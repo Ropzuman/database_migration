@@ -1,0 +1,33 @@
+# Ignore Windows thumbnail cache files
+Thumbs.db
+Desktop.ini
+
+# Ignore VSCode workspace settings
+.vscode/
+
+# Ignore Office temp files
+~$*
+*.tmp
+
+# Ignore compiled Python files (if any)
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Mac
+.DS_Store
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Backup files
+*~
+*.bak
