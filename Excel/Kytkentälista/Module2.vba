@@ -1,15 +1,14 @@
 Sub TyhjaaKommentit()
     Cells.ClearComments
 End Sub
-  '
-  ' Fast-mode helpers to reduce flicker and speed up heavy operations
-  '''
-  ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
-  ' Handles document property extraction, comment-based linking, and error reporting.
-  '''
 
-  ' Fast-mode helpers to reduce flicker and speed up heavy operations
-  Private prevScreenUpdating2 As Boolean
+'''
+' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
+' Handles document property extraction, comment-based linking, and error reporting.
+'''
+
+' Fast-mode helpers to reduce flicker and speed up heavy operations
+Private prevScreenUpdating2 As Boolean
   Private prevCalculation2 As XlCalculation
   Private prevEnableEvents2 As Boolean
   Private prevDisplayAlerts2 As Boolean
@@ -77,9 +76,14 @@ DICustomer = ""
 DIFile = ""
 Dim wsDB2 As Worksheet, wsTemplate As Worksheet
 
-  Sheets("DB2").Select
+  On Error Resume Next
   Set wsDB2 = Sheets("DB2")
   Set wsTemplate = Sheets("TEMPLATE")
+  On Error GoTo 0
+  
+  If wsDB2 Is Nothing Or wsTemplate Is Nothing Then Exit Sub
+  
+  wsDB2.Select
   i = 1
   Do
      Arvo = LCase(Cells(1, i).Value) ' Convert cell value to lowercase
@@ -146,8 +150,18 @@ Sub VaihdaInfo(Optional Sheet As String = "Info")
 ' Handles Info and Revisions sheets. Uses fast mode for performance.
 '''
 Dim i As Long
-'Dim Row As Range
-  Sheets(Sheet).Select
+Dim Row As Long
+Dim Column As Long
+Dim r As Long
+Dim ws As Worksheet
+
+  On Error Resume Next
+  Set ws = Sheets(Sheet)
+  On Error GoTo 0
+  
+  If ws Is Nothing Then Exit Sub
+  
+  ws.Select
   With ActiveSheet
     For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
         Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
@@ -187,6 +201,7 @@ Dim i As Long
           .Comments(i).Parent.Value = DIRev
         Case "revid"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -194,18 +209,14 @@ Dim i As Long
                .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
                Row = Row + 1
              End If
-              Dim Row As Long
-              Dim Column As Long
-              Dim r As Long
-              Dim ws As Worksheet
-              Set ws = Sheets(Sheet)
-              BeginFastMode2
             Next r
+            On Error GoTo 0
           Else
             .Comments(i).Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -214,11 +225,13 @@ Dim i As Long
                 Row = Row + 1
               End If
             Next r
+            On Error GoTo 0
           Else
             .Comments(i).Parent.Value = DIRevDate
           End If
         Case "designer"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -227,9 +240,11 @@ Dim i As Long
                Row = Row + 1
               End If
             Next r
+            On Error GoTo 0
           End If
         Case "checker"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -238,9 +253,11 @@ Dim i As Long
                Row = Row + 1
               End If
             Next r
+            On Error GoTo 0
           End If
         Case "approver"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -249,9 +266,11 @@ Dim i As Long
                Row = Row + 1
               End If
             Next r
+            On Error GoTo 0
           End If
         Case "desc"
           If Sheet <> "Info" Then
+            On Error Resume Next
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
             For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -260,6 +279,7 @@ Dim i As Long
                Row = Row + 1
               End If
             Next r
+            On Error GoTo 0
           End If
         End Select
       Next i
@@ -273,23 +293,35 @@ Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long)
 '''
 Dim i As Long
 Dim j As Long
-i = 1
-   Sheets("DB1").Select
+Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
+
+   On Error Resume Next
+   Set wsDB1 = Sheets("DB1")
+   Set wsTemplate = Sheets("TEMPLATE")
+   Set wsErrors = Sheets("ERRORS")
+   On Error GoTo 0
+   
+   If wsDB1 Is Nothing Or wsTemplate Is Nothing Or wsErrors Is Nothing Then
+     EtsiOts = False
+     Exit Function
+   End If
+   
+   i = 1
+   wsDB1.Select
    Do
      If LCase(Cells(1, i).Value) = LCase(Otsikko) Then
-       Sheets("TEMPLATE").Select
+       wsTemplate.Select
        Cells(Rivi, Sarake).Select
        With ActiveCell
          .AddComment
          .Comment.text text:=LRivi & ":" & i
-                EndFastMode2
-                Sheets("TEMPLATE").Select
          .Comment.Shape.DrawingObject.AutoSize = True
        End With
+       wsTemplate.Select
        EtsiOts = True
        Exit Do
      ElseIf Cells(1, i).Value = "" Then
-       Sheets("ERRORS").Select
+       wsErrors.Select
        If Cells(1, 1).Value = "" Then
          Cells(1, 1).Value = "Following headlines were declared in TEMPLATE, but not found from DB sheet:"
          Cells(2, 1).Value = "HeadLine"
@@ -309,13 +341,9 @@ i = 1
          End If
          j = j + 1
        Loop
-       Sheets("TEMPLATE").Select
+       wsTemplate.Select
        EtsiOts = False
        Exit Do
-      Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
-      Set wsDB1 = Sheets("DB1")
-      Set wsTemplate = Sheets("TEMPLATE")
-      Set wsErrors = Sheets("ERRORS")
      End If
      i = i + 1
    Loop

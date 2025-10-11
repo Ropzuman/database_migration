@@ -31,13 +31,29 @@ Summary of changes
    - Benefits: Improved portability across database engines, better behavior with multi-user environments, and faster grouped inserts.
    - Note: After initial changes a compile-time error was encountered when calling BeginTrans on the Database object in some DAO versions. To fix this, the implementation was updated to call DBEngine.BeginTrans / DBEngine.CommitTrans / DBEngine.Rollback (see "Fixes" below).
 
-4) Typing and input validation
-   - Explicitly typed previously untyped module-level variables (Global last_criteria As Variant, last_used As Variant).
-   - Provided explicit parameter and return types for small helper functions (Set_last, Show_last, Show_last_criteria) for clarity and to avoid implicit-typing bugs.
-   - Hardened input validation in CustomMessage:
-     - Check IsNumeric before numeric comparisons.
-     - Convert to Long via CLng and re-check range.
-     - This prevents runtime errors due to string/number comparisons and improves user input safety.
+
+4) Typing, input validation, and Excel macro safety
+    - Explicitly typed previously untyped module-level variables (Global last_criteria As Variant, last_used As Variant).
+    - Provided explicit parameter and return types for small helper functions (Set_last, Show_last, Show_last_criteria) for clarity and to avoid implicit-typing bugs.
+    - Hardened input validation in CustomMessage:
+       - Check IsNumeric before numeric comparisons.
+       - Convert to Long via CLng and re-check range.
+       - This prevents runtime errors due to string/number comparisons and improves user input safety.
+    - In Excel macro `HaeData`, added a guard so `ORDER BY` is only appended if not already present in the SQL, preventing duplicate clauses and SQL syntax errors.
+    - In Excel macro `Checkout`, all counters and ByRef arguments are now `Long` for 64-bit compatibility and to avoid VBA ByRef argument type mismatches.
+    - Fixed duplicate variable declarations in Module1 (HaeData: changed `i` from Integer to Long; Checkout: removed duplicate `foundRange` declaration) and Module2 (VaihdaInfo: removed duplicate `i` and `Row` declarations; EtsiOts: moved Dim statements to function top).
+    - Added ODBC error handling in HaeData with database file existence check and detailed error messages to diagnose runtime error 1004.
+    - Fixed HaeData error handler logic: moved success message outside error handler so it only shows on successful completion, not after errors.
+    - Removed SQLSuffix logic from HaeData: was commented out in original code and caused issues. Now uses ORDER BY only if specified in faceplate query.
+    - HaeData now skips Excel-based queries (_qryForExcel): prevents ODBC errors when document property queries reference Excel files instead of Access database.
+    - Fixed EtsiOts function: removed erroneous EndFastMode2 call that was causing Excel to freeze during Checkout validation.
+    - Fixed VaihdaInfo function: removed orphaned BeginFastMode2 call in "revid" case that had no matching EndFastMode2, causing Excel to freeze when Checkout validated Revisions sheet.
+    - Fixed Checkout function: replaced EndFastMode call with Application.ScreenUpdating = True since Checkout was using direct ScreenUpdating control, not the Fast Mode functions.
+    - Enhanced Checkout function to handle missing sheets gracefully: VaihdaInfo now checks if sheet exists before accessing it (fixes runtime error 9 "subscript out of range").
+    - Reverted Checkout to lightweight template marker lookup: removed heavy error checking with MsgBox for each marker. Now uses direct Cells.Find() calls like original code - errors logged to ERRORS sheet as designed.
+    - Removed Cells.ClearComments from Checkout: this operation on entire sheet was causing Excel to freeze. Comments are now only cleared when needed in GenPrintout.
+    - Added lightweight sheet existence validation in HaeDocTiedot, VaihdaInfo, and EtsiOts: silently exits if required sheets are missing instead of showing multiple message boxes.
+    - Optimized DIRevArr array access in VaihdaInfo: consolidated error handling with single On Error Resume Next block per case instead of nested checks, improving performance.
 
 Why these changes were made
 --------------------------

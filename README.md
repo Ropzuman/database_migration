@@ -33,6 +33,18 @@ Key migration changes (from the changelog)
 	- Helper functions (`Set_last`, `Show_last`, `Show_last_criteria`) given explicit param/return types.
 	- Hardened input validation in `CustomMessage`: numeric checks (`IsNumeric`), conversion via `CLng`, and range guards to prevent runtime errors.
 
+5) Excel macro SQL and 64-bit safety improvements
+	- `HaeData` now appends `ORDER BY` only if not already present in the SQL, preventing duplicate clauses and SQL errors.
+	- All counters and ByRef arguments in `Checkout` and related calls are now `Long` for 64-bit compatibility and to avoid VBA ByRef type mismatches.
+	- Fixed duplicate variable declarations across modules (Module1: `i` in HaeData, `foundRange` in Checkout; Module2: duplicate `i` and `Row` in VaihdaInfo, workspace variables in EtsiOts).
+	- Enhanced ODBC error handling in `HaeData` with database file existence validation and proper error flow. Skips Excel-based queries (_qryForExcel) to prevent ODBC errors on document property queries.
+	- `VaihdaInfo` now checks if sheet exists before accessing (prevents runtime error 9 when "Revisions" or other optional sheets are missing).
+	- `Checkout` optimized: removed Cells.ClearComments (causes freezing), uses lightweight marker lookup, and properly handles screen updating (replaced mismatched EndFastMode with direct Application.ScreenUpdating = True).
+	- `EtsiOts` fixed: removed erroneous EndFastMode2 call that caused Excel freezing during template validation.
+	- `VaihdaInfo` fixed: removed orphaned BeginFastMode2 call that had no matching EndFastMode2, preventing Excel freeze when processing Revisions sheet.
+	- `HaeDocTiedot`, `VaihdaInfo`, and `EtsiOts` validate sheet existence silently and exit gracefully if sheets are missing.
+	- Lightweight error handling for `DIRevArr` array access prevents subscript errors without performance overhead.
+
 Quick validation (smoke tests)
 ------------------------------
 1. Open the database in 64-bit Access. Import or confirm the updated modules.
