@@ -4,11 +4,11 @@ End Sub
   '
   ' Fast-mode helpers to reduce flicker and speed up heavy operations
   '''
-  ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
-  ' Handles document property extraction, comment-based linking, and error reporting.
+  ' Module2.vba – Metatieto-, info- ja linkitystoiminnot Kytkentälista Excel -järjestelmälle
+  ' Vastaa dokumentin tietojen hausta, kommenttipohjaisesta linkityksestä sekä virheraportoinnista.
   '''
 
-  ' Fast-mode helpers to reduce flicker and speed up heavy operations
+  ' Nopea tila -apuohjelmat: vähentävät näytön välkkymistä ja nopeuttavat raskaita operaatioita
   Private prevScreenUpdating2 As Boolean
   Private prevCalculation2 As XlCalculation
   Private prevEnableEvents2 As Boolean
@@ -17,8 +17,8 @@ End Sub
 
   Private Sub BeginFastMode2()
   '''
-  ' BeginFastMode2: Temporarily disables Excel UI updates, events, and sets calculation to manual
-  ' to speed up macro execution and prevent screen flicker.
+  ' BeginFastMode2: Poistaa tilapäisesti Excelin käyttöliittymän päivitykset, tapahtumat ja asettaa laskennan manuaaliseksi
+  ' makrojen nopeuttamiseksi ja näytön välkkymisen estämiseksi.
   '''
     prevScreenUpdating2 = Application.ScreenUpdating
     prevCalculation2 = Application.Calculation
@@ -36,7 +36,7 @@ End Sub
 
   Private Sub EndFastMode2()
   '''
-  ' EndFastMode2: Restores Excel UI and calculation settings to their previous state.
+  ' EndFastMode2: Palauttaa Excelin käyttöliittymä- ja laskenta-asetukset aiempaan tilaan.
   '''
     On Error Resume Next
     Application.ScreenUpdating = prevScreenUpdating2
@@ -48,8 +48,8 @@ End Sub
   End Sub
 Sub HaeDocTiedot()
 '''
-' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
-' Used for populating headers, footers, and info fields in the printout.
+' HaeDocTiedot: Hakee dokumentin ominaisuudet DB2-taulukosta ja tallentaa ne globaaleihin muuttujiin.
+' Käytetään otsikoiden, alatunnisteiden ja infokenttien täyttämiseen tulosteessa.
 '''
 Dim i As Long
 Dim Arvo As String
@@ -142,15 +142,15 @@ Dim wsDB2 As Worksheet, wsTemplate As Worksheet
 End Sub
 Sub VaihdaInfo(Optional Sheet As String = "Info")
 '''
-' VaihdaInfo: Updates the specified sheet's comment-annotated cells with document property values.
-' Handles Info and Revisions sheets. Uses fast mode for performance.
+' VaihdaInfo: Päivittää annetun taulukon kommentoidut solut dokumentin arvoilla.
+' Käsittelee Info- ja Revisions-taulukot. Käyttää nopeaa tilaa suorituskyvyn parantamiseksi.
 '''
 Dim i As Long
 'Dim Row As Range
   Sheets(Sheet).Select
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
-        Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
+  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
+  Select Case LCase(.Comments(i).text) ' Muutetaan kommentin teksti pieniksi kirjaimiksi
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
         Case "project"
@@ -189,11 +189,11 @@ Dim i As Long
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-             If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
-               Row = Row + 1
-             End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+               If (DIRevArr(r) <> "") Then
+                 .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0) ' Kirjoitetaan revisiotunnus
+                 Row = Row + 1
+               End If
               Dim Row As Long
               Dim Column As Long
               Dim r As Long
@@ -208,11 +208,11 @@ Dim i As Long
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-                .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
-                Row = Row + 1
-              End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                If (DIRevArr(r) <> "") Then
+                  .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " ")) ' Kirjoitetaan revisiopäivä
+                  Row = Row + 1
+                End If
             Next r
           Else
             .Comments(i).Parent.Value = DIRevDate
@@ -221,44 +221,44 @@ Dim i As Long
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
-               Row = Row + 1
-              End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+               If (DIRevArr(r) <> "") Then
+                .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1) ' Kirjoitetaan suunnittelija
+                Row = Row + 1
+               End If
             Next r
           End If
         Case "checker"
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
-               Row = Row + 1
-              End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+               If (DIRevArr(r) <> "") Then
+                .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2) ' Kirjoitetaan tarkastaja
+                Row = Row + 1
+               End If
             Next r
           End If
         Case "approver"
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
-               Row = Row + 1
-              End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+               If (DIRevArr(r) <> "") Then
+                .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3) ' Kirjoitetaan hyväksyjä
+                Row = Row + 1
+               End If
             Next r
           End If
         Case "desc"
           If Sheet <> "Info" Then
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
-               Row = Row + 1
-              End If
+              For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+               If (DIRevArr(r) <> "") Then
+                .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4) ' Kirjoitetaan kuvaus
+                Row = Row + 1
+               End If
             Next r
           End If
         End Select
@@ -268,8 +268,8 @@ Dim i As Long
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
 '''
-' EtsiOts: Searches for a header (Otsikko) in DB1 and annotates TEMPLATE with a comment if found.
-' If not found, logs the missing header in ERRORS sheet. Used for template validation.
+' EtsiOts: Etsii otsikon (Otsikko) DB1-taulukosta ja lisää kommentin TEMPLATE-taulukkoon, jos löytyy.
+' Jos ei löydy, kirjaa puuttuvan otsikon ERRORS-taulukkoon. Käytetään templaten validointiin.
 '''
 Dim i As Long
 Dim j As Long
@@ -281,10 +281,10 @@ i = 1
        Cells(Rivi, Sarake).Select
        With ActiveCell
          .AddComment
-         .Comment.text text:=LRivi & ":" & i
-                EndFastMode2
-                Sheets("TEMPLATE").Select
-         .Comment.Shape.DrawingObject.AutoSize = True
+    .Comment.text text:=LRivi & ":" & i
+    EndFastMode2
+    Sheets("TEMPLATE").Select
+    .Comment.Shape.DrawingObject.AutoSize = True
        End With
        EtsiOts = True
        Exit Do
@@ -303,8 +303,8 @@ i = 1
        j = 3
        Do
          If Cells(j, 1) = "" Then
-            Cells(j, 1).Value = Otsikko
-            Cells(j, 2).Value = Cells(Rivi, Sarake).Address
+             Cells(j, 1).Value = Otsikko
+             Cells(j, 2).Value = Cells(Rivi, Sarake).Address
            Exit Do
          End If
          j = j + 1
@@ -322,8 +322,9 @@ i = 1
 End Function
 Sub VaihdaLinkit1(Alku As Long, Loppu As Long, Kerta As Long)
 '''
-' VaihdaLinkit1: For each cell in the specified range, if it contains a linking marker, copies the value
-' from the LINKING sheet and adds a comment/formula for traceability. Used for legacy linking logic.
+' VaihdaLinkit1: Käy läpi annetun alueen solut; jos solu sisältää linkitysmerkinnän,
+' kopioi arvon LINKING-taulukosta ja lisää kommentin/kaavan jäljitettävyyden vuoksi.
+' Käytetään vanhassa linkityslogiikassa.
 '''
 Dim TRow As Long
 Dim TCol As Long
@@ -357,8 +358,8 @@ Virhe_Komment:
 End Sub
 Sub VaihdaLinkit(Alku As Long, Loppu As Long, Kerta As Long)
 '''
-' VaihdaLinkit: For each comment in the active sheet, updates the corresponding cell in LINKING with a formula
-' and value, and applies formatting if needed. Used for main linking logic in printout.
+' VaihdaLinkit: Käy läpi aktiivisen taulukon kommentit ja päivittää vastaavan LINKING-solun kaavalla
+' ja arvolla, soveltaa muotoilua tarvittaessa. Käytetään päälinkityslogiikassa tulostetta varten.
 '''
 Dim TRow As Long, CRow As Long
 Dim TCol As Long
@@ -367,8 +368,8 @@ Dim Teksti As String
 Dim Kaava As String
 Dim Osoite As String
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
-         Teksti = .Comments(i).text ' Get the comment text
+  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
+         Teksti = .Comments(i).text ' Haetaan kommentin teksti
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
        TCol = CInt(Mid(Teksti, 3))
@@ -389,12 +390,12 @@ Dim Osoite As String
         .Comments(i).Parent.Value = Teksti
       End If
     Next i
-    Cells.ClearComments
+  Cells.ClearComments ' Poistaa kaikki kommentit taulukosta
   End With
 End Sub
 Sub VaihdaLinkit_OLD(Alku As Long, Loppu As Long, Kerta As Long)
 '''
-' VaihdaLinkit_OLD: Legacy version of linking logic, kept for reference. Uses Select/Activate.
+' VaihdaLinkit_OLD: Linkityslogiikan vanha versio, säilytetty viitteeksi. Käyttää Select/Activate-kutsuja.
 '''
 Dim TRow As Long
 Dim TCol As Long
@@ -403,8 +404,8 @@ Dim Teksti As String
 Dim Arvo As String
 Dim Osoite As String
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
-        Teksti = .Comments(i).text ' Get the comment text
+  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
+    Teksti = .Comments(i).text ' Haetaan kommentin teksti
       Osoite = .Comments(i).Parent.Address
       TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
       TCol = CInt(Mid(Teksti, 3))
@@ -414,12 +415,12 @@ Dim Osoite As String
       Sheets(POSheet).Select
       .Comments(i).Parent.Value = Arvo
     Next i
-    Cells.ClearComments
+  Cells.ClearComments ' Poistaa kaikki kommentit taulukosta
   End With
 End Sub
 Function MuutaLinkki(Kohde As String) As String
 '''
-' MuutaLinkki: Helper for VaihdaLinkit_OLD. Adds a comment and formula to the active cell for traceability.
+' MuutaLinkki: Apufunktio VaihdaLinkit_OLD:lle. Lisää kommentin ja kaavan aktiiviseen soluun jäljitettävyyden vuoksi.
 '''
 Dim Arvo As String
 On Error GoTo Virhe_Komment
@@ -439,13 +440,13 @@ End With
 End Function
 Sub TarkistaVaihto(Vaihto As Long, ViimRivi As Long, Riveja As Long)
 '''
-' TarkistaVaihto: Ensures page breaks are set at appropriate rows in the printout sheet.
+' TarkistaVaihto: Varmistaa, että sivunvaihdot ovat oikeissa riveissä tulostetaulukossa.
 '''
 Dim SVRivi As Long
 On Error GoTo VirheSivunLuvussa
   
 '  SVRivi = CInt(ActiveSheet.HPageBreaks(Vaihto).Location.Row)
-  'Automaattinen rivinvaihto tuli huonoon kohtaan, joten tehdään itse uusi edelliseen sopivaan paikkaan
+  'Automaattinen sivunvaihto tuli huonoon kohtaan, joten lisätään uusi edelliseen sopivaan paikkaan
   Cells(ViimRivi, 1).Select
     ActiveSheet.HPageBreaks.Add Before:=ActiveCell ' Add a page break before the active cell
 
@@ -453,7 +454,7 @@ Ulos_TarkistaVaihto:
   Exit Sub
         
 VirheSivunLuvussa:
-  'Rivinvaihto tuli juuri nappiin kohtaan, vahvistetaan se vielä
+  'Sivunvaihto tuli juuri oikeaan kohtaan, vahvistetaan se vielä
   Cells(ViimRivi + Riveja + 1, 1).Select
   ActiveSheet.HPageBreaks.Add Before:=ActiveCell
   Resume Ulos_TarkistaVaihto
@@ -461,8 +462,8 @@ VirheSivunLuvussa:
 End Sub
 Sub TeeLinkingKommentit()
 '''
-' TeeLinkingKommentit: Adds comments to all formula cells in the LINKING sheet for traceability.
-' Uses fast mode for performance.
+' TeeLinkingKommentit: Lisää kommentit kaikkiin kaavasoluihin LINKING-taulukossa jäljitettävyyden vuoksi.
+' Käyttää nopeaa tilaa suorituskyvyn parantamiseksi.
 '''
 Dim Solu As Range
 Dim wsLinking As Worksheet

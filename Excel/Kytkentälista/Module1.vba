@@ -39,10 +39,9 @@ Public DIRevDate As String
 Public DIStatus As String
 
 '''
-' Module1.vba - Main logic for Kytkentälista Excel macro system
-' Handles data fetching from Access, printout generation, and performance optimizations.
+' Module1.vba - Päälogiikka makrolle
+' Hoitaa datan haun Accessista ja tulosteen luonnin sekä suorituskyvyn optimoinnit.
 '''
-
 ' Performance/UX state (to minimize screen flashing and speed up macros)
 Private prevScreenUpdating As Boolean
 Private prevCalculation As XlCalculation
@@ -51,8 +50,8 @@ Private prevDisplayAlerts As Boolean
 Private prevDisplayStatusBar As Boolean
 
 '''
-' BeginFastMode: Temporarily disables Excel UI updates, events, and sets calculation to manual
-' to speed up macro execution and prevent screen flicker.
+' BeginFastMode: Poistaa väliaikaisesti Excelin UI-päivitykset, tapahtumat ja asettaa laskennan manuaaliseksi
+' makrojen nopeuttamiseksi ja näytön välkkymisen estämiseksi.
 '''
 Private Sub BeginFastMode()
   prevScreenUpdating = Application.ScreenUpdating
@@ -71,7 +70,7 @@ Private Sub BeginFastMode()
 End Sub
 
 '''
-' EndFastMode: Restores Excel UI and calculation settings to their previous state.
+' EndFastMode: Palauttaa Excelin UI- ja laskenta-asetukset edelliseen tilaan.
 '''
 Private Sub EndFastMode()
   On Error Resume Next
@@ -85,8 +84,8 @@ Private Sub EndFastMode()
 End Sub
 
 '''
-' HaeData: Fetches data from Access database using ODBC and SQL queries defined in the faceplate.
-' Populates DB1 and DB2 sheets with the results. Uses fast mode for performance.
+' HaeData: Hakee dataa Access-tietokannasta ODBC:n kautta, käyttäen faceplatessa määritettyjä SQL-kyselyitä.
+' Täyttää DB1- ja DB2 -sheetit tuloksilla. Käyttää nopeaa tilaa suorituskyvyn parantamiseksi.
 '''
 Sub HaeData()
 Dim Kanta As String
@@ -123,7 +122,7 @@ Dim Yhteys As String
   BeginFastMode
   Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
   For i = 1 To 2
-    ' Clear previous data and run query for each DB sheet
+    ' Tyhjennä aiemmat datat ja aja kysely jokaiselle DB-sheetille
     Dim ws As Worksheet
     Set ws = Sheets("DB" & i)
     ws.Cells.Clear
@@ -139,7 +138,7 @@ Dim Yhteys As String
         .SaveData = True
         .BackgroundQuery = False
         .Refresh
-        .Delete ' Remove query after refresh to avoid leaving connections
+  .Delete ' Poista kysely päivityksen jälkeen, jotta yhteyksiä ei jää roikkumaan
       End With
       Set TAULUKKO = Nothing
     End If
@@ -149,14 +148,14 @@ Dim Yhteys As String
   Sheets("Main").Select
 End Sub
 '''
-' GenPrintout: Generates a new printout workbook using TEMPLATE and data from DB1.
-' Copies headers, footers, and main data body, applies formatting, and saves the result.
-' Uses array-based transfer for main data for speed. All formatting and linking logic preserved.
+' GenPrintout: Generoi uuden tulostetyökirjan käyttäen TEMPLATEa ja DB1:n dataa.
+' Kopioi otsikot, alatunnisteet ja rungon, soveltaa muotoilut ja tallentaa tuloksen.
+' Käyttää taulukkomuotoista siirtoa (array) rungon kirjoittamiseen nopeuden vuoksi. Kaikki muotoilut ja linkitykset säilytetään.
 '''
 Sub GenPrintout()
   If CheckOK = False Then
     MsgBox "Check data first!", vbCritical, "Error!"
-  Else ' Data has been checked and is ready for printout generation.
+  Else ' Data on tarkistettu ja valmis tulosteen luontiin.
     Dim MacroWB As String
     Dim UusiWB As String
     Dim ViimRivi As Integer
@@ -173,11 +172,11 @@ Sub GenPrintout()
     
   BeginFastMode
     
-  AddFooter = Sheets("Main").AddFooter.Value ' User option from faceplate
+  AddFooter = Sheets("Main").AddFooter.Value ' Käyttäjän valinta faceplatesta
     
-  Riveja = DocEnd - DocStart ' Number of rows in the document body
+  Riveja = DocEnd - DocStart ' Runkodatan rivimäärä
   Sheets("DB1").Select
-  ' Find last used row in DB1
+  ' Etsi DB1:stä viimeinen käytössä oleva rivi
   Recordeja = Cells.Find(What:="*", _
           After:=Range("A1"), _
           LookAt:=xlPart, _
@@ -186,12 +185,12 @@ Sub GenPrintout()
           SearchDirection:=xlPrevious, _
           MatchCase:=False).Row
     
-  MacroWB = ActiveWorkbook.Name ' Store macro workbook name
-  ' Copy Info sheet to new workbook (creates new workbook)
+  MacroWB = ActiveWorkbook.Name ' Tallenna makrotyökirjan nimi
+  ' Kopioi Info-sheet uuteen työkirjaan (luo uuden työkirjan)
   Sheets("Info").Copy
-  UusiWB = ActiveWorkbook.Name ' Store new workbook name
-  Cells.ClearComments ' Remove comments from new Info sheet
-  ' Copy TEMPLATE to new workbook and rename as POSheet
+  UusiWB = ActiveWorkbook.Name ' Tallenna uuden työkirjan nimi
+  Cells.ClearComments ' Poista kommentit uudesta Info-sheetistä
+  ' Kopioi TEMPLATE uuteen työkirjaan ja nimeä POSheetiksi
   Windows(MacroWB).Activate
   Sheets("TEMPLATE").Copy After:=Workbooks(UusiWB).Sheets(1)
   ActiveSheet.Name = POSheet
@@ -199,9 +198,9 @@ Sub GenPrintout()
     
     'Kopioidaan sitten Legend ja Revisions sheetit uuten työkirjaan
     Windows(MacroWB).Activate
-  Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Copy Legend
+  Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Kopioi Legend
   Windows(MacroWB).Activate
-  Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Copy Revisions
+  Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Kopioi Revisions
       Dim ViimRivi As Long
       Dim Riveja As Long
       Dim Recordeja, Recordeja2 As Long
@@ -214,9 +213,9 @@ Sub GenPrintout()
       Dim Oletus As String
       Dim Sarjoja As Long
     Sheets(POSheet).Select
-    ' Clear all data from printout sheet (keeps column widths)
+  ' Tyhjennä kaikki data tulostesheetistä (sarakkeiden leveydet säilyvät)
     Cells.Clear
-    ' Remove all shapes/images if present
+  ' Poista kaikki muodot/kuvat, jos niitä on
     If ActiveSheet.Shapes.Count > 0 Then
       For i = 1 To ActiveSheet.Shapes.Count
         ActiveSheet.Shapes(1).Delete
@@ -226,32 +225,32 @@ Sub GenPrintout()
     
     'Kopioidaan mahdolliset otsikkotiedot Prinout sheetille
   ViimRivi = 1
-  ' Copy header rows from TEMPLATE to printout
+  ' Kopioi otsikkorivit TEMPLATEsta tulostesheetille
   Windows(MacroWB).Activate
   Sheets("TEMPLATE").Rows(PHStart & ":" & PHEnd).Copy
   Windows(UusiWB).Activate
   Rows(ViimRivi & ":" & ViimRivi + PHEnd - PHStart).Select
   ActiveSheet.Paste
-  ' Set print title rows and freeze panes below header
+  ' Aseta tulostuksen otsikkorivit ja jäädytä ruudut otsikoiden alle
   ActiveSheet.PageSetup.PrintTitleRows = "$" & ViimRivi & ":$" & ViimRivi + PHEnd - PHStart
   Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
   ActiveWindow.FreezePanes = True
   ViimRivi = ViimRivi + 1 + PHEnd - PHStart
 '---------- [ ALATUNNISTEET ] --------------------------
-    ' Set up footers for first three sheets (Info, POSheet, Legend)
+  ' Aseta alatunnisteet ensimmäisille kolmelle sheetille (Info, POSheet, Legend)
     For i = 1 To 3
       Sheets(i).Select
       Application.StatusBar = "Prosessing Footers: " & i & "/3"
-      ' Left footer: document info
+  ' Vasen alatunniste: dokumentin tiedot
       ActiveSheet.PageSetup.LeftFooter = "&8Document: " & DIMetsoDocNo & Chr(10) _
                                        & "&8Revision: " & DIRevID & " - " & DIRevDate & Chr(10) _
                                        & "&8Status: " & DIStatus
-      ' Center footer: customer and mill info
+  ' Keskialatunniste: asiakas ja tehdas
       ActiveSheet.PageSetup.CenterFooter = "&8 " & DICustomer & Chr(10) _
                                          & "&8 " & DIMill & Chr(10) _
                                          & "&8 " & DIDepartName & Chr(10) _
                                          & "&8 " & DIDocName2
-      ' Right footer: project and file info
+  ' Oikea alatunniste: projekti ja tiedoston nimi
       ActiveSheet.PageSetup.RightFooter = "&8Project: " & DIProjNo & Chr(10) _
                                         & "&8File: &F" & Chr(10) _
                                         & "&8Page &P(&N)"
@@ -264,14 +263,14 @@ Sub GenPrintout()
     'ActiveSheet.HPageBreaks(1).Location.Row
     Sivunvaihtoja = ActiveSheet.HPageBreaks.Count
     Sarjoja = 0
-  ' --- Optimized: Bulk copy DB1 data to POSheet using array ---
-  ' This block loads all DB1 data into a 2D array and writes it in one operation for speed.
+  ' --- Optimoitu: DB1-datan massasiirto POSheetiin arrayn avulla ---
+  ' Tämä lohko lataa DB1-datan 2D-taulukkoon ja kirjoittaa sen kerralla nopeuden vuoksi.
     Dim dbData As Variant
     Dim dataRows As Long, dataCols As Long
     Dim destStartRow As Long, destEndRow As Long
     Dim destSheet As Worksheet
     Set destSheet = Sheets(POSheet)
-  ' Find data range in DB1 (from row 2 to last row, all columns)
+  ' Etsi datan alue DB1:stä (rivistä 2 viimeiseen riviin, kaikki sarakkeet)
     With Sheets("DB1")
         dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
         dataCols = .Cells(1, .Columns.Count).End(xlToLeft).Column
@@ -281,13 +280,13 @@ Sub GenPrintout()
             dbData = Empty
         End If
     End With
-  ' Write data array to POSheet at the correct position (after header rows)
+  ' Kirjoita array-datan POSheetille oikeaan kohtaan (otsikkorivien jälkeen)
     destStartRow = ViimRivi
     destEndRow = destStartRow + UBound(dbData, 1) - 1
     If Not IsEmpty(dbData) Then
         destSheet.Range(destSheet.Cells(destStartRow, 1), destSheet.Cells(destEndRow, dataCols)).Value = dbData
-  ' Optional: Apply alternating row color for every other block (as before)
-  ' (keeps the same look as the original macro)
+  ' Valinnainen: käytä vuoroväritystä joka toiselle blokille (kuten aiemmin)
+  ' (säilyttää alkuperäisen ulkoasun)
         For i = 0 To UBound(dbData, 1) - 1 Step RMAX
             If (i \ RMAX) Mod 2 = 1 Then
                 With destSheet.Range(destSheet.Cells(destStartRow + i, 1), destSheet.Cells(destStartRow + i + RMAX - 1, Sarakkeita)).Interior
@@ -297,7 +296,7 @@ Sub GenPrintout()
                 End With
             End If
         Next i
-  ' Call VaihdaLinkit for each block as before (handles linking logic)
+  ' Kutsu VaihdaLinkit jokaiselle blokille kuten aiemmin (hoitaa linkityksen)
         Kerta = 0
         For i = 0 To UBound(dbData, 1) - 1 Step RMAX
             VaihdaLinkit destStartRow + i, destStartRow + i + RMAX - 1, Kerta
@@ -305,15 +304,15 @@ Sub GenPrintout()
         Next i
         ViimRivi = destEndRow + 1
     End If
-  ' --- End optimized block ---
+  ' --- Optimoidun lohkon loppu ---
   If AddFooter = True Then
-    ' Copy footer rows from TEMPLATE to printout
+  ' Kopioi alatunnisteen rivit TEMPLATEsta tulostesheetille
     Windows(MacroWB).Activate
     Sheets("TEMPLATE").Rows(PFStart & ":" & PFEnd).Copy
     Windows(UusiWB).Activate
     Rows(ViimRivi & ":" & ViimRivi + PFEnd - PFStart).Select
     ActiveSheet.Paste
-    ' Set up formulas for footer summary cells
+  ' Aseta kaavat alatunnisteen summa-soluja varten
     Dim c As Range
     For Each c In Selection
       If Left(c.Value, 2) = "&&" Then
@@ -321,19 +320,19 @@ Sub GenPrintout()
       End If
     Next c
   End If
-  Cells.ClearComments ' Remove all comments from printout
-  TeeLinkingKommentit ' Add comments to LINKING sheet for traceability
+  Cells.ClearComments ' Poista kaikki kommentit tulostesheetistä
+  TeeLinkingKommentit ' Lisää kommentit LINKING-sheetille jäljitettävyyden vuoksi
 '    If HideLINKING Then
 '      Sheets("LINKING").Visible = False
 '    End If
   Application.DisplayAlerts = False
-  Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
+  Sheets("LINKING").Delete ' Poista LINKING-sheet, jos käyttäjä pyytää
   Application.DisplayAlerts = True
     Windows(UusiWB).Activate
     Worksheets(POSheet).Activate
     Application.StatusBar = False
     EndFastMode
-    ' Prompt user for file name and save as .xlsx
+  ' Kysy käyttäjältä tiedoston nimeä ja tallenna .xlsx-muodossa
     Oletus = DIPath & DIFile
     Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
     If Tiedosto <> "" Then
