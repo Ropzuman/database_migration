@@ -67,6 +67,12 @@ Summary of changes
     - PopulateRevisionsSimple called in GenPrintout AFTER Revisions sheet is copied to new workbook
     - Revisions sheet data source: DB2 sheet column "rev" contains multi-line revision history, split into DIRevArr by Chr(10)
     - Info sheet data source: DB2 sheet contains all document metadata (customer, project, manager, dates, etc.)
+    
+5) Column width optimization in GenPrintout
+    - Fixed issue where printout contained extra columns beyond TEMPLATE definition
+    - Changed dataCols calculation from DB1's last column to use Sarakkeita (TEMPLATE column count)
+    - Added cleanup step to delete any columns beyond Sarakkeita after data population
+    - Result: Printout now matches TEMPLATE width exactly, no extra empty columns
     - Reverted Checkout function to EXACT original implementation with ONLY 64-bit compatibility: changed i, j, Apu from Integer to Long. All other code identical to original working version.
     - Fixed global variable types for 64-bit: Changed RMAX from Integer to Long (used with Long loop variables). Changed Valinta in HaeData from Integer to Long.
     - Fixed GenPrintout: Added missing End If statement at end of function (If CheckOK = False block was never closed).

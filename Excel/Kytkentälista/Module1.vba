@@ -286,7 +286,8 @@ Sub GenPrintout()
     Windows(MacroWB).Activate
     With Sheets("DB1")
         dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
-        dataCols = .Cells(1, .Columns.Count).End(xlToLeft).Column
+        ' Use Sarakkeita from TEMPLATE instead of DB1's last column to prevent extra columns
+        dataCols = Sarakkeita
         If dataRows >= 2 And dataCols >= 1 Then
             dbData = .Range(.Cells(2, 1), .Cells(dataRows, dataCols)).Value
         Else
@@ -319,6 +320,17 @@ Sub GenPrintout()
         ViimRivi = destEndRow + 1
     End If
   ' --- End optimized block ---
+  
+  ' Delete any extra columns beyond Sarakkeita to match TEMPLATE width
+  Sheets(POSheet).Select
+  If Columns.Count > Sarakkeita Then
+    Dim lastCol As Long
+    lastCol = Cells(1, Columns.Count).End(xlToLeft).Column
+    If lastCol > Sarakkeita Then
+      Columns(Sarakkeita + 1 & ":" & lastCol).Delete
+    End If
+  End If
+  
   If AddFooter = True Then
     ' Copy footer rows from TEMPLATE to printout
     Windows(MacroWB).Activate
@@ -339,7 +351,7 @@ Sub GenPrintout()
 '    If HideLINKING Then
 '      Sheets("LINKING").Visible = False
 '    End If
-  ' Delete LINKING sheet if it exists
+  ' Delete LINKING sheet if it exists (may not exist if no linking markers in template)
   On Error Resume Next
   Application.DisplayAlerts = False
   Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
