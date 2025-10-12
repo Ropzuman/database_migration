@@ -154,12 +154,23 @@ Dim Row As Long
 Dim Column As Long
 Dim r As Long
 Dim ws As Worksheet
+Dim processedRevId As Boolean, processedRevDate As Boolean
+Dim processedDesigner As Boolean, processedChecker As Boolean
+Dim processedApprover As Boolean, processedDesc As Boolean
 
   On Error Resume Next
   Set ws = Sheets(Sheet)
   On Error GoTo 0
   
   If ws Is Nothing Then Exit Sub
+  
+  ' Initialize flags for one-time processing of Revisions sheet arrays
+  processedRevId = False
+  processedRevDate = False
+  processedDesigner = False
+  processedChecker = False
+  processedApprover = False
+  processedDesc = False
   
   ws.Select
   With ActiveSheet
@@ -201,85 +212,116 @@ Dim ws As Worksheet
           .Comments(i).Parent.Value = DIRev
         Case "revid"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-             If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
-               Row = Row + 1
-             End If
-            Next r
-            On Error GoTo 0
+            If Not processedRevId Then
+              On Error Resume Next
+              ' Only process if DIRevArr has data
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                 If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
+                   Row = Row + 1
+                 End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedRevId = True
+            End If
           Else
             .Comments(i).Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-                .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
-                Row = Row + 1
+            If Not processedRevDate Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                    .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
+                    Row = Row + 1
+                  End If
+                Next r
               End If
-            Next r
-            On Error GoTo 0
+              On Error GoTo 0
+              processedRevDate = True
+            End If
           Else
             .Comments(i).Parent.Value = DIRevDate
           End If
         Case "designer"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
-               Row = Row + 1
+            If Not processedDesigner Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
+                   Row = Row + 1
+                  End If
+                Next r
               End If
-            Next r
-            On Error GoTo 0
+              On Error GoTo 0
+              processedDesigner = True
+            End If
           End If
         Case "checker"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
-               Row = Row + 1
+            If Not processedChecker Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
+                   Row = Row + 1
+                  End If
+                Next r
               End If
-            Next r
-            On Error GoTo 0
+              On Error GoTo 0
+              processedChecker = True
+            End If
           End If
         Case "approver"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
-               Row = Row + 1
+            If Not processedApprover Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
+                   Row = Row + 1
+                  End If
+                Next r
               End If
-            Next r
-            On Error GoTo 0
+              On Error GoTo 0
+              processedApprover = True
+            End If
           End If
         Case "desc"
           If Sheet <> "Info" Then
-            On Error Resume Next
-            Row = .Comments(i).Parent.Row
-            Column = .Comments(i).Parent.Column
-            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-              If (DIRevArr(r) <> "") Then
-               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
-               Row = Row + 1
+            If Not processedDesc Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
+                   Row = Row + 1
+                  End If
+                Next r
               End If
-            Next r
-            On Error GoTo 0
+              On Error GoTo 0
+              processedDesc = True
+            End If
           End If
         End Select
       Next i
@@ -309,6 +351,11 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    i = 1
    wsDB1.Select
    Do
+     ' Safety check: prevent infinite loop if sheet is unexpectedly large
+     If i > 16384 Then ' Excel max columns
+       EtsiOts = False
+       Exit Do
+     End If
      If LCase(Cells(1, i).Value) = LCase(Otsikko) Then
        wsTemplate.Select
        Cells(Rivi, Sarake).Select
@@ -485,6 +532,95 @@ VirheSivunLuvussa:
   Cells(ViimRivi + Riveja + 1, 1).Select
   ActiveSheet.HPageBreaks.Add Before:=ActiveCell
   Resume Ulos_TarkistaVaihto
+  
+End Sub
+Sub PopulateRevisionsSimple()
+'''
+' PopulateRevisionsSimple: Lightweight function to populate Revisions sheet without comment processing.
+' Finds the first cell with revision data markers and writes DIRevArr data directly.
+' Much faster than VaihdaInfo because it doesn't loop through comments.
+'''
+Dim ws As Worksheet
+Dim r As Long, startRow As Long
+Dim revIdCol As Long, revDateCol As Long, designerCol As Long
+Dim checkerCol As Long, approverCol As Long, descCol As Long
+Dim i As Long
+
+  On Error Resume Next
+  Set ws = Sheets("Revisions")
+  On Error GoTo 0
+  
+  If ws Is Nothing Then Exit Sub
+  If Not IsArray(DIRevArr) Then Exit Sub
+  If UBound(DIRevArr) < LBound(DIRevArr) Then Exit Sub
+  
+  ' Find columns by searching for comment markers in first 20 rows
+  ' This is a simple heuristic - adjust if template structure differs
+  startRow = 0
+  For r = 1 To 20
+    For i = 1 To 10 ' Check first 10 columns
+      If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
+      Select Case LCase(ws.Cells(r, i).Comment.text)
+        Case "revid"
+          revIdCol = i: If startRow = 0 Then startRow = r
+        Case "revdate"
+          revDateCol = i: If startRow = 0 Then startRow = r
+        Case "designer"
+          designerCol = i: If startRow = 0 Then startRow = r
+        Case "checker"
+          checkerCol = i: If startRow = 0 Then startRow = r
+        Case "approver"
+          approverCol = i: If startRow = 0 Then startRow = r
+        Case "desc"
+          descCol = i: If startRow = 0 Then startRow = r
+      End Select
+NextCell:
+    Next i
+  Next r
+  
+  ' If no columns found, exit
+  If startRow = 0 Then Exit Sub
+  
+  ' Write revision data directly
+  On Error Resume Next
+  r = startRow
+  Dim revParts() As String
+  Dim revText As String
+  Dim slashParts() As String
+  
+  For i = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+    If DIRevArr(i) <> "" Then
+      revText = DIRevArr(i)
+      
+      ' Parse revid (first part before space)
+      If revIdCol > 0 And InStr(revText, " ") > 0 Then
+        revParts = Split(revText, " ")
+        If UBound(revParts) >= 0 Then ws.Cells(r, revIdCol).Value = revParts(0)
+      End If
+      
+      ' Parse revdate (between space and /)
+      If revDateCol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
+        Dim spacePos As Long, slashPos As Long
+        spacePos = InStr(revText, " ")
+        slashPos = InStr(revText, "/")
+        If slashPos > spacePos Then
+          ws.Cells(r, revDateCol).Value = Mid(revText, spacePos + 1, slashPos - spacePos - 1)
+        End If
+      End If
+      
+      ' Parse designer, checker, approver, desc (slash-delimited parts)
+      If InStr(revText, "/") > 0 Then
+        slashParts = Split(revText, "/")
+        If designerCol > 0 And UBound(slashParts) >= 1 Then ws.Cells(r, designerCol).Value = slashParts(1)
+        If checkerCol > 0 And UBound(slashParts) >= 2 Then ws.Cells(r, checkerCol).Value = slashParts(2)
+        If approverCol > 0 And UBound(slashParts) >= 3 Then ws.Cells(r, approverCol).Value = slashParts(3)
+        If descCol > 0 And UBound(slashParts) >= 4 Then ws.Cells(r, descCol).Value = slashParts(4)
+      End If
+      
+      r = r + 1
+    End If
+  Next i
+  On Error GoTo 0
   
 End Sub
 Sub TeeLinkingKommentit()

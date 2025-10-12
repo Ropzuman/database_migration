@@ -6,7 +6,7 @@ Public PFEnd As Long
 Public DocStart As Long
 Public DocEnd As Long
 Public Sarakkeita As Long
-Public RMAX As Integer
+Public RMAX As Long
 Public FPSheet As String
 Public POSheet As String
 Public GenFP As Boolean
@@ -91,7 +91,7 @@ End Sub
 Sub HaeData()
 Dim Kanta As String
 Dim sSQL(2) As String
-Dim Valinta As Integer
+Dim Valinta As Long
 Dim i As Long
 Dim TAULUKKO As QueryTable
 Dim Yhteys As String
@@ -222,6 +222,8 @@ Sub GenPrintout()
   Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Copy Legend
   Windows(MacroWB).Activate
   Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Copy Revisions
+  Windows(UusiWB).Activate
+  PopulateRevisionsSimple 'Fast direct write of revision data without comment loops
     Sheets(POSheet).Select
     ' Clear all data from printout sheet (keeps column widths)
     Cells.Clear
@@ -281,6 +283,7 @@ Sub GenPrintout()
     Dim destSheet As Worksheet
     Set destSheet = Sheets(POSheet)
   ' Find data range in DB1 (from row 2 to last row, all columns)
+    Windows(MacroWB).Activate
     With Sheets("DB1")
         dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
         dataCols = .Cells(1, .Columns.Count).End(xlToLeft).Column
@@ -290,6 +293,7 @@ Sub GenPrintout()
             dbData = Empty
         End If
     End With
+    Windows(UusiWB).Activate
   ' Write data array to POSheet at the correct position (after header rows)
     destStartRow = ViimRivi
     destEndRow = destStartRow + UBound(dbData, 1) - 1
@@ -349,6 +353,7 @@ Sub GenPrintout()
       ActiveWorkbook.BuiltinDocumentProperties("Title").Value = POSheet
       ActiveWorkbook.SaveAs Tiedosto, xlOpenXMLWorkbook
     End If
+  End If
 End Sub
 '''
 ' Checkout: Validates that all required headers and row markers exist in the TEMPLATE and DB1 sheets.
@@ -386,7 +391,6 @@ Virhe = False
    
    HaeDocTiedot 'Hakee dokumentin tiedot DB2-sheetiltä
    VaihdaInfo   'Vaihtaa dokumentin tiedot info sheetille
-   VaihdaInfo ("Revisions") 'Tiedot revisions sheetille
    
    Sheets("TEMPLATE").Select
    'Haetaan ensin kerralla kopioitavien rivien määrä eli rivitysmerkinnät
@@ -424,7 +428,7 @@ Virhe = False
          If Left(Arvo, 2) = "££" Then
            If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
          ElseIf Left(Arvo, 1) = "£" Then
-           Apu = CLng(Mid(Arvo, 2, 1))
+           Apu = CInt(Mid(Arvo, 2, 1))
            If EtsiOts(Mid(Arvo, 5), i, j, Apu) = False Then Virhe = True
          End If
        End If

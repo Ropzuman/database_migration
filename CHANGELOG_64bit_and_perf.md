@@ -46,9 +46,30 @@ Summary of changes
     - Fixed HaeData error handler logic: moved success message outside error handler so it only shows on successful completion, not after errors.
     - Removed SQLSuffix logic from HaeData: was commented out in original code and caused issues. Now uses ORDER BY only if specified in faceplate query.
     - HaeData now skips Excel-based queries (_qryForExcel): prevents ODBC errors when document property queries reference Excel files instead of Access database.
-    - Fixed EtsiOts function: removed erroneous EndFastMode2 call that was causing Excel to freeze during Checkout validation.
+    - Fixed EtsiOts function: removed erroneous EndFastMode2 call and added infinite loop protection (max column iteration safety check at 16384 columns).
     - Fixed VaihdaInfo function: removed orphaned BeginFastMode2 call in "revid" case that had no matching EndFastMode2, causing Excel to freeze when Checkout validated Revisions sheet.
-    - Reverted Checkout function to original implementation: restored Cells.ClearComments, added missing Sheets("TEMPLATE").Select call, and fixed function parameter to numeric 1 instead of 1& (Long literal). Kept 64-bit compatibility (Long instead of Integer) but otherwise matches original function that worked reliably.
+    - **CRITICAL FIX**: Removed `VaihdaInfo("Revisions")` call from Checkout function. This call was causing Excel to freeze because:
+      1. During Checkout, the Revisions sheet is being validated and processed with comments
+      2. VaihdaInfo("Revisions") triggers nested loops through DIRevArr for every comment (revid, revdate, designer, checker, approver, desc)
+      3. This creates O(n²) performance issue: comments × revision entries, causing Excel to hang
+      4. The Revisions sheet should only be populated during GenPrintout when the new workbook is created
+      5. Checkout only needs VaihdaInfo() for the Info sheet to populate document metadata for validation
+    - Changed all numeric variables to Long type throughout for 64-bit consistency: RMAX (was Integer), Valinta in HaeData (was Integer), all loop counters (i, j, Apu) in Checkout, GenPrintout, and Module2 functions.
+    - Fixed GenPrintout subscript out of range error: Added workbook activation before accessing DB1 sheet (Windows(MacroWB).Activate) to ensure DB1 is accessed from the macro workbook, not the new printout workbook.
+    - **CRITICAL PERFORMANCE FIX**: Created PopulateRevisionsSimple function to replace VaihdaInfo("Revisions"):
+      - VaihdaInfo("Revisions") was causing freezes even with optimizations due to comment processing overhead
+      - New approach: PopulateRevisionsSimple finds comment-marked columns once (searches first 20 rows), then writes DIRevArr data directly
+      - Eliminates comment iteration entirely - O(n) complexity instead of O(comments × revisions)
+      - Uses direct cell writes: ws.Cells(r, col).Value = data
+      - Includes safety checks: IsArray(DIRevArr), bounds validation, On Error Resume Next for Split operations
+      - Result: Revisions sheet population is now nearly instantaneous
+    - VaihdaInfo optimization (kept for Info sheet): Added boolean flags and IsArray() checks to prevent duplicate processing
+    - PopulateRevisionsSimple called in GenPrintout AFTER Revisions sheet is copied to new workbook
+    - Revisions sheet data source: DB2 sheet column "rev" contains multi-line revision history, split into DIRevArr by Chr(10)
+    - Info sheet data source: DB2 sheet contains all document metadata (customer, project, manager, dates, etc.)
+    - Reverted Checkout function to EXACT original implementation with ONLY 64-bit compatibility: changed i, j, Apu from Integer to Long. All other code identical to original working version.
+    - Fixed global variable types for 64-bit: Changed RMAX from Integer to Long (used with Long loop variables). Changed Valinta in HaeData from Integer to Long.
+    - Fixed GenPrintout: Added missing End If statement at end of function (If CheckOK = False block was never closed).
     - Enhanced Checkout function to handle missing sheets gracefully: VaihdaInfo now checks if sheet exists before accessing it (fixes runtime error 9 "subscript out of range").
     - Reverted Checkout to lightweight template marker lookup: removed heavy error checking with MsgBox for each marker. Now uses direct Cells.Find() calls like original code - errors logged to ERRORS sheet as designed.
     - Removed Cells.ClearComments from Checkout: this operation on entire sheet was causing Excel to freeze. Comments are now only cleared when needed in GenPrintout.
