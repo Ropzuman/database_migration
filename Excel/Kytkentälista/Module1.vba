@@ -6,7 +6,7 @@ Public PFEnd As Long
 Public DocStart As Long
 Public DocEnd As Long
 Public Sarakkeita As Long
-Public RMAX As Integer
+Public RMAX As Long
 Public FPSheet As String
 Public POSheet As String
 Public GenFP As Boolean
@@ -90,9 +90,8 @@ End Sub
 Sub HaeData()
 Dim Kanta As String
 Dim sSQL(2) As String
-Dim SQLSuffix As String
-Dim Valinta As Integer
-Dim i As Integer
+Dim Valinta As Long
+Dim i As Long
 Dim TAULUKKO As QueryTable
 Dim Yhteys As String
 
@@ -104,11 +103,8 @@ Dim Yhteys As String
 'Sheets.Add After:=Sheets("DB1")
 'ActiveSheet.Name = "DB2"
 
-'  If Sheets("Main").CodeOrder.Value = True Then
-'    SQLSuffix = " ORDER BY OrderCode, [DN], [Class]"
-'  Else
-'    SQLSuffix = " ORDER BY OrderValveNo"
-'  End If
+  ' Get Valinta selection
+  On Error Resume Next
   If Sheets("Main").Valinta1.Value = True Then
     Valinta = 0
   ElseIf Sheets("Main").Valinta2.Value = True Then
@@ -116,17 +112,38 @@ Dim Yhteys As String
   Else
     Valinta = 2
   End If
+  On Error GoTo 0
+  
   Kanta = Sheets("Main").Range("C6").Value
-  sSQL(1) = Sheets("Main").Cells(8 + Valinta, 3).Value & SQLSuffix
+  sSQL(1) = Sheets("Main").Cells(8 + Valinta, 3).Value
   sSQL(2) = Sheets("Main").Cells(12 + Valinta, 3).Value
+  
   BeginFastMode
+  
+  ' Verify database file exists
+  If Dir(Kanta) = "" Then
+    MsgBox "Database file not found: " & Kanta, vbCritical, "Database Error"
+    EndFastMode
+    Exit Sub
+  End If
+  
   Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
+  Dim ws As Worksheet
+  
+  On Error GoTo ErrorHandler
+  
   For i = 1 To 2
+<<<<<<< HEAD
     ' Tyhjennä aiemmat datat ja aja kysely jokaiselle DB-sheetille
     Dim ws As Worksheet
     Set ws = Sheets("DB" & i)
+=======
+    ' Clear previous data and run query for each DB sheet
+    Set ws = ThisWorkbook.Sheets("DB" & i)
+>>>>>>> main
     ws.Cells.Clear
-    If sSQL(i) <> "" Then
+    ' Skip Excel-based queries (_qryForExcel) - only process Access database queries
+    If sSQL(i) <> "" And InStr(1, sSQL(i), "_qryForExcel", vbTextCompare) = 0 Then
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
         .Sql = sSQL(i)
@@ -146,6 +163,15 @@ Dim Yhteys As String
   EndFastMode
   MsgBox "Data brought successfully!", vbOKOnly, "Ready"
   Sheets("Main").Select
+  Exit Sub
+  
+ErrorHandler:
+  EndFastMode
+  MsgBox "ODBC Error: " & Err.Description & vbCrLf & vbCrLf & _
+         "Database: " & Kanta & vbCrLf & _
+         "SQL Query " & i & ": " & sSQL(i), vbCritical, "Database Connection Error"
+  Err.Clear
+  Sheets("Main").Select
 End Sub
 '''
 ' GenPrintout: Generoi uuden tulostetyökirjan käyttäen TEMPLATEa ja DB1:n dataa.
@@ -158,17 +184,17 @@ Sub GenPrintout()
   Else ' Data on tarkistettu ja valmis tulosteen luontiin.
     Dim MacroWB As String
     Dim UusiWB As String
-    Dim ViimRivi As Integer
-    Dim Riveja As Integer
-    Dim Recordeja, Recordeja2 As Integer
-    Dim Kerta As Integer
-    Dim Alku As Integer
-    Dim Apu As Integer
-    Dim Sivunvaihtoja As Integer
+    Dim ViimRivi As Long
+    Dim Riveja As Long
+    Dim Recordeja As Long, Recordeja2 As Long
+    Dim Kerta As Long
+    Dim Alku As Long
+    Dim Apu As Long
+    Dim Sivunvaihtoja As Long
     Dim Tiedosto As String
-    Dim i As Integer
+    Dim i As Long
     Dim Oletus As String
-    Dim Sarjoja As Integer
+    Dim Sarjoja As Long
     
   BeginFastMode
     
@@ -200,6 +226,7 @@ Sub GenPrintout()
     Windows(MacroWB).Activate
   Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Kopioi Legend
   Windows(MacroWB).Activate
+<<<<<<< HEAD
   Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Kopioi Revisions
       Dim ViimRivi As Long
       Dim Riveja As Long
@@ -212,6 +239,11 @@ Sub GenPrintout()
       Dim i As Long
       Dim Oletus As String
       Dim Sarjoja As Long
+=======
+  Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Copy Revisions
+  Windows(UusiWB).Activate
+  PopulateRevisionsSimple 'Fast direct write of revision data without comment loops
+>>>>>>> main
     Sheets(POSheet).Select
   ' Tyhjennä kaikki data tulostesheetistä (sarakkeiden leveydet säilyvät)
     Cells.Clear
@@ -270,7 +302,12 @@ Sub GenPrintout()
     Dim destStartRow As Long, destEndRow As Long
     Dim destSheet As Worksheet
     Set destSheet = Sheets(POSheet)
+<<<<<<< HEAD
   ' Etsi datan alue DB1:stä (rivistä 2 viimeiseen riviin, kaikki sarakkeet)
+=======
+  ' Find data range in DB1 (from row 2 to last row, all columns)
+    Windows(MacroWB).Activate
+>>>>>>> main
     With Sheets("DB1")
         dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
         dataCols = .Cells(1, .Columns.Count).End(xlToLeft).Column
@@ -280,7 +317,12 @@ Sub GenPrintout()
             dbData = Empty
         End If
     End With
+<<<<<<< HEAD
   ' Kirjoita array-datan POSheetille oikeaan kohtaan (otsikkorivien jälkeen)
+=======
+    Windows(UusiWB).Activate
+  ' Write data array to POSheet at the correct position (after header rows)
+>>>>>>> main
     destStartRow = ViimRivi
     destEndRow = destStartRow + UBound(dbData, 1) - 1
     If Not IsEmpty(dbData) Then
@@ -325,9 +367,12 @@ Sub GenPrintout()
 '    If HideLINKING Then
 '      Sheets("LINKING").Visible = False
 '    End If
+  ' Delete LINKING sheet if it exists
+  On Error Resume Next
   Application.DisplayAlerts = False
   Sheets("LINKING").Delete ' Poista LINKING-sheet, jos käyttäjä pyytää
   Application.DisplayAlerts = True
+  On Error GoTo 0
     Windows(UusiWB).Activate
     Worksheets(POSheet).Activate
     Application.StatusBar = False
@@ -339,17 +384,18 @@ Sub GenPrintout()
       ActiveWorkbook.BuiltinDocumentProperties("Title").Value = POSheet
       ActiveWorkbook.SaveAs Tiedosto, xlOpenXMLWorkbook
     End If
+  End If
 End Sub
 '''
 ' Checkout: Validates that all required headers and row markers exist in the TEMPLATE and DB1 sheets.
 ' Reports errors to the ERRORS sheet and sets CheckOK flag.
 '''
 Sub Checkout() 'Tämä tarkistaa löytyvätkö kaikki otsikot datasta
-Dim i As Integer
-Dim j As Integer
+Dim i As Long
+Dim j As Long
 Dim Arvo As String
 Dim Virhe As Boolean
-Dim Apu As Integer
+Dim Apu As Long
 CheckOK = False
 RMAX = 0
 Virhe = False
@@ -376,7 +422,6 @@ Virhe = False
    
    HaeDocTiedot 'Hakee dokumentin tiedot DB2-sheetiltä
    VaihdaInfo   'Vaihtaa dokumentin tiedot info sheetille
-   VaihdaInfo ("Revisions") 'Tiedot revisions sheetille
    
    Sheets("TEMPLATE").Select
    'Haetaan ensin kerralla kopioitavien rivien määrä eli rivitysmerkinnät
@@ -426,7 +471,7 @@ Virhe = False
      MsgBox "There were errors on the template! See ERRORS sheet.", vbCritical, "Error!"
    Else
      Sheets("Main").Select
-     EndFastMode
+     Application.ScreenUpdating = True
      CheckOK = True
      MsgBox "Check OK!", vbOKOnly, "OK!"
    End If

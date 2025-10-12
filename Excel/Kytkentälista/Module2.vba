@@ -1,6 +1,7 @@
 Sub TyhjaaKommentit()
     Cells.ClearComments
 End Sub
+<<<<<<< HEAD
   '
   ' Fast-mode helpers to reduce flicker and speed up heavy operations
   '''
@@ -10,6 +11,16 @@ End Sub
 
   ' Nopea tila -apuohjelmat: vähentävät näytön välkkymistä ja nopeuttavat raskaita operaatioita
   Private prevScreenUpdating2 As Boolean
+=======
+
+'''
+' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
+' Handles document property extraction, comment-based linking, and error reporting.
+'''
+
+' Fast-mode helpers to reduce flicker and speed up heavy operations
+Private prevScreenUpdating2 As Boolean
+>>>>>>> main
   Private prevCalculation2 As XlCalculation
   Private prevEnableEvents2 As Boolean
   Private prevDisplayAlerts2 As Boolean
@@ -77,9 +88,14 @@ DICustomer = ""
 DIFile = ""
 Dim wsDB2 As Worksheet, wsTemplate As Worksheet
 
-  Sheets("DB2").Select
+  On Error Resume Next
   Set wsDB2 = Sheets("DB2")
   Set wsTemplate = Sheets("TEMPLATE")
+  On Error GoTo 0
+  
+  If wsDB2 Is Nothing Or wsTemplate Is Nothing Then Exit Sub
+  
+  wsDB2.Select
   i = 1
   Do
      Arvo = LCase(Cells(1, i).Value) ' Convert cell value to lowercase
@@ -146,8 +162,29 @@ Sub VaihdaInfo(Optional Sheet As String = "Info")
 ' Käsittelee Info- ja Revisions-taulukot. Käyttää nopeaa tilaa suorituskyvyn parantamiseksi.
 '''
 Dim i As Long
-'Dim Row As Range
-  Sheets(Sheet).Select
+Dim Row As Long
+Dim Column As Long
+Dim r As Long
+Dim ws As Worksheet
+Dim processedRevId As Boolean, processedRevDate As Boolean
+Dim processedDesigner As Boolean, processedChecker As Boolean
+Dim processedApprover As Boolean, processedDesc As Boolean
+
+  On Error Resume Next
+  Set ws = Sheets(Sheet)
+  On Error GoTo 0
+  
+  If ws Is Nothing Then Exit Sub
+  
+  ' Initialize flags for one-time processing of Revisions sheet arrays
+  processedRevId = False
+  processedRevDate = False
+  processedDesigner = False
+  processedChecker = False
+  processedApprover = False
+  processedDesc = False
+  
+  ws.Select
   With ActiveSheet
   For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
   Select Case LCase(.Comments(i).text) ' Muutetaan kommentin teksti pieniksi kirjaimiksi
@@ -187,6 +224,7 @@ Dim i As Long
           .Comments(i).Parent.Value = DIRev
         Case "revid"
           If Sheet <> "Info" Then
+<<<<<<< HEAD
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
               For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -201,11 +239,30 @@ Dim i As Long
               Set ws = Sheets(Sheet)
               BeginFastMode2
             Next r
+=======
+            If Not processedRevId Then
+              On Error Resume Next
+              ' Only process if DIRevArr has data
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                 If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
+                   Row = Row + 1
+                 End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedRevId = True
+            End If
+>>>>>>> main
           Else
             .Comments(i).Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
           If Sheet <> "Info" Then
+<<<<<<< HEAD
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
               For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -214,11 +271,29 @@ Dim i As Long
                   Row = Row + 1
                 End If
             Next r
+=======
+            If Not processedRevDate Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                    .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
+                    Row = Row + 1
+                  End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedRevDate = True
+            End If
+>>>>>>> main
           Else
             .Comments(i).Parent.Value = DIRevDate
           End If
         Case "designer"
           If Sheet <> "Info" Then
+<<<<<<< HEAD
             Row = .Comments(i).Parent.Row
             Column = .Comments(i).Parent.Column
               For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
@@ -260,6 +335,77 @@ Dim i As Long
                 Row = Row + 1
                End If
             Next r
+=======
+            If Not processedDesigner Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
+                   Row = Row + 1
+                  End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedDesigner = True
+            End If
+          End If
+        Case "checker"
+          If Sheet <> "Info" Then
+            If Not processedChecker Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
+                   Row = Row + 1
+                  End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedChecker = True
+            End If
+          End If
+        Case "approver"
+          If Sheet <> "Info" Then
+            If Not processedApprover Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
+                   Row = Row + 1
+                  End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedApprover = True
+            End If
+          End If
+        Case "desc"
+          If Sheet <> "Info" Then
+            If Not processedDesc Then
+              On Error Resume Next
+              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
+                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+                  If (DIRevArr(r) <> "") Then
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
+                   Row = Row + 1
+                  End If
+                Next r
+              End If
+              On Error GoTo 0
+              processedDesc = True
+            End If
+>>>>>>> main
           End If
         End Select
       Next i
@@ -273,23 +419,47 @@ Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long)
 '''
 Dim i As Long
 Dim j As Long
-i = 1
-   Sheets("DB1").Select
+Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
+
+   On Error Resume Next
+   Set wsDB1 = Sheets("DB1")
+   Set wsTemplate = Sheets("TEMPLATE")
+   Set wsErrors = Sheets("ERRORS")
+   On Error GoTo 0
+   
+   If wsDB1 Is Nothing Or wsTemplate Is Nothing Or wsErrors Is Nothing Then
+     EtsiOts = False
+     Exit Function
+   End If
+   
+   i = 1
+   wsDB1.Select
    Do
+     ' Safety check: prevent infinite loop if sheet is unexpectedly large
+     If i > 16384 Then ' Excel max columns
+       EtsiOts = False
+       Exit Do
+     End If
      If LCase(Cells(1, i).Value) = LCase(Otsikko) Then
-       Sheets("TEMPLATE").Select
+       wsTemplate.Select
        Cells(Rivi, Sarake).Select
        With ActiveCell
          .AddComment
+<<<<<<< HEAD
     .Comment.text text:=LRivi & ":" & i
     EndFastMode2
     Sheets("TEMPLATE").Select
     .Comment.Shape.DrawingObject.AutoSize = True
+=======
+         .Comment.text text:=LRivi & ":" & i
+         .Comment.Shape.DrawingObject.AutoSize = True
+>>>>>>> main
        End With
+       wsTemplate.Select
        EtsiOts = True
        Exit Do
      ElseIf Cells(1, i).Value = "" Then
-       Sheets("ERRORS").Select
+       wsErrors.Select
        If Cells(1, 1).Value = "" Then
          Cells(1, 1).Value = "Following headlines were declared in TEMPLATE, but not found from DB sheet:"
          Cells(2, 1).Value = "HeadLine"
@@ -309,13 +479,9 @@ i = 1
          End If
          j = j + 1
        Loop
-       Sheets("TEMPLATE").Select
+       wsTemplate.Select
        EtsiOts = False
        Exit Do
-      Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
-      Set wsDB1 = Sheets("DB1")
-      Set wsTemplate = Sheets("TEMPLATE")
-      Set wsErrors = Sheets("ERRORS")
      End If
      i = i + 1
    Loop
@@ -460,6 +626,102 @@ VirheSivunLuvussa:
   Resume Ulos_TarkistaVaihto
   
 End Sub
+Sub PopulateRevisionsSimple()
+'''
+' PopulateRevisionsSimple: Lightweight function to populate Revisions sheet without comment processing.
+' Finds the first cell with revision data markers and writes DIRevArr data directly.
+' Much faster than VaihdaInfo because it doesn't loop through comments.
+'''
+Dim ws As Worksheet
+Dim r As Long, startRow As Long
+Dim revIdCol As Long, revDateCol As Long, designerCol As Long
+Dim checkerCol As Long, approverCol As Long, descCol As Long
+Dim i As Long
+
+  On Error Resume Next
+  Set ws = Sheets("Revisions")
+  If ws Is Nothing Then Exit Sub
+  
+  ' Check if DIRevArr is valid array with data
+  If Not IsArray(DIRevArr) Then Exit Sub
+  On Error Resume Next
+  Dim arrSize As Long
+  arrSize = UBound(DIRevArr) - LBound(DIRevArr) + 1
+  If Err.Number <> 0 Or arrSize <= 0 Then
+    On Error GoTo 0
+    Exit Sub
+  End If
+  On Error GoTo 0
+  
+  ' Find columns by searching for comment markers in first 20 rows
+  ' This is a simple heuristic - adjust if template structure differs
+  startRow = 0
+  For r = 1 To 20
+    For i = 1 To 10 ' Check first 10 columns
+      If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
+      Select Case LCase(ws.Cells(r, i).Comment.text)
+        Case "revid"
+          revIdCol = i: If startRow = 0 Then startRow = r
+        Case "revdate"
+          revDateCol = i: If startRow = 0 Then startRow = r
+        Case "designer"
+          designerCol = i: If startRow = 0 Then startRow = r
+        Case "checker"
+          checkerCol = i: If startRow = 0 Then startRow = r
+        Case "approver"
+          approverCol = i: If startRow = 0 Then startRow = r
+        Case "desc"
+          descCol = i: If startRow = 0 Then startRow = r
+      End Select
+NextCell:
+    Next i
+  Next r
+  
+  ' If no columns found, exit
+  If startRow = 0 Then Exit Sub
+  
+  ' Write revision data directly
+  On Error Resume Next
+  r = startRow
+  Dim revParts() As String
+  Dim revText As String
+  Dim slashParts() As String
+  
+  For i = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+    If DIRevArr(i) <> "" Then
+      revText = DIRevArr(i)
+      
+      ' Parse revid (first part before space)
+      If revIdCol > 0 And InStr(revText, " ") > 0 Then
+        revParts = Split(revText, " ")
+        If UBound(revParts) >= 0 Then ws.Cells(r, revIdCol).Value = revParts(0)
+      End If
+      
+      ' Parse revdate (between space and /)
+      If revDateCol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
+        Dim spacePos As Long, slashPos As Long
+        spacePos = InStr(revText, " ")
+        slashPos = InStr(revText, "/")
+        If slashPos > spacePos Then
+          ws.Cells(r, revDateCol).Value = Mid(revText, spacePos + 1, slashPos - spacePos - 1)
+        End If
+      End If
+      
+      ' Parse designer, checker, approver, desc (slash-delimited parts)
+      If InStr(revText, "/") > 0 Then
+        slashParts = Split(revText, "/")
+        If designerCol > 0 And UBound(slashParts) >= 1 Then ws.Cells(r, designerCol).Value = slashParts(1)
+        If checkerCol > 0 And UBound(slashParts) >= 2 Then ws.Cells(r, checkerCol).Value = slashParts(2)
+        If approverCol > 0 And UBound(slashParts) >= 3 Then ws.Cells(r, approverCol).Value = slashParts(3)
+        If descCol > 0 And UBound(slashParts) >= 4 Then ws.Cells(r, descCol).Value = slashParts(4)
+      End If
+      
+      r = r + 1
+    End If
+  Next i
+  On Error GoTo 0
+  
+End Sub
 Sub TeeLinkingKommentit()
 '''
 ' TeeLinkingKommentit: Lisää kommentit kaikkiin kaavasoluihin LINKING-taulukossa jäljitettävyyden vuoksi.
@@ -467,7 +729,14 @@ Sub TeeLinkingKommentit()
 '''
 Dim Solu As Range
 Dim wsLinking As Worksheet
-Set wsLinking = Sheets("LINKING")
+
+  ' Check if LINKING sheet exists
+  On Error Resume Next
+  Set wsLinking = Sheets("LINKING")
+  On Error GoTo 0
+  
+  If wsLinking Is Nothing Then Exit Sub
+  
 BeginFastMode2
   Sheets("LINKING").Select
   Cells(1, 1).Activate
