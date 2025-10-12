@@ -1,50 +1,8 @@
-Sub TyhjaaKommentit()
-    Cells.ClearComments
-End Sub
-
 '''
 ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
 ' Handles document property extraction, comment-based linking, and error reporting.
 '''
 
-' Fast-mode helpers to reduce flicker and speed up heavy operations
-Private prevScreenUpdating2 As Boolean
-  Private prevCalculation2 As XlCalculation
-  Private prevEnableEvents2 As Boolean
-  Private prevDisplayAlerts2 As Boolean
-  Private prevDisplayStatusBar2 As Boolean
-
-  Private Sub BeginFastMode2()
-  '''
-  ' BeginFastMode2: Temporarily disables Excel UI updates, events, and sets calculation to manual
-  ' to speed up macro execution and prevent screen flicker.
-  '''
-    prevScreenUpdating2 = Application.ScreenUpdating
-    prevCalculation2 = Application.Calculation
-    prevEnableEvents2 = Application.EnableEvents
-    prevDisplayAlerts2 = Application.DisplayAlerts
-    prevDisplayStatusBar2 = Application.DisplayStatusBar
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.DisplayAlerts = False
-    On Error Resume Next
-    Application.DisplayStatusBar = False
-    On Error GoTo 0
-  End Sub
-
-  Private Sub EndFastMode2()
-  '''
-  ' EndFastMode2: Restores Excel UI and calculation settings to their previous state.
-  '''
-    On Error Resume Next
-    Application.ScreenUpdating = prevScreenUpdating2
-    Application.Calculation = prevCalculation2
-    Application.EnableEvents = prevEnableEvents2
-    Application.DisplayAlerts = prevDisplayAlerts2
-    Application.DisplayStatusBar = prevDisplayStatusBar2
-    On Error GoTo 0
-  End Sub
 Sub HaeDocTiedot()
 '''
 ' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
@@ -395,41 +353,6 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
      i = i + 1
    Loop
 End Function
-Sub VaihdaLinkit1(Alku As Long, Loppu As Long, Kerta As Long)
-'''
-' VaihdaLinkit1: For each cell in the specified range, if it contains a linking marker, copies the value
-' from the LINKING sheet and adds a comment/formula for traceability. Used for legacy linking logic.
-'''
-Dim TRow As Long
-Dim TCol As Long
-Dim i As Long
-Dim j As Long
-Dim Teksti As String
-Dim Arvo As String
-    For i = Alku To Loppu
-      For j = 1 To Sarakkeita
-        If Left(Cells(i, j).Value, 1) = "£" Then
-          Teksti = Cells(i, j).Comment.text
-          TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
-          TCol = CInt(Mid(Teksti, 3))
-          With Sheets("LINKING").Cells(TRow, TCol)
-            Arvo = .Value
-            .Font.ColorIndex = 5
-            .Font.Bold = True
-            On Error GoTo Virhe_Komment
-            .AddComment
-Virhe_Komment:
-            .Comment.text text:=Arvo
-            .FormulaR1C1 = "='" & POSheet & "'!R" & i & "C" & j
-            .Comment.Visible = False
-            .Comment.Shape.DrawingObject.Shadow = False
-            .Comment.Shape.DrawingObject.AutoSize = True
-          End With
-          Cells(i, j).Value = Arvo
-        End If
-      Next j
-    Next i
-End Sub
 Sub VaihdaLinkit(Alku As Long, Loppu As Long, Kerta As Long)
 '''
 ' VaihdaLinkit: For each comment in the active sheet, updates the corresponding cell in LINKING with a formula
@@ -466,72 +389,6 @@ Dim Osoite As String
     Next i
     Cells.ClearComments
   End With
-End Sub
-Sub VaihdaLinkit_OLD(Alku As Long, Loppu As Long, Kerta As Long)
-'''
-' VaihdaLinkit_OLD: Legacy version of linking logic, kept for reference. Uses Select/Activate.
-'''
-Dim TRow As Long
-Dim TCol As Long
-Dim i As Long
-Dim Teksti As String
-Dim Arvo As String
-Dim Osoite As String
-  With ActiveSheet
-    For i = 1 To .Comments.Count 'Going through all comments
-        Teksti = .Comments(i).text ' Get the comment text
-      Osoite = .Comments(i).Parent.Address
-      TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
-      TCol = CInt(Mid(Teksti, 3))
-      Sheets("LINKING").Select
-      Cells(TRow, TCol).Select
-      Arvo = MuutaLinkki(Osoite)
-      Sheets(POSheet).Select
-      .Comments(i).Parent.Value = Arvo
-    Next i
-    Cells.ClearComments
-  End With
-End Sub
-Function MuutaLinkki(Kohde As String) As String
-'''
-' MuutaLinkki: Helper for VaihdaLinkit_OLD. Adds a comment and formula to the active cell for traceability.
-'''
-Dim Arvo As String
-On Error GoTo Virhe_Komment
-  With ActiveCell
-    Arvo = .Value
-    .Font.ColorIndex = 5
-    .Font.Bold = True
-    .AddComment
-Virhe_Komment:
-    .Comment.text text:=Arvo
-    .Formula = "='" & POSheet & "'!" & Kohde
-    .Comment.Visible = False
-    .Comment.Shape.DrawingObject.Shadow = False
-    .Comment.Shape.DrawingObject.AutoSize = True
-    MuutaLinkki = Arvo
-End With
-End Function
-Sub TarkistaVaihto(Vaihto As Long, ViimRivi As Long, Riveja As Long)
-'''
-' TarkistaVaihto: Ensures page breaks are set at appropriate rows in the printout sheet.
-'''
-Dim SVRivi As Long
-On Error GoTo VirheSivunLuvussa
-  
-'  SVRivi = CInt(ActiveSheet.HPageBreaks(Vaihto).Location.Row)
-  'Automatic page break
-  Cells(ViimRivi, 1).Select
-    ActiveSheet.HPageBreaks.Add Before:=ActiveCell ' Add a page break before the active cell
-
-Ulos_TarkistaVaihto:
-  Exit Sub
-        
-VirheSivunLuvussa:
-  Cells(ViimRivi + Riveja + 1, 1).Select
-  ActiveSheet.HPageBreaks.Add Before:=ActiveCell
-  Resume Ulos_TarkistaVaihto
-  
 End Sub
 Sub PopulateRevisionsSimple()
 '''
@@ -643,15 +500,17 @@ Dim wsLinking As Worksheet
   
   If wsLinking Is Nothing Then Exit Sub
   
-BeginFastMode2
   Sheets("LINKING").Select
   Cells(1, 1).Activate
+  On Error Resume Next
   ActiveCell.SpecialCells(xlCellTypeFormulas).Select
-  Application.StatusBar = "Setting up comments in LINKING sheet (" & Selection.Cells.Count & ")"
-  For Each Solu In Selection.Cells
-    Solu.AddComment CStr(Solu.Value)
-  Next
+  If Err.Number = 0 Then
+    Application.StatusBar = "Setting up comments in LINKING sheet (" & Selection.Cells.Count & ")"
+    For Each Solu In Selection.Cells
+      Solu.AddComment CStr(Solu.Value)
+    Next
+  End If
+  On Error GoTo 0
   Application.DisplayCommentIndicator = xlCommentIndicatorOnly
   Cells(1, 1).Activate
-EndFastMode2
 End Sub

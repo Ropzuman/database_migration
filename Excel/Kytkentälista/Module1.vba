@@ -7,11 +7,7 @@ Public DocStart As Long
 Public DocEnd As Long
 Public Sarakkeita As Long
 Public RMAX As Long
-Public FPSheet As String
 Public POSheet As String
-Public GenFP As Boolean
-Public GenHeader As Boolean
-Public GenDocHeader As Boolean
 Public HideLINKING As Boolean
 Public AddFooter As Boolean
 Public DIContract As String
