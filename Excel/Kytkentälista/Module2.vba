@@ -174,7 +174,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   
   ws.Select
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+    For i = 1 To .Comments.Count 'Going through all comments
         Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
@@ -442,7 +442,7 @@ Dim Teksti As String
 Dim Kaava As String
 Dim Osoite As String
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+    For i = 1 To .Comments.Count 'Going through all comments
          Teksti = .Comments(i).text ' Get the comment text
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
@@ -478,7 +478,7 @@ Dim Teksti As String
 Dim Arvo As String
 Dim Osoite As String
   With ActiveSheet
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+    For i = 1 To .Comments.Count 'Going through all comments
         Teksti = .Comments(i).text ' Get the comment text
       Osoite = .Comments(i).Parent.Address
       TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
@@ -520,7 +520,7 @@ Dim SVRivi As Long
 On Error GoTo VirheSivunLuvussa
   
 '  SVRivi = CInt(ActiveSheet.HPageBreaks(Vaihto).Location.Row)
-  'Automaattinen rivinvaihto tuli huonoon kohtaan, joten tehdään itse uusi edelliseen sopivaan paikkaan
+  'Automatic page break
   Cells(ViimRivi, 1).Select
     ActiveSheet.HPageBreaks.Add Before:=ActiveCell ' Add a page break before the active cell
 
@@ -528,7 +528,6 @@ Ulos_TarkistaVaihto:
   Exit Sub
         
 VirheSivunLuvussa:
-  'Rivinvaihto tuli juuri nappiin kohtaan, vahvistetaan se vielä
   Cells(ViimRivi + Riveja + 1, 1).Select
   ActiveSheet.HPageBreaks.Add Before:=ActiveCell
   Resume Ulos_TarkistaVaihto
@@ -538,7 +537,6 @@ Sub PopulateRevisionsSimple()
 '''
 ' PopulateRevisionsSimple: Lightweight function to populate Revisions sheet without comment processing.
 ' Finds the first cell with revision data markers and writes DIRevArr data directly.
-' Much faster than VaihdaInfo because it doesn't loop through comments.
 '''
 Dim ws As Worksheet
 Dim r As Long, startRow As Long
