@@ -360,6 +360,7 @@ Dim j As Long
 Dim Arvo As String
 Dim Virhe As Boolean
 Dim Apu As Long
+CheckOK = False
 RMAX = 0
 Virhe = False
    Application.ScreenUpdating = False
@@ -372,6 +373,8 @@ Virhe = False
 '   HideLINKING = Sheets("Main").HLINKING.Value
    
    Sheets("TEMPLATE").Select
+   Cells.ClearComments
+   Cells(1, 1).Select
    'Etsitään ensin alueet
    PHStart = Cells.Find(What:="&&PAGE_HEADER_START").Row + 1
    PHEnd = Cells.Find(What:="&&PAGE_HEADER_END").Row - 1
@@ -384,6 +387,8 @@ Virhe = False
    HaeDocTiedot 'Hakee dokumentin tiedot DB2-sheetiltä
    VaihdaInfo   'Vaihtaa dokumentin tiedot info sheetille
    VaihdaInfo ("Revisions") 'Tiedot revisions sheetille
+   
+   Sheets("TEMPLATE").Select
    'Haetaan ensin kerralla kopioitavien rivien määrä eli rivitysmerkinnät
    For i = DocStart To DocEnd
      For j = 1 To Sarakkeita
@@ -417,7 +422,7 @@ Virhe = False
        Arvo = Cells(i, j).Value
        If Len(Arvo) > 2 Then 'Solussa on tietoa
          If Left(Arvo, 2) = "££" Then
-           If EtsiOts(Mid(Arvo, 3), i, j, 1&) = False Then Virhe = True
+           If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
          ElseIf Left(Arvo, 1) = "£" Then
            Apu = CLng(Mid(Arvo, 2, 1))
            If EtsiOts(Mid(Arvo, 5), i, j, Apu) = False Then Virhe = True

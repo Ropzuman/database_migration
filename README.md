@@ -39,7 +39,7 @@ Key migration changes (from the changelog)
 	- Fixed duplicate variable declarations across modules (Module1: `i` in HaeData, `foundRange` in Checkout; Module2: duplicate `i` and `Row` in VaihdaInfo, workspace variables in EtsiOts).
 	- Enhanced ODBC error handling in `HaeData` with database file existence validation and proper error flow. Skips Excel-based queries (_qryForExcel) to prevent ODBC errors on document property queries.
 	- `VaihdaInfo` now checks if sheet exists before accessing (prevents runtime error 9 when "Revisions" or other optional sheets are missing).
-	- `Checkout` optimized: removed Cells.ClearComments (causes freezing), uses lightweight marker lookup, and properly handles screen updating (replaced mismatched EndFastMode with direct Application.ScreenUpdating = True).
+    - `Checkout` restored to original implementation with 64-bit compatibility changes (Long instead of Integer). Keeps Cells.ClearComments to ensure proper comment handling.
 	- `EtsiOts` fixed: removed erroneous EndFastMode2 call that caused Excel freezing during template validation.
 	- `VaihdaInfo` fixed: removed orphaned BeginFastMode2 call that had no matching EndFastMode2, preventing Excel freeze when processing Revisions sheet.
 	- `HaeDocTiedot`, `VaihdaInfo`, and `EtsiOts` validate sheet existence silently and exit gracefully if sheets are missing.

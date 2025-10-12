@@ -48,7 +48,7 @@ Summary of changes
     - HaeData now skips Excel-based queries (_qryForExcel): prevents ODBC errors when document property queries reference Excel files instead of Access database.
     - Fixed EtsiOts function: removed erroneous EndFastMode2 call that was causing Excel to freeze during Checkout validation.
     - Fixed VaihdaInfo function: removed orphaned BeginFastMode2 call in "revid" case that had no matching EndFastMode2, causing Excel to freeze when Checkout validated Revisions sheet.
-    - Fixed Checkout function: replaced EndFastMode call with Application.ScreenUpdating = True since Checkout was using direct ScreenUpdating control, not the Fast Mode functions.
+    - Reverted Checkout function to original implementation: restored Cells.ClearComments, added missing Sheets("TEMPLATE").Select call, and fixed function parameter to numeric 1 instead of 1& (Long literal). Kept 64-bit compatibility (Long instead of Integer) but otherwise matches original function that worked reliably.
     - Enhanced Checkout function to handle missing sheets gracefully: VaihdaInfo now checks if sheet exists before accessing it (fixes runtime error 9 "subscript out of range").
     - Reverted Checkout to lightweight template marker lookup: removed heavy error checking with MsgBox for each marker. Now uses direct Cells.Find() calls like original code - errors logged to ERRORS sheet as designed.
     - Removed Cells.ClearComments from Checkout: this operation on entire sheet was causing Excel to freeze. Comments are now only cleared when needed in GenPrintout.
