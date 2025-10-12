@@ -339,9 +339,12 @@ Sub GenPrintout()
 '    If HideLINKING Then
 '      Sheets("LINKING").Visible = False
 '    End If
+  ' Delete LINKING sheet if it exists
+  On Error Resume Next
   Application.DisplayAlerts = False
   Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
   Application.DisplayAlerts = True
+  On Error GoTo 0
     Windows(UusiWB).Activate
     Worksheets(POSheet).Activate
     Application.StatusBar = False

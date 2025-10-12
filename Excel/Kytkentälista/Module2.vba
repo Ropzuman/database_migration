@@ -548,11 +548,18 @@ Dim i As Long
 
   On Error Resume Next
   Set ws = Sheets("Revisions")
-  On Error GoTo 0
-  
   If ws Is Nothing Then Exit Sub
+  
+  ' Check if DIRevArr is valid array with data
   If Not IsArray(DIRevArr) Then Exit Sub
-  If UBound(DIRevArr) < LBound(DIRevArr) Then Exit Sub
+  On Error Resume Next
+  Dim arrSize As Long
+  arrSize = UBound(DIRevArr) - LBound(DIRevArr) + 1
+  If Err.Number <> 0 Or arrSize <= 0 Then
+    On Error GoTo 0
+    Exit Sub
+  End If
+  On Error GoTo 0
   
   ' Find columns by searching for comment markers in first 20 rows
   ' This is a simple heuristic - adjust if template structure differs
@@ -630,7 +637,14 @@ Sub TeeLinkingKommentit()
 '''
 Dim Solu As Range
 Dim wsLinking As Worksheet
-Set wsLinking = Sheets("LINKING")
+
+  ' Check if LINKING sheet exists
+  On Error Resume Next
+  Set wsLinking = Sheets("LINKING")
+  On Error GoTo 0
+  
+  If wsLinking Is Nothing Then Exit Sub
+  
 BeginFastMode2
   Sheets("LINKING").Select
   Cells(1, 1).Activate
