@@ -186,6 +186,9 @@ Sub GenPrintout()
   BeginFastMode
     
   AddFooter = Sheets("Main").AddFooter.Value ' User option from faceplate
+  On Error Resume Next
+  HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
+  On Error GoTo 0
     
   Riveja = DocEnd - DocStart ' Number of rows in the document body
   Sheets("DB1").Select
@@ -340,14 +343,16 @@ Sub GenPrintout()
   End If
   Cells.ClearComments ' Remove all comments from printout
   TeeLinkingKommentit ' Add comments to LINKING sheet for traceability
-'    If HideLINKING Then
-'      Sheets("LINKING").Visible = False
-'    End If
-  ' Delete LINKING sheet if it exists (may not exist if no linking markers in template)
+  
+  ' Handle LINKING sheet visibility/deletion based on user preference
   On Error Resume Next
-  Application.DisplayAlerts = False
-  Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
-  Application.DisplayAlerts = True
+  If HideLINKING Then
+    Sheets("LINKING").Visible = False
+  Else
+    Application.DisplayAlerts = False
+    Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
+    Application.DisplayAlerts = True
+  End If
   On Error GoTo 0
     Windows(UusiWB).Activate
     Worksheets(POSheet).Activate
@@ -382,7 +387,9 @@ Virhe = False
    Range("A1").Select
    'Constants
    POSheet = Sheets("Main").Range("C16").Value
-'   HideLINKING = Sheets("Main").HLINKING.Value
+   On Error Resume Next
+   HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
+   On Error GoTo 0
    
    Sheets("TEMPLATE").Select
    Cells.ClearComments
@@ -397,7 +404,7 @@ Virhe = False
    PFEnd = Cells.Find(What:="&&PAGE_FOOTER_END").Row - 1
    
    HaeDocTiedot 'Fetch document info from DB2 sheet
-   VaihdaInfo   'Populate document info to Info sheet
+   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
    
    Sheets("TEMPLATE").Select
    'Search for row markers
