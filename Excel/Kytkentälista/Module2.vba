@@ -7,100 +7,100 @@ Sub HaeDocTiedot()
 '''
 ' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
 ' Used for populating headers, footers, and info fields in the printout.
+' Optimized: Removed Select/Activate, uses direct worksheet references.
 '''
 Dim i As Long
 Dim Arvo As String
-DIRev = ""
-DIRevID = ""
-DIRevDate = ""
-DIDocNo = ""
-DIMetsoDocNo = ""
-DIProject = ""
-DIStatus = ""
-DIDocName = ""
-DIDocName1 = ""
-DIDocName2 = ""
-DIDocName3 = ""
-DIContract = ""
-DIProjNo = ""
-DIProjName = ""
-DIPath = ""
-DIDate = ""
-DIManager = ""
-DIMunit = ""
-DIMill = ""
-DIDepartName = ""
-DICustomer = ""
-DIFile = ""
-Dim wsDB2 As Worksheet, wsTemplate As Worksheet
+Dim wsDB2 As Worksheet
+
+  ' Initialize all document info variables
+  DIRev = ""
+  DIRevID = ""
+  DIRevDate = ""
+  DIDocNo = ""
+  DIMetsoDocNo = ""
+  DIProject = ""
+  DIStatus = ""
+  DIDocName = ""
+  DIDocName1 = ""
+  DIDocName2 = ""
+  DIDocName3 = ""
+  DIContract = ""
+  DIProjNo = ""
+  DIProjName = ""
+  DIPath = ""
+  DIDate = ""
+  DIManager = ""
+  DIMunit = ""
+  DIMill = ""
+  DIDepartName = ""
+  DICustomer = ""
+  DIFile = ""
 
   On Error Resume Next
   Set wsDB2 = Sheets("DB2")
-  Set wsTemplate = Sheets("TEMPLATE")
   On Error GoTo 0
   
-  If wsDB2 Is Nothing Or wsTemplate Is Nothing Then Exit Sub
+  If wsDB2 Is Nothing Then Exit Sub
   
-  wsDB2.Select
   i = 1
   Do
-     Arvo = LCase(Cells(1, i).Value) ' Convert cell value to lowercase
+     Arvo = LCase(wsDB2.Cells(1, i).Value) ' Convert cell value to lowercase
     Select Case Arvo
       Case "rev"
-        DIRev = Cells(2, i).Value
+        DIRev = wsDB2.Cells(2, i).Value
         Erase DIRevArr
         DIRevArr() = Split(DIRev, Chr(10))
       Case "revid"
-        DIRevID = Cells(2, i).Value
+        DIRevID = wsDB2.Cells(2, i).Value
       Case "revdate"
-        DIRevDate = Cells(2, i).Value
+        DIRevDate = wsDB2.Cells(2, i).Value
       Case "date"
-        DIDate = Cells(2, i).Value
+        DIDate = wsDB2.Cells(2, i).Value
       Case "docno"
-        DIDocNo = Cells(2, i).Value
+        DIDocNo = wsDB2.Cells(2, i).Value
       Case "metsodocno"
-        DIMetsoDocNo = Cells(2, i).Value
+        DIMetsoDocNo = wsDB2.Cells(2, i).Value
       Case "project"
-        DIProject = Cells(2, i).Value
+        DIProject = wsDB2.Cells(2, i).Value
       Case "status"
-        DIStatus = Cells(2, i).Value
+        DIStatus = wsDB2.Cells(2, i).Value
       Case "docname"
-        DIDocName = Cells(2, i).Value
+        DIDocName = wsDB2.Cells(2, i).Value
       Case "docname1"
-        DIDocName1 = Cells(2, i).Value
+        DIDocName1 = wsDB2.Cells(2, i).Value
       Case "docname2"
-        DIDocName2 = Cells(2, i).Value
+        DIDocName2 = wsDB2.Cells(2, i).Value
        Case "docname3"
-        DIDocName3 = Cells(2, i).Value
+        DIDocName3 = wsDB2.Cells(2, i).Value
       Case "contractno"
-        DIContract = Cells(2, i).Value
+        DIContract = wsDB2.Cells(2, i).Value
       Case "projno"
-        DIProjNo = Cells(2, i).Value
+        DIProjNo = wsDB2.Cells(2, i).Value
       Case "name"
-        DIProjName = Cells(2, i).Value
+        DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath"
-        DIPath = Cells(2, i).Value & IIf(Right(Cells(2, i).Value, 1) = "\", "", "\")
+        DIPath = wsDB2.Cells(2, i).Value & IIf(Right(wsDB2.Cells(2, i).Value, 1) = "\", "", "\")
       Case "manager"
-        DIManager = Cells(2, i).Value
+        DIManager = wsDB2.Cells(2, i).Value
       Case "status"
-        DIStatus = Cells(2, i).Value
+        DIStatus = wsDB2.Cells(2, i).Value
       Case "mill"
-        DIMill = Cells(2, i).Value
+        DIMill = wsDB2.Cells(2, i).Value
       Case "departname"
-        DIDepartName = Cells(2, i).Value
+        DIDepartName = wsDB2.Cells(2, i).Value
       Case "customer"
-        DICustomer = Cells(2, i).Value
+        DICustomer = wsDB2.Cells(2, i).Value
       Case "metsounitname"
-        DIMunit = Cells(2, i).Value
+        DIMunit = wsDB2.Cells(2, i).Value
       Case "file"
-        DIFile = Cells(2, i).Value
+        DIFile = wsDB2.Cells(2, i).Value
       Case ""
         Exit Do
       Case Else
     End Select
     i = i + 1
   Loop
-  wsTemplate.Activate
 End Sub
 Sub VaihdaInfo(Optional Sheet As String = "Info")
 '''
@@ -130,8 +130,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   processedApprover = False
   processedDesc = False
   
-  ws.Select
-  With ActiveSheet
+  With ws
     For i = 1 To .Comments.Count 'Going through all comments
         Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
         Case "unit"
@@ -284,12 +283,12 @@ Dim processedApprover As Boolean, processedDesc As Boolean
         End Select
       Next i
   End With
-  Sheets("TEMPLATE").Select
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
 '''
 ' EtsiOts: Searches for a header (Otsikko) in DB1 and annotates TEMPLATE with a comment if found.
 ' If not found, logs the missing header in ERRORS sheet. Used for template validation.
+' Optimized: Removed all Select/Activate, uses direct worksheet references.
 '''
 Dim i As Long
 Dim j As Long
@@ -307,56 +306,53 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    End If
    
    i = 1
-   wsDB1.Select
    Do
      ' Safety check: prevent infinite loop if sheet is unexpectedly large
      If i > 16384 Then ' Excel max columns
        EtsiOts = False
        Exit Do
      End If
-     If LCase(Cells(1, i).Value) = LCase(Otsikko) Then
-       wsTemplate.Select
-       Cells(Rivi, Sarake).Select
-       With ActiveCell
+     If LCase(wsDB1.Cells(1, i).Value) = LCase(Otsikko) Then
+       ' Found header - add comment to TEMPLATE
+       With wsTemplate.Cells(Rivi, Sarake)
          .AddComment
          .Comment.text text:=LRivi & ":" & i
          .Comment.Shape.DrawingObject.AutoSize = True
        End With
-       wsTemplate.Select
        EtsiOts = True
        Exit Do
-     ElseIf Cells(1, i).Value = "" Then
-       wsErrors.Select
-       If Cells(1, 1).Value = "" Then
-         Cells(1, 1).Value = "Following headlines were declared in TEMPLATE, but not found from DB sheet:"
-         Cells(2, 1).Value = "HeadLine"
-         Cells(2, 2).Value = "Location in TEMPLATE"
-         Cells(1, 1).Font.Bold = True
-         Cells(2, 1).Font.Bold = True
-         Cells(2, 2).Font.Bold = True
-         Columns("A:A").ColumnWidth = 30
-         Columns("B:B").ColumnWidth = 25
+     ElseIf wsDB1.Cells(1, i).Value = "" Then
+       ' Not found - log to ERRORS sheet
+       If wsErrors.Cells(1, 1).Value = "" Then
+         wsErrors.Cells(1, 1).Value = "Following headlines were declared in TEMPLATE, but not found from DB sheet:"
+         wsErrors.Cells(2, 1).Value = "HeadLine"
+         wsErrors.Cells(2, 2).Value = "Location in TEMPLATE"
+         wsErrors.Cells(1, 1).Font.Bold = True
+         wsErrors.Cells(2, 1).Font.Bold = True
+         wsErrors.Cells(2, 2).Font.Bold = True
+         wsErrors.Columns("A:A").ColumnWidth = 30
+         wsErrors.Columns("B:B").ColumnWidth = 25
        End If
        j = 3
        Do
-         If Cells(j, 1) = "" Then
-            Cells(j, 1).Value = Otsikko
-            Cells(j, 2).Value = Cells(Rivi, Sarake).Address
+         If wsErrors.Cells(j, 1) = "" Then
+            wsErrors.Cells(j, 1).Value = Otsikko
+            wsErrors.Cells(j, 2).Value = wsTemplate.Cells(Rivi, Sarake).Address
            Exit Do
          End If
          j = j + 1
        Loop
-       wsTemplate.Select
        EtsiOts = False
        Exit Do
      End If
      i = i + 1
    Loop
 End Function
-Sub VaihdaLinkit(Alku As Long, Loppu As Long, Kerta As Long)
+Sub VaihdaLinkit(TargetSheet As Worksheet, Alku As Long, Loppu As Long, Kerta As Long)
 '''
-' VaihdaLinkit: For each comment in the active sheet, updates the corresponding cell in LINKING with a formula
+' VaihdaLinkit: For each comment in the specified worksheet, updates the corresponding cell in LINKING with a formula
 ' and value, and applies formatting if needed. Used for main linking logic in printout.
+' Optimized: Now accepts worksheet parameter instead of relying on ActiveSheet.
 '''
 Dim TRow As Long, CRow As Long
 Dim TCol As Long
@@ -364,13 +360,13 @@ Dim i As Long
 Dim Teksti As String
 Dim Kaava As String
 Dim Osoite As String
-  With ActiveSheet
+  With TargetSheet
     For i = 1 To .Comments.Count 'Going through all comments
          Teksti = .Comments(i).text ' Get the comment text
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
        TCol = CInt(Mid(Teksti, 3))
-       With Sheets("LINKING").Cells(TRow, TCol)
+       With .Parent.Sheets("LINKING").Cells(TRow, TCol)
          Teksti = .Value
          .Font.ColorIndex = 5
          .Font.Bold = True
@@ -381,13 +377,13 @@ Dim Osoite As String
         .Comments(i).Parent.Value = Teksti
         If Teksti = "Yes" Then
             CRow = .Comments(i).Parent.Row
-            ActiveSheet.Rows(CRow).Font.Strikethrough = True
+            .Rows(CRow).Font.Strikethrough = True
         End If
       Else
         .Comments(i).Parent.Value = Teksti
       End If
     Next i
-    Cells.ClearComments
+    .Cells.ClearComments
   End With
 End Sub
 Sub PopulateRevisionsSimple()
@@ -488,10 +484,11 @@ End Sub
 Sub TeeLinkingKommentit()
 '''
 ' TeeLinkingKommentit: Adds comments to all formula cells in the LINKING sheet for traceability.
-' Uses fast mode for performance.
+' Optimized: Removed Select/Activate, uses direct worksheet references.
 '''
 Dim Solu As Range
 Dim wsLinking As Worksheet
+Dim formulaCells As Range
 
   ' Check if LINKING sheet exists
   On Error Resume Next
@@ -500,17 +497,19 @@ Dim wsLinking As Worksheet
   
   If wsLinking Is Nothing Then Exit Sub
   
-  Sheets("LINKING").Select
-  Cells(1, 1).Activate
+  ' Find all formula cells
   On Error Resume Next
-  ActiveCell.SpecialCells(xlCellTypeFormulas).Select
-  If Err.Number = 0 Then
-    Application.StatusBar = "Setting up comments in LINKING sheet (" & Selection.Cells.Count & ")"
-    For Each Solu In Selection.Cells
+  Set formulaCells = wsLinking.Cells.SpecialCells(xlCellTypeFormulas)
+  On Error GoTo 0
+  
+  If Not formulaCells Is Nothing Then
+    Application.StatusBar = "Setting up comments in LINKING sheet (" & formulaCells.Cells.Count & ")"
+    For Each Solu In formulaCells.Cells
+      On Error Resume Next
       Solu.AddComment CStr(Solu.Value)
+      On Error GoTo 0
     Next
   End If
-  On Error GoTo 0
+  
   Application.DisplayCommentIndicator = xlCommentIndicatorOnly
-  Cells(1, 1).Activate
 End Sub

@@ -160,212 +160,229 @@ End Sub
 ' GenPrintout: Generates a new printout workbook using TEMPLATE and data from DB1.
 ' Copies headers, footers, and main data body, applies formatting, and saves the result.
 ' Uses array-based transfer for main data for speed. All formatting and linking logic preserved.
+' Optimized: Uses direct workbook/worksheet references instead of window switching.
 '''
 Sub GenPrintout()
   If CheckOK = False Then
     MsgBox "Check data first!", vbCritical, "Error!"
-  Else ' Data has been checked and is ready for printout generation.
-    Dim MacroWB As String
-    Dim UusiWB As String
-    Dim ViimRivi As Long
-    Dim Riveja As Long
-    Dim Recordeja As Long, Recordeja2 As Long
-    Dim Kerta As Long
-    Dim Alku As Long
-    Dim Apu As Long
-    Dim Sivunvaihtoja As Long
-    Dim Tiedosto As String
-    Dim i As Long
-    Dim Oletus As String
-    Dim Sarjoja As Long
-    
+    Exit Sub
+  End If
+  
+  ' Variable declarations
+  Dim srcWB As Workbook
+  Dim destWB As Workbook
+  Dim destSheet As Worksheet
+  Dim linkSheet As Worksheet
+  Dim wsDB1 As Worksheet
+  Dim ViimRivi As Long
+  Dim Recordeja As Long
+  Dim Kerta As Long
+  Dim Tiedosto As String
+  Dim i As Long
+  Dim Oletus As String
+  Dim dbData As Variant
+  Dim dataRows As Long, dataCols As Long
+  Dim destStartRow As Long, destEndRow As Long
+  Dim lastCol As Long
+  Dim c As Range
+  
+  On Error GoTo GenPrintoutError
   BeginFastMode
+  
+  Application.StatusBar = "Initializing printout generation..."
     
-  AddFooter = Sheets("Main").AddFooter.Value ' User option from faceplate
+  ' Get user options from faceplate
+  AddFooter = Sheets("Main").AddFooter.Value
   On Error Resume Next
   HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
     
-  Riveja = DocEnd - DocStart ' Number of rows in the document body
-  Sheets("DB1").Select
+  ' Set workbook references
+  Set srcWB = ThisWorkbook
+  Set wsDB1 = srcWB.Sheets("DB1")
+  
+  Application.StatusBar = "Reading data from DB1..."
+  
   ' Find last used row in DB1
-  Recordeja = Cells.Find(What:="*", _
-          After:=Range("A1"), _
+  Recordeja = wsDB1.Cells.Find(What:="*", _
+          After:=wsDB1.Range("A1"), _
           LookAt:=xlPart, _
           LookIn:=xlFormulas, _
           SearchOrder:=xlByRows, _
           SearchDirection:=xlPrevious, _
           MatchCase:=False).Row
-    
-  MacroWB = ActiveWorkbook.Name ' Store macro workbook name
-  ' Copy Info sheet to new workbook (creates new workbook)
-  Sheets("Info").Copy
-  UusiWB = ActiveWorkbook.Name ' Store new workbook name
-  Cells.ClearComments ' Remove comments from new Info sheet
-  ' Copy TEMPLATE to new workbook and rename as POSheet
-  Windows(MacroWB).Activate
-  Sheets("TEMPLATE").Copy After:=Workbooks(UusiWB).Sheets(1)
-  ActiveSheet.Name = POSheet
-
-
-  'Copy Legend and Revisions sheets to new workbook
-    Windows(MacroWB).Activate
-  Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Copy Legend
-  Windows(MacroWB).Activate
-  Sheets("Revisions").Copy After:=Workbooks(UusiWB).Sheets(1) ' Copy Revisions
-  Windows(UusiWB).Activate
-  PopulateRevisionsSimple 'Fast direct write of revision data without comment loops
-    Sheets(POSheet).Select
-    ' Clear all data from printout sheet (keeps column widths)
-    Cells.Clear
-    ' Remove all shapes/images if present
-    If ActiveSheet.Shapes.Count > 0 Then
-      For i = 1 To ActiveSheet.Shapes.Count
-        ActiveSheet.Shapes(1).Delete
-      Next i
-    End If
-    
-    
-    'Copy header rows from TEMPLATE to printout
-  ViimRivi = 1
-  ' Copy header rows from TEMPLATE to printout
-  Windows(MacroWB).Activate
-  Sheets("TEMPLATE").Rows(PHStart & ":" & PHEnd).Copy
-  Windows(UusiWB).Activate
-  Rows(ViimRivi & ":" & ViimRivi + PHEnd - PHStart).Select
-  ActiveSheet.Paste
-  ' Set print title rows and freeze panes below header
-  ActiveSheet.PageSetup.PrintTitleRows = "$" & ViimRivi & ":$" & ViimRivi + PHEnd - PHStart
-  Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
-  ActiveWindow.FreezePanes = True
-  ViimRivi = ViimRivi + 1 + PHEnd - PHStart
-'---------- [ FOOTER ] --------------------------
-    ' Set up footers for first three sheets (Info, POSheet, Legend)
-    For i = 1 To 3
-      Sheets(i).Select
-      Application.StatusBar = "Prosessing Footers: " & i & "/3"
-      ' Left footer: document info
-      ActiveSheet.PageSetup.LeftFooter = "&8Document: " & DIMetsoDocNo & Chr(10) _
-                                       & "&8Revision: " & DIRevID & " - " & DIRevDate & Chr(10) _
-                                       & "&8Status: " & DIStatus
-      ' Center footer: customer and mill info
-      ActiveSheet.PageSetup.CenterFooter = "&8 " & DICustomer & Chr(10) _
-                                         & "&8 " & DIMill & Chr(10) _
-                                         & "&8 " & DIDepartName & Chr(10) _
-                                         & "&8 " & DIDocName2
-      ' Right footer: project and file info
-      ActiveSheet.PageSetup.RightFooter = "&8Project: " & DIProjNo & Chr(10) _
-                                        & "&8File: &F" & Chr(10) _
-                                        & "&8Page &P(&N)"
-    Next i
-    Sheets(POSheet).Select
-'---------- [ FOOTER ] --------------------------
-    Kerta = 0
-    VaihdaLinkit 1, ViimRivi, Kerta
-
-    'ActiveSheet.HPageBreaks(1).Location.Row
-    Sivunvaihtoja = ActiveSheet.HPageBreaks.Count
-    Sarjoja = 0
-  ' --- Optimized: Bulk copy DB1 data to POSheet using array ---
-  ' This block loads all DB1 data into a 2D array and writes it in one operation for speed.
-    Dim dbData As Variant
-    Dim dataRows As Long, dataCols As Long
-    Dim destStartRow As Long, destEndRow As Long
-    Dim destSheet As Worksheet
-    Set destSheet = Sheets(POSheet)
-  ' Find data range in DB1 (from row 2 to last row, all columns)
-    Windows(MacroWB).Activate
-    With Sheets("DB1")
-        dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
-        ' Use Sarakkeita from TEMPLATE instead of DB1's last column to prevent extra columns
-        dataCols = Sarakkeita
-        If dataRows >= 2 And dataCols >= 1 Then
-            dbData = .Range(.Cells(2, 1), .Cells(dataRows, dataCols)).Value
-        Else
-            dbData = Empty
-        End If
-    End With
-    Windows(UusiWB).Activate
-  ' Write data array to POSheet at the correct position (after header rows)
-    destStartRow = ViimRivi
-    destEndRow = destStartRow + UBound(dbData, 1) - 1
-    If Not IsEmpty(dbData) Then
-        destSheet.Range(destSheet.Cells(destStartRow, 1), destSheet.Cells(destEndRow, dataCols)).Value = dbData
-  ' Optional: Apply alternating row color for every other block (as before)
-  ' (keeps the same look as the original macro)
-        For i = 0 To UBound(dbData, 1) - 1 Step RMAX
-            If (i \ RMAX) Mod 2 = 1 Then
-                With destSheet.Range(destSheet.Cells(destStartRow + i, 1), destSheet.Cells(destStartRow + i + RMAX - 1, Sarakkeita)).Interior
-                    .ColorIndex = 19
-                    .Pattern = xlSolid
-                    .PatternColorIndex = xlAutomatic
-                End With
-            End If
-        Next i
-  ' Call VaihdaLinkit for each block as before (handles linking logic)
-        Kerta = 0
-        For i = 0 To UBound(dbData, 1) - 1 Step RMAX
-            VaihdaLinkit destStartRow + i, destStartRow + i + RMAX - 1, Kerta
-            Kerta = Kerta + 1
-        Next i
-        ViimRivi = destEndRow + 1
-    End If
-  ' --- End optimized block ---
   
-  ' Delete any extra columns beyond Sarakkeita to match TEMPLATE width
-  Sheets(POSheet).Select
-  If Columns.Count > Sarakkeita Then
-    Dim lastCol As Long
-    lastCol = Cells(1, Columns.Count).End(xlToLeft).Column
-    If lastCol > Sarakkeita Then
-      Columns(Sarakkeita + 1 & ":" & lastCol).Delete
-    End If
+  Application.StatusBar = "Creating new workbook..."
+  
+  ' Create new workbook by copying Info sheet
+  srcWB.Sheets("Info").Copy
+  Set destWB = ActiveWorkbook
+  destWB.Sheets(1).Cells.ClearComments
+  
+  ' Copy TEMPLATE, Legend, and Revisions to new workbook
+  srcWB.Sheets("TEMPLATE").Copy After:=destWB.Sheets(1)
+  destWB.Sheets(2).Name = POSheet
+  Set destSheet = destWB.Sheets(POSheet)
+  
+  srcWB.Sheets("Legend").Copy After:=destWB.Sheets(2)
+  srcWB.Sheets("Revisions").Copy After:=destWB.Sheets(1)
+  
+  Application.StatusBar = "Populating revisions..."
+  PopulateRevisionsSimple
+  
+  ' Clear POSheet and remove shapes
+  Application.StatusBar = "Preparing printout sheet..."
+  destSheet.Cells.Clear
+  If destSheet.Shapes.Count > 0 Then
+    For i = destSheet.Shapes.Count To 1 Step -1
+      destSheet.Shapes(i).Delete
+    Next i
   End If
   
+  ' Copy header rows from TEMPLATE to POSheet
+  Application.StatusBar = "Copying headers..."
+  ViimRivi = 1
+  srcWB.Sheets("TEMPLATE").Rows(PHStart & ":" & PHEnd).Copy _
+      Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + PHEnd - PHStart)
+  Application.CutCopyMode = False
+  
+  ' Set print title rows and freeze panes
+  destSheet.PageSetup.PrintTitleRows = "$" & ViimRivi & ":$" & ViimRivi + PHEnd - PHStart
+  destSheet.Activate
+  destSheet.Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
+  ActiveWindow.FreezePanes = True
+  ViimRivi = ViimRivi + 1 + PHEnd - PHStart
+  
+  ' Set up footers for first three sheets (Info, POSheet, Legend)
+  Application.StatusBar = "Setting up footers..."
+  For i = 1 To 3
+    With destWB.Sheets(i).PageSetup
+      .LeftFooter = "&8Document: " & DIMetsoDocNo & Chr(10) _
+                  & "&8Revision: " & DIRevID & " - " & DIRevDate & Chr(10) _
+                  & "&8Status: " & DIStatus
+      .CenterFooter = "&8 " & DICustomer & Chr(10) _
+                    & "&8 " & DIMill & Chr(10) _
+                    & "&8 " & DIDepartName & Chr(10) _
+                    & "&8 " & DIDocName2
+      .RightFooter = "&8Project: " & DIProjNo & Chr(10) _
+                   & "&8File: &F" & Chr(10) _
+                   & "&8Page &P(&N)"
+    End With
+  Next i
+  
+  ' Create LINKING sheet and copy DB1 data
+  Application.StatusBar = "Creating LINKING sheet..."
+  Set linkSheet = destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
+  linkSheet.Name = "LINKING"
+  wsDB1.Cells.Copy Destination:=linkSheet.Range("A1")
+  Application.CutCopyMode = False
+  
+  ' Initial linking for header area
+  Kerta = 0
+  VaihdaLinkit destSheet, 1, ViimRivi, Kerta
+  
+  ' Bulk copy DB1 data to POSheet using array
+  Application.StatusBar = "Copying data to printout..."
+  With wsDB1
+    dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
+    dataCols = Sarakkeita
+    If dataRows >= 2 And dataCols >= 1 Then
+      dbData = .Range(.Cells(2, 1), .Cells(dataRows, dataCols)).Value
+    Else
+      dbData = Empty
+    End If
+  End With
+  
+  ' Write data array and apply formatting
+  destStartRow = ViimRivi
+  If Not IsEmpty(dbData) And IsArray(dbData) Then
+    If RMAX <= 0 Then RMAX = 1
+    destEndRow = destStartRow + UBound(dbData, 1) - 1
+    destSheet.Range(destSheet.Cells(destStartRow, 1), destSheet.Cells(destEndRow, dataCols)).Value = dbData
+    
+    ' Apply alternating row color for every other block
+    For i = 0 To UBound(dbData, 1) - 1 Step RMAX
+      If (i \ RMAX) Mod 2 = 1 Then
+        With destSheet.Range(destSheet.Cells(destStartRow + i, 1), destSheet.Cells(destStartRow + i + RMAX - 1, Sarakkeita)).Interior
+          .ColorIndex = 19
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+        End With
+      End If
+    Next i
+    
+    ' Call VaihdaLinkit for each block
+    Kerta = 0
+    For i = 0 To UBound(dbData, 1) - 1 Step RMAX
+      VaihdaLinkit destSheet, destStartRow + i, destStartRow + i + RMAX - 1, Kerta
+      Kerta = Kerta + 1
+    Next i
+    ViimRivi = destEndRow + 1
+  End If
+  
+  ' Delete extra columns beyond Sarakkeita
+  lastCol = destSheet.Cells(1, destSheet.Columns.Count).End(xlToLeft).Column
+  If lastCol > Sarakkeita Then
+    destSheet.Columns(Sarakkeita + 1 & ":" & lastCol).Delete
+  End If
+  
+  ' Add footer block if requested
   If AddFooter = True Then
-    ' Copy footer rows from TEMPLATE to printout
-    Windows(MacroWB).Activate
-    Sheets("TEMPLATE").Rows(PFStart & ":" & PFEnd).Copy
-    Windows(UusiWB).Activate
-    Rows(ViimRivi & ":" & ViimRivi + PFEnd - PFStart).Select
-    ActiveSheet.Paste
+    Application.StatusBar = "Adding footer..."
+    srcWB.Sheets("TEMPLATE").Rows(PFStart & ":" & PFEnd).Copy _
+        Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + PFEnd - PFStart)
+    Application.CutCopyMode = False
+    
     ' Set up formulas for footer summary cells
-    Dim c As Range
-    For Each c In Selection
-      If Left(c.Value, 2) = "&&" Then
-        c.Formula = "=sum(" & Cells(PHEnd, c.Column).Address & ":" & Cells(ViimRivi - 1, c.Column).Address & ")"
+    For Each c In destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + PFEnd - PFStart, Sarakkeita))
+      If Len(CStr(c.Value)) >= 2 Then
+        If Left(CStr(c.Value), 2) = "&&" Then
+          c.Formula = "=SUM(" & destSheet.Cells(PHEnd, c.Column).Address(False, False) & ":" & destSheet.Cells(ViimRivi - 1, c.Column).Address(False, False) & ")"
+        End If
       End If
     Next c
   End If
-  Cells.ClearComments ' Remove all comments from printout
-  TeeLinkingKommentit ' Add comments to LINKING sheet for traceability
   
-  ' Handle LINKING sheet visibility/deletion based on user preference
+  ' Clear comments and add LINKING comments
+  Application.StatusBar = "Finalizing..."
+  destSheet.Cells.ClearComments
+  TeeLinkingKommentit
+  
+  ' Handle LINKING sheet visibility/deletion
   On Error Resume Next
   If HideLINKING Then
-    Sheets("LINKING").Visible = False
+    destWB.Sheets("LINKING").Visible = False
   Else
     Application.DisplayAlerts = False
-    Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
+    destWB.Sheets("LINKING").Delete
     Application.DisplayAlerts = True
   End If
-  On Error GoTo 0
-    Windows(UusiWB).Activate
-    Worksheets(POSheet).Activate
-    Application.StatusBar = False
-    EndFastMode
-    ' Prompt user for file name and save as .xlsx
-    Oletus = DIPath & DIFile
-    Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
-    If Tiedosto <> "" Then
-      ActiveWorkbook.BuiltinDocumentProperties("Title").Value = POSheet
-      ActiveWorkbook.SaveAs Tiedosto, xlOpenXMLWorkbook
-    End If
+  On Error GoTo GenPrintoutError
+  
+  destSheet.Activate
+  Application.StatusBar = False
+  EndFastMode
+  
+  ' Prompt for file name and save
+  Oletus = DIPath & DIFile
+  Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
+  If Tiedosto <> "" Then
+    destWB.BuiltinDocumentProperties("Title").Value = POSheet
+    destWB.SaveAs Tiedosto, xlOpenXMLWorkbook
   End If
+  Exit Sub
+
+GenPrintoutError:
+  Application.StatusBar = False
+  EndFastMode
+  MsgBox "Error in GenPrintout: " & Err.Description, vbCritical, "Printout Generation Error"
+  Err.Clear
+  On Error GoTo 0
 End Sub
 '''
 ' Checkout: Validates that all required headers and row markers exist in the TEMPLATE and DB1 sheets.
 ' Reports errors to the ERRORS sheet and sets CheckOK flag.
+' Optimized: Removed Select/Activate usage, uses direct worksheet references, added error handler.
 '''
 Sub Checkout() 'Check if all headers exist in data
 Dim i As Long
@@ -373,85 +390,105 @@ Dim j As Long
 Dim Arvo As String
 Dim Virhe As Boolean
 Dim Apu As Long
-CheckOK = False
-RMAX = 0
-Virhe = False
-   Application.ScreenUpdating = False
-   Sheets("ERRORS").Select
-   Cells.Select
-   Selection.Clear
-   Range("A1").Select
-   'Constants
-   POSheet = Sheets("Main").Range("C16").Value
-   On Error Resume Next
-   HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
-   On Error GoTo 0
-   
-   Sheets("TEMPLATE").Select
-   Cells.ClearComments
-   Cells(1, 1).Select
-   'Find area markers
-   PHStart = Cells.Find(What:="&&PAGE_HEADER_START").Row + 1
-   PHEnd = Cells.Find(What:="&&PAGE_HEADER_END").Row - 1
-   DocStart = Cells.Find(What:="&&DOC_DATA_START").Row + 1
-   DocEnd = Cells.Find(What:="&&DOC_DATA_END").Row - 1
-   Sarakkeita = Cells.Find(What:="&&END").Column
-   PFStart = Cells.Find(What:="&&PAGE_FOOTER_START").Row + 1
-   PFEnd = Cells.Find(What:="&&PAGE_FOOTER_END").Row - 1
-   
-   HaeDocTiedot 'Fetch document info from DB2 sheet
-   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
-   
-   Sheets("TEMPLATE").Select
-   'Search for row markers
-   For i = DocStart To DocEnd
-     For j = 1 To Sarakkeita
-       Arvo = Cells(i, j).Value
-       If Len(Arvo) > 2 Then 'Cell has data
-         If Left(Arvo, 2) = "££" Then
-           If RMAX > 1 Then Virhe = True
-           RMAX = 1
-         ElseIf Left(Arvo, 1) = "£" Then
-           If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 4, 1)) Then Virhe = True
-           RMAX = CInt(Mid(Arvo, 4, 1))
-         End If
-       End If
-     Next j
-   Next i
-   If Virhe Then
-     Sheets("ERRORS").Select
-     Cells.Delete
-     Range("A1").Select
-     ActiveCell.Value = "Error on declaration!"
-     ActiveCell.Font.Bold = True
-     Range("A2").Value = "- You cannot have ££ and £1/2 links on same template."
-     Range("A3").Value = "- Neither you can have £1/2 and £1/3 links on same template."
-     Range("A4").Value = "- Please correct these errors and try again!"
-     MsgBox "There where errors on template, see ERRORS sheet!", vbCritical, "Error!"
-     Exit Sub
-   End If
-   'Row markers were correct, now searching for headers
-   For i = DocStart To DocEnd
-     For j = 1 To Sarakkeita
-       Arvo = Cells(i, j).Value
-       If Len(Arvo) > 2 Then 'Cell has data
-         If Left(Arvo, 2) = "££" Then
-           If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
-         ElseIf Left(Arvo, 1) = "£" Then
-           Apu = CInt(Mid(Arvo, 2, 1))
-           If EtsiOts(Mid(Arvo, 5), i, j, Apu) = False Then Virhe = True
-         End If
-       End If
-     Next j
-   Next i
-   If Virhe Then
-     Sheets("ERRORS").Select
-     Application.ScreenUpdating = True
-     MsgBox "There were errors on the template! See ERRORS sheet.", vbCritical, "Error!"
-   Else
-     Sheets("Main").Select
-     Application.ScreenUpdating = True
-     CheckOK = True
-     MsgBox "Check OK!", vbOKOnly, "OK!"
-   End If
+Dim wsTemplate As Worksheet
+Dim wsErrors As Worksheet
+
+  On Error GoTo CheckoutError
+  
+  CheckOK = False
+  RMAX = 0
+  Virhe = False
+  Application.ScreenUpdating = False
+  
+  Set wsErrors = Sheets("ERRORS")
+  Set wsTemplate = Sheets("TEMPLATE")
+  
+  ' Clear ERRORS sheet
+  wsErrors.Cells.Clear
+  
+  ' Get constants from faceplate
+  POSheet = Sheets("Main").Range("C16").Value
+  On Error Resume Next
+  HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
+  On Error GoTo CheckoutError
+  
+  ' Clear comments from TEMPLATE
+  wsTemplate.Cells.ClearComments
+  
+  ' Find area markers in TEMPLATE
+  With wsTemplate
+    PHStart = .Cells.Find(What:="&&PAGE_HEADER_START").Row + 1
+    PHEnd = .Cells.Find(What:="&&PAGE_HEADER_END").Row - 1
+    DocStart = .Cells.Find(What:="&&DOC_DATA_START").Row + 1
+    DocEnd = .Cells.Find(What:="&&DOC_DATA_END").Row - 1
+    Sarakkeita = .Cells.Find(What:="&&END").Column
+    PFStart = .Cells.Find(What:="&&PAGE_FOOTER_START").Row + 1
+    PFEnd = .Cells.Find(What:="&&PAGE_FOOTER_END").Row - 1
+  End With
+  
+  ' Fetch document info from DB2 sheet
+  HaeDocTiedot
+  VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
+  
+  ' Search for row markers in TEMPLATE
+  For i = DocStart To DocEnd
+    For j = 1 To Sarakkeita
+      Arvo = wsTemplate.Cells(i, j).Value
+      If Len(Arvo) > 2 Then 'Cell has data
+        If Left(Arvo, 2) = "££" Then
+          If RMAX > 1 Then Virhe = True
+          RMAX = 1
+        ElseIf Left(Arvo, 1) = "£" Then
+          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 4, 1)) Then Virhe = True
+          RMAX = CInt(Mid(Arvo, 4, 1))
+        End If
+      End If
+    Next j
+  Next i
+  
+  If Virhe Then
+    wsErrors.Cells.Clear
+    wsErrors.Range("A1").Value = "Error on declaration!"
+    wsErrors.Range("A1").Font.Bold = True
+    wsErrors.Range("A2").Value = "- You cannot have ££ and £1/2 links on same template."
+    wsErrors.Range("A3").Value = "- Neither you can have £1/2 and £1/3 links on same template."
+    wsErrors.Range("A4").Value = "- Please correct these errors and try again!"
+    wsErrors.Activate
+    Application.ScreenUpdating = True
+    MsgBox "There where errors on template, see ERRORS sheet!", vbCritical, "Error!"
+    Exit Sub
+  End If
+  
+  ' Row markers were correct, now searching for headers
+  For i = DocStart To DocEnd
+    For j = 1 To Sarakkeita
+      Arvo = wsTemplate.Cells(i, j).Value
+      If Len(Arvo) > 2 Then 'Cell has data
+        If Left(Arvo, 2) = "££" Then
+          If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
+        ElseIf Left(Arvo, 1) = "£" Then
+          Apu = CInt(Mid(Arvo, 2, 1))
+          If EtsiOts(Mid(Arvo, 5), i, j, Apu) = False Then Virhe = True
+        End If
+      End If
+    Next j
+  Next i
+  
+  If Virhe Then
+    wsErrors.Activate
+    Application.ScreenUpdating = True
+    MsgBox "There were errors on the template! See ERRORS sheet.", vbCritical, "Error!"
+  Else
+    Sheets("Main").Activate
+    Application.ScreenUpdating = True
+    CheckOK = True
+    MsgBox "Check OK!", vbOKOnly, "OK!"
+  End If
+  Exit Sub
+
+CheckoutError:
+  Application.ScreenUpdating = True
+  MsgBox "Error in Checkout: " & Err.Description, vbCritical, "Checkout Error"
+  Err.Clear
+  On Error GoTo 0
 End Sub
