@@ -7,11 +7,7 @@ Public DocStart As Long
 Public DocEnd As Long
 Public Sarakkeita As Long
 Public RMAX As Long
-Public FPSheet As String
 Public POSheet As String
-Public GenFP As Boolean
-Public GenHeader As Boolean
-Public GenDocHeader As Boolean
 Public HideLINKING As Boolean
 Public AddFooter As Boolean
 Public DIContract As String
@@ -39,10 +35,11 @@ Public DIRevDate As String
 Public DIStatus As String
 
 '''
-' Module1.vba - Päälogiikka makrolle
-' Hoitaa datan haun Accessista ja tulosteen luonnin sekä suorituskyvyn optimoinnit.
+' Module1.vba - Main logic for Kytkentälista Excel macro system.
+' Handles data fetching from Access, checkouts and printout generation.
 '''
-' Performance/UX state (to minimize screen flashing and speed up macros)
+
+' Performance/UX state (to minimize screen flashing and speed up macros.)
 Private prevScreenUpdating As Boolean
 Private prevCalculation As XlCalculation
 Private prevEnableEvents As Boolean
@@ -95,15 +92,7 @@ Dim i As Long
 Dim TAULUKKO As QueryTable
 Dim Yhteys As String
 
-'Tuhotaan DB-sheetit, jotta ne saadaan varmasti tyhjäksi
-'Sheets("DB1").Delete
-'Sheets("DB2").Delete
-'Sheets.Add After:=Sheets("Main")
-'ActiveSheet.Name = "DB1"
-'Sheets.Add After:=Sheets("DB1")
-'ActiveSheet.Name = "DB2"
-
-  ' Get Valinta selection
+' Select which SQL query to use from Main sheet.
   On Error Resume Next
   If Sheets("Main").Valinta1.Value = True Then
     Valinta = 0
@@ -120,7 +109,7 @@ Dim Yhteys As String
   
   BeginFastMode
   
-  ' Verify database file exists
+' Verify database file exists
   If Dir(Kanta) = "" Then
     MsgBox "Database file not found: " & Kanta, vbCritical, "Database Error"
     EndFastMode
@@ -198,7 +187,10 @@ Sub GenPrintout()
     
   BeginFastMode
     
-  AddFooter = Sheets("Main").AddFooter.Value ' Käyttäjän valinta faceplatesta
+  AddFooter = Sheets("Main").AddFooter.Value ' User option from faceplate
+  On Error Resume Next
+  HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
+  On Error GoTo 0
     
   Riveja = DocEnd - DocStart ' Runkodatan rivimäärä
   Sheets("DB1").Select
@@ -220,9 +212,9 @@ Sub GenPrintout()
   Windows(MacroWB).Activate
   Sheets("TEMPLATE").Copy After:=Workbooks(UusiWB).Sheets(1)
   ActiveSheet.Name = POSheet
-    
-    
-    'Kopioidaan sitten Legend ja Revisions sheetit uuten työkirjaan
+
+
+  'Copy Legend and Revisions sheets to new workbook
     Windows(MacroWB).Activate
   Sheets("Legend").Copy After:=Workbooks(UusiWB).Sheets(2) ' Kopioi Legend
   Windows(MacroWB).Activate
@@ -255,7 +247,7 @@ Sub GenPrintout()
     End If
     
     
-    'Kopioidaan mahdolliset otsikkotiedot Prinout sheetille
+    'Copy header rows from TEMPLATE to printout
   ViimRivi = 1
   ' Kopioi otsikkorivit TEMPLATEsta tulostesheetille
   Windows(MacroWB).Activate
@@ -268,8 +260,8 @@ Sub GenPrintout()
   Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
   ActiveWindow.FreezePanes = True
   ViimRivi = ViimRivi + 1 + PHEnd - PHStart
-'---------- [ ALATUNNISTEET ] --------------------------
-  ' Aseta alatunnisteet ensimmäisille kolmelle sheetille (Info, POSheet, Legend)
+'---------- [ FOOTER ] --------------------------
+    ' Set up footers for first three sheets (Info, POSheet, Legend)
     For i = 1 To 3
       Sheets(i).Select
       Application.StatusBar = "Prosessing Footers: " & i & "/3"
@@ -288,7 +280,7 @@ Sub GenPrintout()
                                         & "&8Page &P(&N)"
     Next i
     Sheets(POSheet).Select
-'---------- [ ALATUNNISTEET ] --------------------------
+'---------- [ FOOTER ] --------------------------
     Kerta = 0
     VaihdaLinkit 1, ViimRivi, Kerta
 
@@ -310,7 +302,8 @@ Sub GenPrintout()
 >>>>>>> main
     With Sheets("DB1")
         dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
-        dataCols = .Cells(1, .Columns.Count).End(xlToLeft).Column
+        ' Use Sarakkeita from TEMPLATE instead of DB1's last column to prevent extra columns
+        dataCols = Sarakkeita
         If dataRows >= 2 And dataCols >= 1 Then
             dbData = .Range(.Cells(2, 1), .Cells(dataRows, dataCols)).Value
         Else
@@ -346,7 +339,18 @@ Sub GenPrintout()
         Next i
         ViimRivi = destEndRow + 1
     End If
-  ' --- Optimoidun lohkon loppu ---
+  ' --- End optimized block ---
+  
+  ' Delete any extra columns beyond Sarakkeita to match TEMPLATE width
+  Sheets(POSheet).Select
+  If Columns.Count > Sarakkeita Then
+    Dim lastCol As Long
+    lastCol = Cells(1, Columns.Count).End(xlToLeft).Column
+    If lastCol > Sarakkeita Then
+      Columns(Sarakkeita + 1 & ":" & lastCol).Delete
+    End If
+  End If
+  
   If AddFooter = True Then
   ' Kopioi alatunnisteen rivit TEMPLATEsta tulostesheetille
     Windows(MacroWB).Activate
@@ -362,16 +366,18 @@ Sub GenPrintout()
       End If
     Next c
   End If
-  Cells.ClearComments ' Poista kaikki kommentit tulostesheetistä
-  TeeLinkingKommentit ' Lisää kommentit LINKING-sheetille jäljitettävyyden vuoksi
-'    If HideLINKING Then
-'      Sheets("LINKING").Visible = False
-'    End If
-  ' Delete LINKING sheet if it exists
+  Cells.ClearComments ' Remove all comments from printout
+  TeeLinkingKommentit ' Add comments to LINKING sheet for traceability
+  
+  ' Handle LINKING sheet visibility/deletion based on user preference
   On Error Resume Next
-  Application.DisplayAlerts = False
-  Sheets("LINKING").Delete ' Poista LINKING-sheet, jos käyttäjä pyytää
-  Application.DisplayAlerts = True
+  If HideLINKING Then
+    Sheets("LINKING").Visible = False
+  Else
+    Application.DisplayAlerts = False
+    Sheets("LINKING").Delete ' Remove LINKING sheet if user requested
+    Application.DisplayAlerts = True
+  End If
   On Error GoTo 0
     Windows(UusiWB).Activate
     Worksheets(POSheet).Activate
@@ -390,7 +396,7 @@ End Sub
 ' Checkout: Validates that all required headers and row markers exist in the TEMPLATE and DB1 sheets.
 ' Reports errors to the ERRORS sheet and sets CheckOK flag.
 '''
-Sub Checkout() 'Tämä tarkistaa löytyvätkö kaikki otsikot datasta
+Sub Checkout() 'Check if all headers exist in data
 Dim i As Long
 Dim j As Long
 Dim Arvo As String
@@ -404,14 +410,16 @@ Virhe = False
    Cells.Select
    Selection.Clear
    Range("A1").Select
-   'Vakiot
+   'Constants
    POSheet = Sheets("Main").Range("C16").Value
-'   HideLINKING = Sheets("Main").HLINKING.Value
+   On Error Resume Next
+   HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
+   On Error GoTo 0
    
    Sheets("TEMPLATE").Select
    Cells.ClearComments
    Cells(1, 1).Select
-   'Etsitään ensin alueet
+   'Find area markers
    PHStart = Cells.Find(What:="&&PAGE_HEADER_START").Row + 1
    PHEnd = Cells.Find(What:="&&PAGE_HEADER_END").Row - 1
    DocStart = Cells.Find(What:="&&DOC_DATA_START").Row + 1
@@ -420,15 +428,15 @@ Virhe = False
    PFStart = Cells.Find(What:="&&PAGE_FOOTER_START").Row + 1
    PFEnd = Cells.Find(What:="&&PAGE_FOOTER_END").Row - 1
    
-   HaeDocTiedot 'Hakee dokumentin tiedot DB2-sheetiltä
-   VaihdaInfo   'Vaihtaa dokumentin tiedot info sheetille
+   HaeDocTiedot 'Fetch document info from DB2 sheet
+   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
    
    Sheets("TEMPLATE").Select
-   'Haetaan ensin kerralla kopioitavien rivien määrä eli rivitysmerkinnät
+   'Search for row markers
    For i = DocStart To DocEnd
      For j = 1 To Sarakkeita
        Arvo = Cells(i, j).Value
-       If Len(Arvo) > 2 Then 'Solussa on tietoa
+       If Len(Arvo) > 2 Then 'Cell has data
          If Left(Arvo, 2) = "££" Then
            If RMAX > 1 Then Virhe = True
            RMAX = 1
@@ -451,11 +459,11 @@ Virhe = False
      MsgBox "There where errors on template, see ERRORS sheet!", vbCritical, "Error!"
      Exit Sub
    End If
-   'Rivitys merkinnätolivat oikein, etsitään otsikoita
+   'Row markers were correct, now searching for headers
    For i = DocStart To DocEnd
      For j = 1 To Sarakkeita
        Arvo = Cells(i, j).Value
-       If Len(Arvo) > 2 Then 'Solussa on tietoa
+       If Len(Arvo) > 2 Then 'Cell has data
          If Left(Arvo, 2) = "££" Then
            If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
          ElseIf Left(Arvo, 1) = "£" Then

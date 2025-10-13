@@ -1,62 +1,8 @@
-Sub TyhjaaKommentit()
-    Cells.ClearComments
-End Sub
-<<<<<<< HEAD
-  '
-  ' Fast-mode helpers to reduce flicker and speed up heavy operations
-  '''
-  ' Module2.vba – Metatieto-, info- ja linkitystoiminnot Kytkentälista Excel -järjestelmälle
-  ' Vastaa dokumentin tietojen hausta, kommenttipohjaisesta linkityksestä sekä virheraportoinnista.
-  '''
-
-  ' Nopea tila -apuohjelmat: vähentävät näytön välkkymistä ja nopeuttavat raskaita operaatioita
-  Private prevScreenUpdating2 As Boolean
-=======
-
 '''
 ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
 ' Handles document property extraction, comment-based linking, and error reporting.
 '''
 
-' Fast-mode helpers to reduce flicker and speed up heavy operations
-Private prevScreenUpdating2 As Boolean
->>>>>>> main
-  Private prevCalculation2 As XlCalculation
-  Private prevEnableEvents2 As Boolean
-  Private prevDisplayAlerts2 As Boolean
-  Private prevDisplayStatusBar2 As Boolean
-
-  Private Sub BeginFastMode2()
-  '''
-  ' BeginFastMode2: Poistaa tilapäisesti Excelin käyttöliittymän päivitykset, tapahtumat ja asettaa laskennan manuaaliseksi
-  ' makrojen nopeuttamiseksi ja näytön välkkymisen estämiseksi.
-  '''
-    prevScreenUpdating2 = Application.ScreenUpdating
-    prevCalculation2 = Application.Calculation
-    prevEnableEvents2 = Application.EnableEvents
-    prevDisplayAlerts2 = Application.DisplayAlerts
-    prevDisplayStatusBar2 = Application.DisplayStatusBar
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-    Application.DisplayAlerts = False
-    On Error Resume Next
-    Application.DisplayStatusBar = False
-    On Error GoTo 0
-  End Sub
-
-  Private Sub EndFastMode2()
-  '''
-  ' EndFastMode2: Palauttaa Excelin käyttöliittymä- ja laskenta-asetukset aiempaan tilaan.
-  '''
-    On Error Resume Next
-    Application.ScreenUpdating = prevScreenUpdating2
-    Application.Calculation = prevCalculation2
-    Application.EnableEvents = prevEnableEvents2
-    Application.DisplayAlerts = prevDisplayAlerts2
-    Application.DisplayStatusBar = prevDisplayStatusBar2
-    On Error GoTo 0
-  End Sub
 Sub HaeDocTiedot()
 '''
 ' HaeDocTiedot: Hakee dokumentin ominaisuudet DB2-taulukosta ja tallentaa ne globaaleihin muuttujiin.
@@ -186,8 +132,8 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   
   ws.Select
   With ActiveSheet
-  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
-  Select Case LCase(.Comments(i).text) ' Muutetaan kommentin teksti pieniksi kirjaimiksi
+    For i = 1 To .Comments.Count 'Going through all comments
+        Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
         Case "project"
@@ -486,42 +432,6 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
      i = i + 1
    Loop
 End Function
-Sub VaihdaLinkit1(Alku As Long, Loppu As Long, Kerta As Long)
-'''
-' VaihdaLinkit1: Käy läpi annetun alueen solut; jos solu sisältää linkitysmerkinnän,
-' kopioi arvon LINKING-taulukosta ja lisää kommentin/kaavan jäljitettävyyden vuoksi.
-' Käytetään vanhassa linkityslogiikassa.
-'''
-Dim TRow As Long
-Dim TCol As Long
-Dim i As Long
-Dim j As Long
-Dim Teksti As String
-Dim Arvo As String
-    For i = Alku To Loppu
-      For j = 1 To Sarakkeita
-        If Left(Cells(i, j).Value, 1) = "£" Then
-          Teksti = Cells(i, j).Comment.text
-          TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
-          TCol = CInt(Mid(Teksti, 3))
-          With Sheets("LINKING").Cells(TRow, TCol)
-            Arvo = .Value
-            .Font.ColorIndex = 5
-            .Font.Bold = True
-            On Error GoTo Virhe_Komment
-            .AddComment
-Virhe_Komment:
-            .Comment.text text:=Arvo
-            .FormulaR1C1 = "='" & POSheet & "'!R" & i & "C" & j
-            .Comment.Visible = False
-            .Comment.Shape.DrawingObject.Shadow = False
-            .Comment.Shape.DrawingObject.AutoSize = True
-          End With
-          Cells(i, j).Value = Arvo
-        End If
-      Next j
-    Next i
-End Sub
 Sub VaihdaLinkit(Alku As Long, Loppu As Long, Kerta As Long)
 '''
 ' VaihdaLinkit: Käy läpi aktiivisen taulukon kommentit ja päivittää vastaavan LINKING-solun kaavalla
@@ -534,8 +444,8 @@ Dim Teksti As String
 Dim Kaava As String
 Dim Osoite As String
   With ActiveSheet
-  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
-         Teksti = .Comments(i).text ' Haetaan kommentin teksti
+    For i = 1 To .Comments.Count 'Going through all comments
+         Teksti = .Comments(i).text ' Get the comment text
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
        TCol = CInt(Mid(Teksti, 3))
@@ -559,78 +469,10 @@ Dim Osoite As String
   Cells.ClearComments ' Poistaa kaikki kommentit taulukosta
   End With
 End Sub
-Sub VaihdaLinkit_OLD(Alku As Long, Loppu As Long, Kerta As Long)
-'''
-' VaihdaLinkit_OLD: Linkityslogiikan vanha versio, säilytetty viitteeksi. Käyttää Select/Activate-kutsuja.
-'''
-Dim TRow As Long
-Dim TCol As Long
-Dim i As Long
-Dim Teksti As String
-Dim Arvo As String
-Dim Osoite As String
-  With ActiveSheet
-  For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit taulukossa
-    Teksti = .Comments(i).text ' Haetaan kommentin teksti
-      Osoite = .Comments(i).Parent.Address
-      TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
-      TCol = CInt(Mid(Teksti, 3))
-      Sheets("LINKING").Select
-      Cells(TRow, TCol).Select
-      Arvo = MuutaLinkki(Osoite)
-      Sheets(POSheet).Select
-      .Comments(i).Parent.Value = Arvo
-    Next i
-  Cells.ClearComments ' Poistaa kaikki kommentit taulukosta
-  End With
-End Sub
-Function MuutaLinkki(Kohde As String) As String
-'''
-' MuutaLinkki: Apufunktio VaihdaLinkit_OLD:lle. Lisää kommentin ja kaavan aktiiviseen soluun jäljitettävyyden vuoksi.
-'''
-Dim Arvo As String
-On Error GoTo Virhe_Komment
-  With ActiveCell
-    Arvo = .Value
-    .Font.ColorIndex = 5
-    .Font.Bold = True
-    .AddComment
-Virhe_Komment:
-    .Comment.text text:=Arvo
-    .Formula = "='" & POSheet & "'!" & Kohde
-    .Comment.Visible = False
-    .Comment.Shape.DrawingObject.Shadow = False
-    .Comment.Shape.DrawingObject.AutoSize = True
-    MuutaLinkki = Arvo
-End With
-End Function
-Sub TarkistaVaihto(Vaihto As Long, ViimRivi As Long, Riveja As Long)
-'''
-' TarkistaVaihto: Varmistaa, että sivunvaihdot ovat oikeissa riveissä tulostetaulukossa.
-'''
-Dim SVRivi As Long
-On Error GoTo VirheSivunLuvussa
-  
-'  SVRivi = CInt(ActiveSheet.HPageBreaks(Vaihto).Location.Row)
-  'Automaattinen sivunvaihto tuli huonoon kohtaan, joten lisätään uusi edelliseen sopivaan paikkaan
-  Cells(ViimRivi, 1).Select
-    ActiveSheet.HPageBreaks.Add Before:=ActiveCell ' Add a page break before the active cell
-
-Ulos_TarkistaVaihto:
-  Exit Sub
-        
-VirheSivunLuvussa:
-  'Sivunvaihto tuli juuri oikeaan kohtaan, vahvistetaan se vielä
-  Cells(ViimRivi + Riveja + 1, 1).Select
-  ActiveSheet.HPageBreaks.Add Before:=ActiveCell
-  Resume Ulos_TarkistaVaihto
-  
-End Sub
 Sub PopulateRevisionsSimple()
 '''
 ' PopulateRevisionsSimple: Lightweight function to populate Revisions sheet without comment processing.
 ' Finds the first cell with revision data markers and writes DIRevArr data directly.
-' Much faster than VaihdaInfo because it doesn't loop through comments.
 '''
 Dim ws As Worksheet
 Dim r As Long, startRow As Long
@@ -737,15 +579,17 @@ Dim wsLinking As Worksheet
   
   If wsLinking Is Nothing Then Exit Sub
   
-BeginFastMode2
   Sheets("LINKING").Select
   Cells(1, 1).Activate
+  On Error Resume Next
   ActiveCell.SpecialCells(xlCellTypeFormulas).Select
-  Application.StatusBar = "Setting up comments in LINKING sheet (" & Selection.Cells.Count & ")"
-  For Each Solu In Selection.Cells
-    Solu.AddComment CStr(Solu.Value)
-  Next
+  If Err.Number = 0 Then
+    Application.StatusBar = "Setting up comments in LINKING sheet (" & Selection.Cells.Count & ")"
+    For Each Solu In Selection.Cells
+      Solu.AddComment CStr(Solu.Value)
+    Next
+  End If
+  On Error GoTo 0
   Application.DisplayCommentIndicator = xlCommentIndicatorOnly
   Cells(1, 1).Activate
-EndFastMode2
 End Sub
