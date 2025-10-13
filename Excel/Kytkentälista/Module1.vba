@@ -428,6 +428,16 @@ Dim wsErrors As Worksheet
   
   ' Fetch document info from DB2 sheet
   HaeDocTiedot
+  
+  ' Check if data was loaded from DB2
+  If DIProject = "" And DIDocNo = "" And DIProjNo = "" And DIMetsoDocNo = "" Then
+    wsErrors.Range("A1").Value = "WARNING: No document metadata found in DB2 sheet!"
+    wsErrors.Range("A2").Value = "Please click 'Get Data' button first to load data from database."
+    wsErrors.Range("A1").Font.Bold = True
+    wsErrors.Range("A1").Font.ColorIndex = 3 ' Red
+    Debug.Print "Checkout: No data found in DB2 - Info sheet will be empty"
+  End If
+  
   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
   
   ' Search for row markers in TEMPLATE

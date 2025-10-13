@@ -100,7 +100,16 @@ Dim wsDB2 As Worksheet
       Case Else
     End Select
     i = i + 1
+    ' Safety check: prevent infinite loop (Excel max columns)
+    If i > 16384 Then Exit Do
   Loop
+  
+  ' DEBUG: Report what was loaded
+  Debug.Print "HaeDocTiedot completed. Loaded " & (i - 1) & " columns from DB2"
+  Debug.Print "  DIProject: '" & DIProject & "'"
+  Debug.Print "  DIManager: '" & DIManager & "'"
+  Debug.Print "  DIDocNo: '" & DIDocNo & "'"
+  Debug.Print "  DIProjNo: '" & DIProjNo & "'"
 End Sub
 Sub VaihdaInfo(Optional Sheet As String = "Info")
 '''
@@ -120,7 +129,16 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   Set ws = Sheets(Sheet)
   On Error GoTo 0
   
-  If ws Is Nothing Then Exit Sub
+  If ws Is Nothing Then
+    Debug.Print "VaihdaInfo: Sheet '" & Sheet & "' not found!"
+    Exit Sub
+  End If
+  
+  ' DEBUG: Report sheet info
+  Debug.Print "VaihdaInfo: Processing sheet '" & Sheet & "' with " & ws.Comments.Count & " comments"
+  If ws.Comments.Count = 0 Then
+    Debug.Print "  WARNING: No comments found in sheet - Info will remain empty!"
+  End If
   
   ' Initialize flags for one-time processing of Revisions sheet arrays
   processedRevId = False
@@ -132,7 +150,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   
   With ws
     For i = 1 To .Comments.Count 'Going through all comments
-        Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
+        Select Case LCase(.Comments(i).Text) ' Convert comment text to lowercase
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
         Case "project"
@@ -316,7 +334,7 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
        ' Found header - add comment to TEMPLATE
        With wsTemplate.Cells(Rivi, Sarake)
          .AddComment
-         .Comment.text text:=LRivi & ":" & i
+         .Comment.Text Text:=LRivi & ":" & i
          .Comment.Shape.DrawingObject.AutoSize = True
        End With
        EtsiOts = True
@@ -341,6 +359,8 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
            Exit Do
          End If
          j = j + 1
+         ' Safety check: prevent infinite loop
+         If j > 10000 Then Exit Do
        Loop
        EtsiOts = False
        Exit Do
@@ -362,7 +382,7 @@ Dim Kaava As String
 Dim Osoite As String
   With TargetSheet
     For i = 1 To .Comments.Count 'Going through all comments
-         Teksti = .Comments(i).text ' Get the comment text
+         Teksti = .Comments(i).Text ' Get the comment text
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
        TCol = CInt(Mid(Teksti, 3))
@@ -418,7 +438,7 @@ Dim i As Long
   For r = 1 To 20
     For i = 1 To 10 ' Check first 10 columns
       If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
-      Select Case LCase(ws.Cells(r, i).Comment.text)
+      Select Case LCase(ws.Cells(r, i).Comment.Text)
         Case "revid"
           revIdCol = i: If startRow = 0 Then startRow = r
         Case "revdate"
