@@ -4,60 +4,72 @@
 '''
 
 Sub HaeDocTiedot()
-'''
-' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
-' Used for populating headers, footers, and info fields in the printout.
-' Optimized: Removed Select/Activate, uses direct worksheet references.
-'''
-Dim i As Long
+Dim i As Integer
 Dim Arvo As String
-Dim wsDB2 As Worksheet
+DIRev = ""
+DIRevID = ""
+DIRevDate = ""
+DIDocNo = ""
+DIMetsoDocNo = ""
+DIProject = ""
+DIStatus = ""
+DIDocName = ""
+DIDocName1 = ""
+DIDocName2 = ""
+DIDocName3 = ""
+DIContract = ""
+DIProjNo = ""
+DIProjName = ""
+DIPath = ""
+DIDate = ""
+DIManager = ""
+DIMunit = ""
+DIMill = ""
+DIDepartName = ""
+DICustomer = ""
+DIFile = ""
 
-  ' Initialize all document info variables
-  DIRev = ""
-  DIRevID = ""
-  DIRevDate = ""
-  DIDocNo = ""
-  DIMetsoDocNo = ""
-  DIProject = ""
-  DIStatus = ""
-  DIDocName = ""
-  DIDocName1 = ""
-  DIDocName2 = ""
-  DIDocName3 = ""
-  DIContract = ""
-  DIProjNo = ""
-  DIProjName = ""
-  DIPath = ""
-  DIDate = ""
-  DIManager = ""
-  DIMunit = ""
-  DIMill = ""
-  DIDepartName = ""
-  DICustomer = ""
-  DIFile = ""
-
-  On Error Resume Next
-  Set wsDB2 = Sheets("DB2")
-  On Error GoTo 0
+  Dim wsDB2 As Worksheet
+  Set wsDB2 = Worksheets("DB2")
   
-  If wsDB2 Is Nothing Then Exit Sub
+  ' Debug: Check if DB2 has data
+  If wsDB2.Cells(2, 1).Value = "" Then
+    Debug.Print "HaeDocTiedot: WARNING - DB2 sheet has no data in row 2!"
+    Debug.Print "HaeDocTiedot: DB2 appears to be empty. Make sure 'Get Data' was clicked first."
+    ' Don't exit - continue to clear variables but log warning
+  End If
   
   i = 1
   Do
-     Arvo = LCase(wsDB2.Cells(1, i).Value) ' Convert cell value to lowercase
+    Arvo = LCase(wsDB2.Cells(1, i).Value)
     Select Case Arvo
       Case "rev"
+        ' Rev contains full revision history with linebreaks
+        ' Format: "B 21.5.2025/TKa/JKa/JKa/After HW FAT" + Chr(10) + "A 13.5.2025/..." etc.
         DIRev = wsDB2.Cells(2, i).Value
-        Erase DIRevArr
-        DIRevArr() = Split(DIRev, Chr(10))
+        DIRevArr = Split(DIRev, Chr(10))
+        
+        ' Extract first revision ID: First character (can be letter or number)
+        If Len(DIRev) > 0 Then
+          DIRevID = Left(DIRev, 1) ' First character (e.g., "B")
+        End If
+        
+        ' Extract first revision date (format: "B 21.5.2025/...")
+        If InStr(DIRev, " ") > 0 And InStr(DIRev, "/") > 0 Then
+          Dim revParts As String
+          revParts = Split(DIRev, "/")(0) ' Get part before first /
+          If InStr(revParts, " ") > 0 Then
+            DIRevDate = Trim(Mid(revParts, InStr(revParts, " ") + 1)) ' Get date after space
+          End If
+        End If
       Case "revid"
         DIRevID = wsDB2.Cells(2, i).Value
       Case "revdate"
         DIRevDate = wsDB2.Cells(2, i).Value
-      Case "date"
+      Case "date", "dateoriginal"
         DIDate = wsDB2.Cells(2, i).Value
-      Case "docno"
+      Case "docno", "clientno"
+        ' docno is clientno column
         DIDocNo = wsDB2.Cells(2, i).Value
       Case "metsodocno"
         DIMetsoDocNo = wsDB2.Cells(2, i).Value
@@ -65,13 +77,17 @@ Dim wsDB2 As Worksheet
         DIProject = wsDB2.Cells(2, i).Value
       Case "status"
         DIStatus = wsDB2.Cells(2, i).Value
-      Case "docname"
+      Case "docname", "extdocid"
         DIDocName = wsDB2.Cells(2, i).Value
       Case "docname1"
+        ' docname1 is Customer
         DIDocName1 = wsDB2.Cells(2, i).Value
+        DICustomer = wsDB2.Cells(2, i).Value ' Customer = docname1
       Case "docname2"
+        ' docname2 is Mill
         DIDocName2 = wsDB2.Cells(2, i).Value
-       Case "docname3"
+        DIMill = wsDB2.Cells(2, i).Value ' Mill = docname2
+      Case "docname3"
         DIDocName3 = wsDB2.Cells(2, i).Value
       Case "contractno"
         DIContract = wsDB2.Cells(2, i).Value
@@ -80,13 +96,16 @@ Dim wsDB2 As Worksheet
       Case "name"
         DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath"
+        ' workpath contains project number after "P:\"
         DIPath = wsDB2.Cells(2, i).Value & IIf(Right(wsDB2.Cells(2, i).Value, 1) = "\", "", "\")
+        ' Extract ProjNo: 8 characters after "P:\" (e.g., "24PRO229")
+        Dim pathStr As String
+        pathStr = wsDB2.Cells(2, i).Value
+        If InStr(pathStr, "P:\") > 0 Then
+          DIProjNo = Mid(pathStr, InStr(pathStr, "P:\") + 3, 8)
+        End If
       Case "manager"
         DIManager = wsDB2.Cells(2, i).Value
-      Case "status"
-        DIStatus = wsDB2.Cells(2, i).Value
-      Case "mill"
-        DIMill = wsDB2.Cells(2, i).Value
       Case "departname"
         DIDepartName = wsDB2.Cells(2, i).Value
       Case "customer"
@@ -101,60 +120,95 @@ Dim wsDB2 As Worksheet
     End Select
     i = i + 1
   Loop
+  
+  ' Build composite fields after loop
+  ' Project = Customer + Mill (docname1 + docname2)
+  If DIProject = "" Then
+    DIProject = DICustomer & " " & DIMill
+  End If
+  
+  ' ProjName = Customer + Mill (docname1 + docname2)
+  If DIProjName = "" Then
+    DIProjName = DICustomer & " " & DIMill
+  End If
+  
+  ' Date = current date if not provided
+  If DIDate = "" Then
+    DIDate = Format(Date, "dd.mm.yyyy")
+  End If
+  
+  ' Debug output
+  Debug.Print "HaeDocTiedot: Populated variables:"
+  Debug.Print "  DICustomer: '" & DICustomer & "'"
+  Debug.Print "  DIMill: '" & DIMill & "'"
+  Debug.Print "  DIProject: '" & DIProject & "'"
+  Debug.Print "  DIProjName: '" & DIProjName & "'"
+  Debug.Print "  DIProjNo: '" & DIProjNo & "'"
+  Debug.Print "  DIDocNo: '" & DIDocNo & "'"
+  Debug.Print "  DIDocName: '" & DIDocName & "'"
+  Debug.Print "  DIDocName3: '" & DIDocName3 & "'"
+  Debug.Print "  DIStatus: '" & DIStatus & "'"
+  Debug.Print "  DIRevID: '" & DIRevID & "'"
+  Debug.Print "  DIRevDate: '" & DIRevDate & "'"
+  
+  Worksheets("TEMPLATE").Select
 End Sub
 Sub VaihdaInfo(Optional Sheet As String = "Info")
-'''
-' VaihdaInfo: Updates the specified sheet's comment-annotated cells with document property values.
-' Handles Info and Revisions sheets. Uses fast mode for performance.
-'''
 Dim i As Long
 Dim Row As Long
 Dim Column As Long
 Dim r As Long
-Dim ws As Worksheet
-Dim processedRevId As Boolean, processedRevDate As Boolean
-Dim processedDesigner As Boolean, processedChecker As Boolean
-Dim processedApprover As Boolean, processedDesc As Boolean
 
   On Error Resume Next
-  Set ws = Sheets(Sheet)
+  Worksheets(Sheet).Select
+  If Err.Number <> 0 Then
+    Err.Clear
+    Exit Sub
+  End If
   On Error GoTo 0
   
-  If ws Is Nothing Then Exit Sub
-  
-  ' Initialize flags for one-time processing of Revisions sheet arrays
-  processedRevId = False
-  processedRevDate = False
-  processedDesigner = False
-  processedChecker = False
-  processedApprover = False
-  processedDesc = False
-  
-  With ws
-    For i = 1 To .Comments.Count 'Going through all comments
-        Select Case LCase(.Comments(i).text) ' Convert comment text to lowercase
+  With ActiveSheet
+    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+      Dim commentText As String
+      commentText = LCase(.Comments(i).Text)
+      
+      ' Debug output
+      Debug.Print "VaihdaInfo: Comment '" & commentText & "' at " & .Comments(i).Parent.Address
+      
+      Select Case commentText
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
+          Debug.Print "  -> Set to: Metso Paper - " & DIMunit
         Case "project"
           .Comments(i).Parent.Value = DIProject
+          Debug.Print "  -> Set to: " & DIProject
         Case "manager"
           .Comments(i).Parent.Value = DIManager
+          Debug.Print "  -> Set to: " & DIManager
         Case "contractno"
           .Comments(i).Parent.Value = DIContract
+          Debug.Print "  -> Set to: " & DIContract
         Case "projname"
           .Comments(i).Parent.Value = DIProjName
+          Debug.Print "  -> Set to: " & DIProjName
         Case "projno"
           .Comments(i).Parent.Value = DIProjNo
+          Debug.Print "  -> Set to: " & DIProjNo
         Case "date"
           .Comments(i).Parent.Value = DIDate
+          Debug.Print "  -> Set to: " & DIDate
         Case "status"
           .Comments(i).Parent.Value = DIStatus
+          Debug.Print "  -> Set to: " & DIStatus
         Case "mill"
           .Comments(i).Parent.Value = DIMill
+          Debug.Print "  -> Set to: " & DIMill
         Case "departname"
           .Comments(i).Parent.Value = DIDepartName
+          Debug.Print "  -> Set to: " & DIDepartName
         Case "customer"
           .Comments(i).Parent.Value = DICustomer
+          Debug.Print "  -> Set to: " & DICustomer
         Case "docname"
           .Comments(i).Parent.Value = DIDocName
         Case "docname1"
@@ -169,120 +223,90 @@ Dim processedApprover As Boolean, processedDesc As Boolean
           .Comments(i).Parent.Value = DIRev
         Case "revid"
           If Sheet <> "Info" Then
-            If Not processedRevId Then
-              On Error Resume Next
-              ' Only process if DIRevArr has data
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                 If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
-                   Row = Row + 1
-                 End If
-                Next r
-              End If
-              On Error GoTo 0
-              processedRevId = True
-            End If
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+             If Err.Number = 0 And (DIRevArr(r) <> "") Then
+               .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
+               Row = Row + 1
+             End If
+            Next r
+            On Error GoTo 0
           Else
             .Comments(i).Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
           If Sheet <> "Info" Then
-            If Not processedRevDate Then
-              On Error Resume Next
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                  If (DIRevArr(r) <> "") Then
-                    .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
-                    Row = Row + 1
-                  End If
-                Next r
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+              If Err.Number = 0 And (DIRevArr(r) <> "") Then
+                .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
+                Row = Row + 1
               End If
-              On Error GoTo 0
-              processedRevDate = True
-            End If
+            Next r
+            On Error GoTo 0
           Else
             .Comments(i).Parent.Value = DIRevDate
           End If
         Case "designer"
           If Sheet <> "Info" Then
-            If Not processedDesigner Then
-              On Error Resume Next
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                  If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
-                   Row = Row + 1
-                  End If
-                Next r
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+              If Err.Number = 0 And (DIRevArr(r) <> "") Then
+               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
+               Row = Row + 1
               End If
-              On Error GoTo 0
-              processedDesigner = True
-            End If
+            Next r
+            On Error GoTo 0
           End If
         Case "checker"
           If Sheet <> "Info" Then
-            If Not processedChecker Then
-              On Error Resume Next
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                  If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
-                   Row = Row + 1
-                  End If
-                Next r
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+              If Err.Number = 0 And (DIRevArr(r) <> "") Then
+               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
+               Row = Row + 1
               End If
-              On Error GoTo 0
-              processedChecker = True
-            End If
+            Next r
+            On Error GoTo 0
           End If
         Case "approver"
           If Sheet <> "Info" Then
-            If Not processedApprover Then
-              On Error Resume Next
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                  If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
-                   Row = Row + 1
-                  End If
-                Next r
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+              If Err.Number = 0 And (DIRevArr(r) <> "") Then
+               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
+               Row = Row + 1
               End If
-              On Error GoTo 0
-              processedApprover = True
-            End If
+            Next r
+            On Error GoTo 0
           End If
         Case "desc"
           If Sheet <> "Info" Then
-            If Not processedDesc Then
-              On Error Resume Next
-              If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
-                For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
-                  If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
-                   Row = Row + 1
-                  End If
-                Next r
+            On Error Resume Next
+            Row = .Comments(i).Parent.Row
+            Column = .Comments(i).Parent.Column
+            For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
+              If Err.Number = 0 And (DIRevArr(r) <> "") Then
+               .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
+               Row = Row + 1
               End If
-              On Error GoTo 0
-              processedDesc = True
-            End If
+            Next r
+            On Error GoTo 0
           End If
         End Select
       Next i
   End With
+  Worksheets("TEMPLATE").Select
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
 '''
@@ -316,7 +340,7 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
        ' Found header - add comment to TEMPLATE
        With wsTemplate.Cells(Rivi, Sarake)
          .AddComment
-         .Comment.text text:=LRivi & ":" & i
+         .Comment.Text Text:=LRivi & ":" & i
          .Comment.Shape.DrawingObject.AutoSize = True
        End With
        EtsiOts = True
@@ -341,6 +365,8 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
            Exit Do
          End If
          j = j + 1
+         ' Safety check: prevent infinite loop
+         If j > 10000 Then Exit Do
        Loop
        EtsiOts = False
        Exit Do
@@ -362,7 +388,7 @@ Dim Kaava As String
 Dim Osoite As String
   With TargetSheet
     For i = 1 To .Comments.Count 'Going through all comments
-         Teksti = .Comments(i).text ' Get the comment text
+         Teksti = .Comments(i).Text ' Get the comment text
        Osoite = .Comments(i).Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
        TCol = CInt(Mid(Teksti, 3))
@@ -418,7 +444,7 @@ Dim i As Long
   For r = 1 To 20
     For i = 1 To 10 ' Check first 10 columns
       If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
-      Select Case LCase(ws.Cells(r, i).Comment.text)
+      Select Case LCase(ws.Cells(r, i).Comment.Text)
         Case "revid"
           revIdCol = i: If startRow = 0 Then startRow = r
         Case "revdate"
