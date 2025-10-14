@@ -32,34 +32,26 @@ DIFile = ""
   Dim wsDB2 As Worksheet
   Set wsDB2 = Worksheets("DB2")
   
-  ' Debug: Check if DB2 has data
-  If wsDB2.Cells(2, 1).Value = "" Then
-    Debug.Print "HaeDocTiedot: WARNING - DB2 sheet has no data in row 2!"
-    Debug.Print "HaeDocTiedot: DB2 appears to be empty. Make sure 'Get Data' was clicked first."
-    ' Don't exit - continue to clear variables but log warning
-  End If
-  
   i = 1
   Do
     Arvo = LCase(wsDB2.Cells(1, i).Value)
     Select Case Arvo
       Case "rev"
-        ' Rev contains full revision history with linebreaks
-        ' Format: "B 21.5.2025/TKa/JKa/JKa/After HW FAT" + Chr(10) + "A 13.5.2025/..." etc.
+        ' Parse revision history: "B 21.5.2025/TKa/JKa/JKa/After HW FAT" + Chr(10) + "A 13.5.2025/..."
         DIRev = wsDB2.Cells(2, i).Value
         DIRevArr = Split(DIRev, Chr(10))
         
-        ' Extract first revision ID: First character (can be letter or number)
+        ' Extract first revision ID (first character)
         If Len(DIRev) > 0 Then
-          DIRevID = Left(DIRev, 1) ' First character (e.g., "B")
+          DIRevID = Left(DIRev, 1)
         End If
         
-        ' Extract first revision date (format: "B 21.5.2025/...")
+        ' Extract first revision date
         If InStr(DIRev, " ") > 0 And InStr(DIRev, "/") > 0 Then
           Dim revParts As String
-          revParts = Split(DIRev, "/")(0) ' Get part before first /
+          revParts = Split(DIRev, "/")(0)
           If InStr(revParts, " ") > 0 Then
-            DIRevDate = Trim(Mid(revParts, InStr(revParts, " ") + 1)) ' Get date after space
+            DIRevDate = Trim(Mid(revParts, InStr(revParts, " ") + 1))
           End If
         End If
       Case "revid"
@@ -69,7 +61,6 @@ DIFile = ""
       Case "date", "dateoriginal"
         DIDate = wsDB2.Cells(2, i).Value
       Case "docno", "clientno"
-        ' docno is clientno column
         DIDocNo = wsDB2.Cells(2, i).Value
       Case "metsodocno"
         DIMetsoDocNo = wsDB2.Cells(2, i).Value
@@ -80,13 +71,11 @@ DIFile = ""
       Case "docname", "extdocid"
         DIDocName = wsDB2.Cells(2, i).Value
       Case "docname1"
-        ' docname1 is Customer
         DIDocName1 = wsDB2.Cells(2, i).Value
-        DICustomer = wsDB2.Cells(2, i).Value ' Customer = docname1
+        DICustomer = wsDB2.Cells(2, i).Value
       Case "docname2"
-        ' docname2 is Mill
         DIDocName2 = wsDB2.Cells(2, i).Value
-        DIMill = wsDB2.Cells(2, i).Value ' Mill = docname2
+        DIMill = wsDB2.Cells(2, i).Value
       Case "docname3"
         DIDocName3 = wsDB2.Cells(2, i).Value
       Case "contractno"
@@ -96,9 +85,8 @@ DIFile = ""
       Case "name"
         DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath"
-        ' workpath contains project number after "P:\"
         DIPath = wsDB2.Cells(2, i).Value & IIf(Right(wsDB2.Cells(2, i).Value, 1) = "\", "", "\")
-        ' Extract ProjNo: 8 characters after "P:\" (e.g., "24PRO229")
+        ' Extract project number: 8 characters after "P:\"
         Dim pathStr As String
         pathStr = wsDB2.Cells(2, i).Value
         If InStr(pathStr, "P:\") > 0 Then
@@ -121,35 +109,18 @@ DIFile = ""
     i = i + 1
   Loop
   
-  ' Build composite fields after loop
-  ' Project = Customer + Mill (docname1 + docname2)
+  ' Build composite fields if not provided
   If DIProject = "" Then
     DIProject = DICustomer & " " & DIMill
   End If
   
-  ' ProjName = Customer + Mill (docname1 + docname2)
   If DIProjName = "" Then
     DIProjName = DICustomer & " " & DIMill
   End If
   
-  ' Date = current date if not provided
   If DIDate = "" Then
     DIDate = Format(Date, "dd.mm.yyyy")
   End If
-  
-  ' Debug output
-  Debug.Print "HaeDocTiedot: Populated variables:"
-  Debug.Print "  DICustomer: '" & DICustomer & "'"
-  Debug.Print "  DIMill: '" & DIMill & "'"
-  Debug.Print "  DIProject: '" & DIProject & "'"
-  Debug.Print "  DIProjName: '" & DIProjName & "'"
-  Debug.Print "  DIProjNo: '" & DIProjNo & "'"
-  Debug.Print "  DIDocNo: '" & DIDocNo & "'"
-  Debug.Print "  DIDocName: '" & DIDocName & "'"
-  Debug.Print "  DIDocName3: '" & DIDocName3 & "'"
-  Debug.Print "  DIStatus: '" & DIStatus & "'"
-  Debug.Print "  DIRevID: '" & DIRevID & "'"
-  Debug.Print "  DIRevDate: '" & DIRevDate & "'"
   
   Worksheets("TEMPLATE").Select
 End Sub
@@ -172,43 +143,29 @@ Dim r As Long
       Dim commentText As String
       commentText = LCase(.Comments(i).Text)
       
-      ' Debug output
-      Debug.Print "VaihdaInfo: Comment '" & commentText & "' at " & .Comments(i).Parent.Address
-      
       Select Case commentText
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
-          Debug.Print "  -> Set to: Metso Paper - " & DIMunit
         Case "project"
           .Comments(i).Parent.Value = DIProject
-          Debug.Print "  -> Set to: " & DIProject
         Case "manager"
           .Comments(i).Parent.Value = DIManager
-          Debug.Print "  -> Set to: " & DIManager
         Case "contractno"
           .Comments(i).Parent.Value = DIContract
-          Debug.Print "  -> Set to: " & DIContract
         Case "projname"
           .Comments(i).Parent.Value = DIProjName
-          Debug.Print "  -> Set to: " & DIProjName
         Case "projno"
           .Comments(i).Parent.Value = DIProjNo
-          Debug.Print "  -> Set to: " & DIProjNo
         Case "date"
           .Comments(i).Parent.Value = DIDate
-          Debug.Print "  -> Set to: " & DIDate
         Case "status"
           .Comments(i).Parent.Value = DIStatus
-          Debug.Print "  -> Set to: " & DIStatus
         Case "mill"
           .Comments(i).Parent.Value = DIMill
-          Debug.Print "  -> Set to: " & DIMill
         Case "departname"
           .Comments(i).Parent.Value = DIDepartName
-          Debug.Print "  -> Set to: " & DIDepartName
         Case "customer"
           .Comments(i).Parent.Value = DICustomer
-          Debug.Print "  -> Set to: " & DICustomer
         Case "docname"
           .Comments(i).Parent.Value = DIDocName
         Case "docname1"

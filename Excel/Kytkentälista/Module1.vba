@@ -127,30 +127,15 @@ Dim Yhteys As String
     ws.Cells.Clear
     If sSQL(i) <> "" Then
 
-      ' ============================================================================
-      ' 64-BIT ODBC COMPATIBILITY FIX FOR ACCESS SAVED QUERIES
-      ' ============================================================================
-      ' Access saved queries work differently in 64-bit ODBC:
-      '   - 32-bit ODBC: Accepts "FROM _qryForExcel" syntax for saved queries
-      '   - 64-bit ODBC: Requires brackets around query names with underscores
-      '   - Without brackets, 64-bit ODBC throws: "ODBC Error: Database Connection Error
-
-      ' Solution:
-      '   Automatically wrap saved query names in brackets: FROM [_qryForExcel]
-      '   Works in both 32-bit and 64-bit ODBC drivers
-  
+      ' 64-bit ODBC requires brackets around Access saved query names with underscores
+      ' Convert: FROM _qryForExcel -> FROM [_qryForExcel]
       Dim sqlQuery As String
       sqlQuery = sSQL(i)
       
-      Debug.Print "HaeData: DB" & i & " - Original query: " & sqlQuery
-      
-      ' Fix for 64-bit ODBC: add brackets around _qryForExcel
       If InStr(1, sqlQuery, "_qryForExcel", vbTextCompare) > 0 Then
-        ' Replace all variations
         sqlQuery = Replace(sqlQuery, "FROM _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
         sqlQuery = Replace(sqlQuery, "from _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
         sqlQuery = Replace(sqlQuery, "FROM_qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
-        Debug.Print "HaeData: DB" & i & " - Modified query: " & sqlQuery
       End If
 
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
@@ -167,11 +152,8 @@ Dim Yhteys As String
         On Error Resume Next
         .Refresh
         If Err.Number <> 0 Then
-          Debug.Print "HaeData: ERROR on DB" & i & " refresh: " & Err.Description
-          Debug.Print "HaeData: Query was: " & sqlQuery
           MsgBox "Error refreshing DB" & i & ":" & vbCrLf & vbCrLf & _
                  Err.Description & vbCrLf & vbCrLf & _
-                 "Query: " & sqlQuery & vbCrLf & vbCrLf & _
                  "This sheet will be empty.", vbCritical, "Query Error"
           Err.Clear
         End If
@@ -186,14 +168,10 @@ Dim Yhteys As String
       ' Check if query returned any data
       Dim rowCount As Long
       rowCount = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-      Debug.Print "HaeData: DB" & i & " - Query returned " & (rowCount - 1) & " data rows (plus header)"
       
       If rowCount <= 1 Then
-        Debug.Print "HaeData: WARNING - DB" & i & " has NO DATA ROWS!"
-        Debug.Print "HaeData: Query was: " & sqlQuery
         If i = 2 Then
           MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
-                 "Query: " & sqlQuery & vbCrLf & vbCrLf & _
                  "This means the Info sheet will be empty." & vbCrLf & vbCrLf & _
                  "Check the query in Main sheet - you may need to:" & vbCrLf & _
                  "1. Add wildcards: WHERE DocName3 like '%Kytkentalista%'" & vbCrLf & _
@@ -458,7 +436,7 @@ Dim wsErrors As Worksheet
   CheckOK = False
   RMAX = 0
   Virhe = False
-  Application.ScreenUpdating = False
+  BeginFastMode
   
   Set wsErrors = Sheets("ERRORS")
   Set wsTemplate = Sheets("TEMPLATE")
@@ -524,7 +502,7 @@ Dim wsErrors As Worksheet
     wsErrors.Range("A3").Value = "- Neither you can have £1/2 and £1/3 links on same template."
     wsErrors.Range("A4").Value = "- Please correct these errors and try again!"
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     MsgBox "There where errors on template, see ERRORS sheet!", vbCritical, "Error!"
     Exit Sub
   End If
@@ -546,18 +524,18 @@ Dim wsErrors As Worksheet
   
   If Virhe Then
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     MsgBox "There were errors on the template! See ERRORS sheet.", vbCritical, "Error!"
   Else
     Sheets("Main").Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     CheckOK = True
     MsgBox "Check OK!", vbOKOnly, "OK!"
   End If
   Exit Sub
 
 CheckoutError:
-  Application.ScreenUpdating = True
+  EndFastMode
   MsgBox "Error in Checkout: " & Err.Description, vbCritical, "Checkout Error"
   Err.Clear
   On Error GoTo 0
