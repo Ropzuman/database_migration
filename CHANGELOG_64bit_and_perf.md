@@ -45,9 +45,24 @@ Summary of changes
     - Added ODBC error handling in HaeData with database file existence check and detailed error messages to diagnose runtime error 1004.
     - Fixed HaeData error handler logic: moved success message outside error handler so it only shows on successful completion, not after errors.
     - Removed SQLSuffix logic from HaeData: was commented out in original code and caused issues. Now uses ORDER BY only if specified in faceplate query.
-    - HaeData now skips Excel-based queries (_qryForExcel): prevents ODBC errors when document property queries reference Excel files instead of Access database.
     - Fixed EtsiOts function: removed erroneous EndFastMode2 call and added infinite loop protection (max column iteration safety check at 16384 columns).
     - Fixed VaihdaInfo function: removed orphaned BeginFastMode2 call in "revid" case that had no matching EndFastMode2, causing Excel to freeze when Checkout validated Revisions sheet.
+    
+5) 64-bit ODBC driver compatibility for Access saved queries
+    - **Issue:** Access saved queries (e.g., `_qryForExcel`) work differently between 32-bit and 64-bit ODBC drivers.
+    - **Root cause:** 
+      - 32-bit ODBC driver accepts: `SELECT * FROM _qryForExcel WHERE ...`
+      - 64-bit ODBC driver requires brackets: `SELECT * FROM [_qryForExcel] WHERE ...`
+      - Query names starting with underscore need proper escaping in 64-bit ODBC
+    - **Error encountered:** "ODBC Error: Database Connection Error" when executing queries referencing saved Access queries
+    - **Solution implemented in HaeData (Module1.vba):**
+      - Automatically detects query references to `_qryForExcel` in SQL statements
+      - Wraps query name in brackets using: `Replace("FROM _qryForExcel", "FROM [_qryForExcel]")`
+      - Case-insensitive replacement to handle any SQL variant
+      - Maintains backwards compatibility: works with both 32-bit and 64-bit ODBC drivers
+      - No changes required to SQL queries in Main sheet faceplate
+    - **Technical rationale:** Brackets `[...]` tell ODBC that the identifier is an object name (saved query), not a SQL keyword. This is required for identifiers with special characters (underscores, spaces) in 64-bit ODBC.
+    - **Impact:** Enables full 64-bit Excel compatibility while preserving existing SQL query syntax used in 32-bit version.
     - **CRITICAL FIX**: Removed `VaihdaInfo("Revisions")` call from Checkout function. This call was causing Excel to freeze because:
       1. During Checkout, the Revisions sheet is being validated and processed with comments
       2. VaihdaInfo("Revisions") triggers nested loops through DIRevArr for every comment (revid, revdate, designer, checker, approver, desc)

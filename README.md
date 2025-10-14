@@ -45,6 +45,20 @@ Key migration changes (from the changelog)
 	- `HaeDocTiedot`, `VaihdaInfo`, and `EtsiOts` validate sheet existence silently and exit gracefully if sheets are missing.
 	- Lightweight error handling for `DIRevArr` array access prevents subscript errors without performance overhead.
 
+6) 64-bit ODBC driver compatibility for Access saved queries
+	- **Issue discovered:** Access saved queries (like `_qryForExcel`) work differently between 32-bit and 64-bit ODBC drivers when queried from Excel via ODBC QueryTables.
+	- **Symptoms:** "ODBC Error: Database Connection Error" when executing queries like `SELECT * FROM _qryForExcel WHERE DocName3 like 'Kytkentälista'`
+	- **Root cause:**
+		- 32-bit Microsoft Access ODBC driver accepts: `FROM _qryForExcel` (without brackets)
+		- 64-bit Microsoft Access ODBC driver requires: `FROM [_qryForExcel]` (with brackets)
+		- Query names starting with underscore need bracket escaping in 64-bit ODBC
+	- **Solution implemented in HaeData (Module1.vba):**
+		- Automatic detection of `_qryForExcel` references in SQL queries
+		- Transparent bracket insertion: `Replace("FROM _qryForExcel", "FROM [_qryForExcel]", case-insensitive)`
+		- Maintains backwards compatibility: works with both 32-bit and 64-bit ODBC drivers
+		- **User impact:** No changes needed to existing SQL queries in the Main sheet
+	- **Testing:** Verify that "Get Data" button successfully populates both DB1 and DB2 sheets without ODBC errors in 64-bit Excel
+
 Quick validation (smoke tests)
 ------------------------------
 1. Open the database in 64-bit Access. Import or confirm the updated modules.

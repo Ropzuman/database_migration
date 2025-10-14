@@ -125,11 +125,37 @@ Dim Yhteys As String
     ' Clear previous data and run query for each DB sheet
     Set ws = ThisWorkbook.Sheets("DB" & i)
     ws.Cells.Clear
-    ' Skip Excel-based queries (_qryForExcel) - only process Access database queries
-    If sSQL(i) <> "" And InStr(1, sSQL(i), "_qryForExcel", vbTextCompare) = 0 Then
+    If sSQL(i) <> "" Then
+
+      ' ============================================================================
+      ' 64-BIT ODBC COMPATIBILITY FIX FOR ACCESS SAVED QUERIES
+      ' ============================================================================
+      ' Access saved queries work differently in 64-bit ODBC:
+      '   - 32-bit ODBC: Accepts "FROM _qryForExcel" syntax for saved queries
+      '   - 64-bit ODBC: Requires brackets around query names with underscores
+      '   - Without brackets, 64-bit ODBC throws: "ODBC Error: Database Connection Error
+
+      ' Solution:
+      '   Automatically wrap saved query names in brackets: FROM [_qryForExcel]
+      '   Works in both 32-bit and 64-bit ODBC drivers
+  
+      Dim sqlQuery As String
+      sqlQuery = sSQL(i)
+      
+      Debug.Print "HaeData: DB" & i & " - Original query: " & sqlQuery
+      
+      ' Fix for 64-bit ODBC: add brackets around _qryForExcel
+      If InStr(1, sqlQuery, "_qryForExcel", vbTextCompare) > 0 Then
+        ' Replace all variations
+        sqlQuery = Replace(sqlQuery, "FROM _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
+        sqlQuery = Replace(sqlQuery, "from _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
+        sqlQuery = Replace(sqlQuery, "FROM_qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
+        Debug.Print "HaeData: DB" & i & " - Modified query: " & sqlQuery
+      End If
+
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
-        .Sql = sSQL(i)
+        .Sql = sqlQuery
         .FieldNames = True
         .RefreshStyle = xlInsertDeleteCells
         .RowNumbers = False
@@ -137,10 +163,44 @@ Dim Yhteys As String
         .HasAutoFormat = True
         .SaveData = True
         .BackgroundQuery = False
+        
+        On Error Resume Next
         .Refresh
+        If Err.Number <> 0 Then
+          Debug.Print "HaeData: ERROR on DB" & i & " refresh: " & Err.Description
+          Debug.Print "HaeData: Query was: " & sqlQuery
+          MsgBox "Error refreshing DB" & i & ":" & vbCrLf & vbCrLf & _
+                 Err.Description & vbCrLf & vbCrLf & _
+                 "Query: " & sqlQuery & vbCrLf & vbCrLf & _
+                 "This sheet will be empty.", vbCritical, "Query Error"
+          Err.Clear
+        End If
+        On Error GoTo ErrorHandler
+        
         .Delete ' Remove query after refresh to avoid leaving connections
       End With
       Set TAULUKKO = Nothing
+      
+      On Error GoTo ErrorHandler
+      
+      ' Check if query returned any data
+      Dim rowCount As Long
+      rowCount = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+      Debug.Print "HaeData: DB" & i & " - Query returned " & (rowCount - 1) & " data rows (plus header)"
+      
+      If rowCount <= 1 Then
+        Debug.Print "HaeData: WARNING - DB" & i & " has NO DATA ROWS!"
+        Debug.Print "HaeData: Query was: " & sqlQuery
+        If i = 2 Then
+          MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
+                 "Query: " & sqlQuery & vbCrLf & vbCrLf & _
+                 "This means the Info sheet will be empty." & vbCrLf & vbCrLf & _
+                 "Check the query in Main sheet - you may need to:" & vbCrLf & _
+                 "1. Add wildcards: WHERE DocName3 like '%Kytkentalista%'" & vbCrLf & _
+                 "2. Check spelling of 'Kytkentalista'" & vbCrLf & _
+                 "3. Verify data exists in the database", vbExclamation, "Query Returned No Data"
+        End If
+      End If
     End If
   Next i
   EndFastMode
