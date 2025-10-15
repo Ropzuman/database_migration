@@ -1,6 +1,7 @@
 '''
 ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
 ' Handles document property extraction, comment-based linking, and error reporting.
+' Updated: Enhanced for OLE DB compatibility - robust column name matching.
 '''
 
 Sub HaeDocTiedot()
@@ -32,14 +33,28 @@ DIFile = ""
   Dim wsDB2 As Worksheet
   Set wsDB2 = Worksheets("DB2")
   
+  ' Check if DB2 has any data (OLE DB should populate this via Module1)
+  If wsDB2.Cells(1, 1).Value = "" Then
+    ' DB2 is empty - no data retrieved from database
+    Exit Sub
+  End If
+  
   i = 1
   Do
-    Arvo = LCase(wsDB2.Cells(1, i).Value)
+    ' Use LCase for case-insensitive matching (OLE DB and ODBC may differ in case)
+    Arvo = LCase(Trim(wsDB2.Cells(1, i).Value))
+    
+    ' OLE DB Compatibility Note:
+    ' Column names from DOCUMENTS table should be identical whether retrieved via ODBC or OLE DB.
+    ' Using LCase() ensures case-insensitive matching for robustness.
+    ' Trim() removes any trailing/leading spaces that might differ between providers.
     Select Case Arvo
       Case "rev"
         ' Parse revision history: "B 21.5.2025/TKa/JKa/JKa/After HW FAT" + Chr(10) + "A 13.5.2025/..."
         DIRev = wsDB2.Cells(2, i).Value
-        DIRevArr = Split(DIRev, Chr(10))
+        If Not IsNull(DIRev) And DIRev <> "" Then
+          DIRevArr = Split(DIRev, Chr(10))
+        End If
         
         ' Extract first revision ID (first character)
         If Len(DIRev) > 0 Then
@@ -85,12 +100,15 @@ DIFile = ""
       Case "name"
         DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath"
-        DIPath = wsDB2.Cells(2, i).Value & IIf(Right(wsDB2.Cells(2, i).Value, 1) = "\", "", "\")
-        ' Extract project number: 8 characters after "P:\"
+        ' OLE DB and ODBC handle paths identically, but check for Null/Empty
         Dim pathStr As String
-        pathStr = wsDB2.Cells(2, i).Value
-        If InStr(pathStr, "P:\") > 0 Then
-          DIProjNo = Mid(pathStr, InStr(pathStr, "P:\") + 3, 8)
+        pathStr = wsDB2.Cells(2, i).Value & ""
+        If pathStr <> "" Then
+          DIPath = pathStr & IIf(Right(pathStr, 1) = "\", "", "\")
+          ' Extract project number: 8 characters after "P:\"
+          If InStr(pathStr, "P:\") > 0 Then
+            DIProjNo = Mid(pathStr, InStr(pathStr, "P:\") + 3, 8)
+          End If
         End If
       Case "manager"
         DIManager = wsDB2.Cells(2, i).Value
