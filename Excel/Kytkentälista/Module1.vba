@@ -81,8 +81,9 @@ Private Sub EndFastMode()
 End Sub
 
 '''
-' HaeData: Fetches data from Access database using ODBC and SQL queries defined in the faceplate.
+' HaeData: Fetches data from Access database using OLE DB and SQL queries defined in the faceplate.
 ' Populates DB1 and DB2 sheets with the results. Uses fast mode for performance.
+' Updated: Switched from ODBC to OLE DB for better 64-bit Office 365 compatibility.
 '''
 Sub HaeData()
 Dim Kanta As String
@@ -116,7 +117,20 @@ Dim Yhteys As String
     Exit Sub
   End If
   
-  Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
+  ' Use OLE DB instead of ODBC for better 64-bit Office 365 compatibility
+  ' Try ACE.OLEDB providers in order: 16.0 (Office 2016+), 15.0 (Office 2013), 12.0 (Office 2010)
+  Dim fileExt As String
+  fileExt = LCase(Right(Kanta, 6))  ' Get last 6 characters to handle both .mdb and .accdb
+  
+  ' Always use OLE DB for Access databases (.mdb and .accdb)
+  If InStr(fileExt, ".mdb") > 0 Or InStr(fileExt, ".accdb") > 0 Then
+    ' Try Office 2016+ provider first (most likely for Office 365)
+    Yhteys = "OLEDB;Provider=Microsoft.ACE.OLEDB.16.0;Data Source=" & Kanta
+  Else
+    ' Fallback to ODBC only if not an Access database file
+    Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
+  End If
+  
   Dim ws As Worksheet
   
   On Error GoTo ErrorHandler
@@ -127,17 +141,17 @@ Dim Yhteys As String
     ws.Cells.Clear
     If sSQL(i) <> "" Then
 
-      ' 64-bit ODBC requires brackets around Access saved query names with underscores
-      ' Convert: FROM _qryForExcel -> FROM [_qryForExcel]
+      ' OLE DB handles Access queries properly - no bracket workarounds needed
       Dim sqlQuery As String
       sqlQuery = sSQL(i)
       
-      If InStr(1, sqlQuery, "_qryForExcel", vbTextCompare) > 0 Then
-        sqlQuery = Replace(sqlQuery, "FROM _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
-        sqlQuery = Replace(sqlQuery, "from _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
-        sqlQuery = Replace(sqlQuery, "FROM_qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
-      End If
-
+      ' Try OLE DB providers with automatic fallback
+      Dim connectionSuccess As Boolean
+      Dim errorMsg As String
+      connectionSuccess = False
+      
+      ' Try ACE.OLEDB.16.0 first (Office 2016+)
+      On Error Resume Next
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
         .Sql = sqlQuery
@@ -148,35 +162,89 @@ Dim Yhteys As String
         .HasAutoFormat = True
         .SaveData = True
         .BackgroundQuery = False
-        
-        On Error Resume Next
         .Refresh
-        If Err.Number <> 0 Then
-          MsgBox "Error refreshing DB" & i & ":" & vbCrLf & vbCrLf & _
-                 Err.Description & vbCrLf & vbCrLf & _
-                 "This sheet will be empty.", vbCritical, "Query Error"
-          Err.Clear
-        End If
-        On Error GoTo ErrorHandler
-        
-        .Delete ' Remove query after refresh to avoid leaving connections
       End With
-      Set TAULUKKO = Nothing
+      
+      If Err.Number = 0 Then
+        connectionSuccess = True
+      Else
+        errorMsg = Err.Description
+        Err.Clear
+        
+        ' Delete failed QueryTable
+        On Error Resume Next
+        TAULUKKO.Delete
+        Err.Clear
+        
+        ' Try ACE.OLEDB.15.0 (Office 2013)
+        If InStr(Yhteys, "ACE.OLEDB.16.0") > 0 Then
+          Yhteys = Replace(Yhteys, "ACE.OLEDB.16.0", "ACE.OLEDB.15.0")
+          Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
+          With TAULUKKO
+            .Sql = sqlQuery
+            .FieldNames = True
+            .RefreshStyle = xlInsertDeleteCells
+            .RowNumbers = False
+            .FillAdjacentFormulas = False
+            .HasAutoFormat = True
+            .SaveData = True
+            .BackgroundQuery = False
+            .Refresh
+          End With
+          
+          If Err.Number = 0 Then
+            connectionSuccess = True
+          Else
+            Err.Clear
+            TAULUKKO.Delete
+            Err.Clear
+            
+            ' Try ACE.OLEDB.12.0 (Office 2010)
+            Yhteys = Replace(Yhteys, "ACE.OLEDB.15.0", "ACE.OLEDB.12.0")
+            Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
+            With TAULUKKO
+              .Sql = sqlQuery
+              .FieldNames = True
+              .RefreshStyle = xlInsertDeleteCells
+              .RowNumbers = False
+              .FillAdjacentFormulas = False
+              .HasAutoFormat = True
+              .SaveData = True
+              .BackgroundQuery = False
+              .Refresh
+            End With
+            
+            If Err.Number = 0 Then
+              connectionSuccess = True
+            Else
+              Err.Clear
+              TAULUKKO.Delete
+              Err.Clear
+            End If
+          End If
+        End If
+      End If
       
       On Error GoTo ErrorHandler
       
-      ' Check if query returned any data
-      Dim rowCount As Long
-      rowCount = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-      
-      If rowCount <= 1 Then
-        If i = 2 Then
-          MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
-                 "This means the Info sheet will be empty." & vbCrLf & vbCrLf & _
-                 "Check the query in Main sheet - you may need to:" & vbCrLf & _
-                 "1. Add wildcards: WHERE DocName3 like '%Kytkentalista%'" & vbCrLf & _
-                 "2. Check spelling of 'Kytkentalista'" & vbCrLf & _
-                 "3. Verify data exists in the database", vbExclamation, "Query Returned No Data"
+      ' If all OLE DB attempts failed, show error
+      If Not connectionSuccess Then
+        MsgBox "Database Connection Failed for DB" & i & vbCrLf & vbCrLf & _
+               "Tried OLE DB providers: 16.0, 15.0, 12.0" & vbCrLf & _
+               "Last error: " & errorMsg & vbCrLf & vbCrLf & _
+               "Connection attempted: " & Yhteys & vbCrLf & _
+               "Query: " & sqlQuery & vbCrLf & vbCrLf & _
+               "This sheet will be empty.", vbCritical, "Query Error"
+      Else
+        ' Check if query returned any data (only if connection succeeded)
+        Dim rowCount As Long
+        rowCount = ws.UsedRange.Rows.Count
+        If rowCount <= 1 Then
+          If i = 2 Then
+            MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
+                   "This means the Info sheet will be empty." & vbCrLf & vbCrLf & _
+                   "Check the query in Main sheet.", vbExclamation, "Query Returned No Data"
+          End If
         End If
       End If
     End If
@@ -188,13 +256,13 @@ Dim Yhteys As String
   
 ErrorHandler:
   EndFastMode
-  MsgBox "ODBC Error: " & Err.Description & vbCrLf & vbCrLf & _
+  MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
          "Database: " & Kanta & vbCrLf & _
+         "Connection: " & Yhteys & vbCrLf & _
          "SQL Query " & i & ": " & sSQL(i), vbCritical, "Database Connection Error"
   Err.Clear
   Sheets("Main").Select
 End Sub
-'''
 ' GenPrintout: Generates a new printout workbook using TEMPLATE and data from DB1.
 ' Copies headers, footers, and main data body, applies formatting, and saves the result.
 ' Uses array-based transfer for main data for speed. All formatting and linking logic preserved.
