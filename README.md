@@ -18,8 +18,9 @@ Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Offi
 - **Validation:** Hardened input checks in `CustomMessage`, explicit typing for globals
 
 ### Excel Macros
-- **64-bit ODBC:** Auto-brackets Access query names: `FROM _qryForExcel` → `FROM [_qryForExcel]`
-- **DB2 Query Fix:** Changed from saved query to direct DOCUMENTS table query to avoid ODBC WHERE clause limitations
+- **OLE DB Migration:** Switched from ODBC to OLE DB (ACE.OLEDB) for better 64-bit compatibility
+- **Provider Fallback:** Automatic fallback: 16.0 → 15.0 → 12.0 for Office version compatibility
+- **DB2 Query Fix:** Fixed saved query `_qryForExcel` to work with OLE DB (removed `Nz()` function)
 - **Column Mapping:** Complete mapping from DOCUMENTS table to Info sheet (see `COLUMN_MAPPING_COMPLETE.md`)
 - **Performance:** Consistent BeginFastMode/EndFastMode usage, optimized screen updating
 - **Safety:** Infinite loop protection, sheet existence validation, database file checks
@@ -28,9 +29,9 @@ Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Offi
 ## Excel Workflows
 
 ### 1. Get Data (HaeData)
-- Fetches data from Access database via ODBC
+- Fetches data from Access database via OLE DB (with automatic provider fallback)
 - Populates DB1 (Circuit_Diagrams_IO_Terminals) and DB2 (DOCUMENTS) sheets
-- Validates database file existence, handles ODBC errors
+- Validates database file existence, handles connection errors gracefully
 
 ### 2. Run Check (Checkout)
 - Validates TEMPLATE headers against DB1 data
