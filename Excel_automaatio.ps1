@@ -1,12 +1,25 @@
-#Excel työkalujen migraatio automaatio
+# Excel työkalujen migraation automaatio
+
+# Skripti vaihtaa kohdeprojektin listojen Excel-kyselyiden VBA koodin moduulit ja tekee niistä yhteensopivat 64-bittisen Officen kanssa.
+# Määritä polut ylempään kohtaa tulee vaihtaa kohdeprojektin Excel-työkalujen kansion polku, yleensä muotoa \Z\tools\Projektin listojen excel-kyselyt.
+# Määritä polut alempaan kohtaan tulee vaihtaa 64-bittisten moduulien polku. Tästä tullee kiinteä sijainti Y-asemalle.
+# Module Names kohtaan 64-bittisten moduulien nimet.
+
+# Muokatun tiedoston voi tallentaa muodossa .ps1 haluamaansa sijaintiin ja suorittaa seuraavasti:
+# Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 
+# Suorita "polku tiedostoon"\"tiedoston_nimi".ps1
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $false
 $excel.DisplayAlerts = $false
 
 # Määritä polut
-$excelFilesPath = "C:\Users\roope.vaha-aho\OneDrive - Proense Oy\Documents\Projektit\Fortum\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
-$modulePath = "C:\database_migration\Excel\Kytkentälista\Moduulit"
+$excelFilesPath = C:\Users\roope.vaha-aho\OneDrive - Proense Oy\Documents\Projektit\Fortum\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS
+$modulePath = C:\database_migration\Excel\Kytkentälista\Moduulit
 
+# Module names
 $moduleNames = @("Module1", "Module2", "Module3") 
 
 Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm" | ForEach-Object {
