@@ -3,7 +3,11 @@ DOCUMENTS_64BIT_MIGRATION.md
 This document summarizes the Access DOCUMENTS 64-bit migration helper artifacts and instructions.
 
 What I added:
-- scripts/export_access_vba.ps1 : PowerShell script that exports all VBA components from .accdb/.mdb files using Access COM automation.
+- Automations/export_access_vba.ps1 : PowerShell script that exports all VBA components from .accdb/.mdb files using Access COM automation.
+
+Note: there is an additional Excel automation script at `Automations/Excel_automaatio.ps1` which helps swap module files inside a folder of .xlsm workbooks.
+
+See `Logs/AUTOMATIONS_LOG.md` for the automation script history and usage notes.
 
 How to run (PowerShell / Windows):
 1. Ensure 'Trust access to the VBA project object model' is enabled in Access Trust Center -> Macro Settings.

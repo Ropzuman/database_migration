@@ -1,53 +1,36 @@
-<#
-Export-AccessVBA.ps1
-Exports all VBA components from Microsoft Access database files (.accdb, .mdb) using COM automation.
-
-Requirements and caveats:
-- "Trust access to the VBA project object model" must be enabled in Access Trust Center (Macro Settings).
-- The PowerShell bitness (32/64-bit) must match the installed Microsoft Office/Access bitness.
-  Run `powershell -Version` or check $env:PROCESSOR_ARCHITECTURE; if Access is 32-bit, run the 32-bit PowerShell.
-- You may need to run PowerShell as a user who can interact with desktop COM objects.
-- Exporting programmatically requires the host to allow programmatic access to the VBIDE (see Trust Center).
-- This script attempts to gracefully release COM objects; if Access processes remain, check Task Manager and kill lingering MSACCESS.EXE.
-
-Usage examples:
-# Export a single file
-.
-# powershell -ExecutionPolicy Bypass -File .\scripts\export_access_vba.ps1 -InputPath "C:\Data\MyDB.accdb" -OutDir "C:\temp\access_vba_exports"
-
-# Export all Access files in a folder
-# powershell -ExecutionPolicy Bypass -File .\scripts\export_access_vba.ps1 -InputPath "C:\Data\AccessDBs" -OutDir "C:\temp\access_vba_exports"
-
-Parameters:
--InputPath : Path to a single .accdb/.mdb file or a folder containing Access files.
--OutDir    : Destination directory for exported components (default: ./access_vba_exports)
--Verbose   : Provide verbose output
-
-Behavior:
-- For each database file, creates a subfolder named using the DB filename under OutDir.
-- Exports each VBComponent using the component name and a suitable extension (.bas, .cls, .frm, .txt).
-
-# VBA alternative (to run inside Access VBA Immediate window):
-# Note: Requires reference to "Microsoft Visual Basic for Applications Extensibility 5.3"
+#<
+# Export-AccessVBA.ps1
+# TARKOITUS: Viedä Access-tietokantojen (*.accdb, *.mdb) VBA-komponentit tiedostojärjestelmään tarkastelua,
+# versionointia tai migraatiota varten. Skripti avaa jokaisen tietokannan ja yrittää viedä sen VBProjectin
+# moduulit (standard, class, dokumentti/form-moduulit) erillisiksi .bas/.cls/.frm-tiedostoiksi.
 #
-# Sub ExportAllComponents(outFolder As String)
-#   Dim vbProj As VBIDE.VBProject
-#   Dim vbComp As VBIDE.VBComponent
-#   Dim ext As String
-#   If Right(outFolder, 1) <> "\" Then outFolder = outFolder & "\"
-#   Set vbProj = Application.VBE.ActiveVBProject
-#   For Each vbComp In vbProj.VBComponents
-#     Select Case vbComp.Type
-#       Case vbext_ct_StdModule: ext = ".bas"
-#       Case vbext_ct_ClassModule: ext = ".cls"
-#       Case vbext_ct_MSForm: ext = ".frm"
-#       Case Else: ext = ".txt"
-#     End Select
-#     vbComp.Export outFolder & vbComp.Name & ext
-#   Next vbComp
-# End Sub
+# KÄYTTÄYTYMINEN:
+# - Skripti pyytää syötehakemistoa, jos -InputPath-parametriä ei anneta. Se käy hakemiston läpi rekursiivisesti.
+# - Kaikki *.accdb ja *.mdb tiedostot käsitellään, paitsi ne joiden nimessä esiintyy "_Backup" (case-insensitive).
+# - Jokaiselle tietokannalle luodaan alihakemisto -OutDir-polun alle (DB:n nimen mukaan) ja viedään komponentit sinne.
+# - Lokitus ja debug-viestit käytävät Write-Verbose; käynnistä skripti PowerShellin -Verbose -kytkimellä nähdäksesi lisätiedot.
 #
-# End of VBA snippet
+# VAATIMUKSET JA HUOMAUTUKSET:
+# - Ota Accessissa käyttöön "Trust access to the VBA project object model" (Trust Center -> Macro Settings).
+# - Käytä PowerShell-bitnessiä, joka vastaa Office/Access -asennuksen bittisyyttä (32/64-bit).
+# - Skripti vaatii työpöytäistunnon (COM-automaatio, Access.Application), eikä sovellu palvelin-CRON-tyyppiseen käyttöön.
+# - Suojatut/Salasanalla suojatut VBProjectit eivät salli vientiä.
+# - Jos käytät verkon polkuja (UNC, jaetut asemat), muista että verkon polkujen käsittely ja oikeudet voivat poiketa
+#   paikallisista poluista; käytä UNC-polkuja (\\server\share\path) tai liitettyä asemaa ja varmista, että käyttäjällä
+#   on riittävät oikeudet ja että luke/skriptaus sallitaan palvelimella.
+#
+# KÄYTTÖESIMERKIT:
+#   Interaktiivinen (kysyy hakemiston):
+#     pwsh -ExecutionPolicy Bypass -File .\Automations\export_access_vba.ps1
+#
+#   Ei-interaktiivinen (parametrit):
+#     pwsh -ExecutionPolicy Bypass -File .\Automations\export_access_vba.ps1 -InputPath "C:\Data\AccessDBs" -OutDir "C:\temp\access_exports" -Verbose
+#
+# Lokit ja lisätiedot:
+# - Automaatioloki: Logs/AUTOMATIONS_LOG.md
+#
+# Luotu: 2025-10-22
+# Päivitetty: 2025-10-22 (suomi-käännös, verkko-polkuvaroitus, export-käyttäytymisen selkeytys)
 #>
 
 param(
@@ -64,13 +47,13 @@ param(
 # Example: $DefaultInputPath = 'C:\Data\AccessDBs' or 'C:\Data\MyDB.accdb'
 $DefaultInputPath = ''
 
-# If InputPath not provided via parameters, try DefaultInputPath; otherwise prompt interactively.
+# If InputPath not provided via parameters, try DefaultInputPath; otherwise prompt interactively for a directory.
 if ([string]::IsNullOrWhiteSpace($InputPath)) {
     if (-not [string]::IsNullOrWhiteSpace($DefaultInputPath)) {
         Write-Host "Using DefaultInputPath: $DefaultInputPath" -ForegroundColor Cyan
         $InputPath = $DefaultInputPath
     } else {
-        $prompt = Read-Host -Prompt 'Enter path to Access file or folder (leave empty to cancel)'
+        $prompt = Read-Host -Prompt 'Enter directory path to scan for Access files (subfolders included). Leave empty to cancel.'
         if ([string]::IsNullOrWhiteSpace($prompt)) {
             Write-Host 'No InputPath provided. Exiting.' -ForegroundColor Yellow
             exit 1
@@ -87,9 +70,13 @@ function Ensure-Directory {
 function Get-AccessFilesFromPath {
     param([string]$Path)
     if (Test-Path $Path -PathType Leaf) {
-        return @(Get-Item $Path)
+        $item = Get-Item $Path
+        # Skip files that include _Backup in the filename (case-insensitive)
+        if ($item.Name -match '_Backup') { return @() }
+        return @($item)
     } elseif (Test-Path $Path -PathType Container) {
-        return Get-ChildItem -Path $Path -Include *.accdb, *.mdb -File -Recurse
+        # Get all .accdb/.mdb files recursively and exclude ones with '_Backup' in the filename
+        return Get-ChildItem -Path $Path -Include *.accdb, *.mdb -File -Recurse | Where-Object { $_.Name -notmatch '_Backup' }
     } else {
         throw "InputPath '$Path' does not exist."
     }

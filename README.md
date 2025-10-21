@@ -55,6 +55,8 @@ Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Offi
 - `Excel/Kytkentälista/Debugging/` - Diagnostic tools (DiagnosticTest, ColumnMappingDiagnostic, FixInfoSheetComments)
 - `Logs/` - Changelogs, fixes, and analysis documentation
 - `COLUMN_MAPPING_COMPLETE.md` - DB2→Info sheet mapping reference
+- `Automations/` - Automation scripts used to migrate and extract VBA components (see `Automations/export_access_vba.ps1` and `Automations/Excel_automaatio.ps1`)
+- `Logs/AUTOMATIONS_LOG.md` - Log and changelog for automation scripts
 
 ## Version History
 See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.
