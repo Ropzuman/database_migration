@@ -14,7 +14,7 @@ $excel.Visible = $false
 $excel.DisplayAlerts = $false
 
 # Määritä polut (Polut on suojattu lainausmerkeillä välilyöntien takia)
-$excelFilesPath = "P:\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
+$excelFilesPath = "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
 $modulePath = "C:\database_migration\Excel\Kytkentälista\Moduulit"
 
 # Module names
