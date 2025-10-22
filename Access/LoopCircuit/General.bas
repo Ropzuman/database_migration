@@ -25,28 +25,41 @@ Function SniffUser()
   Dim Taulu As DAO.Recordset
   Dim NWUserName As String
   Dim CName As String
+  
+  ' KORJATTU RATKAISU:
+  ' Tarvitsemme ERI muuttujat Space$-funktiota varten (joka vaatii Long)
+  ' ja API-kutsun nSize-parametria varten (joka vaatii LongPtr VBA7:ssa).
+  
+  Dim BufferSize_Long As Long
+  
   #If VBA7 Then
-    Dim BuffSize As LongPtr
+    Dim BufferSize_Ptr As LongPtr
   #Else
-    Dim BuffSize As Long
+    Dim BufferSize_Ptr As Long
   #End If
+  
   Dim NBuffer As String
     
   On Error GoTo ErrHandler
   
   ' Get network username
-  BuffSize = 256
-  NBuffer = Space$(BuffSize)
-  If api_GetUserName(NBuffer, BuffSize) Then
-    NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+  BufferSize_Long = 256
+  NBuffer = Space$(BufferSize_Long)  ' 1. Käytä Long-muuttujaa Space$-funktiolle
+  BufferSize_Ptr = BufferSize_Long   ' 2. Kopioi arvo LongPtr-muuttujaan
+  
+  ' 3. Käytä LongPtr-muuttujaa API-kutsussa. Nyt tyypit täsmäävät (LongPtr -> LongPtr)
+  If api_GetUserName(NBuffer, BufferSize_Ptr) Then
+     NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else
     NWUserName = "Unknown"
   End If
   
-  ' Get computer name
-  BuffSize = 256
-  NBuffer = Space$(BuffSize)
-  If api_GetComputerName(NBuffer, BuffSize) Then
+  ' Get computer name (toista sama kuvio)
+  BufferSize_Long = 256
+  NBuffer = Space$(BufferSize_Long)
+  BufferSize_Ptr = BufferSize_Long
+  
+  If api_GetComputerName(NBuffer, BufferSize_Ptr) Then
     CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else
     CName = "Unknown"
@@ -84,3 +97,4 @@ ErrHandler:
   ' Log error or handle silently
   Resume Cleanup
 End Function
+

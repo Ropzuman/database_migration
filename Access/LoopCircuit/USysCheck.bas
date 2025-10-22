@@ -3,6 +3,7 @@ Option Compare Database
 Option Explicit
 
 ' Updated 2025-10-22: 64-bit compatibility, cleaner code
+' Updated 2025-10-23: Changed API Declarations from Private to Public
 
 ' Type must be declared outside conditional compilation for Access form compatibility
 Public Type OPENFILENAME
@@ -38,15 +39,16 @@ Public Type OPENFILENAME
     lpTemplateName As String
 End Type
 
+' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 #If VBA7 Then
-    Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
-    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
-    Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
@@ -70,3 +72,4 @@ End Function
 Function Show_last_criteria(criterias As Variant) As Variant
     Show_last_criteria = m_last_criteria
 End Function
+

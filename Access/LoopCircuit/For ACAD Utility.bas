@@ -1,4 +1,5 @@
 Attribute VB_Name = "For ACAD Utility"
+
 Option Compare Database
 Option Explicit
 
@@ -20,3 +21,4 @@ End Type
 #Else
   Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
 #End If
+
