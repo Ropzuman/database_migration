@@ -1,32 +1,33 @@
 # Excel_automaatio.ps1
-# TARKOITUS: Korvaa VBA-moduulit hakemistossa olevissa .xlsm-työkirjoissa 64-bittisillä moduuleilla.
+
+# TARKOITUS: Korvaa VBA-moduulit listojen kysely työkaluissa 64-bittisillä moduuleilla.
+
 # KÄYTTÄYTYMINEN:
 # - Kysyy polut työkirjojen hakemistoon ja moduulitiedostojen hakemistoon (ellei oletuksia ole asetettu).
 # - Avaa jokaisen .xlsm-työkirjan, poistaa moduulit, tuo uudet .bas-moduulit, tallentaa väliaikaisesti ja korvaa alkuperäisen.
 # - Käyttää retry-logiikkaa lukkojen kiertämiseksi (OneDrive ym.).
+
 # - HUOM: Kun muutoksia ajetaan verkkosijaintiin, pitää käyttää verkkosijainnin nimeä \\proense01\projektit\ 
 # - esim. "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
-# - Lokit ja historia: Logs/AUTOMATIONS_LOG.md
 
 # Muokatun tiedoston voi tallentaa muodossa .ps1 haluamaansa sijaintiin ja suorittaa seuraavasti:
-# Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 
-# Suorita "polku tiedostoon"\"tiedoston_nimi".ps1
+# - Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+# - Suorita "polku tiedostoon"\"tiedoston_nimi".ps1
 
 $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $false
 $excel.DisplayAlerts = $false
 
-# --- Paths: provide defaults and interactive prompts so user can change them at runtime ---
-# Default values (edit here if you want a different default)
+# --- Polut ja asetukset (Päivitä oletusarvot tähän halutessasi. Varsinkin uusien moduulien sijainti yleensä kiinteä.) ---
 $DefaultExcelFilesPath = ''
 $DefaultModulePath = ''
 
 Write-Host "Excel files folder: $DefaultExcelFilesPath" -ForegroundColor Cyan
-$inputExcel = Read-Host -Prompt 'Enter path to folder containing .xlsm files (press Enter to use default)'
+$inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (paina Enter käyttääksesi oletusta)'
 if ([string]::IsNullOrWhiteSpace($inputExcel)) { $excelFilesPath = $DefaultExcelFilesPath } else { $excelFilesPath = $inputExcel }
 
 Write-Host "Module files folder: $DefaultModulePath" -ForegroundColor Cyan
-$inputModule = Read-Host -Prompt 'Enter path to folder containing .bas module files (press Enter to use default)'
+$inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (paina Enter käyttääksesi oletusta)'
 if ([string]::IsNullOrWhiteSpace($inputModule)) { $modulePath = $DefaultModulePath } else { $modulePath = $inputModule }
 
 # Validate paths
@@ -39,7 +40,9 @@ if (-not (Test-Path $modulePath -PathType Container)) {
     exit 1
 }
 
-# Module names
+# Moduulien nimet.
+# Määrittele kaikki ne moduulit, jotka poistetaan ja tuodaan uudelleen.
+# Älä sisällytä tiedostopäätettä (.bas) nimiin.
 $moduleNames = @("Module1", "Module2", "Module3") 
 
 # Retry-asetukset OneDrive-lukkojen kiertämiseksi

@@ -71,3 +71,106 @@ Notes:
 - AutoCAD automation uses late binding (CreateObject/GetObject) for maximum compatibility
 - Original exported files remain in Automations/access_vba_exports/LoopCircuit/ for reference
 - Lock file logic updated to handle both .laccdb (Access 2007+) and .ldb (older versions)
+
+---
+
+### 2025-01-XX - Critical Bug Fix: Type Declaration Scoping in LoopCircuit
+
+**Issue Discovered:**
+After importing migrated LoopCircuit VBA files, all form button events failed with error:
+```
+Microsoft Access can't find the procedure '[procedure name]'
+```
+
+**Root Cause:**
+The `OPENFILENAME` Type declaration in `USysCheck.bas` was duplicated inside both branches of the `#If VBA7` conditional compilation block. Access VBA requires Type declarations at module scope OUTSIDE any conditional compilation directives. When Types are duplicated in conditional blocks, Access cannot resolve them properly, causing form event procedures to fail.
+
+**Files Fixed:**
+- `Access/LoopCircuit/USysCheck.bas` - Moved OPENFILENAME Type to module level with conditional LongPtr/Long fields inside the Type structure
+
+**Technical Explanation:**
+```vba
+' INCORRECT (causes "Can't find procedure" errors):
+#If VBA7 Then
+    Public Type OPENFILENAME
+        ' all fields...
+    End Type
+#Else
+    Public Type OPENFILENAME  ' DUPLICATE - causes Access to lose references!
+        ' all fields...
+    End Type
+#End If
+
+' CORRECT:
+Public Type OPENFILENAME
+    lStructSize As Long
+    #If VBA7 Then
+        hwndOwner As LongPtr
+        hInstance As LongPtr
+    #Else
+        hwndOwner As Long
+        hInstance As Long
+    #End If
+    lpstrFilter As String
+    ' ... other fields
+End Type
+
+#If VBA7 Then
+    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" ...
+#Else
+    Private Declare Function GetOpenFileName Lib "comdlg32.dll" ...
+#End If
+```
+
+**Lesson Learned:**
+When migrating VBA to 64-bit compatibility:
+1. **Type declarations** must always be at module scope OUTSIDE #If blocks
+2. Use conditional compilation INSIDE Type structures only for fields that need different types (LongPtr vs Long)
+3. Only **Declare statements** (API functions) should be fully wrapped in #If VBA7 conditional blocks
+4. Duplicating Types in conditional blocks breaks Access form event wiring
+
+**Verification Results:**
+- `For ACAD Utility.bas`: POINTAPI Type was already correctly positioned outside conditional blocks ✓
+- `Form_DBUsers.cls`: UserRec Type correctly positioned at module level ✓
+- `Form_Tee Kuvat.cls`: Only uses conditional compilation for variable declarations, not Types ✓
+- `Form_Linkkien vaihto.cls`: No Type declarations, no issues ✓
+
+**Testing:**
+After fixing USysCheck.bas, users should:
+1. Re-import all LoopCircuit VBA files into Access database
+2. Open VBA Editor (Alt+F11)
+3. Run Debug → Compile VBAProject to verify no errors
+4. Test all form button click events execute without "Can't find procedure" errors
+
+**Update - Additional Syntax Error Fixed:**
+After fixing the Type declaration issue, testing revealed a string concatenation syntax error in Form_DBUsers.cls (lines 63, 69). Changed `+` operator to `&` operator for string concatenation. VBA requires `&` for string concatenation; using `+` causes "Expected: end of statement" errors in Access event procedures.
+
+Fixed code:
+```vba
+' Changed from: SPath = Left(SPath, InStr(1, SPath, ".")) + "laccdb"
+' To: SPath = Left(SPath, InStr(1, SPath, ".")) & "laccdb"
+```
+
+This was the only occurrence of `+` for string concatenation in all LoopCircuit files.
+
+**Update - Third Bug Fix: CurrentDb Multiple References:**
+Testing revealed another "Expected: end of statement" error in Form_Linkkien vaihto.cls. The issue was calling `CurrentDb.Name` multiple times in the same statement (line 27):
+
+```vba
+' WRONG - causes "Expected: end of statement":
+Polku = Left(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
+
+' CORRECT - assign to variable first:
+Set db = CurrentDb
+DbName = db.Name
+Polku = Left(DbName, Len(DbName) - Len(Dir(DbName)))
+```
+
+**Files Fixed:**
+- `Form_Linkkien vaihto.cls` - Added db and DbName variables, replaced all CurrentDb references
+- Changed line 27 to use intermediate variables
+- Changed line 35 from CurrentDb.OpenRecordset to db.OpenRecordset  
+- Changed line 56 from CurrentDb.Execute to db.Execute
+- Added db cleanup in Cleanup section
+
+**Lesson:** In Access VBA, `CurrentDb` should be assigned to a DAO.Database variable and reused, not called multiple times in complex expressions.

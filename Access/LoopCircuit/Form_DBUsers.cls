@@ -61,13 +61,13 @@ On Error GoTo Err_WhosOn
    Set dbCurrent = Nothing
 
    ' For Access 2007+ the lock file extension is .laccdb (not .ldb)
-   SPath = Left(SPath, InStr(1, SPath, ".")) + "laccdb"
+   SPath = Left(SPath, InStr(1, SPath, ".")) & "laccdb"
 
    ' Test for valid file
    X = Dir(SPath)
    If X = "" Then
       ' Try legacy .ldb extension for older Access versions
-      SPath = Left(SPath, InStr(1, SPath, ".")) + "ldb"
+      SPath = Left(SPath, InStr(1, SPath, ".")) & "ldb"
       X = Dir(SPath)
       If X = "" Then
          Err.Raise 68 ' File not found

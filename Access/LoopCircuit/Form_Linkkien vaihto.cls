@@ -20,14 +20,18 @@ Private Sub Command0_Click()
     Dim Taul As DAO.Recordset
     Dim Taulu As String
     Dim UpdateCount As Long
+    Dim db As DAO.Database
+    Dim DbName As String
     
     On Error GoTo ErrHandler
     
     ' Get current database path
-    Polku = Left(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
+    Set db = CurrentDb
+    DbName = db.Name
+    Polku = Left(DbName, Len(DbName) - Len(Dir(DbName)))
     
     ' Query linked tables (excluding MotorData)
-    Set Taul = CurrentDb.OpenRecordset( _
+    Set Taul = db.OpenRecordset( _
         "SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects " & _
         "WHERE ([Database] Is Not Null) AND ([Name] Not Like 'MotorData')")
     
@@ -49,7 +53,7 @@ Private Sub Command0_Click()
                 Taulu = Taul.Fields("Name")
                 
                 ' Drop and relink table
-                CurrentDb.Execute "DROP TABLE [" & Taulu & "]"
+                db.Execute "DROP TABLE [" & Taulu & "]"
                 
                 On Error Resume Next
                 DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, _
@@ -71,6 +75,10 @@ Cleanup:
     If Not Taul Is Nothing Then
         Taul.Close
         Set Taul = Nothing
+    End If
+    If Not db Is Nothing Then
+        db.Close
+        Set db = Nothing
     End If
     On Error GoTo 0
     

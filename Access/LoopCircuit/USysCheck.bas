@@ -4,62 +4,50 @@ Option Explicit
 
 ' Updated 2025-10-22: 64-bit compatibility, cleaner code
 
+' Type must be declared outside conditional compilation for Access form compatibility
+Public Type OPENFILENAME
+    lStructSize As Long
+#If VBA7 Then
+    hwndOwner As LongPtr
+    hInstance As LongPtr
+#Else
+    hwndOwner As Long
+    hInstance As Long
+#End If
+    lpstrFilter As String
+    lpstrCustomFilter As String
+    nMaxCustFilter As Long
+    nFilterIndex As Long
+    lpstrFile As String
+    nMaxFile As Long
+    lpstrFileTitle As String
+    nMaxFileTitle As Long
+    lpstrInitialDir As String
+    lpstrTitle As String
+    flags As Long
+    nFileOffset As Integer
+    nFileExtension As Integer
+    lpstrDefExt As String
+#If VBA7 Then
+    lCustData As LongPtr
+    lpfnHook As LongPtr
+#Else
+    lCustData As Long
+    lpfnHook As Long
+#End If
+    lpTemplateName As String
+End Type
+
 #If VBA7 Then
     Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
     Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
-    
-    Public Type OPENFILENAME
-        lStructSize As Long
-        hwndOwner As LongPtr
-        hInstance As LongPtr
-        lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
-        nFilterIndex As Long
-        lpstrFile As String
-        nMaxFile As Long
-        lpstrFileTitle As String
-        nMaxFileTitle As Long
-        lpstrInitialDir As String
-        lpstrTitle As String
-        flags As Long
-        nFileOffset As Integer
-        nFileExtension As Integer
-        lpstrDefExt As String
-        lCustData As LongPtr
-        lpfnHook As LongPtr
-        lpTemplateName As String
-    End Type
 #Else
     Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As Long) As Long
     Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
-    
-    Public Type OPENFILENAME
-        lStructSize As Long
-        hwndOwner As Long
-        hInstance As Long
-        lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
-        nFilterIndex As Long
-        lpstrFile As String
-        nMaxFile As Long
-        lpstrFileTitle As String
-        nMaxFileTitle As Long
-        lpstrInitialDir As String
-        lpstrTitle As String
-        flags As Long
-        nFileOffset As Integer
-        nFileExtension As Integer
-        lpstrDefExt As String
-        lCustData As Long
-        lpfnHook As Long
-        lpTemplateName As String
-    End Type
 #End If
 
 ' Module-level state variables (consider replacing with collection or class for better encapsulation)
