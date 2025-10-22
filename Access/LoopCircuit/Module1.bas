@@ -1,21 +1,24 @@
+Attribute VB_Name = "Module1"
 Option Compare Database
+Option Explicit
 
+' Demonstrates custom message handling with input validation
+' Updated 2025-10-22: Type safety, cleaner logic
 Sub CustomMessage()
-    Dim strMsg As String, strInput As String
+    Dim strMsg As String
+    Dim strInput As String
+    Dim n As Long
+    Dim continueLoop As Boolean
 
-    ' Initialize string.
-    strMsg = "Number outside range.@You entered " _
-        & "a number that is less than 1 or greater " _
-        & "than 10.@Press OK to enter the number " _
-        & "again."
-    ' Prompt user for input.
-    strInput = InputBox("Enter a number between 1 " _
-        & "and 10.")
-    ' Determine if user chose "Cancel".
-    If strInput = "" Then Exit Sub
-
-    ' Validate numeric input
-    Do
+    strMsg = "Number outside range.@You entered a number that is less than 1 or greater than 10.@Press OK to enter the number again."
+    
+    ' Prompt user for input
+    strInput = InputBox("Enter a number between 1 and 10.")
+    If strInput = "" Then Exit Sub ' User cancelled
+    
+    continueLoop = True
+    Do While continueLoop
+        ' Validate numeric input
         If Not IsNumeric(strInput) Then
             If MsgBox("Please enter a numeric value.", vbOKCancel, "Error!") = vbOK Then
                 strInput = InputBox("Enter a number between 1 and 10.")
@@ -24,7 +27,7 @@ Sub CustomMessage()
                 Exit Sub
             End If
         Else
-            Dim n As Long
+            ' Validate range
             n = CLng(strInput)
             If n < 1 Or n > 10 Then
                 If MsgBox(strMsg, vbOKCancel, "Error!") = vbOK Then
@@ -34,8 +37,9 @@ Sub CustomMessage()
                     Exit Sub
                 End If
             Else
+                ' Valid input
                 MsgBox "You entered the number " & CStr(n) & "."
-                Exit Do
+                continueLoop = False
             End If
         End If
     Loop

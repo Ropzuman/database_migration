@@ -1,10 +1,15 @@
+Attribute VB_Name = "USysCheck"
 Option Compare Database
 Option Explicit
 
- #If VBA7 Then
-    Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, ByVal nSize As LongPtr) As LongPtr
-    ' --------- [ CHOOSE FILE ] -----------------
-    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As LongPtr
+' Updated 2025-10-22: 64-bit compatibility, cleaner code
+
+#If VBA7 Then
+    Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+        (pOpenfilename As OPENFILENAME) As LongPtr
+    
     Public Type OPENFILENAME
         lStructSize As Long
         hwndOwner As LongPtr
@@ -27,10 +32,12 @@ Option Explicit
         lpfnHook As LongPtr
         lpTemplateName As String
     End Type
- #Else
-    Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
-    ' --------- [ CHOOSE FILE ] -----------------
-    Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
+#Else
+    Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, nSize As Long) As Long
+    Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+        (pOpenfilename As OPENFILENAME) As Long
+    
     Public Type OPENFILENAME
         lStructSize As Long
         hwndOwner As Long
@@ -53,22 +60,25 @@ Option Explicit
         lpfnHook As Long
         lpTemplateName As String
     End Type
- #End If
-'Etsii temp hakemiston
-'Public Declare Function GetTempPath Lib "kernel32" Alias "GetTempPathA" (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
-Global last_criteria As Variant, last_used As Variant
- 
+#End If
+
+' Module-level state variables (consider replacing with collection or class for better encapsulation)
+Private m_last_criteria As Variant
+Private m_last_used As Variant
+
+' Stores last used values and criteria
 Function Set_last(Values As Variant, criterias As Variant) As Variant
-    ' Store last used values and criteria (keeps state in module-level globals)
-    last_criteria = criterias
-    last_used = Values
-    Set_last = last_used
+    m_last_criteria = criterias
+    m_last_used = Values
+    Set_last = m_last_used
 End Function
 
+' Retrieves last used values
 Function Show_last(criterias As Variant) As Variant
-    Show_last = last_used
+    Show_last = m_last_used
 End Function
 
+' Retrieves last used criteria
 Function Show_last_criteria(criterias As Variant) As Variant
-    Show_last_criteria = last_criteria
+    Show_last_criteria = m_last_criteria
 End Function
