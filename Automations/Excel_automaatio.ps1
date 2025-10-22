@@ -1,9 +1,12 @@
-# Excel työkalujen migraation automaatio
-
-# Skripti vaihtaa kohdeprojektin listojen Excel-kyselyiden VBA koodin moduulit ja tekee niistä yhteensopivat 64-bittisen Officen kanssa.
-# Määritä polut ylempään kohtaa tulee vaihtaa kohdeprojektin Excel-työkalujen kansion polku, yleensä muotoa \Z\tools\Projektin listojen excel-kyselyt.
-# Määritä polut alempaan kohtaan tulee vaihtaa 64-bittisten moduulien polku. Tästä tullee kiinteä sijainti Y-asemalle.
-# Module Names kohtaan 64-bittisten moduulien nimet.
+# Excel_automaatio.ps1
+# TARKOITUS: Korvaa VBA-moduulit hakemistossa olevissa .xlsm-työkirjoissa 64-bittisillä moduuleilla.
+# KÄYTTÄYTYMINEN:
+# - Kysyy polut työkirjojen hakemistoon ja moduulitiedostojen hakemistoon (ellei oletuksia ole asetettu).
+# - Avaa jokaisen .xlsm-työkirjan, poistaa moduulit, tuo uudet .bas-moduulit, tallentaa väliaikaisesti ja korvaa alkuperäisen.
+# - Käyttää retry-logiikkaa lukkojen kiertämiseksi (OneDrive ym.).
+# - HUOM: Kun muutoksia ajetaan verkkosijaintiin, pitää käyttää verkkosijainnin nimeä \\proense01\projektit\ 
+# - esim. "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
+# - Lokit ja historia: Logs/AUTOMATIONS_LOG.md
 
 # Muokatun tiedoston voi tallentaa muodossa .ps1 haluamaansa sijaintiin ja suorittaa seuraavasti:
 # Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 
@@ -13,9 +16,28 @@ $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $false
 $excel.DisplayAlerts = $false
 
-# Määritä polut (Polut on suojattu lainausmerkeillä välilyöntien takia)
-$excelFilesPath = "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
-$modulePath = "C:\database_migration\Excel\Kytkentälista\Moduulit"
+# --- Paths: provide defaults and interactive prompts so user can change them at runtime ---
+# Default values (edit here if you want a different default)
+$DefaultExcelFilesPath = ''
+$DefaultModulePath = ''
+
+Write-Host "Excel files folder: $DefaultExcelFilesPath" -ForegroundColor Cyan
+$inputExcel = Read-Host -Prompt 'Enter path to folder containing .xlsm files (press Enter to use default)'
+if ([string]::IsNullOrWhiteSpace($inputExcel)) { $excelFilesPath = $DefaultExcelFilesPath } else { $excelFilesPath = $inputExcel }
+
+Write-Host "Module files folder: $DefaultModulePath" -ForegroundColor Cyan
+$inputModule = Read-Host -Prompt 'Enter path to folder containing .bas module files (press Enter to use default)'
+if ([string]::IsNullOrWhiteSpace($inputModule)) { $modulePath = $DefaultModulePath } else { $modulePath = $inputModule }
+
+# Validate paths
+if (-not (Test-Path $excelFilesPath -PathType Container)) {
+    Write-Error "Excel files folder does not exist: $excelFilesPath"
+    exit 1
+}
+if (-not (Test-Path $modulePath -PathType Container)) {
+    Write-Error "Module files folder does not exist: $modulePath"
+    exit 1
+}
 
 # Module names
 $moduleNames = @("Module1", "Module2", "Module3") 
