@@ -1,27 +1,35 @@
 # Access_automaatio.ps1
 
+# TARKOITUS: Korvaa VBA-moduulit (.bas) ja luokkamoduulit (.cls) kannassa.
+# YMPÄRISTÖ: Tämä skripti on suunniteltu ajettavaksi 64-bittisessä PowerShellissä, 
+#           ja se automatisoi 64-bittistä Microsoft Accessia.
+
+# KÄYTTÄYTYMINEN:
+# - Varmistaa, että skripti ajetaan 64-bittisessä (x64) PowerShellissä.
+# - Kysyy polun yhteen tietokantatiedostoon ja polun komponenttihakemistoon.
+# - Avaa .accdb-kannan, poistaa määritellyt komponentit (moduulit/luokat) ja tuo uudet.
+# - Käyttää try...finally-lohkoa varmistaakseen, että Access-prosessi suljetaan aina.
+
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
-# Kohde-Office on 32-bittinen, joten tämän skriptin on AJAUDUTTAVA 32-bittisessä (x86) PowerShellissä.
-if ([System.IntPtr]::Size -ne 4) {
-    Write-Error "VIRHE: Tämä skripti on suoritettava 32-bittisessä (x86) PowerShellissä, koska kohde-Office on 32-bittinen."
-    Write-Error "Sulje tämä (64-bittinen) ikkuna ja käynnistä 'Windows PowerShell (x86)'."
+if ([System.IntPtr]::Size -ne 8) {
+    Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
+    Write-Error "Sulje tämä (x86) ikkuna ja käynnistä normaali 'Windows PowerShell'."
     Start-Sleep -Seconds 10
     exit 1
 }
-Write-Host "Tarkistus OK: Ajetaan 32-bittisessä (x86) PowerShellissä." -ForegroundColor Green
+Write-Host "Tarkistus OK: Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
 
 
-# Määritellään $access-muuttuja ennalta nulliksi, jotta 'finally'-lohko toimii
+# Määritellään muuttujat ennalta 'finally'-lohkoa varten
 $access = $null
 $database = $null
 
 try {
-    # Koko automaatioprosessi ajetaan try-lohkossa
-    
+    # --- 1. Alustus ---
     $access = New-Object -ComObject Access.Application
     $access.Visible = $false
 
-    # --- Polut ja asetukset ---
+    # --- 2. Polkujen kysely ---
     $DefaultAccessFilePath = ''
     $DefaultComponentPath = ''
 
@@ -33,13 +41,9 @@ try {
     $inputComponent = Read-Host -Prompt 'Lisää polku komponenttitiedostoille (paina Enter käyttääksesi oletusta)'
     if ([string]::IsNullOrWhiteSpace($inputComponent)) { $componentPath = $DefaultComponentPath } else { $componentPath = $inputComponent }
 
-    # Validate paths
+    # Polkujen tarkistus
     if (-not (Test-Path $databasePath -PathType Leaf)) {
         Write-Error "Access-tiedostoa ei löydy (tai polku on hakemisto): $databasePath"
-        exit 1
-    }
-    if ($databasePath -notlike "*.accdb") {
-        Write-Error "Tiedoston pitää olla .accdb-päätteinen: $databasePath"
         exit 1
     }
     if (-not (Test-Path $componentPath -PathType Container)) {
@@ -47,9 +51,9 @@ try {
         exit 1
     }
 
-    # --- Komponenttien nimet ---
-    # HUOM! TÄMÄ SKRIPTI EI OSALLA TUODA LOMAKKEITA (Form_) TAI RAPORTTEJA.
-    # Se osaa tuoda vain standardimoduuleja (.bas) ja luokkamoduuleja (.cls).
+    # --- 3. Komponenttien määrittely ---
+    # Määrittele kaikki ne moduulien ja luokkamoduulien nimet, jotka poistetaan ja tuodaan.
+    # Älä käytä tiedostopäätteitä (.bas/.cls) nimissä.
     $componentNames = @(
         "Module1", 
         "General", 
@@ -69,16 +73,18 @@ try {
     $retryCount = 0
     $isOpened = $false
 
-    # 1. Poista Vain luku -attribuutti
+    # --- 4. Tiedoston valmistelu ja avaus ---
+    
+    # Poista 'Vain luku' -attribuutti
     try {
         Set-ItemProperty -Path $databasePath -Name IsReadOnly -Value $false -Force
-        Write-Host "   ✅ Poistettiin Vain luku -attribuutti tiedostojärjestelmästä."
+        Write-Host "   ✅ Poistettiin Vain luku -attribuutti."
     }
     catch {
-        Write-Warning "   ⚠️ Vain luku -attribuutin poisto epäonnistui: $($_.Exception.Message). Jatketaan yrittämistä."
+        Write-Warning "   ⚠️ Vain luku -attribuutin poisto epäonnistui: $($_.Exception.Message). Jatketaan silti."
     }
 
-    # 2. Avaa tietokanta
+    # Avaa tietokanta retry-logiikalla
     do {
         try {
             $access.OpenCurrentDatabase($databasePath) 
@@ -99,26 +105,30 @@ try {
         }
     } while (-not $isOpened -and $retryCount -lt $maxRetries)
 
-    # 3. Käsittely (jos avaus onnistui)
+    # --- 5. VBA-komponenttien käsittely ---
     if ($isOpened) {
         
         try {
+            # Kytke Accessin sisäiset varoitukset pois päältä
             $access.DoCmd.SetWarnings($false)
             Write-Host "   - Access-varoitukset poistettu käytöstä."
             
+            # Yritä saada yhteys VBA-projektiin
             $vbaProject = $database.Application.VBE.ActiveVBProject
             
+            # KRIITTINEN TARKISTUS: Jos $vbaProject on $null, Accessin turva-asetukset estävät toiminnon.
             if ($null -eq $vbaProject) {
                 Write-Error "   ❌ KRIITTINEN VIRHE: VBA-projektiin (VBE) ei päästy käsiksi (palautti null)."
-                Write-Error "     Vaikka bittisyys on oikein, varmista UUDELLEEN, että 'Trust access to the VBA project object model'"
-                Write-Error "     on päällä Accessin asetuksissa (Tiedosto > Asetukset > Luottamuskeskus > Makroasetukset)."
-                Write-Error "     Tarkista myös 'Luotetut sijainnit' (Trusted Locations) ja lisää sinne tiedoston ja komponenttien polut."
+                Write-Error "     SYY: Accessin turva-asetukset estävät tämän. Tarkista seuraavat:"
+                Write-Error "     1. Access > Asetukset > Luottamuskeskus > 'Luota VBA-projektin objektimallin käyttöön'."
+                Write-Error "     2. Access > Asetukset > Luottamuskeskus > 'Luotetut sijainnit' (lisää $databasePath ja $componentPath)."
+                Write-Error "     3. Tiedoston Ominaisuudet > 'Salli' (Unblock), jos se on ladattu verkosta."
                 throw "VBA Project is null. Check Access Trust Center settings."
             }
             
             Write-Host "   - VBA-projekti avattu onnistuneesti."
 
-            # 3.1 Poista vanhat
+            # 5.1 Poista vanhat komponentit
             foreach ($name in $componentNames) {
                 try {
                     $component = $vbaProject.VBComponents.Item($name)
@@ -126,11 +136,12 @@ try {
                     Write-Host "   ✅ Poistettiin vanha komponentti: $name"
                 }
                 catch {
+                    # Tämä on ok, jos komponenttia ei ollut olemassa
                     Write-Host "   - Info: Komponenttia $name ei löytynyt poistettavaksi (tämä on ok)."
                 }
             }
 
-            # 3.2 Tuo uudet
+            # 5.2 Tuo uudet komponentit
             foreach ($name in $componentNames) {
                 $basPath = Join-Path $componentPath "$($name).bas"
                 $clsPath = Join-Path $componentPath "$($name).cls"
@@ -157,11 +168,12 @@ try {
                 }
             }
             
-            # 3.3 Tallenna ja sulje
+            # 5.3 Tallenna ja sulje
             $acCmdSaveDatabase = 19
             $database.Application.DoCmd.RunCommand($acCmdSaveDatabase) 
             Write-Host "   ✅ Tietokanta tallennettiin paikoilleen."
             
+            # Laita varoitukset takaisin päälle
             $access.DoCmd.SetWarnings($true)
             
             $access.CloseCurrentDatabase()
@@ -170,7 +182,7 @@ try {
         }
         catch {
             # Tämä 'catch' nappaa VBA-käsittelyn virheet
-            Write-Error "   ❌ Virhe VBA-käsittelyssä tai tallennuksessa: $($_.Exception.Message)"
+            Write-Error "❌ Virhe VBA-käsittelyssä tai tallennuksessa: $($_.Exception.Message)"
             
             # Yritetään siistiä tietokantayhteys
             try {
@@ -187,15 +199,15 @@ try {
 
 }
 catch {
-    # Tämä 'catch' nappaa kaikki ylemmän tason virheet (esim. New-Object, polkujen tarkistus, tiedoston avaus)
+    # Tämä 'catch' nappaa kaikki ylemmän tason virheet (esim. New-Object, polkujen tarkistus)
     Write-Error "--- KRIITTINEN VIRHE SKRIPTIN SUORITUKSESSA ---"
     Write-Error $_.Exception.Message
     
 }
 finally {
-    # --- PAKOTETTU SIIVOUS ---
+    # --- 6. PAKOTETTU SIIVOUS ---
     # Tämä lohko suoritetaan AINA, vaikka skripti kaatuisi tai onnistuisi.
-    # Tämä estää zombie-prosessien syntymisen.
+    # Tämä estää "zombie" (jumittuneiden) Access-prosessien syntymisen.
     
     Write-Host "--- Siivotaan ja suljetaan Access-prosessi... ---"
     
@@ -208,7 +220,6 @@ finally {
             Write-Warning "   - Access.Quit() epäonnistui (prosessi oli ehkä jo kaatunut)."
         }
         
-        # Odotetaan hetki, jotta prosessi ehtii sulkeutua ennen COM-objektin tuhoamista
         Start-Sleep -Seconds 1 
         
         try {
@@ -216,7 +227,7 @@ finally {
             Write-Host "   - COM-objekti vapautettu."
         }
         catch {
-            # Tämä voi epäonnistua, jos $access-muuttujaa ei koskaan luotu kunnolla
+            # Hiljainen virhe, jos COM-objektia ei koskaan luotu kunnolla
         }
     }
     
