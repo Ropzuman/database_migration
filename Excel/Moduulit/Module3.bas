@@ -1,9 +1,9 @@
 '''
-' Module3.vba - Utility macro for toggling visibility of the LINKING sheet
-' Used to show/hide the LINKING sheet in the workbook for debugging or user preference.
+' Module3.vba - Apumakro LINKING-sheetin näkyvyyden vaihtamiseen
+' Käytetään LINKING-sheetin näyttämiseen/piilottamiseen työkirjassa debuggausta tai käyttäjän mieltymyksiä varten.
 '''
 Sub Linking()
-    ' Toggles the visibility of the LINKING sheet in the workbook.
+    ' Vaihtaa LINKING-sheetin näkyvyyden työkirjassa.
     Dim i As Long
     For i = 1 To Sheets.Count
         If LCase(Sheets(i).Name) = "linking" Then
