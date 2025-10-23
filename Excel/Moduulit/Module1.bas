@@ -81,9 +81,8 @@ Private Sub EndFastMode()
 End Sub
 
 '''
-' HaeData: Fetches data from Access database using OLE DB and SQL queries defined in the faceplate.
-' Populates DB1 and DB2 sheets with the results. Uses fast mode for performance.
-' Updated: Switched from ODBC to OLE DB for better 64-bit Office 365 compatibility.
+' HaeData: Fetches data from Access database using OLE DB (with automatic provider fallback).
+' Populates DB1 and DB2 sheets with query results. Uses fast mode for performance.
 '''
 Sub HaeData()
 Dim Kanta As String
@@ -117,17 +116,13 @@ Dim Yhteys As String
     Exit Sub
   End If
   
-  ' Use OLE DB instead of ODBC for better 64-bit Office 365 compatibility
-  ' Try ACE.OLEDB providers in order: 16.0 (Office 2016+), 15.0 (Office 2013), 12.0 (Office 2010)
+  ' Use OLE DB for Access databases (tries 16.0 → 15.0 → 12.0 automatically)
   Dim fileExt As String
-  fileExt = LCase(Right(Kanta, 6))  ' Get last 6 characters to handle both .mdb and .accdb
+  fileExt = LCase(Right(Kanta, 6))
   
-  ' Always use OLE DB for Access databases (.mdb and .accdb)
   If InStr(fileExt, ".mdb") > 0 Or InStr(fileExt, ".accdb") > 0 Then
-    ' Try Office 2016+ provider first (most likely for Office 365)
     Yhteys = "OLEDB;Provider=Microsoft.ACE.OLEDB.16.0;Data Source=" & Kanta
   Else
-    ' Fallback to ODBC only if not an Access database file
     Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
   End If
   
@@ -141,16 +136,14 @@ Dim Yhteys As String
     ws.Cells.Clear
     If sSQL(i) <> "" Then
 
-      ' OLE DB handles Access queries properly - no bracket workarounds needed
       Dim sqlQuery As String
       sqlQuery = sSQL(i)
       
-      ' Try OLE DB providers with automatic fallback
+      ' Automatic OLE DB provider fallback: 16.0 → 15.0 → 12.0
       Dim connectionSuccess As Boolean
       Dim errorMsg As String
       connectionSuccess = False
       
-      ' Try ACE.OLEDB.16.0 first (Office 2016+)
       On Error Resume Next
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
@@ -170,13 +163,11 @@ Dim Yhteys As String
       Else
         errorMsg = Err.Description
         Err.Clear
-        
-        ' Delete failed QueryTable
         On Error Resume Next
         TAULUKKO.Delete
         Err.Clear
         
-        ' Try ACE.OLEDB.15.0 (Office 2013)
+        ' Fallback: Try 15.0
         If InStr(Yhteys, "ACE.OLEDB.16.0") > 0 Then
           Yhteys = Replace(Yhteys, "ACE.OLEDB.16.0", "ACE.OLEDB.15.0")
           Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
@@ -199,7 +190,7 @@ Dim Yhteys As String
             TAULUKKO.Delete
             Err.Clear
             
-            ' Try ACE.OLEDB.12.0 (Office 2010)
+            ' Fallback: Try 12.0
             Yhteys = Replace(Yhteys, "ACE.OLEDB.15.0", "ACE.OLEDB.12.0")
             Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
             With TAULUKKO
@@ -227,24 +218,19 @@ Dim Yhteys As String
       
       On Error GoTo ErrorHandler
       
-      ' If all OLE DB attempts failed, show error
       If Not connectionSuccess Then
         MsgBox "Database Connection Failed for DB" & i & vbCrLf & vbCrLf & _
-               "Tried OLE DB providers: 16.0, 15.0, 12.0" & vbCrLf & _
-               "Last error: " & errorMsg & vbCrLf & vbCrLf & _
-               "Connection attempted: " & Yhteys & vbCrLf & _
+               "Error: " & errorMsg & vbCrLf & _
+               "Connection: " & Yhteys & vbCrLf & _
                "Query: " & sqlQuery & vbCrLf & vbCrLf & _
                "This sheet will be empty.", vbCritical, "Query Error"
       Else
-        ' Check if query returned any data (only if connection succeeded)
+        ' Warn if DB2 returned no data
         Dim rowCount As Long
         rowCount = ws.UsedRange.Rows.Count
-        If rowCount <= 1 Then
-          If i = 2 Then
-            MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
-                   "This means the Info sheet will be empty." & vbCrLf & vbCrLf & _
-                   "Check the query in Main sheet.", vbExclamation, "Query Returned No Data"
-          End If
+        If rowCount <= 1 And i = 2 Then
+          MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
+                 "Info sheet will be empty. Check the query in Main sheet.", vbExclamation, "No Data"
         End If
       End If
     End If
@@ -541,7 +527,6 @@ Dim wsErrors As Worksheet
     wsErrors.Range("A2").Value = "Please click 'Get Data' button first to load data from database."
     wsErrors.Range("A1").Font.Bold = True
     wsErrors.Range("A1").Font.ColorIndex = 3 ' Red
-    Debug.Print "Checkout: No data found in DB2 - Info sheet will be empty"
   End If
   
   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
