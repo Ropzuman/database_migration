@@ -1,4 +1,4 @@
-# Access_automaatio.ps1
+﻿# Access_automaatio.ps1
 
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
 # Kohde-Office on 32-bittinen, joten tämän skriptin on AJAUDUTTAVA 32-bittisessä (x86) PowerShellissä.
