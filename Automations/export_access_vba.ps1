@@ -1,4 +1,4 @@
-#<
+
 # Export-AccessVBA.ps1
 # TARKOITUS: Viedä Access-tietokantojen (*.accdb, *.mdb) VBA-komponentit tiedostojärjestelmään tarkastelua,
 # versionointia tai migraatiota varten. Skripti avaa jokaisen tietokannan ja yrittää viedä sen VBProjectin

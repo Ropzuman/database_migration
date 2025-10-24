@@ -1,7 +1,6 @@
 '''
 ' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
 ' Handles document property extraction, comment-based linking, and error reporting.
-' Updated: Enhanced for OLE DB compatibility - robust column name matching.
 '''
 
 Sub HaeDocTiedot()
@@ -33,21 +32,12 @@ DIFile = ""
   Dim wsDB2 As Worksheet
   Set wsDB2 = Worksheets("DB2")
   
-  ' Check if DB2 has any data (OLE DB should populate this via Module1)
-  If wsDB2.Cells(1, 1).Value = "" Then
-    ' DB2 is empty - no data retrieved from database
-    Exit Sub
-  End If
+  If wsDB2.Cells(1, 1).Value = "" Then Exit Sub
   
   i = 1
   Do
-    ' Use LCase for case-insensitive matching (OLE DB and ODBC may differ in case)
+    ' Case-insensitive column matching with whitespace trimming
     Arvo = LCase(Trim(wsDB2.Cells(1, i).Value))
-    
-    ' OLE DB Compatibility Note:
-    ' Column names from DOCUMENTS table should be identical whether retrieved via ODBC or OLE DB.
-    ' Using LCase() ensures case-insensitive matching for robustness.
-    ' Trim() removes any trailing/leading spaces that might differ between providers.
     Select Case Arvo
       Case "rev"
         ' Parse revision history: "B 21.5.2025/TKa/JKa/JKa/After HW FAT" + Chr(10) + "A 13.5.2025/..."
@@ -100,12 +90,10 @@ DIFile = ""
       Case "name"
         DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath"
-        ' OLE DB and ODBC handle paths identically, but check for Null/Empty
         Dim pathStr As String
         pathStr = wsDB2.Cells(2, i).Value & ""
         If pathStr <> "" Then
           DIPath = pathStr & IIf(Right(pathStr, 1) = "\", "", "\")
-          ' Extract project number: 8 characters after "P:\"
           If InStr(pathStr, "P:\") > 0 Then
             DIProjNo = Mid(pathStr, InStr(pathStr, "P:\") + 3, 8)
           End If

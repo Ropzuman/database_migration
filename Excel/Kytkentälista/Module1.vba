@@ -81,8 +81,8 @@ Private Sub EndFastMode()
 End Sub
 
 '''
-' HaeData: Fetches data from Access database using OLE DB (with automatic provider fallback).
-' Populates DB1 and DB2 sheets with query results. Uses fast mode for performance.
+' HaeData: Fetches data from Access database using ODBC and SQL queries defined in the faceplate.
+' Populates DB1 and DB2 sheets with the results. Uses fast mode for performance.
 '''
 Sub HaeData()
 Dim Kanta As String
@@ -116,16 +116,7 @@ Dim Yhteys As String
     Exit Sub
   End If
   
-  ' Use OLE DB for Access databases (tries 16.0 → 15.0 → 12.0 automatically)
-  Dim fileExt As String
-  fileExt = LCase(Right(Kanta, 6))
-  
-  If InStr(fileExt, ".mdb") > 0 Or InStr(fileExt, ".accdb") > 0 Then
-    Yhteys = "OLEDB;Provider=Microsoft.ACE.OLEDB.16.0;Data Source=" & Kanta
-  Else
-    Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
-  End If
-  
+  Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
   Dim ws As Worksheet
   
   On Error GoTo ErrorHandler
@@ -134,20 +125,11 @@ Dim Yhteys As String
     ' Clear previous data and run query for each DB sheet
     Set ws = ThisWorkbook.Sheets("DB" & i)
     ws.Cells.Clear
-    If sSQL(i) <> "" Then
-
-      Dim sqlQuery As String
-      sqlQuery = sSQL(i)
-      
-      ' Automatic OLE DB provider fallback: 16.0 → 15.0 → 12.0
-      Dim connectionSuccess As Boolean
-      Dim errorMsg As String
-      connectionSuccess = False
-      
-      On Error Resume Next
+    ' Skip Excel-based queries (_qryForExcel) - only process Access database queries
+    If sSQL(i) <> "" And InStr(1, sSQL(i), "_qryForExcel", vbTextCompare) = 0 Then
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
-        .Sql = sqlQuery
+        .Sql = sSQL(i)
         .FieldNames = True
         .RefreshStyle = xlInsertDeleteCells
         .RowNumbers = False
@@ -156,83 +138,9 @@ Dim Yhteys As String
         .SaveData = True
         .BackgroundQuery = False
         .Refresh
+        .Delete ' Remove query after refresh to avoid leaving connections
       End With
-      
-      If Err.Number = 0 Then
-        connectionSuccess = True
-      Else
-        errorMsg = Err.Description
-        Err.Clear
-        On Error Resume Next
-        TAULUKKO.Delete
-        Err.Clear
-        
-        ' Fallback: Try 15.0
-        If InStr(Yhteys, "ACE.OLEDB.16.0") > 0 Then
-          Yhteys = Replace(Yhteys, "ACE.OLEDB.16.0", "ACE.OLEDB.15.0")
-          Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
-          With TAULUKKO
-            .Sql = sqlQuery
-            .FieldNames = True
-            .RefreshStyle = xlInsertDeleteCells
-            .RowNumbers = False
-            .FillAdjacentFormulas = False
-            .HasAutoFormat = True
-            .SaveData = True
-            .BackgroundQuery = False
-            .Refresh
-          End With
-          
-          If Err.Number = 0 Then
-            connectionSuccess = True
-          Else
-            Err.Clear
-            TAULUKKO.Delete
-            Err.Clear
-            
-            ' Fallback: Try 12.0
-            Yhteys = Replace(Yhteys, "ACE.OLEDB.15.0", "ACE.OLEDB.12.0")
-            Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
-            With TAULUKKO
-              .Sql = sqlQuery
-              .FieldNames = True
-              .RefreshStyle = xlInsertDeleteCells
-              .RowNumbers = False
-              .FillAdjacentFormulas = False
-              .HasAutoFormat = True
-              .SaveData = True
-              .BackgroundQuery = False
-              .Refresh
-            End With
-            
-            If Err.Number = 0 Then
-              connectionSuccess = True
-            Else
-              Err.Clear
-              TAULUKKO.Delete
-              Err.Clear
-            End If
-          End If
-        End If
-      End If
-      
-      On Error GoTo ErrorHandler
-      
-      If Not connectionSuccess Then
-        MsgBox "Database Connection Failed for DB" & i & vbCrLf & vbCrLf & _
-               "Error: " & errorMsg & vbCrLf & _
-               "Connection: " & Yhteys & vbCrLf & _
-               "Query: " & sqlQuery & vbCrLf & vbCrLf & _
-               "This sheet will be empty.", vbCritical, "Query Error"
-      Else
-        ' Warn if DB2 returned no data
-        Dim rowCount As Long
-        rowCount = ws.UsedRange.Rows.Count
-        If rowCount <= 1 And i = 2 Then
-          MsgBox "WARNING: DB2 query returned no data!" & vbCrLf & vbCrLf & _
-                 "Info sheet will be empty. Check the query in Main sheet.", vbExclamation, "No Data"
-        End If
-      End If
+      Set TAULUKKO = Nothing
     End If
   Next i
   EndFastMode
@@ -242,13 +150,13 @@ Dim Yhteys As String
   
 ErrorHandler:
   EndFastMode
-  MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
+  MsgBox "ODBC Error: " & Err.Description & vbCrLf & vbCrLf & _
          "Database: " & Kanta & vbCrLf & _
-         "Connection: " & Yhteys & vbCrLf & _
          "SQL Query " & i & ": " & sSQL(i), vbCritical, "Database Connection Error"
   Err.Clear
   Sheets("Main").Select
 End Sub
+'''
 ' GenPrintout: Generates a new printout workbook using TEMPLATE and data from DB1.
 ' Copies headers, footers, and main data body, applies formatting, and saves the result.
 ' Uses array-based transfer for main data for speed. All formatting and linking logic preserved.
@@ -490,7 +398,7 @@ Dim wsErrors As Worksheet
   CheckOK = False
   RMAX = 0
   Virhe = False
-  BeginFastMode
+  Application.ScreenUpdating = False
   
   Set wsErrors = Sheets("ERRORS")
   Set wsTemplate = Sheets("TEMPLATE")
@@ -520,15 +428,6 @@ Dim wsErrors As Worksheet
   
   ' Fetch document info from DB2 sheet
   HaeDocTiedot
-  
-  ' Check if data was loaded from DB2
-  If DIProject = "" And DIDocNo = "" And DIProjNo = "" And DIMetsoDocNo = "" Then
-    wsErrors.Range("A1").Value = "WARNING: No document metadata found in DB2 sheet!"
-    wsErrors.Range("A2").Value = "Please click 'Get Data' button first to load data from database."
-    wsErrors.Range("A1").Font.Bold = True
-    wsErrors.Range("A1").Font.ColorIndex = 3 ' Red
-  End If
-  
   VaihdaInfo   'Populate document info to Info sheet only (not Revisions during checkout)
   
   ' Search for row markers in TEMPLATE
@@ -555,7 +454,7 @@ Dim wsErrors As Worksheet
     wsErrors.Range("A3").Value = "- Neither you can have £1/2 and £1/3 links on same template."
     wsErrors.Range("A4").Value = "- Please correct these errors and try again!"
     wsErrors.Activate
-    EndFastMode
+    Application.ScreenUpdating = True
     MsgBox "There where errors on template, see ERRORS sheet!", vbCritical, "Error!"
     Exit Sub
   End If
@@ -577,18 +476,18 @@ Dim wsErrors As Worksheet
   
   If Virhe Then
     wsErrors.Activate
-    EndFastMode
+    Application.ScreenUpdating = True
     MsgBox "There were errors on the template! See ERRORS sheet.", vbCritical, "Error!"
   Else
     Sheets("Main").Activate
-    EndFastMode
+    Application.ScreenUpdating = True
     CheckOK = True
     MsgBox "Check OK!", vbOKOnly, "OK!"
   End If
   Exit Sub
 
 CheckoutError:
-  EndFastMode
+  Application.ScreenUpdating = True
   MsgBox "Error in Checkout: " & Err.Description, vbCritical, "Checkout Error"
   Err.Clear
   On Error GoTo 0
