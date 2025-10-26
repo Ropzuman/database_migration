@@ -2,7 +2,7 @@ Option Explicit
 
 ' Updated 2025-10-26: 64-bit compatibility, performance optimizations, improved error handling
 ' Excel-AutoCAD integration: Import/export block attributes and text entities
-' Changes: Integer → Long (64-bit), early binding → late binding (compatibility),
+' Changes: Integer ? Long (64-bit), early binding ? late binding (compatibility),
 '          added error handlers, array optimization for performance
 
 ' ============================================================================
@@ -14,30 +14,50 @@ Option Explicit
 ' Source: Autodesk AutoCAD ActiveX/VBA Reference Documentation
 ' ============================================================================
 
-' Selection methods
-Public Const acSelectionSetAll As Long = 2          ' Select all entities
-Public Const acSelectionSetPrevious As Long = 4     ' Select previously selected entities
+' Selection methods (CRITICAL: Changed to Integer)
+' NOTE: acSelectionSetAll must be 5
+Public Const acSelectionSetAll As Integer = 5       ' Select all entities (correct value)
+Public Const acSelectionSetPrevious As Integer = 4  ' Select previously selected entities
 
-' Active space
-Public Const acModelSpace As Long = 1               ' Model space (vs paper space)
+' Active space (CRITICAL: Changed to Integer)
+Public Const acModelSpace As Integer = 1            ' Model space (vs paper space)
 
-' Drawing versions for SaveAs
-Public Const acNative As Long = 60                  ' Current AutoCAD version
-Public Const ac2004_dwg As Long = 24                ' AutoCAD 2004 format
-Public Const ac2007_dwg As Long = 36                ' AutoCAD 2007 format
-Public Const ac2010_dwg As Long = 48                ' AutoCAD 2010 format
-Public Const ac2013_dwg As Long = 60                ' AutoCAD 2013 format
+' Drawing versions for SaveAs (CRITICAL: Changed to Integer)
+Public Const acNative As Integer = 60               ' Current AutoCAD version
+Public Const ac2004_dwg As Integer = 24             ' AutoCAD 2004 format
+Public Const ac2007_dwg As Integer = 36             ' AutoCAD 2007 format
+Public Const ac2010_dwg As Integer = 48             ' AutoCAD 2010 format
+Public Const ac2013_dwg As Integer = 60             ' AutoCAD 2013 format
 
-' Window state
-Public Const acMax As Long = 3                      ' Maximize window
+' Window state (CRITICAL: Changed to Integer)
+Public Const acMax As Integer = 3                   ' Maximize window
 
-' Zoom methods
-Public Const acZoomScaledRelative As Long = 3       ' Zoom relative to current view
+' Zoom methods (CRITICAL: Changed to Integer)
+Public Const acZoomScaledRelative As Integer = 3    ' Zoom relative to current view
 
 Public oACAD As Object ' AcadApplication (late binding for compatibility) - Changed from AcadApplication
 Public oDOC As Object ' AcadDocument - Changed from AcadDocument
 Public OliAuki As Boolean
 Public Ver As Long ' Changed from Integer to Long for 64-bit compatibility
+Public Const DEBUG_TRACE As Boolean = True ' set False to silence debug prints
+
+' Lightweight tracing helper for the Immediate Window (Ctrl+G)
+Private Sub Trace(ByVal msg As String)
+    If DEBUG_TRACE Then Debug.Print Format(Now, "hh:nn:ss") & " | " & msg
+End Sub
+
+' Wrapper macros so TuoDATA shows in the Macros dialog without parameters
+Public Sub TuoDATA_All()
+    ' Import all entities (no previous selection)
+    Trace "TuoDATA_All invoked"
+    TuoDATA False
+End Sub
+
+Public Sub TuoDATA_Selected()
+    ' Import only the previous selection in AutoCAD
+    Trace "TuoDATA_Selected invoked"
+    TuoDATA True
+End Sub
 
 Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
 ' Import data from AutoCAD to Excel
@@ -52,13 +72,14 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim VainValitut As Boolean
     Dim Joukko As Object ' AcadSelectionSet - Changed from AcadSelectionSet
     Dim BlockArray As Variant
-    Dim i As Long, j As Long, jj As Long ' Changed from Integer to Long
-    ' ⚠️ CRITICAL: FilterType MUST remain Integer (not Long)
+    Dim i As Long, j As Long, jj As Long, k As Long ' Changed from Integer to Long
+    ' ?? CRITICAL: FilterType MUST remain Integer (not Long)
     ' AutoCAD's SelectionSet.Select API requires Integer array for DXF filter codes
     ' Changing to Long causes error: "Invalid argument FilterType in Select"
-    Dim FilterType(0) As Integer ' Exception: Must remain Integer - AutoCAD COM API requirement
-    Dim FilterData(0) As Variant
-    Dim Poista() As Object ' AcadEntity - Changed from AcadEntity array
+    Dim FilterType() As Integer ' Dynamic array (MUST be Integer)
+    Dim FilterData() As Variant  ' Dynamic array for filter values
+    ' NOTE: RemoveItems expects a Variant array of objects; using Variant avoids type mismatch
+    Dim Poista() As Variant ' array of AcadEntity objects (as Variant)
     Dim L As Long ' Changed from Integer to Long
     Dim EiPoisteta As Boolean
     Dim Nimet As String
@@ -75,6 +96,22 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim Loytyi As Boolean
     Dim Filter2 As Boolean
     Dim Docmode As Boolean
+    Dim StepMsg As String ' diagnostic breadcrumb for error location
+    Dim IncludeTexts As Boolean ' whether to process text entities based on UI selection
+    Dim AllowAll As Boolean ' whether wildcard * is used for all block names
+    Dim FoundAny As Boolean ' whether any entity matched the criteria
+    Dim oEnt As Object ' current entity from selection set (late bound)
+    Dim StartBaseRow As Long ' first output row before import begins
+    Dim DocStartRow As Long ' first output row for the current drawing
+    Dim prevCalc As Long
+    Dim prevEvents As Boolean
+    Dim prevScreen As Boolean
+    Dim TagCol As Object ' cache: attribute tag -> column index
+    ' Bulk write buffer (rows x cols)
+    Dim buf() As Variant
+    Dim rowCap As Long, colCap As Long, rowUsed As Long, maxColUsed As Long
+    Dim selCount As Long
+    Dim LayerStr As String, Layers As Variant, HasLayers As Boolean
     
     On Error GoTo ErrHandler
   
@@ -90,8 +127,16 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         End If
     End If
   
+    ' Minimize Excel UI and recalculation overhead during import
+    prevScreen = Application.ScreenUpdating
+    prevCalc = Application.Calculation
+    prevEvents = Application.EnableEvents
     Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
     
+    StepMsg = "Get AutoCAD application"
+    Trace StepMsg
     ' Connect to running AutoCAD instance
     On Error Resume Next
     Set oACAD = GetObject(, "AutoCAD.Application")
@@ -109,15 +154,15 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     End If
     
     EkaKerta = True
+    StepMsg = "Select DATA sheet"
+    Trace StepMsg
     DATA.Select
     
     If Tyhjenna Then
-        Cells.Select
-        Selection.Clear
-        Selection.NumberFormat = "@" ' Set cell format to text
+        Cells.Clear
+        Cells.NumberFormat = "@" ' Set cell format to text
         Rows("1:1").Font.Bold = True ' Make headers bold
         Columns("E:F").NumberFormat = "General"
-        Range("A1").Select
         Cells(1, 1).Value = "PATH"
         Cells(1, 2).Value = "DWG"
         Cells(1, 3).Value = "BLOCK"
@@ -127,7 +172,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Cells(1, 7).Value = "Layer"
     End If
     
-    ' Get document count
+    StepMsg = "Get document count"
+    Trace StepMsg
     If Listasta Then
         TIEDLISTA.Select
         i = 1
@@ -149,30 +195,41 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Rivi = Rivi + 1
     Loop
     
-    ' Parse block names
-    Nimet = UCase(Aloitus.Range("D7").Value)
+    StepMsg = "Parse block names"
+    Trace StepMsg
+    Nimet = CStr(Aloitus.Range("D7").Value) ' keep original case for DXF name filters
     Blokit = Split(Nimet, ",")
     
     For i = 0 To UBound(Blokit)
         Blokit(i) = Trim(Blokit(i))
     Next i
     
-    ' Set up entity filter
-    If Aloitus.Range("D5").Value = "Tekstit" Then
-        FilterType(0) = 0
-        FilterData(0) = "TEXT,MTEXT,DTEXT"
-    ElseIf Aloitus.Range("D5").Value = "Blokit ja tekstit" Then
-        FilterType(0) = 0
-        FilterData(0) = "TEXT,MTEXT,DTEXT,INSERT"
-    Else
-        FilterType(0) = 0
-        FilterData(0) = "INSERT"
+    StepMsg = "Determine entity types"
+    Trace StepMsg
+    IncludeTexts = (Aloitus.Range("D5").Value = "Tekstit" Or Aloitus.Range("D5").Value = "Blokit ja tekstit")
+
+    ' Optional layer filter from UI (comma-separated). Blank = no layer filter.
+    On Error Resume Next
+    LayerStr = CStr(Aloitus.Range("D8").Value)
+    On Error GoTo ErrHandler
+    HasLayers = False
+    If Len(Trim(LayerStr)) > 0 Then
+        Layers = Split(LayerStr, ",")
+        For i = LBound(Layers) To UBound(Layers)
+            Layers(i) = Trim(CStr(Layers(i)))
+            If Layers(i) <> "" Then HasLayers = True
+        Next i
     End If
     
     ' Save and temporarily change document mode
     Docmode = oACAD.Preferences.System.SingleDocumentMode
     oACAD.Preferences.System.SingleDocumentMode = False
     
+    ' Remember first empty row before import to calculate totals later
+    StartBaseRow = Rivi
+    ' Initialize tag-to-column cache
+    Set TagCol = CreateObject("Scripting.Dictionary")
+
     ' Process each document
     For DocRivi = 1 To DocMaara
         Application.StatusBar = "Doc: " & DocRivi & "/" & DocMaara
@@ -181,7 +238,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             Set oDOC = oACAD.ActiveDocument
             Loytyi = True
         Else
-            ' Find document in collection
+            StepMsg = "Resolve current/target document"
+            Trace StepMsg
             Loytyi = False
             For i = 0 To oACAD.Documents.Count - 1
                 If UCase(oACAD.Documents(i).Name) = UCase(Dir(TIEDLISTA.Cells(DocRivi, 1).Value)) Then
@@ -192,115 +250,274 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             Next i
             
             If Not Loytyi Then
+                StepMsg = "Open drawing from list"
+                Trace StepMsg
                 Set oDOC = oACAD.Documents.Open(TIEDLISTA.Cells(DocRivi, 1).Value)
             End If
         End If
-        
+
         ' Get document information
         DWGName = Left(oDOC.Name, Len(oDOC.Name) - 4) ' Remove .dwg extension
         Hakemisto = oDOC.Path
         
-        ' Clean up existing selection set
+            StepMsg = "Get document information"
+            Trace StepMsg
         For i = 0 To oDOC.SelectionSets.Count - 1
             If oDOC.SelectionSets(i).Name = "EXCELHAKU" Then
                 oDOC.SelectionSets(i).Delete
-                Exit For
+            StepMsg = "Clean up existing selection set"
+            Trace StepMsg
             End If
         Next i
         
         Set Joukko = oDOC.SelectionSets.Add("EXCELHAKU")
-        
+
         ' ========================================================================
-        ' Select entities with filter
-        ' SelectOnScreen is used for previously selected entities (user selection)
-        ' Select is used for programmatic selection of all entities
-        ' Both methods accept FilterType and FilterData arrays for filtering
+        ' Select entities (no filter arrays) and filter in VBA by EntityName
+        ' Rationale: Avoids COM filter type/value edge-cases under late binding.
         ' ========================================================================
-        
-        If VainValitut Then
-            ' Select from user's previously selected entities on screen
-            Joukko.SelectOnScreen FilterType, FilterData
+        StepMsg = "Select entities"
+        Trace StepMsg
+        ' Build DXF filters to limit selection at source for performance
+        ' We avoid code 2 (name) to support dynamic blocks; we'll AND a layer filter if provided.
+        Dim idx As Long
+        idx = -1
+        ' Entity type filter: INSERT or INSERT/TEXT/MTEXT with <or>
+        If IncludeTexts Then
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
         Else
-            ' Select all entities matching filter programmatically
-            Joukko.Select acSelectionSetAll, Empty, Empty, FilterType, FilterData
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
         End If
-        
-        ' Filter blocks that don''t match criteria
-        L = 0
-        For j = 0 To Joukko.Count - 1
-            If Joukko(j).EntityName = "AcDbBlockReference" Then
-                EiPoisteta = False
-                For i = 0 To UBound(Blokit)
-                    If UCase(Joukko(j).EffectiveName) = Blokit(i) Then
-                        EiPoisteta = True
-                        Exit For
-                    ElseIf Blokit(i) = "*" Then
-                        EiPoisteta = True
-                        Exit For ' Added Exit For for efficiency
-                    End If
-                Next i
-                
-                If Not EiPoisteta Then
-                    ReDim Preserve Poista(L)
-                    Set Poista(L) = Joukko(j)
-                    L = L + 1
+        ' Optional layer OR-group
+        If HasLayers Then
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
+            For k = LBound(Layers) To UBound(Layers)
+                If Layers(k) <> "" Then
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 8: FilterData(idx) = Layers(k)
                 End If
+            Next k
+            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
+            Trace "Layer filter applied: " & LayerStr
+        Else
+            Trace "No layer filter"
+        End If
+
+        ' Select with filters (works for both Previous and All)
+        If VainValitut Then
+            Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
+        Else
+            Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+        End If
+        Trace "Selection count: " & Joukko.Count
+    selCount = Joukko.Count
+    ' Prepare a bulk buffer sized to the selection (plus a tiny slack) and reasonable column capacity
+    rowCap = selCount + 8
+    colCap = 40 ' 7 base + typical attributes
+    ReDim buf(1 To rowCap, 1 To colCap)
+    rowUsed = 0
+    maxColUsed = 7
+
+        StepMsg = "Prepare filter criteria"
+        Trace StepMsg
+        AllowAll = False
+        For i = 0 To UBound(Blokit)
+            If Blokit(i) = "*" Then
+                AllowAll = True
+                Exit For
             End If
-        Next j
-        
-        If L > 0 Then Joukko.RemoveItems Poista
-        
-        If Joukko.Count = 0 Then
-            MsgBox "Kuvasta tai valitulta alueelta ei löytynyt tietoja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
-        End If
-        
+        Next i
+
+        StepMsg = "Process entities in selection set"
+        Trace StepMsg
         ' Process entities in selection set
+        FoundAny = False
+        DocStartRow = Rivi
         For i = 0 To Joukko.Count - 1
+            ' Resolve entity explicitly via Item to avoid default-member ambiguity in late binding
+            StepMsg = "Get entity from selection: index=" & i
+            On Error Resume Next
+            Set oEnt = Joukko.Item(i)
+            If Err.Number <> 0 Or oEnt Is Nothing Then
+                Err.Clear
+                On Error GoTo ErrHandler
+                GoTo ContinueEntities
+            End If
+            On Error GoTo ErrHandler
+
             Application.StatusBar = "Luetaan tietoa: " & i + 1 & "/" & Joukko.Count & "  File: " & DWGName
-            Cells(Rivi, 1).Value = Hakemisto
-            Cells(Rivi, 2).Value = DWGName
-            Cells(Rivi, 4).Value = Joukko(i).Handle
             
-            If Joukko(i).EntityName = "AcDbBlockReference" Then
-                Set Blokki = Joukko(i)
-                Cells(Rivi, 5).Value = Blokki.InsertionPoint(0) '' XCord
-                Cells(Rivi, 6).Value = Blokki.InsertionPoint(1) '' YCord
-                Cells(Rivi, 7).Value = Blokki.Layer
-                Cells(Rivi, 3).Value = Blokki.EffectiveName
-                Cells(Rivi, 3).ClearNotes
-                Cells(Rivi, 3).AddComment Blokki.Name
-                
-                If Blokki.HasAttributes Then
-                    BlockArray = Blokki.GetAttributes
-                    For j = 0 To UBound(BlockArray)
-                        Cells(1, 8 + j).Value = BlockArray(j).TagString
-                        Cells(1, 8 + j).ClearNotes
-                        Cells(1, 8 + j).AddComment Blokki.EffectiveName
-                        Cells(Rivi, 8 + j).Value = BlockArray(j).TextString
-                    Next j
-                    Rivi = Rivi + 1
+            ' Prepare handle; may fail for proxies
+            StepMsg = "Read entity handle"
+            Dim entHandle As Variant
+            On Error Resume Next
+            entHandle = oEnt.Handle
+            Err.Clear
+            On Error GoTo ErrHandler
+            
+            StepMsg = "Check entity type"
+            Dim entType As String
+            Dim isBlock As Boolean, isText As Boolean, isMText As Boolean
+            Dim tmp As Variant
+            ' Try TypeName first; if it fails (rare), fall back to EntityName or ObjectName via CallByName
+            On Error Resume Next
+            entType = ""
+            entType = TypeName(oEnt) ' e.g., "IAcadBlockReference", "IAcadText", "IAcadMText"
+            If Err.Number <> 0 Or entType = "" Then
+                Err.Clear
+                StepMsg = "Check entity type: EntityName fallback"
+                tmp = CallByName(oEnt, "EntityName", VbGet)
+                If Err.Number <> 0 Or IsEmpty(tmp) Then
+                    Err.Clear
+                    StepMsg = "Check entity type: ObjectName fallback"
+                    tmp = CallByName(oEnt, "ObjectName", VbGet)
                 End If
-            Else
-                ' Handle text entities
-                If Joukko(i).EntityName = "AcDbText" Then
-                    Set oText = Joukko(i)
+                If Err.Number <> 0 Or IsEmpty(tmp) Then
+                    ' Could not resolve entity type; skip this entity
+                    Err.Clear
+                    On Error GoTo ErrHandler
+                    GoTo ContinueEntities
+                End If
+                entType = CStr(tmp)
+            End If
+            On Error GoTo ErrHandler
+            Trace "Entity type: " & entType
+
+            ' Normalize checks for both interface TypeName and AcDb* values
+            isBlock = (InStr(1, entType, "BlockReference", vbTextCompare) > 0) Or _
+                      (InStr(1, entType, "AcDbBlockReference", vbTextCompare) > 0)
+            isMText = (InStr(1, entType, "MText", vbTextCompare) > 0) Or _
+                      (InStr(1, entType, "AcDbMText", vbTextCompare) > 0)
+            isText = ((InStr(1, entType, "Text", vbTextCompare) > 0) Or _
+                      (InStr(1, entType, "AcDbText", vbTextCompare) > 0)) And Not isMText
+
+            If isBlock Then
+                ' Check block name matches filter criteria
+                On Error Resume Next
+                Set Blokki = oEnt
+                If Err.Number <> 0 Or Blokki Is Nothing Then
+                    Err.Clear
+                    On Error GoTo ErrHandler
+                    GoTo ContinueEntities
+                End If
+                On Error GoTo ErrHandler
+                EiPoisteta = AllowAll
+                If Not EiPoisteta Then
+                    For k = 0 To UBound(Blokit)
+                        If UCase(Blokki.EffectiveName) = UCase(Blokit(k)) Then
+                            EiPoisteta = True
+                            Exit For
+                        End If
+                    Next k
+                End If
+
+                If EiPoisteta Then
+                    ' Add a buffered row
+                    rowUsed = rowUsed + 1
+                    If rowUsed > rowCap Then
+                        ' Extend buffer rows if unexpectedly exceeded
+                        rowCap = rowCap + 64
+                        ReDim Preserve buf(1 To rowCap, 1 To colCap)
+                    End If
+                    On Error Resume Next
+                    buf(rowUsed, 1) = Hakemisto
+                    buf(rowUsed, 2) = DWGName
+                    buf(rowUsed, 3) = Blokki.EffectiveName
+                    buf(rowUsed, 4) = entHandle
+                    buf(rowUsed, 5) = Blokki.InsertionPoint(0) '' XCord
+                    buf(rowUsed, 6) = Blokki.InsertionPoint(1) '' YCord
+                    buf(rowUsed, 7) = Blokki.Layer
+                    On Error GoTo ErrHandler
+
+                    StepMsg = "Read block attributes"
+                    If Blokki.HasAttributes Then
+                        BlockArray = Blokki.GetAttributes
+                        For jj = 0 To UBound(BlockArray)
+                            Dim tagName As String
+                            Dim colIdx As Long
+                            tagName = UCase(BlockArray(jj).TagString)
+                            If Not TagCol.Exists(tagName) Then
+                                ' Find or create a column for this tag
+                                colIdx = OtsS(tagName)
+                                TagCol.Add tagName, colIdx
+                                ' Annotate header with block name (optional, error-safe)
+                                On Error Resume Next
+                                Cells(1, colIdx).ClearNotes
+                                Cells(1, colIdx).AddComment Blokki.EffectiveName
+                                On Error GoTo ErrHandler
+                            Else
+                                colIdx = CLng(TagCol(tagName))
+                            End If
+                            ' Ensure buffer has enough columns
+                            If colIdx > colCap Then
+                                colCap = colIdx + 8
+                                ReDim Preserve buf(1 To rowCap, 1 To colCap)
+                            End If
+                            If colIdx > maxColUsed Then maxColUsed = colIdx
+                            buf(rowUsed, colIdx) = BlockArray(jj).TextString
+                        Next jj
+                    End If
+                    FoundAny = True
+                End If
+            ElseIf IncludeTexts And (isText Or isMText) Then
+                ' Handle text entities only when requested
+                If isText Then
+                    On Error Resume Next
+                    Set oText = oEnt
+                    If Err.Number <> 0 Or oText Is Nothing Then
+                        Err.Clear
+                        On Error GoTo ErrHandler
+                        GoTo ContinueEntities
+                    End If
+                    On Error GoTo ErrHandler
                     Cells(Rivi, 8).Value = oText.TextString
                     Cells(Rivi, 5).Value = oText.InsertionPoint(0)
                     Cells(Rivi, 6).Value = oText.InsertionPoint(1)
-                    Range(Cells(Rivi, 1), Cells(Rivi, 8)).Interior.ColorIndex = 8
                 Else
-                    Set oMText = Joukko(i)
+                    On Error Resume Next
+                    Set oMText = oEnt
+                    If Err.Number <> 0 Or oMText Is Nothing Then
+                        Err.Clear
+                        On Error GoTo ErrHandler
+                        GoTo ContinueEntities
+                    End If
+                    On Error GoTo ErrHandler
                     Cells(Rivi, 8).Value = oMText.TextString
                     Cells(Rivi, 5).Value = oMText.InsertionPoint(0)
                     Cells(Rivi, 6).Value = oMText.InsertionPoint(1)
-                    Range(Cells(Rivi, 1), Cells(Rivi, 8)).Interior.ColorIndex = 8
                 End If
+                Range(Cells(Rivi, 1), Cells(Rivi, 8)).Interior.ColorIndex = 8
                 Rivi = Rivi + 1
+                FoundAny = True
+            Else
+                ' Skip other entity types
             End If
+ContinueEntities:
         Next i
+
+        ' Flush buffered rows to sheet in a single write
+        If rowUsed > 0 Then
+            Dim outRng As Range
+            Set outRng = Range(Cells(DocStartRow, 1), Cells(DocStartRow + rowUsed - 1, maxColUsed))
+            outRng.Value = buf
+            Rivi = DocStartRow + rowUsed
+        End If
+        Trace "Doc processed: " & DWGName & ", rows added: " & rowUsed
         
-        If Not Loytyi Then oDOC.Close False
+        ' If nothing matched, inform the user
+        If Not FoundAny Then
+            MsgBox "Kuvasta tai valitulta alueelta ei löytynyt tietoja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
+        End If
+        
+        ' Close drawing opened from list (do not save) to match original behavior
+        If Not Loytyi Then
+            oDOC.Close False
+        End If
     Next DocRivi
+    Trace "TuoDATA finished, total rows added: " & (Rivi - StartBaseRow)
     
 Cleanup:
     On Error Resume Next
@@ -308,6 +525,10 @@ Cleanup:
     oACAD.Preferences.System.SingleDocumentMode = Docmode
     Cells.EntireColumn.AutoFit
     Application.StatusBar = False
+    ' Restore Excel settings
+    Application.EnableEvents = prevEvents
+    Application.Calculation = prevCalc
+    Application.ScreenUpdating = prevScreen
     
     ' Release objects
     Set Blokki = Nothing
@@ -318,7 +539,8 @@ Cleanup:
     Exit Sub
     
 ErrHandler:
-    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Tuo DATA"
+    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description & vbCrLf & _
+          "Vaihe: " & StepMsg, vbCritical, "Tuo DATA"
     Resume Cleanup
 End Sub
 
@@ -342,7 +564,7 @@ Public Sub VieDATA()
     Dim oMText As Object ' AcadMText - Changed from AcadMText
     Dim Docmode As Boolean
     
-    On Error GoTo ErrHandler
+    ' (no debug tracing in export routine)
     
     Ver = acNative ' Ver = 60
   
@@ -706,3 +928,4 @@ Function Yhd(Alue As Range, Optional Merkki As String) As String
     
     Yhd = Teksti
 End Function
+
