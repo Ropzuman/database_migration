@@ -61,7 +61,7 @@ Dim Yhteys As String
 '  Else
 '    SQLSuffix = " ORDER BY OrderValveNo"
 '  End If
-If Sheets("Main").Valinta1.Value = True Then
+  If Sheets("Main").Valinta1.Value = True Then
     Valinta = 0
   ElseIf Sheets("Main").Valinta2.Value = True Then
     Valinta = 1
@@ -216,14 +216,14 @@ Sub GenPrintout()
       Windows(UusiWB).Activate
       Rows(ViimRivi & ":" & ViimRivi + Riveja).Select
       ActiveSheet.Paste  'Liitetään UUTEEN Workbookiin (Liittää muotoilut linkit jne.)
-      'If i Mod 2 = 1 Then
-      '  Range(Cells(ViimRivi, 1).Address, Cells(ViimRivi + Riveja, Sarakkeita).Address).Select
-      '  With Selection.Interior
-      '    .ColorIndex = 19
-      '    .Pattern = xlSolid
-      '    .PatternColorIndex = xlAutomatic
-      '  End With
-      'End If
+      If i Mod 2 = 1 Then
+        Range(Cells(ViimRivi, 1).Address, Cells(ViimRivi + Riveja, Sarakkeita).Address).Select
+        With Selection.Interior
+          .ColorIndex = 19
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+        End With
+      End If
       VaihdaLinkit ViimRivi, ViimRivi + Riveja, Kerta
       ViimRivi = ViimRivi + Riveja + 1
       Kerta = Kerta + 1
@@ -243,13 +243,8 @@ Sub GenPrintout()
         ActiveSheet.Paste
         Dim c As Range
         For Each c In Selection
-            'If Left(c.Value, 2) = "&&" Then
-            If Left(c.Value, 2) = "&&" And Len(c.Value) > 4 Then
-                c.Formula = "=counta(" & Cells(PHEnd, c.Column).Address & ":" & Cells(ViimRivi - 1, c.Column).Address & ")"
-            Else
             If Left(c.Value, 2) = "&&" Then
                 c.Formula = "=sum(" & Cells(PHEnd, c.Column).Address & ":" & Cells(ViimRivi - 1, c.Column).Address & ")"
-                End If
             End If
         Next c
     End If
