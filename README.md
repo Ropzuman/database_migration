@@ -89,7 +89,6 @@ Notes:
 
 - You can pre-fill default paths by editing `$DefaultAccessFilePath` and `$DefaultComponentPath` at the top of the script.
 
-
 ## Version History
 
 See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.
