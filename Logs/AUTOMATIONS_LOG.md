@@ -28,7 +28,7 @@ Planned:
 - Add a --dry-run mode to list files without opening Access/Excel.
 - Add logging to file (per-run log entries) and optional CSV summary of exported components.
 - Add command-line switches to `Excel_automaatio.ps1` to run unattended in CI (pass both folder paths).
- 
+
 2025-10-22 - Cleanup
 
 - Removed `DOCUMENTS_64BIT_MIGRATION.md` (DOCUMENTS is an Access DB; migration notes moved to project docs and automations log).
