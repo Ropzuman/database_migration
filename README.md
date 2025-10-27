@@ -58,6 +58,50 @@ Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Offi
 3. **Excel:** Click "Run Check" → verify Info sheet populates, no ERRORS
 4. **Excel:** Click "Generate Printout" → verify new workbook created
 
+## Excel: AutoCAD Import/Export (AcadDATA)
+
+This workbook includes an AutoCAD integration to read block attributes (and optional text entities) from DWG and write changes back.
+
+### Import (TuoDATA)
+
+- Run via Macros: TuoDATA_All (all) or TuoDATA_Selected (previous selection in AutoCAD).
+- Inputs on the Start sheet:
+  - D7: Block names, comma-separated. Use `*` to import all blocks.
+  - D5: Entity scope: "Blokit" or "Blokit ja tekstit" (includes TEXT/MTEXT).
+- Output columns: PATH, DWG, BLOCK, HANDLE, XCord, YCord, Layer, then one column per attribute tag (created as needed).
+
+Selection behavior
+
+- No layer filter (by design for simplicity and correctness).
+- The selection uses DXF filters for performance:
+  - Always filters by entity type: `INSERT` (and `TEXT`/`MTEXT` if chosen).
+  - If specific block names are given (not just `*`), a code-2 OR-group is added for those names.
+  - If that yields zero entities (typical for dynamic blocks with anonymous names), the code falls back to type-only selection and prunes in VBA by `EffectiveName` to keep only the requested blocks.
+- Text entities (when enabled) bypass the block-name filter and are included as-is.
+
+Dynamic blocks
+
+- Matching is performed against `EffectiveName`, so dynamic blocks are handled correctly.
+- The fallback path ensures dynamic blocks are included even if their anonymous DXF names don’t match the code-2 name filter.
+
+Dev tracing
+
+- Controlled in `Excel/Moduulit/AcadDATA/Koodit.bas` by `Public Const DEBUG_TRACE As Boolean`.
+- When `True`, detailed timestamps and steps are printed to the Immediate Window (Ctrl+G) during import: filter setup, selection counts, fallback triggers, and per-document row totals.
+- Functional behavior is unchanged; tracing only affects verbosity.
+
+### Export (VieDATA)
+
+More details for developers: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
+
+- Writes edited attribute values back to blocks by HANDLE.
+- Respects AutoCAD SingleDocumentMode and performs safe COM cleanup.
+
+### Double-click navigation
+
+- On the data sheet, double-click a row to locate the entity in AutoCAD and zoom to it.
+- Uses a robust zoom sequence: ZoomWindow to the entity’s bounding box and a safe scaled zoom helper to avoid enum mismatches under late binding.
+
 ## File Organization
 
 - `Access/` - Access VBA modules

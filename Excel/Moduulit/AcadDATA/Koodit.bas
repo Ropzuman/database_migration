@@ -19,9 +19,6 @@ Option Explicit
 Public Const acSelectionSetAll As Integer = 5       ' Select all entities (correct value)
 Public Const acSelectionSetPrevious As Integer = 4  ' Select previously selected entities
 
-' Active space (CRITICAL: Changed to Integer)
-Public Const acModelSpace As Integer = 1            ' Model space (vs paper space)
-
 ' Drawing versions for SaveAs (CRITICAL: Changed to Integer)
 Public Const acNative As Integer = 60               ' Current AutoCAD version
 Public Const ac2004_dwg As Integer = 24             ' AutoCAD 2004 format
@@ -29,11 +26,7 @@ Public Const ac2007_dwg As Integer = 36             ' AutoCAD 2007 format
 Public Const ac2010_dwg As Integer = 48             ' AutoCAD 2010 format
 Public Const ac2013_dwg As Integer = 60             ' AutoCAD 2013 format
 
-' Window state (CRITICAL: Changed to Integer)
-Public Const acMax As Integer = 3                   ' Maximize window
-
-' Zoom methods (CRITICAL: Changed to Integer)
-Public Const acZoomScaledRelative As Integer = 3    ' Zoom relative to current view
+'' Note: Window state, active space and zoom constants are defined where used (e.g., DATA.bas)
 
 Public oACAD As Object ' AcadApplication (late binding for compatibility) - Changed from AcadApplication
 Public oDOC As Object ' AcadDocument - Changed from AcadDocument
@@ -94,7 +87,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim DocRivi As Long ' Changed from Integer to Long
     Dim DocMaara As Long ' Changed from Integer to Long
     Dim Loytyi As Boolean
-    Dim Filter2 As Boolean
+    'Dim Filter2 As Boolean ' removed (unused)
     Dim Docmode As Boolean
     Dim StepMsg As String ' diagnostic breadcrumb for error location
     Dim IncludeTexts As Boolean ' whether to process text entities based on UI selection
@@ -111,7 +104,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim buf() As Variant
     Dim rowCap As Long, colCap As Long, rowUsed As Long, maxColUsed As Long
     Dim selCount As Long
-    Dim LayerStr As String, Layers As Variant, HasLayers As Boolean
+    ' Layer filtering removed; variables deleted
     
     On Error GoTo ErrHandler
   
@@ -153,7 +146,6 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Tyhjenna = True
     End If
     
-    EkaKerta = True
     StepMsg = "Select DATA sheet"
     Trace StepMsg
     DATA.Select
@@ -208,7 +200,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Trace StepMsg
     IncludeTexts = (Aloitus.Range("D5").Value = "Tekstit" Or Aloitus.Range("D5").Value = "Blokit ja tekstit")
     ' Layer filtering removed by request (simpler and faster)
-    HasLayers = False: LayerStr = "": Layers = Empty
+    ' no-op (layer filter removed)
     
     ' Save and temporarily change document mode
     Docmode = oACAD.Preferences.System.SingleDocumentMode
@@ -248,28 +240,39 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         ' Get document information
         DWGName = Left(oDOC.Name, Len(oDOC.Name) - 4) ' Remove .dwg extension
         Hakemisto = oDOC.Path
-        
-            StepMsg = "Get document information"
-            Trace StepMsg
+
+        StepMsg = "Clean up existing selection set"
+        Trace StepMsg
         For i = 0 To oDOC.SelectionSets.Count - 1
             If oDOC.SelectionSets(i).Name = "EXCELHAKU" Then
                 oDOC.SelectionSets(i).Delete
-            StepMsg = "Clean up existing selection set"
-            Trace StepMsg
             End If
         Next i
         
         Set Joukko = oDOC.SelectionSets.Add("EXCELHAKU")
 
         ' ========================================================================
-        ' Select entities (no filter arrays) and filter in VBA by EntityName
-        ' Rationale: Avoids COM filter type/value edge-cases under late binding.
+        ' Selection strategy
+        ' 1) Build a tight DXF filter by entity type (INSERT [+ TEXT/MTEXT if requested]).
+        ' 2) If specific block names are given (not just "*"), add a code-2 name OR-group.
+        ' 3) If that yields zero items, re-select by type only and prune in VBA by EffectiveName
+        '    to capture dynamic blocks with anonymous names.
+        ' 4) As an extra precaution, when a name filter is active, remove any non-matching
+        '    BlockReferences from the selection set before processing.
         ' ========================================================================
         StepMsg = "Select entities"
         Trace StepMsg
+        ' Determine wildcard state early for clarity
+        AllowAll = False
+        For i = 0 To UBound(Blokit)
+            If Blokit(i) = "*" Then
+                AllowAll = True
+                Exit For
+            End If
+        Next i
         ' Build DXF filters to limit selection at source for performance
-        ' Use code 2 name filter to narrow INSERTs by block names; also include "*U*" to catch dynamic blocks,
-        ' then post-filter by EffectiveName in VBA. Layer filter removed.
+        ' Use code 2 name filter to narrow INSERTs by block names; dynamic blocks are handled
+        ' by a type-only fallback + EffectiveName pruning (see step 3 above).
         Dim idx As Long
         idx = -1
         ' Entity type filter: INSERT or INSERT/TEXT/MTEXT with <or>
@@ -313,7 +316,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             Joukko.Select acSelectionSetAll, , , FilterType, FilterData
         End If
         ' Pre-filter: if specific block names requested, remove non-matching blocks from the selection set
-        If (Not AllowAll) And haveNameFilter Then
+    If haveNameFilter Then
             L = 0
             For j = 0 To Joukko.Count - 1
                 On Error Resume Next
@@ -382,15 +385,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     rowUsed = 0
     maxColUsed = 7
 
-        StepMsg = "Prepare filter criteria"
-        Trace StepMsg
-        AllowAll = False
-        For i = 0 To UBound(Blokit)
-            If Blokit(i) = "*" Then
-                AllowAll = True
-                Exit For
-            End If
-        Next i
+        ' AllowAll already determined above
 
         StepMsg = "Process entities in selection set"
         Trace StepMsg
@@ -762,6 +757,7 @@ Cleanup:
     On Error Resume Next
     If Not OliAuki Then
         If Not oDOC Is Nothing Then
+            If Ver = 0 Then Ver = acNative
             oDOC.SaveAs oDOC.FullName, Ver
         End If
     End If
@@ -796,23 +792,6 @@ Private Function OtsS(Nimi As String) As Long '' Changed from Integer to Long
             Exit Do
         ElseIf Cells(1, i).Value = Nimi Then
             OtsS = i
-            Exit Do
-        End If
-        i = i + 1
-    Loop
-End Function
-
-Private Function EOtsS(Nimi As String) As Long '' Changed from Integer to Long
-'' Find existing column for attribute name
-    Dim i As Long '' Changed from Integer to Long
-    Nimi = UCase(Nimi)
-    i = 7
-    Do
-        If Cells(1, i).Value = Nimi Then
-            EOtsS = i
-            Exit Do
-        ElseIf Cells(1, i).Value = "" Then
-            EOtsS = i
             Exit Do
         End If
         i = i + 1

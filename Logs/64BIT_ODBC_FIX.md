@@ -1,4 +1,4 @@
-# 64-bit ODBC Compatibility Fix for _qryForExcel
+# 64-bit ODBC Compatibility Fix for \_qryForExcel
 
 ## Problem
 
@@ -31,7 +31,7 @@ For i = 1 To 2
     If InStr(1, sqlQuery, "FROM _qryForExcel", vbTextCompare) > 0 Then
       sqlQuery = Replace(sqlQuery, "FROM _qryForExcel", "FROM [_qryForExcel]", , , vbTextCompare)
     End If
-    
+
     Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
     With TAULUKKO
       .Sql = sqlQuery  ' Uses modified SQL with brackets
@@ -41,13 +41,14 @@ For i = 1 To 2
 ## How It Works
 
 1. **Reads original SQL** from Main sheet (e.g., `SELECT * FROM _qryForExcel WHERE ...`)
-2. **Detects saved query reference** using `InStr()` to find "_qryForExcel"
+2. **Detects saved query reference** using `InStr()` to find "\_qryForExcel"
 3. **Adds brackets** using `Replace()` to change `FROM _qryForExcel` to `FROM [_qryForExcel]`
 4. **Executes modified SQL** through ODBC QueryTable
 
 ## Why This Works
 
 Microsoft Access and ODBC require **identifier escaping** for names that:
+
 - Start with underscore (`_qryForExcel`)
 - Contain special characters
 - Are reserved words
@@ -59,11 +60,13 @@ The brackets `[...]` tell ODBC: "This is an object name, not a SQL keyword."
 After this fix, test:
 
 1. **Click "Get Data" button**
+
    - Should execute without ODBC error
    - DB1 should populate with circuit data
    - DB2 should populate with document metadata (one row)
 
 2. **Check DB2 content:**
+
    - Row 1: Headers (rev, revid, project, manager, etc.)
    - Row 2: Data values
 
@@ -76,23 +79,30 @@ After this fix, test:
 If brackets don't work, other options include:
 
 ### Option 1: Use Query Name Directly
+
 Change Main sheet SQL from:
-```sql
+
+```
+sql
 SELECT * FROM _qryForExcel WHERE DocName3 like 'Kytkentälista'
 ```
 
 To just:
-```sql
+
+```
+sql
 _qryForExcel
 ```
 
 **Downside:** Loses the WHERE filter, would return ALL documents.
 
 ### Option 2: Replace with Full SQL Definition
+
 Replace the saved query reference with the actual SQL:
+
 ```sql
-SELECT DOCUMENTS.*, ProjInfo.*, Status.Status 
-FROM (DOCUMENTS LEFT JOIN ProjInfo ON DOCUMENTS.ProjID = ProjInfo.ProjID) 
+SELECT DOCUMENTS.*, ProjInfo.*, Status.Status
+FROM (DOCUMENTS LEFT JOIN ProjInfo ON DOCUMENTS.ProjID = ProjInfo.ProjID)
 LEFT JOIN Status ON DOCUMENTS.StatusID = Status.StatusID
 WHERE DOCUMENTS.DocName3 like 'Kytkentälista'
 ```
@@ -110,12 +120,12 @@ We chose to fix the VBA code instead of changing the Main sheet because:
 
 ## Comparison: 32-bit vs 64-bit
 
-| Feature | 32-bit Excel | 64-bit Excel (Before Fix) | 64-bit Excel (After Fix) |
-|---------|--------------|---------------------------|--------------------------|
-| ODBC Driver | 32-bit | 64-bit | 64-bit |
-| Query Name Escaping | Optional | Required | Automatic |
-| `FROM _qryForExcel` | ✅ Works | ❌ Fails | ✅ Works |
-| `FROM [_qryForExcel]` | ✅ Works | ✅ Works | ✅ Works |
+| Feature               | 32-bit Excel | 64-bit Excel (Before Fix) | 64-bit Excel (After Fix) |
+| --------------------- | ------------ | ------------------------- | ------------------------ |
+| ODBC Driver           | 32-bit       | 64-bit                    | 64-bit                   |
+| Query Name Escaping   | Optional     | Required                  | Automatic                |
+| `FROM _qryForExcel`   | ✅ Works     | ❌ Fails                  | ✅ Works                 |
+| `FROM [_qryForExcel]` | ✅ Works     | ✅ Works                  | ✅ Works                 |
 
 ## Files Modified
 
