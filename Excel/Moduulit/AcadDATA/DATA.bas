@@ -15,7 +15,7 @@ Option Explicit
 
 Private Const acModelSpace As Long = 1              ' Model space (vs paper space)
 Private Const acMax As Long = 3                     ' Maximize window
-Private Const acZoomScaledRelative As Long = 3      ' Zoom relative to current view
+
 
 Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As Boolean)
     Dim oACAD As Object ' AcadApplication (late binding for compatibility)
@@ -102,9 +102,10 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
         
         ' Get bounding box and zoom to entity
         Entity.GetBoundingBox MinPoint, MaxPoint
-        oACAD.ActiveDocument.WindowState = acMax
-        oACAD.ZoomWindow MinPoint, MaxPoint
-        oACAD.ZoomScaled 0.5, acZoomScaledRelative
+    oACAD.ActiveDocument.WindowState = acMax
+    oACAD.ZoomWindow MinPoint, MaxPoint
+    ' Robust late-binding zoom-out: try enum value 1, then 3
+    SafeZoomScaled oACAD, 0.5
         
         ' Activate AutoCAD window
         On Error Resume Next
