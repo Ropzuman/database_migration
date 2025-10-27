@@ -207,19 +207,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     StepMsg = "Determine entity types"
     Trace StepMsg
     IncludeTexts = (Aloitus.Range("D5").Value = "Tekstit" Or Aloitus.Range("D5").Value = "Blokit ja tekstit")
-
-    ' Optional layer filter from UI (comma-separated). Blank = no layer filter.
-    On Error Resume Next
-    LayerStr = CStr(Aloitus.Range("D8").Value)
-    On Error GoTo ErrHandler
-    HasLayers = False
-    If Len(Trim(LayerStr)) > 0 Then
-        Layers = Split(LayerStr, ",")
-        For i = LBound(Layers) To UBound(Layers)
-            Layers(i) = Trim(CStr(Layers(i)))
-            If Layers(i) <> "" Then HasLayers = True
-        Next i
-    End If
+    ' Layer filtering removed by request (simpler and faster)
+    HasLayers = False: LayerStr = "": Layers = Empty
     
     ' Save and temporarily change document mode
     Docmode = oACAD.Preferences.System.SingleDocumentMode
@@ -279,7 +268,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         StepMsg = "Select entities"
         Trace StepMsg
         ' Build DXF filters to limit selection at source for performance
-        ' We avoid code 2 (name) to support dynamic blocks; we'll AND a layer filter if provided.
+        ' Use code 2 name filter to narrow INSERTs by block names; also include "*U*" to catch dynamic blocks,
+        ' then post-filter by EffectiveName in VBA. Layer filter removed.
         Dim idx As Long
         idx = -1
         ' Entity type filter: INSERT or INSERT/TEXT/MTEXT with <or>
@@ -292,18 +282,28 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Else
             idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
         End If
-        ' Optional layer OR-group
-        If HasLayers Then
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
-            For k = LBound(Layers) To UBound(Layers)
-                If Layers(k) <> "" Then
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 8: FilterData(idx) = Layers(k)
+        ' Block name OR-group (code 2), if specific names provided and not just "*"
+        Dim haveNameFilter As Boolean: haveNameFilter = False
+        If UBound(Blokit) >= 0 Then
+            ' Check if at least one specific name given
+            For k = LBound(Blokit) To UBound(Blokit)
+                If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
+                    haveNameFilter = True
+                    Exit For
                 End If
             Next k
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
-            Trace "Layer filter applied: " & LayerStr
-        Else
-            Trace "No layer filter"
+            If haveNameFilter Then
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
+                For k = LBound(Blokit) To UBound(Blokit)
+                    If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
+                        idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 2: FilterData(idx) = Blokit(k)
+                    End If
+                Next k
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
+                Trace "Name filter applied for blocks: " & Nimet
+            Else
+                Trace "No specific block names provided; selecting all INSERT (and TEXT/MTEXT if chosen)"
+            End If
         End If
 
         ' Select with filters (works for both Previous and All)
@@ -312,7 +312,68 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Else
             Joukko.Select acSelectionSetAll, , , FilterType, FilterData
         End If
+        ' Pre-filter: if specific block names requested, remove non-matching blocks from the selection set
+        If (Not AllowAll) And haveNameFilter Then
+            L = 0
+            For j = 0 To Joukko.Count - 1
+                On Error Resume Next
+                Set oEnt = Joukko.Item(j)
+                If Err.Number <> 0 Then Err.Clear
+                If Not oEnt Is Nothing Then
+                    Dim entNm As String
+                    entNm = ""
+                    entNm = CallByName(oEnt, "EntityName", VbGet)
+                    If Err.Number <> 0 Then entNm = "": Err.Clear
+                    ' Only evaluate blocks here; allow TEXT/MTEXT to pass when IncludeTexts is True
+                    If InStr(1, entNm, "BlockReference", vbTextCompare) > 0 Or entNm = "AcDbBlockReference" Then
+                        Set Blokki = oEnt
+                        Dim match As Boolean: match = False
+                        For k = LBound(Blokit) To UBound(Blokit)
+                            If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
+                                If UCase(Blokki.EffectiveName) = UCase(Blokit(k)) Then
+                                    match = True: Exit For
+                                End If
+                            End If
+                        Next k
+                        If Not match Then
+                            ReDim Preserve Poista(L)
+                            Set Poista(L) = oEnt
+                            L = L + 1
+                        End If
+                    End If
+                End If
+                On Error GoTo ErrHandler
+            Next j
+            If L > 0 Then
+                On Error Resume Next
+                Joukko.RemoveItems Poista
+                On Error GoTo ErrHandler
+            End If
+        End If
         Trace "Selection count: " & Joukko.Count
+
+        ' Fallback: if specific names were requested and the selection is empty, re-select only by entity type
+        ' so that dynamic blocks (anonymous names) are included, then prune by EffectiveName.
+        If (Not AllowAll) And haveNameFilter And Joukko.Count = 0 Then
+            Trace "Fallback to type-only selection for dynamic blocks"
+            ' Rebuild filters: entity types only
+            Erase FilterType: Erase FilterData: idx = -1
+            If IncludeTexts Then
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
+            Else
+                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
+            End If
+            If VainValitut Then
+                Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
+            Else
+                Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+            End If
+            Trace "Selection count after fallback: " & Joukko.Count
+        End If
     selCount = Joukko.Count
     ' Prepare a bulk buffer sized to the selection (plus a tiny slack) and reasonable column capacity
     rowCap = selCount + 8
@@ -879,7 +940,7 @@ Sub RefNumerointi()
     
     '' Fetch from drawing
     TuoDATA True, "REFERENCE"
-    vSivu = CLng(Aloitus.Range("D18").Value) '' Changed from CInt to CLng
+    vSivu = CLng(Aloitus.Range("D17").Value) '' Changed from CInt to CLng
   
     Cells.Sort Key1:=Range("F2"), Order1:=xlDescending, Header:=xlYes, OrderCustom:=1, MatchCase:=False, Orientation:=xlTopToBottom
     
