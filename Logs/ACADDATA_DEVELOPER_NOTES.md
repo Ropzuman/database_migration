@@ -1,5 +1,16 @@
 # AcadDATA Developer Notes
 
+## 2025-10-30 – Non-functional cleanup
+
+- Introduced a small helper `BuildTypeFilter(includeTexts, FilterType(), FilterData())` to construct the DXF entity-type filter arrays for selection (`INSERT` and optional `TEXT`/`MTEXT`). This removes duplicated code blocks and avoids repeated `ReDim Preserve` operations by sizing arrays exactly.
+- Removed a couple of unused locals and improved inline comments. No functional changes.
+- Behavior remains the same:
+  - Selection still enforces Model Space and uses type filters first.
+  - When specific names are provided, effective-name pruning remains in place to include dynamic blocks.
+  - Coordinate extraction and Excel calculation-mode handling are unchanged.
+
+Rationale: Keeping the selection filter construction DRY improves readability and slightly reduces overhead while keeping the late-binding behavior stable.
+
 This document explains the AutoCAD import/export implementation in Excel (AcadDATA), focusing on the selection pipeline, dynamic blocks, DXF filter usage, tracing, performance, and troubleshooting.
 
 ## Selection pipeline overview

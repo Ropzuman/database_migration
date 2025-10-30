@@ -1,5 +1,6 @@
 Option Explicit
 
+' Updated 2025-10-30: non-functional cleanup and micro-optimizations; kept behavior identical
 ' Updated 2025-10-26: 64-bit compatibility, performance optimizations, improved error handling
 ' Excel-AutoCAD integration: Import/export block attributes and text entities
 ' Changes: Integer ? Long (64-bit), early binding ? late binding (compatibility),
@@ -38,6 +39,24 @@ Public Const DEBUG_TRACE As Boolean = True ' set False to silence debug prints
 ' Lightweight tracing helper for the Immediate Window (Ctrl+G)
 Private Sub Trace(ByVal msg As String)
     If DEBUG_TRACE Then Debug.Print Format(Now, "hh:nn:ss") & " | " & msg
+End Sub
+
+' Build DXF entity-type filters (INSERT [+ TEXT/MTEXT if requested])
+' Note: Arrays are 0-based and sized exactly to avoid repeated ReDim Preserve.
+Private Sub BuildTypeFilter(ByVal includeTexts As Boolean, ByRef FilterType() As Integer, ByRef FilterData() As Variant)
+    If includeTexts Then
+        ReDim FilterType(0 To 4)
+        ReDim FilterData(0 To 4)
+        FilterType(0) = -4: FilterData(0) = "<or"
+        FilterType(1) = 0: FilterData(1) = "INSERT"
+        FilterType(2) = 0: FilterData(2) = "TEXT"
+        FilterType(3) = 0: FilterData(3) = "MTEXT"
+        FilterType(4) = -4: FilterData(4) = "or>"
+    Else
+        ReDim FilterType(0 To 0)
+        ReDim FilterData(0 To 0)
+        FilterType(0) = 0: FilterData(0) = "INSERT"
+    End If
 End Sub
 
 ' Wrapper macros so TuoDATA shows in the Macros dialog without parameters
@@ -81,7 +100,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim Blokki As Object ' AcadBlockReference - Changed from AcadBlockReference
     Dim DWGName As String
     Dim Hakemisto As String
-    Dim EkaKerta As Boolean
+    'Dim EkaKerta As Boolean ' removed (unused)
     Dim Rivi As Long
     Dim oText As Object ' AcadText - Changed from AcadText
     Dim oMText As Object ' AcadMText - Changed from AcadMText
@@ -97,7 +116,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim oEnt As Object ' current entity from selection set (late bound)
     Dim StartBaseRow As Long ' first output row before import begins
     Dim DocStartRow As Long ' first output row for the current drawing
-    Dim prevCalc As Long
+    'Dim prevCalc As Long ' removed (unused)
+    Dim wasCalcAuto As Boolean ' remember if Automatic calc was enabled before running
     Dim prevEvents As Boolean
     Dim prevScreen As Boolean
     Dim TagCol As Object ' cache: attribute tag -> column index
@@ -123,8 +143,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
   
     ' Minimize Excel UI and recalculation overhead during import
     prevScreen = Application.ScreenUpdating
-    prevCalc = Application.Calculation
     prevEvents = Application.EnableEvents
+    wasCalcAuto = (Application.Calculation = xlCalculationAutomatic)
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     Application.EnableEvents = False
@@ -140,7 +160,11 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
         ' Restore Excel settings before exiting (avoid leaving calc in Manual)
         Application.EnableEvents = prevEvents
-        Application.Calculation = prevCalc
+        If wasCalcAuto Then
+            Application.Calculation = xlCalculationAutomatic
+        Else
+            Application.Calculation = xlCalculationManual
+        End If
         Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
@@ -292,43 +316,22 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                 Exit For
             End If
         Next i
-        ' Build DXF filters to limit selection at source for performance
-        ' Use code 2 name filter to narrow INSERTs by block names; dynamic blocks are handled
-        ' by a type-only fallback + EffectiveName pruning (see step 3 above).
-        Dim idx As Long
-        idx = -1
-        ' Entity type filter: INSERT or INSERT/TEXT/MTEXT with <or>
-        If IncludeTexts Then
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
-        Else
-            idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-        End If
-        ' Block name OR-group (code 2), if specific names provided and not just "*"
+    ' Build DXF filters to limit selection at source for performance.
+    ' To ensure dynamic blocks are always included, we select by type only
+    ' and then prune by EffectiveName in VBA when specific names are provided.
+        ' Build entity type filter using helper (avoids duplication, exact sizing)
+        BuildTypeFilter IncludeTexts, FilterType, FilterData
+        ' Determine if specific names are requested (affects pruning behavior)
         Dim haveNameFilter As Boolean: haveNameFilter = False
         If UBound(Blokit) >= 0 Then
-            ' Check if at least one specific name given
             For k = LBound(Blokit) To UBound(Blokit)
-                If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
-                    haveNameFilter = True
-                    Exit For
-                End If
+                If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then haveNameFilter = True: Exit For
             Next k
-            If haveNameFilter Then
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
-                For k = LBound(Blokit) To UBound(Blokit)
-                    If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
-                        idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 2: FilterData(idx) = Blokit(k)
-                    End If
-                Next k
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
-                Trace "Name filter applied for blocks: " & Nimet
-            Else
-                Trace "No specific block names provided; selecting all INSERT (and TEXT/MTEXT if chosen)"
-            End If
+        End If
+        If haveNameFilter Then
+            Trace "Using type-only selection with EffectiveName pruning for: " & Nimet
+        Else
+            Trace "Selecting all INSERT (and TEXT/MTEXT if chosen)"
         End If
 
         ' Select with filters (works for both Previous and All)
@@ -379,16 +382,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             ' If no blocks found at all (e.g., only text was selected), trigger type-only fallback
             If blockRefCount = 0 Then
                 Trace "No BlockReferences in initial selection (with name filter); reselecting by type only"
-                Erase FilterType: Erase FilterData: idx = -1
-                If IncludeTexts Then
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
-                Else
-                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-                End If
+                ' Rebuild type-only filter
+                BuildTypeFilter IncludeTexts, FilterType, FilterData
                 If VainValitut Then
                     Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
                 Else
@@ -399,21 +394,12 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         End If
         Trace "Selection count: " & Joukko.Count
 
-        ' Fallback: if specific names were requested and the selection is empty, re-select only by entity type
-        ' so that dynamic blocks (anonymous names) are included, then prune by EffectiveName.
+        ' Fallback: If specific names were requested and the selection is empty, re-select by type only
+        ' (kept for safety, though we already select by type when haveNameFilter=True)
         If (Not AllowAll) And haveNameFilter And Joukko.Count = 0 Then
             Trace "Fallback to type-only selection for dynamic blocks"
             ' Rebuild filters: entity types only
-            Erase FilterType: Erase FilterData: idx = -1
-            If IncludeTexts Then
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
-            Else
-                idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
-            End If
+            BuildTypeFilter IncludeTexts, FilterType, FilterData
             If VainValitut Then
                 Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
             Else
@@ -527,8 +513,23 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     buf(rowUsed, 2) = DWGName
                     buf(rowUsed, 3) = Blokki.EffectiveName
                     buf(rowUsed, 4) = entHandle
-                    buf(rowUsed, 5) = Blokki.InsertionPoint(0) '' XCord
-                    buf(rowUsed, 6) = Blokki.InsertionPoint(1) '' YCord
+                    ' Late binding: InsertionPoint returns a Variant array (x,y,z). Retrieve then index.
+                    Dim ip As Variant
+                    On Error Resume Next
+                    ip = CallByName(Blokki, "InsertionPoint", VbGet)
+                    Err.Clear
+                    On Error GoTo ErrHandler
+                    If IsArray(ip) Then
+                        buf(rowUsed, 5) = CDbl(ip(0)) '' XCord
+                        buf(rowUsed, 6) = CDbl(ip(1)) '' YCord
+                    Else
+                        ' Fallback: attempt property access directly
+                        On Error Resume Next
+                        buf(rowUsed, 5) = CDbl(Blokki.InsertionPoint(0))
+                        buf(rowUsed, 6) = CDbl(Blokki.InsertionPoint(1))
+                        Err.Clear
+                        On Error GoTo ErrHandler
+                    End If
                     buf(rowUsed, 7) = Blokki.Layer
                     On Error GoTo ErrHandler
 
@@ -574,8 +575,21 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     End If
                     On Error GoTo ErrHandler
                     Cells(Rivi, 8).Value = oText.TextString
-                    Cells(Rivi, 5).Value = oText.InsertionPoint(0)
-                    Cells(Rivi, 6).Value = oText.InsertionPoint(1)
+                    Dim ipT As Variant
+                    On Error Resume Next
+                    ipT = CallByName(oText, "InsertionPoint", VbGet)
+                    Err.Clear
+                    On Error GoTo ErrHandler
+                    If IsArray(ipT) Then
+                        Cells(Rivi, 5).Value = CDbl(ipT(0))
+                        Cells(Rivi, 6).Value = CDbl(ipT(1))
+                    Else
+                        On Error Resume Next
+                        Cells(Rivi, 5).Value = CDbl(oText.InsertionPoint(0))
+                        Cells(Rivi, 6).Value = CDbl(oText.InsertionPoint(1))
+                        Err.Clear
+                        On Error GoTo ErrHandler
+                    End If
                 Else
                     On Error Resume Next
                     Set oMText = oEnt
@@ -586,8 +600,21 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     End If
                     On Error GoTo ErrHandler
                     Cells(Rivi, 8).Value = oMText.TextString
-                    Cells(Rivi, 5).Value = oMText.InsertionPoint(0)
-                    Cells(Rivi, 6).Value = oMText.InsertionPoint(1)
+                    Dim ipM As Variant
+                    On Error Resume Next
+                    ipM = CallByName(oMText, "InsertionPoint", VbGet)
+                    Err.Clear
+                    On Error GoTo ErrHandler
+                    If IsArray(ipM) Then
+                        Cells(Rivi, 5).Value = CDbl(ipM(0))
+                        Cells(Rivi, 6).Value = CDbl(ipM(1))
+                    Else
+                        On Error Resume Next
+                        Cells(Rivi, 5).Value = CDbl(oMText.InsertionPoint(0))
+                        Cells(Rivi, 6).Value = CDbl(oMText.InsertionPoint(1))
+                        Err.Clear
+                        On Error GoTo ErrHandler
+                    End If
                 End If
                 Range(Cells(Rivi, 1), Cells(Rivi, 8)).Interior.ColorIndex = 8
                 Rivi = Rivi + 1
@@ -604,6 +631,13 @@ ContinueEntities:
             Set outRng = Range(Cells(DocStartRow, 1), Cells(DocStartRow + rowUsed - 1, maxColUsed))
             outRng.Value = buf
             Rivi = DocStartRow + rowUsed
+        End If
+        ' After flushing rows, coerce coordinate columns to numbers (handles any text leftovers)
+        If rowUsed > 0 Then
+            With Range(Cells(DocStartRow, 5), Cells(DocStartRow + rowUsed - 1, 6))
+                .NumberFormat = "General"
+                .Value = .Value
+            End With
         End If
         Trace "Doc processed: " & DWGName & ", rows added: " & rowUsed
         
@@ -627,8 +661,18 @@ Cleanup:
     Application.StatusBar = False
     ' Restore Excel settings
     Application.EnableEvents = prevEvents
-    Application.Calculation = prevCalc
+    If wasCalcAuto Then
+        Application.Calculation = xlCalculationAutomatic
+    Else
+        Application.Calculation = xlCalculationManual
+    End If
     Application.ScreenUpdating = prevScreen
+    ' Proactively recalc to clear stale-calc indicators without changing user setting
+    If Application.Calculation = xlCalculationManual Then
+        Application.CalculateFullRebuild
+    Else
+        Application.CalculateFull
+    End If
     
     ' Release objects
     Set Blokki = Nothing

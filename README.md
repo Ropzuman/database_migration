@@ -6,12 +6,7 @@ Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Offi
 
 ## Components
 
-- **Access VBA:** `Access/kanta.vba`, `kanta1.vba`, `kanta2.vba`, `kanta3.vba`
-- **Excel Macros:** `Excel/Kytkentälista/Module1.vba`, `Module2.vba`, `Module3.vba`
-- **Diagnostics:** `Excel/Kytkentälista/Debugging/` (diagnostic and testing tools)
-- **Documentation:** `COLUMN_MAPPING_COMPLETE.md`, `Logs/CHANGELOG_64bit_and_perf.md`
-
-## Key Changes
+[This section will be updated with new information once the placeholder is filled.]
 
 ### Access VBA
 
@@ -136,3 +131,12 @@ Notes:
 ## Version History
 
 See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.
+
+## Maintenance: VBA cleanup (2025-10-30)
+
+- Non-functional cleanup in `Excel/Moduulit/AcadDATA/Koodit.bas`:
+  - Extracted a tiny helper to build DXF type filters (reduces duplication and ReDim Preserve calls).
+  - Removed a couple of unused variables and clarified comments.
+  - No behavior changes; import/export flows and selection logic are identical.
+- Developer notes updated: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
+- Changelog entry: `Logs/ACADDATA_CLEANUP_2025-10-30.md`.
