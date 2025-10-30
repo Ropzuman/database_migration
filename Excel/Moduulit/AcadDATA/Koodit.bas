@@ -27,6 +27,7 @@ Public Const ac2010_dwg As Integer = 48             ' AutoCAD 2010 format
 Public Const ac2013_dwg As Integer = 60             ' AutoCAD 2013 format
 
 '' Note: Window state, active space and zoom constants are defined where used (e.g., DATA.bas)
+Private Const acModelSpace As Integer = 1 ' ensure selection happens in Model Space
 
 Public oACAD As Object ' AcadApplication (late binding for compatibility) - Changed from AcadApplication
 Public oDOC As Object ' AcadDocument - Changed from AcadDocument
@@ -137,6 +138,10 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     If Err.Number <> 0 Then
         On Error GoTo 0
         MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+        ' Restore Excel settings before exiting (avoid leaving calc in Manual)
+        Application.EnableEvents = prevEvents
+        Application.Calculation = prevCalc
+        Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
     On Error GoTo ErrHandler
@@ -152,9 +157,11 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     
     If Tyhjenna Then
         Cells.Clear
-        Cells.NumberFormat = "@" ' Set cell format to text
-        Rows("1:1").Font.Bold = True ' Make headers bold
-        Columns("E:F").NumberFormat = "General"
+        ' Default to General for the whole sheet to keep formulas and numbers working
+        Cells.NumberFormat = "General"
+        ' Set header styling
+        Rows("1:1").Font.Bold = True
+        ' Define headers
         Cells(1, 1).Value = "PATH"
         Cells(1, 2).Value = "DWG"
         Cells(1, 3).Value = "BLOCK"
@@ -162,7 +169,17 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         Cells(1, 5).Value = "XCord"
         Cells(1, 6).Value = "YCord"
         Cells(1, 7).Value = "Layer"
+        ' Set appropriate formats per column
+        Columns("A:A").NumberFormat = "@"   ' PATH as text
+        Columns("B:B").NumberFormat = "@"   ' DWG as text
+        Columns("C:C").NumberFormat = "@"   ' BLOCK as text
+        Columns("D:D").NumberFormat = "@"   ' HANDLE as text
+        Columns("E:F").NumberFormat = "General" ' coordinates numeric
+        Columns("G:G").NumberFormat = "@"   ' Layer as text
+        ' Attribute columns (H onward) left as General
     End If
+    ' Ensure coordinate columns are numeric even when not clearing
+    Columns("E:F").NumberFormat = "General"
     
     StepMsg = "Get document count"
     Trace StepMsg
@@ -243,6 +260,11 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
 
         StepMsg = "Clean up existing selection set"
         Trace StepMsg
+        ' Ensure selection is executed in Model Space (avoid Paper Space-only picks)
+        On Error Resume Next
+        oDOC.ActiveSpace = acModelSpace
+        Err.Clear
+        On Error GoTo ErrHandler
         For i = 0 To oDOC.SelectionSets.Count - 1
             If oDOC.SelectionSets(i).Name = "EXCELHAKU" Then
                 oDOC.SelectionSets(i).Delete
@@ -316,8 +338,9 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             Joukko.Select acSelectionSetAll, , , FilterType, FilterData
         End If
         ' Pre-filter: if specific block names requested, remove non-matching blocks from the selection set
-    If haveNameFilter Then
+        If haveNameFilter Then
             L = 0
+            Dim blockRefCount As Long: blockRefCount = 0
             For j = 0 To Joukko.Count - 1
                 On Error Resume Next
                 Set oEnt = Joukko.Item(j)
@@ -329,6 +352,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     If Err.Number <> 0 Then entNm = "": Err.Clear
                     ' Only evaluate blocks here; allow TEXT/MTEXT to pass when IncludeTexts is True
                     If InStr(1, entNm, "BlockReference", vbTextCompare) > 0 Or entNm = "AcDbBlockReference" Then
+                        blockRefCount = blockRefCount + 1
                         Set Blokki = oEnt
                         Dim match As Boolean: match = False
                         For k = LBound(Blokit) To UBound(Blokit)
@@ -351,6 +375,26 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                 On Error Resume Next
                 Joukko.RemoveItems Poista
                 On Error GoTo ErrHandler
+            End If
+            ' If no blocks found at all (e.g., only text was selected), trigger type-only fallback
+            If blockRefCount = 0 Then
+                Trace "No BlockReferences in initial selection (with name filter); reselecting by type only"
+                Erase FilterType: Erase FilterData: idx = -1
+                If IncludeTexts Then
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "<or"
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "TEXT"
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "MTEXT"
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = -4: FilterData(idx) = "or>"
+                Else
+                    idx = idx + 1: ReDim Preserve FilterType(idx): ReDim Preserve FilterData(idx): FilterType(idx) = 0: FilterData(idx) = "INSERT"
+                End If
+                If VainValitut Then
+                    Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
+                Else
+                    Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+                End If
+                Trace "Selection count after zero-block fallback: " & Joukko.Count
             End If
         End If
         Trace "Selection count: " & Joukko.Count
