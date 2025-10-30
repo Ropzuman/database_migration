@@ -1,10 +1,10 @@
 Option Explicit
 
-' Updated 2025-10-30: non-functional cleanup and micro-optimizations; kept behavior identical
+' Updated 2025-10-30: non-functional cleanup and micro-optimizations
 ' Updated 2025-10-26: 64-bit compatibility, performance optimizations, improved error handling
 ' Excel-AutoCAD integration: Import/export block attributes and text entities
-' Changes: Integer ? Long (64-bit), early binding ? late binding (compatibility),
-'          added error handlers, array optimization for performance
+' Changes: Integer -> Long (64-bit), early binding -> late binding (compatibility),
+' added error handlers, array optimization for performance
 
 ' ============================================================================
 ' AutoCAD Constants - Required for Late Binding
@@ -86,7 +86,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim Joukko As Object ' AcadSelectionSet - Changed from AcadSelectionSet
     Dim BlockArray As Variant
     Dim i As Long, j As Long, jj As Long, k As Long ' Changed from Integer to Long
-    ' ?? CRITICAL: FilterType MUST remain Integer (not Long)
+    ' CRITICAL: FilterType MUST remain Integer (not Long)
     ' AutoCAD's SelectionSet.Select API requires Integer array for DXF filter codes
     ' Changing to Long causes error: "Invalid argument FilterType in Select"
     Dim FilterType() As Integer ' Dynamic array (MUST be Integer)
