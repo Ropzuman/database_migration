@@ -140,3 +140,25 @@ See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.
   - No behavior changes; import/export flows and selection logic are identical.
 - Developer notes updated: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
 - Changelog entry: `Logs/ACADDATA_CLEANUP_2025-10-30.md`.
+
+## Excel: Kytkentälista (DB fetch + printout)
+
+The Kytkentälista tool uses two SQL inputs on the faceplate:
+
+- DB1 (body data): populates the main rows for the printout.
+- DB2 (document info): fills Info/Revisions and drives the default Save As location.
+
+Inputs
+
+- SQL can target tables or saved Access queries (e.g., `_qryForExcel`) via ODBC.
+- Prefer ANSI-92 wildcards (`%`) in SQL for portability if filtering with LIKE.
+
+Save As defaults
+
+- Path comes from DB2 WorkPath (header is case-insensitive; common synonyms like `workpath`, `path`, `work_path`, `listpath`, `lists_path`, `savepath`, `targetpath`, `outputpath` are accepted). The path is normalized and ends with `\`.
+- File name comes from DB2 File. If missing, it falls back to the faceplate Body Sheet Name.
+- If the name has no extension, `.xlsx` is appended automatically.
+
+Diagnostics
+
+- After Get Data, the status bar briefly shows row counts per sheet (DB1/DB2). The Immediate Window also prints a summary (view via Ctrl+G).
