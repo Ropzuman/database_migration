@@ -295,43 +295,31 @@ Sub GenPrintout()
   VaihdaLinkit destSheet, 1, ViimRivi, Kerta
   
   ' Bulk copy DB1 data to POSheet using array
-  Application.StatusBar = "Copying data to printout..."
-  With wsDB1
-    dataRows = .Cells(.Rows.Count, 1).End(xlUp).Row
-    dataCols = Sarakkeita
-    If dataRows >= 2 And dataCols >= 1 Then
-      dbData = .Range(.Cells(2, 1), .Cells(dataRows, dataCols)).Value
-    Else
-      dbData = Empty
+  Application.StatusBar = "Copying data to printout using template blocks..."
+  ' Revert to template-driven population to preserve original layout/links
+  Dim Riveja As Long
+  Riveja = DocEnd - DocStart
+  If RMAX <= 0 Then RMAX = 1
+  ' Iterate DB1 data rows in groups of RMAX, copying TEMPLATE rows each time
+  Kerta = 0
+  For i = 2 To Recordeja Step RMAX
+    ' Copy TEMPLATE block to destination
+    srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd).Copy _
+        Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
+    ' Apply alternating shading per block
+    If ((i - 2) \ RMAX) Mod 2 = 1 Then
+      With destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + Riveja, Sarakkeita)).Interior
+        .ColorIndex = 19
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+      End With
     End If
-  End With
-  
-  ' Write data array and apply formatting
-  destStartRow = ViimRivi
-  If Not IsEmpty(dbData) And IsArray(dbData) Then
-    If RMAX <= 0 Then RMAX = 1
-    destEndRow = destStartRow + UBound(dbData, 1) - 1
-    destSheet.Range(destSheet.Cells(destStartRow, 1), destSheet.Cells(destEndRow, dataCols)).Value = dbData
-    
-    ' Apply alternating row color for every other block
-    For i = 0 To UBound(dbData, 1) - 1 Step RMAX
-      If (i \ RMAX) Mod 2 = 1 Then
-        With destSheet.Range(destSheet.Cells(destStartRow + i, 1), destSheet.Cells(destStartRow + i + RMAX - 1, Sarakkeita)).Interior
-          .ColorIndex = 19
-          .Pattern = xlSolid
-          .PatternColorIndex = xlAutomatic
-        End With
-      End If
-    Next i
-    
-    ' Call VaihdaLinkit for each block
-    Kerta = 0
-    For i = 0 To UBound(dbData, 1) - 1 Step RMAX
-      VaihdaLinkit destSheet, destStartRow + i, destStartRow + i + RMAX - 1, Kerta
-      Kerta = Kerta + 1
-    Next i
-    ViimRivi = destEndRow + 1
-  End If
+    ' Map values from LINKING to the template area via comment markers
+    VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta
+    ' Advance to next block
+    ViimRivi = ViimRivi + Riveja + 1
+    Kerta = Kerta + 1
+  Next i
   
   ' Delete extra columns beyond Sarakkeita
   lastCol = destSheet.Cells(1, destSheet.Columns.Count).End(xlToLeft).Column
