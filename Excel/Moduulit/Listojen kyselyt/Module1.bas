@@ -82,17 +82,21 @@ End Sub
 
 '''
 ' HaeData: Fetches data from Access database using ODBC and SQL queries defined in the faceplate.
-' Populates DB1 and DB2 sheets with the results. Uses fast mode for performance.
+' Populates DB1 (main body data) and DB2 (document metadata) sheets.
+' QueryTable lifecycle: Create → Refresh → Delete (no persistent connections left behind).
+' Diagnostics: Row counts displayed in StatusBar and Immediate Window after each query.
 '''
 Sub HaeData()
 Dim Kanta As String
-Dim sSQL(2) As String
+Dim sSQL(1 To 2) As String
 Dim Valinta As Long
 Dim i As Long
 Dim TAULUKKO As QueryTable
 Dim Yhteys As String
+Dim ws As Worksheet
+Dim rc As Long
 
-' Select which SQL query to use from Main sheet.
+  ' Select which SQL query to use from Main sheet
   On Error Resume Next
   If Sheets("Main").Valinta1.Value = True Then
     Valinta = 0
@@ -117,17 +121,15 @@ Dim Yhteys As String
   End If
   
   Yhteys = "ODBC;DBQ=" & Kanta & ";Driver={Microsoft Access Driver (*.mdb, *.accdb)}"
-  Dim ws As Worksheet
   
   On Error GoTo ErrorHandler
   
   For i = 1 To 2
-    ' Clear previous data and run query for each DB sheet
     Set ws = ThisWorkbook.Sheets("DB" & i)
     ws.Cells.Clear
-    ' Allow selecting from saved Access queries as well (e.g., _qryForExcel)
+    
     If sSQL(i) <> "" Then
-      ' Create a throwaway QueryTable to populate the sheet; delete it after refresh
+      ' Create QueryTable, refresh, then delete (no persistent connections)
       Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
       With TAULUKKO
         .Sql = sSQL(i)
@@ -139,11 +141,11 @@ Dim Yhteys As String
         .SaveData = True
         .BackgroundQuery = False
         .Refresh
-        .Delete ' Remove query after refresh to avoid leaving connections
+        .Delete
       End With
       Set TAULUKKO = Nothing
-      ' Non-intrusive diagnostics: show quick row count in StatusBar and Immediate window
-      Dim rc As Long
+      
+      ' Report row count for diagnostics
       rc = 0
       On Error Resume Next
       rc = ws.UsedRange.Rows.Count
@@ -167,9 +169,9 @@ ErrorHandler:
 End Sub
 '''
 ' GenPrintout: Generates a new printout workbook using TEMPLATE and data from DB1.
-' Copies headers, footers, and main data body, applies formatting, and saves the result.
-' Uses array-based transfer for main data for speed. All formatting and linking logic preserved.
-' Optimized: Uses direct workbook/worksheet references instead of window switching.
+' Uses template-driven population: copies TEMPLATE blocks per data group (RMAX rows),
+' then maps values from LINKING sheet via comment-based markers (VaihdaLinkit).
+' This preserves the template's layout, formatting, and linking logic.
 '''
 Sub GenPrintout()
   If CheckOK = False Then
@@ -181,7 +183,6 @@ Sub GenPrintout()
   Dim srcWB As Workbook
   Dim destWB As Workbook
   Dim destSheet As Worksheet
-  Dim linkSheet As Worksheet
   Dim wsDB1 As Worksheet
   Dim ViimRivi As Long
   Dim Recordeja As Long
@@ -189,11 +190,9 @@ Sub GenPrintout()
   Dim Tiedosto As String
   Dim i As Long
   Dim Oletus As String
-  Dim dbData As Variant
-  Dim dataRows As Long, dataCols As Long
-  Dim destStartRow As Long, destEndRow As Long
   Dim lastCol As Long
   Dim c As Range
+  Dim Riveja As Long
   
   On Error GoTo GenPrintoutError
   BeginFastMode
@@ -285,19 +284,18 @@ Sub GenPrintout()
   
   ' Create LINKING sheet and copy DB1 data
   Application.StatusBar = "Creating LINKING sheet..."
-  Set linkSheet = destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
-  linkSheet.Name = "LINKING"
-  wsDB1.Cells.Copy Destination:=linkSheet.Range("A1")
+  With destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
+    .Name = "LINKING"
+    wsDB1.Cells.Copy Destination:=.Range("A1")
+  End With
   Application.CutCopyMode = False
   
   ' Initial linking for header area
   Kerta = 0
   VaihdaLinkit destSheet, 1, ViimRivi, Kerta
   
-  ' Bulk copy DB1 data to POSheet using array
+  ' Template-driven population: copy TEMPLATE blocks and map values via VaihdaLinkit
   Application.StatusBar = "Copying data to printout using template blocks..."
-  ' Revert to template-driven population to preserve original layout/links
-  Dim Riveja As Long
   Riveja = DocEnd - DocStart
   If RMAX <= 0 Then RMAX = 1
   ' Iterate DB1 data rows in groups of RMAX, copying TEMPLATE rows each time
@@ -392,11 +390,14 @@ GenPrintoutError:
   On Error GoTo 0
 End Sub
 '''
-' Checkout: Validates that all required headers and row markers exist in the TEMPLATE and DB1 sheets.
-' Reports errors to the ERRORS sheet and sets CheckOK flag.
-' Optimized: Removed Select/Activate usage, uses direct worksheet references, added error handler.
+' Checkout: Validates TEMPLATE structure and DB1 headers.
+' - Finds area markers (&&PAGE_HEADER_START, &&DOC_DATA_START, etc.) in TEMPLATE
+' - Validates row markers (££ for single-row, £1/2/3 for multi-row groups)
+' - Creates comments in TEMPLATE cells to link to DB1 columns (via EtsiOts)
+' - Populates Info sheet with document metadata from DB2
+' - Sets CheckOK flag if validation passes, otherwise reports errors to ERRORS sheet
 '''
-Sub Checkout() 'Check if all headers exist in data
+Sub Checkout()
 Dim i As Long
 Dim j As Long
 Dim Arvo As String

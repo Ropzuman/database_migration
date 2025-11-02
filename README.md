@@ -159,6 +159,18 @@ Save As defaults
 - File name comes from DB2 File. If missing, it falls back to the faceplate Body Sheet Name.
 - If the name has no extension, `.xlsx` is appended automatically.
 
+Template population
+
+- GenPrintout uses template-driven population: copies TEMPLATE blocks per data group (RMAX rows), then maps values from LINKING sheet via comment-based markers.
+- This preserves the template's layout, formatting, and cell linking logic.
+- Each comment marker in the TEMPLATE (created during Checkout) links to a DB1 column; VaihdaLinkit reads these markers and populates cells with corresponding data.
+
 Diagnostics
 
 - After Get Data, the status bar briefly shows row counts per sheet (DB1/DB2). The Immediate Window also prints a summary (view via Ctrl+G).
+
+Recent updates (2025-11-03)
+
+- Fixed critical bug in VaihdaLinkit that caused incorrect template population
+- Optimized code: removed dead variables, added constants, improved comments
+- See `Logs/KYTKENTALISTA_OPTIMIZATION_2025-11-03.md` for details

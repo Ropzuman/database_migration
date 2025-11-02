@@ -8,6 +8,9 @@
 ' - File is taken from DB2 (file/filename/file_name) and used as the default Save As name by GenPrintout.
 '''
 
+' Safety limit for loop iterations to prevent infinite loops
+Private Const MAX_EXCEL_COLUMNS As Long = 16384
+
 Sub HaeDocTiedot()
 '''
 ' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
@@ -112,8 +115,7 @@ Dim wsDB2 As Worksheet
       Case Else
     End Select
     i = i + 1
-    ' Safety check: prevent infinite loop (Excel max columns)
-    If i > 16384 Then Exit Do
+    If i > MAX_EXCEL_COLUMNS Then Exit Do ' Safety check
   Loop
   
   ' DEBUG: Report what was loaded
@@ -337,8 +339,7 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    
    i = 1
    Do
-     ' Safety check: prevent infinite loop if sheet is unexpectedly large
-     If i > 16384 Then ' Excel max columns
+     If i > MAX_EXCEL_COLUMNS Then ' Safety check
        EtsiOts = False
        Exit Do
      End If
