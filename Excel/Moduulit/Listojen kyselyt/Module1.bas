@@ -306,6 +306,7 @@ Sub GenPrintout()
     ' Copy TEMPLATE block to destination
     srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd).Copy _
         Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
+    Application.CutCopyMode = False ' Clear clipboard after copy
     ' Apply alternating shading per block
     If ((i - 2) \ RMAX) Mod 2 = 1 Then
       With destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + Riveja, Sarakkeita)).Interior
