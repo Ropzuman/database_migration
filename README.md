@@ -121,12 +121,16 @@ What it does:
 
 - Prompts for the database file path and the folder containing exported VBA components.
 - Opens the database with retry logic and removes read-only attribute if set.
-- Removes listed components if present, then imports the corresponding .bas/.cls files.
+- **Replaces component code directly** (reads .bas/.cls content, strips headers, writes clean code via CodeModule API).
 - Saves the database, re-enables warnings, and performs robust COM cleanup to avoid orphaned MSACCESS.EXE.
+
+**Important:** The script uses **direct code replacement** instead of `VBComponents.Import()` to avoid invisible metadata corruption. This approach is equivalent to manually copy-pasting code into the VBA editor and works correctly for both standard modules (.bas) and class modules (.cls).
 
 Notes:
 
 - You can pre-fill default paths by editing `$DefaultAccessFilePath` and `$DefaultComponentPath` at the top of the script.
+- Component names to update are defined in `$componentNames` array.
+- See `Logs/AUTOMATIONS_LOG.md` for technical details on the VBComponents.Import issue.
 
 ## Automations: Excel updater
 

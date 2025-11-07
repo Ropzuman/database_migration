@@ -292,3 +292,51 @@ Never use `VBComponents.Import()` for automation when code correctness is critic
 
 Verified that modules updated via automation now behave identically to manually copy-pasted code.
 
+---
+
+## 2025-11-07 - Access VBA Component Import Issue: Same VBComponents.Import Problem
+
+**Problem Identified:**
+
+`Access_automaatio.ps1` had the identical issue as the Excel script - it was using `VBComponents.Import()` to replace VBA modules and class modules in .accdb databases, causing the same invisible metadata corruption.
+
+**Solution Applied:**
+
+Updated Access automation script with the same direct code replacement approach:
+
+```powershell
+# OLD APPROACH (causes metadata corruption):
+$vbaProject.VBComponents.Remove($component)
+$vbaProject.VBComponents.Import($fullModulePath)
+
+# NEW APPROACH (direct code replacement):
+$moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+# Strip VBA headers (Attribute VB_Name, VERSION, etc.)...
+$codeModule.DeleteLines(1, $codeModule.CountOfLines)
+$codeModule.AddFromString($cleanCode)
+```
+
+**Key Differences for Access:**
+
+- Handles both .bas (standard modules) and .cls (class modules) files
+- Uses correct component type when creating new components:
+  - Type 1 (`vbext_ct_StdModule`) for .bas files
+  - Type 2 (`vbext_ct_ClassModule`) for .cls files
+- Same header stripping logic as Excel script
+- Creates components if they don't exist in the database
+
+**Benefits:**
+
+- ✅ Access form modules and class modules now work correctly after automation
+- ✅ No invisible Attribute lines corrupting the code
+- ✅ Consistent with Excel automation approach
+- ✅ Handles both module types (.bas and .cls) correctly
+
+**Files Modified:**
+
+- `Automations/Access_automaatio.ps1` - Replaced Import/Remove logic with direct CodeModule manipulation
+
+**Testing:**
+
+Both Access and Excel automation scripts now use the same proven approach for VBA code replacement.
+

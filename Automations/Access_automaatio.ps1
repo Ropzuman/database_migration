@@ -7,8 +7,15 @@
 # KÄYTTÄYTYMINEN:
 # - Varmistaa, että skripti ajetaan 64-bittisessä (x64) PowerShellissä.
 # - Kysyy polun yhteen tietokantatiedostoon ja polun komponenttihakemistoon.
-# - Avaa .accdb-kannan, poistaa määritellyt komponentit (moduulit/luokat) ja tuo uudet.
+# - Avaa .accdb-kannan, päivittää komponenttien sisällön suoraan (moduulit/luokat).
 # - Käyttää try...finally-lohkoa varmistaakseen, että Access-prosessi suljetaan aina.
+
+# TÄRKEÄÄ - VBComponents.Import-ongelma:
+# - Tämä skripti KORVAA komponenttien sisällön suoraan CodeModule-rajapinnan kautta.
+# - EI käytetä VBComponents.Import()-funktiota, koska se lisää näkymättömiä metatietoja.
+# - Import() aiheuttaa komponenttien toimintahäiriöitä (käyttäytyy eri tavalla kuin manuaalisesti kopioidut).
+# - Nykyinen toteutus: lue .bas/.cls-tiedosto → poista headerit → kirjoita puhdas koodi AddFromString()-funktiolla.
+# - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
 if ([System.IntPtr]::Size -ne 8) {
@@ -128,20 +135,7 @@ try {
             
             Write-Host "   - VBA-projekti avattu onnistuneesti."
 
-            # 5.1 Poista vanhat komponentit
-            foreach ($name in $componentNames) {
-                try {
-                    $component = $vbaProject.VBComponents.Item($name)
-                    $vbaProject.VBComponents.Remove($component)
-                    Write-Host "   ✅ Poistettiin vanha komponentti: $name"
-                }
-                catch {
-                    # Tämä on ok, jos komponenttia ei ollut olemassa
-                    Write-Host "   - Info: Komponenttia $name ei löytynyt poistettavaksi (tämä on ok)."
-                }
-            }
-
-            # 5.2 Tuo uudet komponentit
+            # 5.1 Päivitä komponenttien sisältö suoraan (välttää Import-metatietojen ongelman)
             foreach ($name in $componentNames) {
                 $basPath = Join-Path $componentPath "$($name).bas"
                 $clsPath = Join-Path $componentPath "$($name).cls"
@@ -149,22 +143,66 @@ try {
 
                 if (Test-Path $basPath) {
                     $fullModulePath = $basPath
+                    $componentType = 1  # vbext_ct_StdModule
                 }
                 elseif (Test-Path $clsPath) {
                     $fullModulePath = $clsPath
+                    $componentType = 2  # vbext_ct_ClassModule
                 }
 
                 if (-not $fullModulePath) {
-                    Write-Error "   ❌ VIRHE: Uutta komponenttitiedostoa ($name.bas/.cls) ei löydy polusta $componentPath. Ohitetaan tuonti."
+                    Write-Error "   ❌ VIRHE: Komponenttitiedostoa ($name.bas/.cls) ei löydy polusta $componentPath. Ohitetaan päivitys."
                     continue
                 }
                 
                 try {
-                    $vbaProject.VBComponents.Import($fullModulePath)
-                    Write-Host "   ✅ Tuotiin uusi komponentti: $name"
+                    # Lue .bas/.cls-tiedoston sisältö
+                    $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+                    
+                    # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
+                    # Säilytetään vain varsinainen VBA-koodi
+                    $lines = $moduleContent -split "`r?`n"
+                    $codeStartIndex = 0
+                    for ($i = 0; $i -lt $lines.Count; $i++) {
+                        if ($lines[$i] -match "^Attribute\s+" -or $lines[$i] -match "^VERSION\s+") {
+                            $codeStartIndex = $i + 1
+                        }
+                        elseif ($lines[$i].Trim() -eq "") {
+                            continue
+                        }
+                        else {
+                            break
+                        }
+                    }
+                    
+                    # Ota vain VBA-koodi (ilman header-rivejä)
+                    $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
+                    
+                    # Etsi tai luo komponentti
+                    $component = $null
+                    try {
+                        $component = $vbaProject.VBComponents.Item($name)
+                        Write-Host "   - Komponentti $name löytyi, päivitetään sisältö..."
+                    }
+                    catch {
+                        # Jos komponenttia ei ole, luo se
+                        Write-Host "   - Komponenttia $name ei löytynyt, luodaan uusi..."
+                        $component = $vbaProject.VBComponents.Add($componentType)
+                        $component.Name = $name
+                    }
+                    
+                    # Tyhjennä vanha koodi ja aseta uusi
+                    $codeModule = $component.CodeModule
+                    if ($codeModule.CountOfLines -gt 0) {
+                        $codeModule.DeleteLines(1, $codeModule.CountOfLines)
+                    }
+                    $codeModule.AddFromString($cleanCode)
+                    
+                    Write-Host "   ✅ Päivitettiin $name ($(($cleanCode -split "`n").Count) riviä koodia)"
+                    
                 }
                 catch {
-                    Write-Error "   ❌ VIRHE: Komponentin $name tuonti epäonnistui: $($_.Exception.Message)"
+                    Write-Error "   ❌ VIRHE: Komponentin $name päivitys epäonnistui: $($_.Exception.Message)"
                 }
             }
             
