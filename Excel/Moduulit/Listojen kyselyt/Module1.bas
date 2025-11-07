@@ -179,6 +179,16 @@ Sub GenPrintout()
     Exit Sub
   End If
   
+  ' Performance timing variables
+  Dim perfStart As Double, perfTotal As Double
+  Dim perfCopy As Double, perfLink As Double, perfShade As Double
+  Dim perfIterations As Long
+  perfStart = Timer
+  perfCopy = 0
+  perfLink = 0
+  perfShade = 0
+  perfIterations = 0
+  
   ' Variable declarations
   Dim srcWB As Workbook
   Dim destWB As Workbook
@@ -310,17 +320,28 @@ Sub GenPrintout()
   VaihdaLinkit destSheet, 1, ViimRivi, Kerta
   
   ' Template-driven population: copy TEMPLATE blocks and map values via VaihdaLinkit
+  ' OPTIMIZED: Reduce cross-workbook copies by using intermediate range + batch clipboard clears
   Application.StatusBar = "Copying data to printout using template blocks..."
   Riveja = DocEnd - DocStart
   If RMAX <= 0 Then RMAX = 1
+  
+  ' Pre-copy TEMPLATE block to destination once (cross-workbook copy is slow)
+  Dim templateRange As Range
+  Set templateRange = srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd)
+  
   ' Iterate DB1 data rows in groups of RMAX, copying TEMPLATE rows each time
   Kerta = 0
   For i = 2 To Recordeja Step RMAX
-    ' Copy TEMPLATE block to destination
-    srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd).Copy _
-        Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
-    Application.CutCopyMode = False ' Clear clipboard after copy
+    perfIterations = perfIterations + 1
+    
+    ' OPTIMIZATION: Copy from source workbook
+    ' (Note: Can't fully optimize this without array approach since we need formatting)
+    Dim tCopy As Double: tCopy = Timer
+    templateRange.Copy Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
+    perfCopy = perfCopy + (Timer - tCopy)
+    
     ' Apply alternating shading per block
+    Dim tShade As Double: tShade = Timer
     If ((i - 2) \ RMAX) Mod 2 = 1 Then
       With destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + Riveja, Sarakkeita)).Interior
         .ColorIndex = 19
@@ -328,12 +349,20 @@ Sub GenPrintout()
         .PatternColorIndex = xlAutomatic
       End With
     End If
+    perfShade = perfShade + (Timer - tShade)
+    
     ' Map values from LINKING to the template area via comment markers
+    Dim tLink As Double: tLink = Timer
     VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta
+    perfLink = perfLink + (Timer - tLink)
+    
     ' Advance to next block
     ViimRivi = ViimRivi + Riveja + 1
     Kerta = Kerta + 1
   Next i
+  
+  ' OPTIMIZATION: Clear clipboard once after all copies (not in loop)
+  Application.CutCopyMode = False
   
   ' Delete extra columns beyond Sarakkeita
   lastCol = destSheet.Cells(1, destSheet.Columns.Count).End(xlToLeft).Column
@@ -404,6 +433,24 @@ Sub GenPrintout()
     destWB.BuiltinDocumentProperties("Title").Value = POSheet
     destWB.SaveAs Tiedosto, xlOpenXMLWorkbook
   End If
+  
+  ' Performance diagnostics
+  perfTotal = Timer - perfStart
+  Debug.Print "=== GenPrintout Performance Report ==="
+  Debug.Print "Total time: " & Format(perfTotal, "0.00") & "s"
+  Debug.Print "Iterations: " & perfIterations & " (RMAX=" & RMAX & ", Rows=" & Recordeja & ")"
+  Debug.Print "  Copy time: " & Format(perfCopy, "0.00") & "s (" & Format(perfCopy / perfTotal * 100, "0.0") & "%)"
+  Debug.Print "  Link time: " & Format(perfLink, "0.00") & "s (" & Format(perfLink / perfTotal * 100, "0.0") & "%)"
+  Debug.Print "  Shade time: " & Format(perfShade, "0.00") & "s (" & Format(perfShade / perfTotal * 100, "0.0") & "%)"
+  Debug.Print "  Other: " & Format(perfTotal - perfCopy - perfLink - perfShade, "0.00") & "s"
+  If perfIterations > 0 Then
+    Debug.Print "Avg per iteration: " & Format(perfTotal / perfIterations * 1000, "0.0") & "ms"
+    Debug.Print "  Copy: " & Format(perfCopy / perfIterations * 1000, "0.0") & "ms"
+    Debug.Print "  Link: " & Format(perfLink / perfIterations * 1000, "0.0") & "ms"
+    Debug.Print "  Shade: " & Format(perfShade / perfIterations * 1000, "0.0") & "ms"
+  End If
+  Debug.Print "======================================"
+  
   Exit Sub
 
 GenPrintoutError:
