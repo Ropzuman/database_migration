@@ -128,6 +128,33 @@ Notes:
 
 - You can pre-fill default paths by editing `$DefaultAccessFilePath` and `$DefaultComponentPath` at the top of the script.
 
+## Automations: Excel updater
+
+Use `Automations/Excel_automaatio.ps1` to replace VBA modules in .xlsm workbooks across multiple locations.
+
+Prerequisites:
+
+- Run in PowerShell (any bitness, but must match Excel if opening workbooks).
+- Microsoft Excel installed.
+- Trust Center: enable "Trust access to the VBA project object model".
+
+What it does:
+
+- Prompts for the folder containing .xlsm files and the folder with updated .bas module files.
+- For each .xlsm workbook:
+  - Opens with retry logic (handles OneDrive locks).
+  - **Replaces module code directly** (reads .bas content, strips headers, writes clean code via CodeModule API).
+  - Saves to temporary file, deletes original, renames (atomic replacement pattern).
+- Performs robust COM cleanup to avoid orphaned EXCEL.EXE processes.
+
+**Important:** The script uses **direct code replacement** instead of `VBComponents.Import()` to avoid invisible metadata corruption that can cause modules to behave incorrectly. This approach is equivalent to manually copy-pasting code into the VBA editor.
+
+Notes:
+
+- Pre-fill default paths by editing `$DefaultExcelFilesPath` and `$DefaultModulePath` at the top.
+- Module names to update are defined in `$moduleNames` array (default: Module1, Module2, Module3).
+- See `Logs/AUTOMATIONS_LOG.md` for technical details on the VBComponents.Import issue.
+
 ## Version History
 
 See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.

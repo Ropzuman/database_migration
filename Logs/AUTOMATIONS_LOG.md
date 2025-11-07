@@ -215,3 +215,80 @@ Usage notes:
 
 - Run in 64-bit PowerShell. Ensure Access Trust Center has "Trust access to the VBA project object model" enabled and both the .accdb and the module folder are trusted locations.
 - Optional defaults can be set via `$DefaultAccessFilePath` and `$DefaultComponentPath` at the top of the script to speed up repeated runs.
+
+---
+
+## 2025-11-07 - Excel VBA Module Import Issue: VBComponents.Import Metadata Corruption
+
+**Problem Identified:**
+
+`Excel_automaatio.ps1` was using `VBComponents.Import()` to replace VBA modules in .xlsm workbooks. This approach caused invisible metadata corruption:
+
+- Modules imported via `VBComponents.Import()` contained hidden VBA file headers (Attribute VB_Name, VERSION lines, etc.)
+- These invisible metadata lines caused the modules to behave differently than when code was manually copy-pasted
+- Users reported the script "doesn't export the modules right" - automation failed but manual copy-paste worked
+
+**Root Cause:**
+
+When VBA exports a module to .bas file, it includes file metadata:
+```vba
+Attribute VB_Name = "Module1"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+' ... other attributes
+```
+
+When using `VBComponents.Import()`, Excel/VBA **adds these metadata lines to the module's code**, not just as metadata but as actual code content. This corruption is invisible in the VBA editor but affects execution.
+
+**Solution Implemented:**
+
+Changed approach from Remove → Import to **Direct Code Replacement**:
+
+1. Read the .bas file as plain text
+2. Strip VBA file headers (Attribute lines, VERSION lines, blank lines at start)
+3. Extract only the clean VBA code
+4. Use `CodeModule.DeleteLines()` to clear existing code
+5. Use `CodeModule.AddFromString()` to write clean code directly
+
+**Code Changes:**
+
+```powershell
+# OLD APPROACH (causes metadata corruption):
+$vbaProject.VBComponents.Remove($module)
+$vbaProject.VBComponents.Import($fullModulePath)
+
+# NEW APPROACH (direct code replacement):
+$moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+# Strip headers...
+$codeModule.DeleteLines(1, $codeModule.CountOfLines)
+$codeModule.AddFromString($cleanCode)
+```
+
+**Benefits:**
+
+- ✅ **No invisible metadata** - only actual VBA code is written
+- ✅ **Preserves module exactly** as seen in VBA editor
+- ✅ **Faster** - no remove/import cycle needed
+- ✅ **More reliable** - equivalent to manual copy-paste
+- ✅ **Creates modules if missing** - handles new module additions
+
+**Technical Details:**
+
+The script now:
+- Detects and removes VBA file header lines (`Attribute VB_`, `VERSION `)
+- Handles modules that don't exist yet (creates them with `VBComponents.Add(1)`)
+- Reports line count of actual code written for verification
+- Uses UTF8 encoding to preserve special characters
+
+**Lesson Learned:**
+
+Never use `VBComponents.Import()` for automation when code correctness is critical. Always use direct `CodeModule` manipulation to avoid hidden metadata corruption.
+
+**Files Modified:**
+
+- `Automations/Excel_automaatio.ps1` - Replaced Import/Remove logic with direct CodeModule manipulation
+
+**Testing:**
+
+Verified that modules updated via automation now behave identically to manually copy-pasted code.
+

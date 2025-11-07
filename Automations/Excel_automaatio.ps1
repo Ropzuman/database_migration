@@ -4,8 +4,15 @@
 
 # KÄYTTÄYTYMINEN:
 # - Kysyy polut työkirjojen hakemistoon ja moduulitiedostojen hakemistoon (ellei oletuksia ole asetettu).
-# - Avaa jokaisen .xlsm-työkirjan, poistaa moduulit, tuo uudet .bas-moduulit, tallentaa väliaikaisesti ja korvaa alkuperäisen.
+# - Avaa jokaisen .xlsm-työkirjan, päivittää moduulien sisällön suoraan, tallentaa väliaikaisesti ja korvaa alkuperäisen.
 # - Käyttää retry-logiikkaa lukkojen kiertämiseksi (OneDrive ym.).
+
+# TÄRKEÄÄ - VBComponents.Import-ongelma:
+# - Tämä skripti KORVAA moduulien sisällön suoraan CodeModule-rajapinnan kautta.
+# - EI käytetä VBComponents.Import()-funktiota, koska se lisää näkymättömiä metatietoja moduuleihin.
+# - Import() aiheuttaa moduulien toimintahäiriöitä (käyttäytyy eri tavalla kuin manuaalisesti kopioidut).
+# - Nykyinen toteutus: lue .bas-tiedosto → poista headerit → kirjoita puhdas koodi AddFromString()-funktiolla.
+# - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
 # - HUOM: Kun muutoksia ajetaan verkkosijaintiin, pitää käyttää verkkosijainnin nimeä \\proense01\projektit\ 
 # - esim. "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
@@ -77,12 +84,14 @@ Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm" | ForEach-Object {
             )
             $isOpened = $true
             Write-Host "  - Työkirja avattu onnistuneesti."
-        } catch {
+        }
+        catch {
             $retryCount++
             if ($retryCount -lt $maxRetries) {
                 Write-Warning "  ⚠️ Avaus epäonnistui: $($_.Exception.Message). Yritetään uudelleen $retryDelaySeconds sekunnin kuluttua (Yritys $retryCount / $maxRetries)."
                 Start-Sleep -Seconds $retryDelaySeconds
-            } else {
+            }
+            else {
                 Write-Error "  ❌ VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen jälkeen. Jätetään käsittelemättä."
                 $isOpened = $false
                 # Nosta virhe, jotta päästään pää-catch-lohkoon
@@ -99,31 +108,63 @@ Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm" | ForEach-Object {
             $vbaProject = $workbook.VBProject
             Write-Host "  - VBA-projekti avattu."
 
-            # 3. Poista vanhat moduulit
-            foreach ($name in $moduleNames) {
-                try {
-                    $module = $vbaProject.VBComponents.Item($name)
-                    $vbaProject.VBComponents.Remove($module)
-                    Write-Host "  ✅ Poistettiin vanha $name"
-                } catch {
-                    # Hiljainen virhe, jos moduulia ei löydy
-                }
-            }
-
-            # 4. Tuo uudet moduulit
+            # 3. Päivitä moduulien sisältö suoraan (välttää Import-metatietojen ongelman)
             foreach ($name in $moduleNames) {
                 $fullModulePath = Join-Path $modulePath "$($name).bas"
                 
                 if (-not (Test-Path $fullModulePath)) {
-                    Write-Error "  ❌ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan tuonti."
+                    Write-Error "  ❌ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan päivitys."
                     continue
                 }
                 
                 try {
-                    $vbaProject.VBComponents.Import($fullModulePath)
-                    Write-Host "  ✅ Tuotiin uusi $name"
-                } catch {
-                    Write-Error "  ❌ VIRHE: Moduulin $name tuonti epäonnistui: $($_.Exception.Message)"
+                    # Lue .bas-tiedoston sisältö
+                    $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+                    
+                    # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
+                    # Säilytetään vain varsinainen VBA-koodi
+                    $lines = $moduleContent -split "`r?`n"
+                    $codeStartIndex = 0
+                    for ($i = 0; $i -lt $lines.Count; $i++) {
+                        if ($lines[$i] -match "^Attribute\s+" -or $lines[$i] -match "^VERSION\s+") {
+                            $codeStartIndex = $i + 1
+                        }
+                        elseif ($lines[$i].Trim() -eq "") {
+                            continue
+                        }
+                        else {
+                            break
+                        }
+                    }
+                    
+                    # Ota vain VBA-koodi (ilman header-rivejä)
+                    $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
+                    
+                    # Etsi tai luo moduuli
+                    $module = $null
+                    try {
+                        $module = $vbaProject.VBComponents.Item($name)
+                        Write-Host "  - Moduuli $name löytyi, päivitetään sisältö..."
+                    }
+                    catch {
+                        # Jos moduulia ei ole, luo se
+                        Write-Host "  - Moduulia $name ei löytynyt, luodaan uusi..."
+                        $module = $vbaProject.VBComponents.Add(1) # 1 = vbext_ct_StdModule
+                        $module.Name = $name
+                    }
+                    
+                    # Tyhjennä vanha koodi ja aseta uusi
+                    $codeModule = $module.CodeModule
+                    if ($codeModule.CountOfLines -gt 0) {
+                        $codeModule.DeleteLines(1, $codeModule.CountOfLines)
+                    }
+                    $codeModule.AddFromString($cleanCode)
+                    
+                    Write-Host "  ✅ Päivitettiin $name ($(($cleanCode -split "`n").Count) riviä koodia)"
+                    
+                }
+                catch {
+                    Write-Error "  ❌ VIRHE: Moduulin $name päivitys epäonnistui: $($_.Exception.Message)"
                 }
             }
 
@@ -152,7 +193,8 @@ Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm" | ForEach-Object {
             Rename-Item -Path $tempWorkbookPath -NewName (Split-Path $workbookPath -Leaf) -Force -ErrorAction Stop
             Write-Host "  ✅ Tiedosto $workbookPath päivitetty onnistuneesti korvausmenetelmällä."
 
-        } catch {
+        }
+        catch {
             # Virheenkäsittely
             Write-Error "❌ Virhe VBA-käsittelyssä tai tallennuksessa/korvauksessa: $($_.Exception.Message)"
             
