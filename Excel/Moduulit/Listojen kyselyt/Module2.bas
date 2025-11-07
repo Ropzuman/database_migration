@@ -125,7 +125,7 @@ Dim wsDB2 As Worksheet
   Debug.Print "  DIDocNo: '" & DIDocNo & "'"
   Debug.Print "  DIProjNo: '" & DIProjNo & "'"
 End Sub
-Sub VaihdaInfo(Optional Sheet As String = "Info")
+Sub VaihdaInfo(Optional SheetName As String = "Info")
 '''
 ' VaihdaInfo: Updates the specified sheet's comment-annotated cells with document property values.
 ' Handles Info and Revisions sheets. Uses fast mode for performance.
@@ -140,16 +140,16 @@ Dim processedDesigner As Boolean, processedChecker As Boolean
 Dim processedApprover As Boolean, processedDesc As Boolean
 
   On Error Resume Next
-  Set ws = Sheets(Sheet)
+  Set ws = Sheets(SheetName)
   On Error GoTo 0
   
   If ws Is Nothing Then
-    Debug.Print "VaihdaInfo: Sheet '" & Sheet & "' not found!"
+    Debug.Print "VaihdaInfo: Sheet '" & SheetName & "' not found!"
     Exit Sub
   End If
   
   ' DEBUG: Report sheet info
-  Debug.Print "VaihdaInfo: Processing sheet '" & Sheet & "' with " & ws.Comments.Count & " comments"
+  Debug.Print "VaihdaInfo: Processing sheet '" & SheetName & "' with " & ws.Comments.Count & " comments"
   If ws.Comments.Count = 0 Then
     Debug.Print "  WARNING: No comments found in sheet - Info will remain empty!"
   End If
@@ -200,7 +200,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
         Case "rev"
           .Comments(i).Parent.Value = DIRev
         Case "revid"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedRevId Then
               On Error Resume Next
               ' Only process if DIRevArr has data
@@ -221,7 +221,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             .Comments(i).Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedRevDate Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
@@ -241,7 +241,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             .Comments(i).Parent.Value = DIRevDate
           End If
         Case "designer"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedDesigner Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
@@ -259,7 +259,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             End If
           End If
         Case "checker"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedChecker Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
@@ -277,7 +277,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             End If
           End If
         Case "approver"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedApprover Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
@@ -295,7 +295,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             End If
           End If
         Case "desc"
-          If Sheet <> "Info" Then
+          If SheetName <> "Info" Then
             If Not processedDesc Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then

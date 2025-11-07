@@ -1,4 +1,4 @@
-Public CheckOK As Boolean
+﻿Public CheckOK As Boolean
 Public PHStart As Long
 Public PHEnd As Long
 Public PFStart As Long
@@ -196,6 +196,11 @@ Sub GenPrintout()
   
   On Error GoTo GenPrintoutError
   BeginFastMode
+  
+  ' Get POSheet name from faceplate
+  POSheet = Sheets("Main").Range("C16").Value
+  If Trim(POSheet) = "" Then POSheet = "Printout" ' Default name if not set
+  
   ' Ensure document info is current (path/name from DB2)
   On Error Resume Next
   If Trim(DIPath) = "" Or Trim(DIFile) = "" Then HaeDocTiedot
@@ -215,14 +220,23 @@ Sub GenPrintout()
   
   Application.StatusBar = "Reading data from DB1..."
   
-  ' Find last used row in DB1
-  Recordeja = wsDB1.Cells.Find(What:="*", _
-          After:=wsDB1.Range("A1"), _
-          LookAt:=xlPart, _
-          LookIn:=xlFormulas, _
-          SearchOrder:=xlByRows, _
-          SearchDirection:=xlPrevious, _
-          MatchCase:=False).Row
+  ' Find last used row in DB1 - with null checking
+  Dim lastCell As Range
+  Set lastCell = wsDB1.Cells.Find(What:="*", _
+                                  After:=wsDB1.Range("A1"), _
+                                  LookAt:=xlPart, _
+                                  LookIn:=xlFormulas, _
+                                  SearchOrder:=xlByRows, _
+                                  SearchDirection:=xlPrevious, _
+                                  MatchCase:=False)
+  
+  If lastCell Is Nothing Then
+    EndFastMode
+    MsgBox "DB1 sheet is empty! Please click 'Get Data' first to load data from database.", vbCritical, "No Data Error"
+    Exit Sub
+  End If
+  
+  Recordeja = lastCell.Row
   
   Application.StatusBar = "Creating new workbook..."
   
@@ -269,14 +283,15 @@ Sub GenPrintout()
   Application.StatusBar = "Setting up footers..."
   For i = 1 To 3
     With destWB.Sheets(i).PageSetup
-      .LeftFooter = "&8Document: " & DIMetsoDocNo & Chr(10) _
-                  & "&8Revision: " & DIRevID & " - " & DIRevDate & Chr(10) _
-                  & "&8Status: " & DIStatus
-      .CenterFooter = "&8 " & DICustomer & Chr(10) _
-                    & "&8 " & DIMill & Chr(10) _
-                    & "&8 " & DIDepartName & Chr(10) _
-                    & "&8 " & DIDocName2
-      .RightFooter = "&8Project: " & DIProjNo & Chr(10) _
+      ' Null-safe string concatenation (empty values are OK - some equipment lacks certain attributes)
+      .LeftFooter = "&8Document: " & (DIMetsoDocNo & "") & Chr(10) _
+                  & "&8Revision: " & (DIRevID & "") & " - " & (DIRevDate & "") & Chr(10) _
+                  & "&8Status: " & (DIStatus & "")
+      .CenterFooter = "&8 " & (DICustomer & "") & Chr(10) _
+                    & "&8 " & (DIMill & "") & Chr(10) _
+                    & "&8 " & (DIDepartName & "") & Chr(10) _
+                    & "&8 " & (DIDocName2 & "")
+      .RightFooter = "&8Project: " & (DIProjNo & "") & Chr(10) _
                    & "&8File: &F" & Chr(10) _
                    & "&8Page &P(&N)"
     End With
@@ -366,14 +381,23 @@ Sub GenPrintout()
   ' Prompt for file name and save
   ' Build a robust default path+file for the save dialog
   Dim defPath As String, defName As String
-  defPath = Trim(DIPath)
+  
+  ' Safe handling of potentially empty/null DIPath and DIFile
+  On Error Resume Next
+    defPath = Trim(DIPath & "")
+    defName = Trim(DIFile & "")
+  On Error GoTo GenPrintoutError
+  
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
   If Right$(defPath, 1) <> "\\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
+  
   ' Per requirement: file name should come from DB2 "File" column
-  defName = Trim(DIFile)
   If defName = "" Then defName = POSheet ' fallback only if DB2 didn't provide a name
+  If defName = "" Then defName = "Printout" ' Ultimate fallback
+  
   ' Ensure .xlsx extension if none provided
   If InStrRev(defName, ".") = 0 Then defName = defName & ".xlsx"
+  
   Oletus = defPath & defName
   Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
   If Tiedosto <> "" Then
@@ -385,7 +409,36 @@ Sub GenPrintout()
 GenPrintoutError:
   Application.StatusBar = False
   EndFastMode
-  MsgBox "Error in GenPrintout: " & Err.Description, vbCritical, "Printout Generation Error"
+  
+  ' Enhanced error handler with context-specific messages
+  Dim errMsg As String
+  errMsg = "Error in GenPrintout: " & Err.Description & " (Error " & Err.Number & ")"
+  
+  ' Add context based on error number
+  Select Case Err.Number
+    Case 91
+      errMsg = errMsg & vbCrLf & vbCrLf & "Object variable not set." & vbCrLf & _
+               "This usually means a sheet or range is missing." & vbCrLf & _
+               "Check that all required sheets exist (TEMPLATE, DB1, DB2, Info, Legend, Revisions)."
+    Case 1004
+      errMsg = errMsg & vbCrLf & vbCrLf & "Application-defined or object-defined error." & vbCrLf & _
+               "This often means a copy/paste operation failed or a sheet name is invalid."
+    Case 9
+      errMsg = errMsg & vbCrLf & vbCrLf & "Subscript out of range." & vbCrLf & _
+               "A sheet with the specified name doesn't exist."
+    Case 13
+      errMsg = errMsg & vbCrLf & vbCrLf & "Type mismatch." & vbCrLf & _
+               "Trying to use incompatible data types (e.g., text where number expected)."
+  End Select
+  
+  MsgBox errMsg, vbCritical, "Printout Generation Error"
+  
+  ' Log to Immediate Window for debugging
+  Debug.Print "GenPrintout ERROR:"
+  Debug.Print "  Number: " & Err.Number
+  Debug.Print "  Description: " & Err.Description
+  Debug.Print "  Source: " & Err.Source
+  
   Err.Clear
   On Error GoTo 0
 End Sub
@@ -402,7 +455,6 @@ Dim i As Long
 Dim j As Long
 Dim Arvo As String
 Dim Virhe As Boolean
-Dim Apu As Long
 Dim wsTemplate As Worksheet
 Dim wsErrors As Worksheet
 
@@ -428,15 +480,44 @@ Dim wsErrors As Worksheet
   ' Clear comments from TEMPLATE
   wsTemplate.Cells.ClearComments
   
-  ' Find area markers in TEMPLATE
+  ' Find area markers in TEMPLATE - with null checking
+  Dim foundCell As Range
   With wsTemplate
-    PHStart = .Cells.Find(What:="&&PAGE_HEADER_START").Row + 1
-    PHEnd = .Cells.Find(What:="&&PAGE_HEADER_END").Row - 1
-    DocStart = .Cells.Find(What:="&&DOC_DATA_START").Row + 1
-    DocEnd = .Cells.Find(What:="&&DOC_DATA_END").Row - 1
-    Sarakkeita = .Cells.Find(What:="&&END").Column
-    PFStart = .Cells.Find(What:="&&PAGE_FOOTER_START").Row + 1
-    PFEnd = .Cells.Find(What:="&&PAGE_FOOTER_END").Row - 1
+    Set foundCell = .Cells.Find(What:="&&PAGE_HEADER_START")
+    If foundCell Is Nothing Then
+      wsErrors.Range("A1").Value = "TEMPLATE ERROR: Marker &&PAGE_HEADER_START not found!"
+      wsErrors.Range("A1").Font.Bold = True
+      wsErrors.Range("A1").Font.ColorIndex = 3
+      wsErrors.Activate
+      Application.ScreenUpdating = True
+      MsgBox "TEMPLATE is missing required markers! See ERRORS sheet.", vbCritical, "Template Error"
+      Exit Sub
+    End If
+    PHStart = foundCell.Row + 1
+    
+    Set foundCell = .Cells.Find(What:="&&PAGE_HEADER_END")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_HEADER_END not found"
+    PHEnd = foundCell.Row - 1
+    
+    Set foundCell = .Cells.Find(What:="&&DOC_DATA_START")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&DOC_DATA_START not found"
+    DocStart = foundCell.Row + 1
+    
+    Set foundCell = .Cells.Find(What:="&&DOC_DATA_END")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&DOC_DATA_END not found"
+    DocEnd = foundCell.Row - 1
+    
+    Set foundCell = .Cells.Find(What:="&&END")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&END not found"
+    Sarakkeita = foundCell.Column
+    
+    Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_START")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_START not found"
+    PFStart = foundCell.Row + 1
+    
+    Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_END")
+    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_END not found"
+    PFEnd = foundCell.Row - 1
   End With
   
   ' Fetch document info from DB2 sheet
@@ -490,8 +571,7 @@ Dim wsErrors As Worksheet
         If Left(Arvo, 2) = "££" Then
           If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
         ElseIf Left(Arvo, 1) = "£" Then
-          Apu = CInt(Mid(Arvo, 2, 1))
-          If EtsiOts(Mid(Arvo, 5), i, j, Apu) = False Then Virhe = True
+          If EtsiOts(Mid(Arvo, 5), i, j, CInt(Mid(Arvo, 2, 1))) = False Then Virhe = True
         End If
       End If
     Next j
@@ -511,7 +591,30 @@ Dim wsErrors As Worksheet
 
 CheckoutError:
   Application.ScreenUpdating = True
-  MsgBox "Error in Checkout: " & Err.Description, vbCritical, "Checkout Error"
+  
+  Dim errMsg As String
+  errMsg = "Error in Checkout: " & Err.Description & " (Error " & Err.Number & ")"
+  
+  ' Add helpful context for common errors
+  If Err.Number = vbObjectError + 1 Then
+    errMsg = errMsg & vbCrLf & vbCrLf & "TEMPLATE sheet is missing required marker(s)." & vbCrLf & _
+             "Please ensure TEMPLATE contains all markers:" & vbCrLf & _
+             "&&PAGE_HEADER_START, &&PAGE_HEADER_END" & vbCrLf & _
+             "&&DOC_DATA_START, &&DOC_DATA_END" & vbCrLf & _
+             "&&PAGE_FOOTER_START, &&PAGE_FOOTER_END" & vbCrLf & _
+             "&&END"
+  ElseIf Err.Number = 91 Then
+    errMsg = errMsg & vbCrLf & vbCrLf & "This usually means a required sheet or object is missing." & vbCrLf & _
+             "Ensure TEMPLATE, DB1, DB2, ERRORS, and Info sheets exist."
+  End If
+  
+  MsgBox errMsg, vbCritical, "Checkout Error"
+  
+  ' Log to Immediate Window
+  Debug.Print "Checkout ERROR:"
+  Debug.Print "  Number: " & Err.Number
+  Debug.Print "  Description: " & Err.Description
+  
   Err.Clear
   On Error GoTo 0
 End Sub
