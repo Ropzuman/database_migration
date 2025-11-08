@@ -1,26 +1,26 @@
-﻿# Access_automaatio.ps1
+# Access_automaatio.ps1
 
 # TARKOITUS: Korvaa VBA-moduulit (.bas) ja luokkamoduulit (.cls) kannassa.
-# YMPÄRISTÖ: Tämä skripti tukee sekä 32-bittistä että 64-bittistä Microsoft Accessia.
-#           Skripti tunnistaa automaattisesti Accessin arkkitehtuurin ja käynnistyy
-#           uudelleen oikeassa PowerShell-ympäristössä tarvittaessa.
+# YMP?RIST?: T?m? skripti tukee sek? 32-bittist? ett? 64-bittist? Microsoft Accessia.
+#           Skripti tunnistaa automaattisesti Accessin arkkitehtuurin ja k?ynnistyy
+#           uudelleen oikeassa PowerShell-ymp?rist?ss? tarvittaessa.
 
-# KÄYTTÄYTYMINEN:
+# K?YTT?YTYMINEN:
 # - Tunnistaa Accessin bittisyyden (32-bit tai 64-bit)
-# - Jos PowerShell-bittisyys ei vastaa Accessia, käynnistyy automaattisesti uudelleen
+# - Jos PowerShell-bittisyys ei vastaa Accessia, k?ynnistyy automaattisesti uudelleen
 # - Kysyy polun yhteen tietokantatiedostoon ja polun komponenttihakemistoon
-# - Avaa .accdb-kannan, päivittää komponenttien sisällön suoraan (moduulit/luokat)
-# - Käyttää try...finally-lohkoa varmistaakseen, että Access-prosessi suljetaan aina
+# - Avaa .accdb-kannan, p?ivitt?? komponenttien sis?ll?n suoraan (moduulit/luokat)
+# - K?ytt?? try...finally-lohkoa varmistaakseen, ett? Access-prosessi suljetaan aina
 
-# TÄRKEÄÄ - VBComponents.Import-ongelma:
-# - Tämä skripti KORVAA komponenttien sisällön suoraan CodeModule-rajapinnan kautta.
-# - EI käytetä VBComponents.Import()-funktiota, koska se lisää näkymättömiä metatietoja.
-# - Import() aiheuttaa komponenttien toimintahäiriöitä (käyttäytyy eri tavalla kuin manuaalisesti kopioidut).
-# - Nykyinen toteutus: lue .bas/.cls-tiedosto → poista headerit → kirjoita puhdas koodi AddFromString()-funktiolla.
-# - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
+# T?RKE?? - VBComponents.Import-ongelma:
+# - T?m? skripti KORVAA komponenttien sis?ll?n suoraan CodeModule-rajapinnan kautta.
+# - EI k?ytet? VBComponents.Import()-funktiota, koska se lis?? n?kym?tt?mi? metatietoja.
+# - Import() aiheuttaa komponenttien toimintah?iri?it? (k?ytt?ytyy eri tavalla kuin manuaalisesti kopioidut).
+# - Nykyinen toteutus: lue .bas/.cls-tiedosto ? poista headerit ? kirjoita puhdas koodi AddFromString()-funktiolla.
+# - T?m? vastaa manuaalista kopioi-liit? -toimintoa VBA-editorissa.
 
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
-# Tunnista Accessin bittisyys rekisteristä
+# Tunnista Accessin bittisyys rekisterist?
 $accessPath = $null
 $accessIs32Bit = $false
 
@@ -30,7 +30,7 @@ if ($accessPath -and ($accessPath -match 'x86' -or $accessPath -match 'Program F
     $accessIs32Bit = $true
 }
 
-# Jos ei löytynyt, tarkista 32-bit sijainti (WOW6432Node)
+# Jos ei l?ytynyt, tarkista 32-bit sijainti (WOW6432Node)
 if (-not $accessPath) {
     $accessPath = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\MSACCESS.EXE" -ErrorAction SilentlyContinue).'(default)'
     if ($accessPath) {
@@ -39,8 +39,8 @@ if (-not $accessPath) {
 }
 
 if (-not $accessPath) {
-    Write-Error "VIRHE: Microsoft Accessia ei löydy järjestelmästä."
-    Write-Error "Asenna Microsoft Access ennen tämän skriptin ajamista."
+    Write-Host "VIRHE: Microsoft Accessia ei l?ydy j?rjestelm?st?."
+    Write-Host "Asenna Microsoft Access ennen t?m?n skriptin ajamista."
     Start-Sleep -Seconds 10
     exit 1
 }
@@ -48,25 +48,25 @@ if (-not $accessPath) {
 # Tarkista PowerShellin bittisyys
 $psIs64Bit = [System.IntPtr]::Size -eq 8
 
-# Näytä tunnistetut arkkitehtuurit
+# N?yt? tunnistetut arkkitehtuurit
 Write-Host "=== BITTISYYS-TARKISTUS ===" -ForegroundColor Cyan
 Write-Host "Access: $(if($accessIs32Bit){'32-bit'}else{'64-bit'}) ($accessPath)"
 Write-Host "PowerShell: $(if($psIs64Bit){'64-bit'}else{'32-bit'})"
 
-# Jos bittisyydet eivät täsmää, näytä virhe ja lopeta
+# Jos bittisyydet eiv?t t?sm??, n?yt? virhe ja lopeta
 if ($accessIs32Bit -and $psIs64Bit) {
     Write-Host ""
-    Write-Host "❌ VIRHE: Bittisyydet eivät täsmää!" -ForegroundColor Red
+    Write-Host "[ERROR] VIRHE: Bittisyydet eiv?t t?sm??!" -ForegroundColor Red
     Write-Host "   Access on 32-bittinen, mutta PowerShell on 64-bittinen." -ForegroundColor Yellow
-    Write-Host "   64-bit PowerShell ei voi luoda COM-yhteyttä 32-bit Accessiin." -ForegroundColor Yellow
+    Write-Host "   64-bit PowerShell ei voi luoda COM-yhteytt? 32-bit Accessiin." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "RATKAISU: Aja skripti batch-tiedostolla:" -ForegroundColor Cyan
     Write-Host "   Kaksoisklikkaa: RUN_ACCESS_AUTOMATION.bat" -ForegroundColor Green
     Write-Host ""
-    Write-Host "TAI käynnistä manuaalisesti 32-bit PowerShellissä:" -ForegroundColor Cyan
-    Write-Host "   1. Avaa Käynnistä-valikko" -ForegroundColor White
+    Write-Host "TAI k?ynnist? manuaalisesti 32-bit PowerShelliss?:" -ForegroundColor Cyan
+    Write-Host "   1. Avaa K?ynnist?-valikko" -ForegroundColor White
     Write-Host "   2. Etsi 'PowerShell (x86)'" -ForegroundColor White
-    Write-Host "   3. Suorita siellä:" -ForegroundColor White
+    Write-Host "   3. Suorita siell?:" -ForegroundColor White
     Write-Host "      cd c:\database_migration\Automations" -ForegroundColor Gray
     Write-Host "      .\Access_automaatio.ps1" -ForegroundColor Gray
     Write-Host ""
@@ -75,13 +75,13 @@ if ($accessIs32Bit -and $psIs64Bit) {
 }
 elseif (-not $accessIs32Bit -and -not $psIs64Bit) {
     Write-Host ""
-    Write-Host "❌ VIRHE: Bittisyydet eivät täsmää!" -ForegroundColor Red
+    Write-Host "[ERROR] VIRHE: Bittisyydet eiv?t t?sm??!" -ForegroundColor Red
     Write-Host "   Access on 64-bittinen, mutta PowerShell on 32-bittinen." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "RATKAISU: Käynnistä 64-bit PowerShellissä:" -ForegroundColor Cyan
-    Write-Host "   1. Avaa Käynnistä-valikko" -ForegroundColor White
+    Write-Host "RATKAISU: K?ynnist? 64-bit PowerShelliss?:" -ForegroundColor Cyan
+    Write-Host "   1. Avaa K?ynnist?-valikko" -ForegroundColor White
     Write-Host "   2. Etsi 'PowerShell' (ei x86)" -ForegroundColor White
-    Write-Host "   3. Suorita siellä:" -ForegroundColor White
+    Write-Host "   3. Suorita siell?:" -ForegroundColor White
     Write-Host "      cd c:\database_migration\Automations" -ForegroundColor Gray
     Write-Host "      .\Access_automaatio.ps1" -ForegroundColor Gray
     Write-Host ""
@@ -89,13 +89,13 @@ elseif (-not $accessIs32Bit -and -not $psIs64Bit) {
     exit 1
 }
 else {
-    Write-Host "✅ Bittisyydet täsmäävät - jatketaan..." -ForegroundColor Green
+    Write-Host "[OK] Bittisyydet t?sm??v?t - jatketaan..." -ForegroundColor Green
 }
 
 Write-Host ""
 
 
-# Määritellään muuttujat ennalta 'finally'-lohkoa varten
+# M??ritell??n muuttujat ennalta 'finally'-lohkoa varten
 $access = $null
 $database = $null
 
@@ -109,29 +109,29 @@ try {
     $DefaultComponentPath = ''
 
     Write-Host "Access file path: $DefaultAccessFilePath" -ForegroundColor Cyan
-    $inputAccess = Read-Host -Prompt 'Lisää polku Access-tiedostoon (.accdb) (paina Enter käyttääksesi oletusta)'
+    $inputAccess = Read-Host -Prompt 'Lis?? polku Access-tiedostoon (.accdb) (paina Enter k?ytt??ksesi oletusta)'
     if ([string]::IsNullOrWhiteSpace($inputAccess)) { $databasePath = $DefaultAccessFilePath } else { $databasePath = $inputAccess }
 
     Write-Host "Component files folder: $DefaultComponentPath" -ForegroundColor Cyan
-    $inputComponent = Read-Host -Prompt 'Lisää polku komponenttitiedostoille (paina Enter käyttääksesi oletusta)'
+    $inputComponent = Read-Host -Prompt 'Lis?? polku komponenttitiedostoille (paina Enter k?ytt??ksesi oletusta)'
     if ([string]::IsNullOrWhiteSpace($inputComponent)) { $componentPath = $DefaultComponentPath } else { $componentPath = $inputComponent }
 
     # Polkujen tarkistus
     if (-not (Test-Path $databasePath -PathType Leaf)) {
-        Write-Error "Access-tiedostoa ei löydy tai polku on hakemisto: $databasePath"
+        Write-Host "Access-tiedostoa ei l?ydy tai polku on hakemisto: $databasePath"
         exit 1
     }
     if (-not (Test-Path $componentPath -PathType Container)) {
-        Write-Error "Component files folder does not exist: $componentPath"
+        Write-Host "Component files folder does not exist: $componentPath"
         exit 1
     }
 
-    # --- 3. Komponenttien määrittely ---
-    # Määrittele kaikki ne moduulien ja luokkamoduulien nimet, jotka poistetaan ja tuodaan.
-    # Älä käytä tiedostopäätteitä (.bas/.cls) nimissä.
+    # --- 3. Komponenttien m??rittely ---
+    # M??rittele kaikki ne moduulien ja luokkamoduulien nimet, jotka poistetaan ja tuodaan.
+    # ?l? k?yt? tiedostop??tteit? (.bas/.cls) nimiss?.
     # 
-    # PÄIVITETTY 2025-11-08: Phase 1 cleanup (dead code removal, Replace() optimization)
-    # - Poistettu: Form_USysRevText_OLD (dead code, korvattu Form_USysRevText:llä)
+    # P?IVITETTY 2025-11-08: Phase 1 cleanup (dead code removal, Replace() optimization)
+    # - Poistettu: Form_USysRevText_OLD (dead code, korvattu Form_USysRevText:ll?)
     # - Muokattu: GlobalVBAs (custom Replace() poistettu, Pituus-muuttujat siivottu)
     # - Muokattu: ForDocuments (VBA71.dll API-deklaraatiot poistettu)
     $componentNames = @(
@@ -171,7 +171,7 @@ try {
     $maxRetries = 3
     $retryDelaySeconds = 1
 
-    Write-Host "--- KÄSITTELLÄÄN: $databasePath ---"
+    Write-Host "--- K?SITTELL??N: $databasePath ---"
 
     $retryCount = 0
     $isOpened = $false
@@ -181,10 +181,10 @@ try {
     # Poista 'Vain luku' -attribuutti
     try {
         Set-ItemProperty -Path $databasePath -Name IsReadOnly -Value $false -Force
-        Write-Host "   ✅ Poistettiin Vain luku -attribuutti."
+        Write-Host "   [OK] Poistettiin Vain luku -attribuutti."
     }
     catch {
-        Write-Warning "   ⚠️ Vain luku -attribuutin poisto epäonnistui: $($_.Exception.Message). Jatketaan silti."
+        Write-Warning "   [WARN] Vain luku -attribuutin poisto failed: $($_.Exception.Message). Jatketaan silti."
     }
 
     # Avaa tietokanta retry-logiikalla
@@ -198,40 +198,40 @@ try {
         catch {
             $retryCount++
             if ($retryCount -lt $maxRetries) {
-                Write-Warning "   ⚠️ Avaus epäonnistui: $($_.Exception.Message). Yritetään uudelleen (Yritys $retryCount / $maxRetries)."
+                Write-Warning "   [WARN] Avaus failed: $($_.Exception.Message). Yritet??n uudelleen (Yritys $retryCount / $maxRetries)."
                 Start-Sleep -Seconds $retryDelaySeconds
             }
             else {
-                Write-Error "   ❌ VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen jälkeen."
-                throw $_ # Heitetään virhe pää-try-lohkolle
+                Write-Host "   [ERROR] VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen j?lkeen."
+                throw $_ # Heitet??n virhe p??-try-lohkolle
             }
         }
     } while (-not $isOpened -and $retryCount -lt $maxRetries)
 
-    # --- 5. VBA-komponenttien käsittely ---
+    # --- 5. VBA-komponenttien k?sittely ---
     if ($isOpened) {
         
         try {
-            # Kytke Accessin sisäiset varoitukset pois päältä
+            # Kytke Accessin sis?iset varoitukset pois p??lt?
             $access.DoCmd.SetWarnings($false)
-            Write-Host "   - Access-varoitukset poistettu käytöstä."
+            Write-Host "   - Access-varoitukset poistettu k?yt?st?."
             
-            # Yritä saada yhteys VBA-projektiin
+            # Yrit? saada yhteys VBA-projektiin
             $vbaProject = $database.Application.VBE.ActiveVBProject
             
-            # KRIITTINEN TARKISTUS: Jos $vbaProject on $null, Accessin turva-asetukset estävät toiminnon.
+            # KRIITTINEN TARKISTUS: Jos $vbaProject on $null, Accessin turva-asetukset est?v?t toiminnon.
             if ($null -eq $vbaProject) {
-                Write-Error "   ❌ KRIITTINEN VIRHE: VBA-projektiin (VBE) ei päästy käsiksi (palautti null)."
-                Write-Error "     SYY: Accessin turva-asetukset estävät tämän. Tarkista seuraavat:"
-                Write-Error "     1. Access - Asetukset - Luottamuskeskus - Luota VBA-projektin objektimallin käyttöön"
-                Write-Error "     2. Access - Asetukset - Luottamuskeskus - Luotetut sijainnit - lisää polut: $databasePath ja $componentPath"
-                Write-Error "     3. Tiedoston Ominaisuudet - Salli eli Unblock, jos se on ladattu verkosta"
+                Write-Host "   [ERROR] KRIITTINEN VIRHE: VBA-projektiin (VBE) ei p??sty k?siksi (palautti null)."
+                Write-Host "     SYY: Accessin turva-asetukset est?v?t t?m?n. Tarkista seuraavat:"
+                Write-Host "     1. Access - Asetukset - Luottamuskeskus - Luota VBA-projektin objektimallin k?ytt??n"
+                Write-Host "     2. Access - Asetukset - Luottamuskeskus - Luotetut sijainnit - lis?? polut: $databasePath ja $componentPath"
+                Write-Host "     3. Tiedoston Ominaisuudet - Salli eli Unblock, jos se on ladattu verkosta"
                 throw "VBA Project is null. Check Access Trust Center settings."
             }
             
             Write-Host "   - VBA-projekti avattu onnistuneesti."
 
-            # 5.1 Päivitä komponenttien sisältö suoraan (välttää Import-metatietojen ongelman)
+            # 5.1 P?ivit? komponenttien sis?lt? suoraan (v?ltt?? Import-metatietojen ongelman)
             foreach ($name in $componentNames) {
                 $basPath = Join-Path $componentPath "$($name).bas"
                 $clsPath = Join-Path $componentPath "$($name).cls"
@@ -247,24 +247,24 @@ try {
                 }
 
                 if (-not $fullModulePath) {
-                    Write-Error "   ❌ VIRHE: Komponenttitiedostoa $name.bas tai $name.cls ei löydy polusta $componentPath. Ohitetaan päivitys."
+                    Write-Host "   [ERROR] VIRHE: Komponenttitiedostoa $name.bas tai $name.cls ei l?ydy polusta $componentPath. Ohitetaan p?ivitys."
                     continue
                 }
                 
                 try {
-                    # Lue .bas/.cls-tiedoston sisältö
+                    # Lue .bas/.cls-tiedoston sis?lt?
                     $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
                     
                     # Poista VBA-tiedoston header-rivit (.cls: VERSION, BEGIN/END, Attribute; .bas: Attribute)
-                    # Säilytetään vain varsinainen VBA-koodi (Option/Declare/Function/Sub/Dim jne.)
+                    # S?ilytet??n vain varsinainen VBA-koodi (Option/Declare/Function/Sub/Dim jne.)
                     $lines = $moduleContent -split "`r?`n"
                     $codeStartIndex = 0
                     
-                    # Käy läpi rivejä ja ohita kaikki header-rivit
+                    # K?y l?pi rivej? ja ohita kaikki header-rivit
                     for ($i = 0; $i -lt $lines.Count; $i++) {
                         $line = $lines[$i].Trim()
                         
-                        # Ohita VERSION, BEGIN, END, Attribute, MultiUse ja tyhjät rivit
+                        # Ohita VERSION, BEGIN, END, Attribute, MultiUse ja tyhj?t rivit
                         if ($line -match "^VERSION\s+" -or 
                             $line -match "^BEGIN$" -or 
                             $line -match "^END$" -or 
@@ -274,59 +274,59 @@ try {
                             $codeStartIndex = $i + 1
                         }
                         else {
-                            # Kun törmätään ensimmäiseen varsinaiseen koodiriviin, lopeta
+                            # Kun t?rm?t??n ensimm?iseen varsinaiseen koodiriviin, lopeta
                             break
                         }
                     }
                     
-                    # Ota vain VBA-koodi (ilman header-rivejä)
+                    # Ota vain VBA-koodi (ilman header-rivej?)
                     $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
                     
                     # Etsi tai luo komponentti
                     $component = $null
                     try {
                         $component = $vbaProject.VBComponents.Item($name)
-                        Write-Host "   - Komponentti $name löytyi, päivitetään sisältö..."
+                        Write-Host "   - Komponentti $name l?ytyi, p?ivitet??n sis?lt?..."
                     }
                     catch {
                         # Jos komponenttia ei ole, luo se
-                        Write-Host "   - Komponenttia $name ei löytynyt, luodaan uusi..."
+                        Write-Host "   - Komponenttia $name ei l?ytynyt, luodaan uusi..."
                         $component = $vbaProject.VBComponents.Add($componentType)
                         $component.Name = $name
                     }
                     
-                    # Tyhjennä vanha koodi ja aseta uusi
+                    # Tyhjenn? vanha koodi ja aseta uusi
                     $codeModule = $component.CodeModule
                     if ($codeModule.CountOfLines -gt 0) {
                         $codeModule.DeleteLines(1, $codeModule.CountOfLines)
                     }
                     $codeModule.AddFromString($cleanCode)
                     
-                    Write-Host "   ✅ Paivitettiin $name - $(($cleanCode -split "`n").Count) rivia koodia"
+                    Write-Host "   [OK] Paivitettiin $name - $(($cleanCode -split "`n").Count) rivia koodia"
                     
                 }
                 catch {
-                    Write-Error "   ❌ VIRHE: Komponentin $name päivitys epäonnistui: $($_.Exception.Message)"
+                    Write-Host "   [ERROR] VIRHE: Komponentin $name p?ivitys failed: $($_.Exception.Message)"
                 }
             }
             
             # 5.3 Tallenna ja sulje
             $acCmdSaveDatabase = 19
             $database.Application.DoCmd.RunCommand($acCmdSaveDatabase) 
-            Write-Host "   ✅ Tietokanta tallennettiin paikoilleen."
+            Write-Host "   [OK] Tietokanta tallennettiin paikoilleen."
             
-            # Laita varoitukset takaisin päälle
+            # Laita varoitukset takaisin p??lle
             $access.DoCmd.SetWarnings($true)
             
             $access.CloseCurrentDatabase()
-            Write-Host "   ✅ Tiedosto $databasePath päivitetty onnistuneesti."
+            Write-Host "   [OK] Tiedosto $databasePath p?ivitetty onnistuneesti."
 
         }
         catch {
-            # Tämä 'catch' nappaa VBA-käsittelyn virheet
-            Write-Error "❌ Virhe VBA-käsittelyssä tai tallennuksessa: $($_.Exception.Message)"
+            # T?m? 'catch' nappaa VBA-k?sittelyn virheet
+            Write-Host "[ERROR] Virhe VBA-k?sittelyss? tai tallennuksessa: $($_.Exception.Message)"
             
-            # Yritetään siistiä tietokantayhteys
+            # Yritet??n siisti? tietokantayhteys
             try {
                 if ($null -ne $access) {
                     $access.DoCmd.SetWarnings($true)
@@ -334,32 +334,32 @@ try {
                 }
             }
             catch {
-                Write-Warning "   - Huomio: Tietokannan sulkeminen virhetilanteessa epäonnistui."
+                Write-Warning "   - Huomio: Tietokannan sulkeminen virhetilanteessa failed."
             }
         }
     } # end if ($isOpened)
 
 }
 catch {
-    # Tämä 'catch' nappaa kaikki ylemmän tason virheet (esim. New-Object, polkujen tarkistus)
-    Write-Error "--- KRIITTINEN VIRHE SKRIPTIN SUORITUKSESSA ---"
+    # T?m? 'catch' nappaa kaikki ylemm?n tason virheet (esim. New-Object, polkujen tarkistus)
+    Write-Host "--- KRIITTINEN VIRHE SKRIPTIN SUORITUKSESSA ---"
     Write-Error $_.Exception.Message
     
 }
 finally {
     # --- 6. PAKOTETTU SIIVOUS ---
-    # Tämä lohko suoritetaan AINA, vaikka skripti kaatuisi tai onnistuisi.
-    # Tämä estää "zombie" (jumittuneiden) Access-prosessien syntymisen.
+    # T?m? lohko suoritetaan AINA, vaikka skripti kaatuisi tai onnistuisi.
+    # T?m? est?? "zombie" (jumittuneiden) Access-prosessien syntymisen.
     
     Write-Host "--- Siivotaan ja suljetaan Access-prosessi... ---"
     
     if ($null -ne $access) {
         try {
             $access.Quit()
-            Write-Host "   - Access.Quit() kutsuttu."
+            Write-Host "   - Access.Quit() called."
         }
         catch {
-            Write-Warning "   - Access.Quit() epäonnistui (prosessi oli ehkä jo kaatunut)."
+            Write-Warning "   - Access.Quit() failed (prosessi oli ehk? jo kaatunut)."
         }
         
         Start-Sleep -Seconds 1 
