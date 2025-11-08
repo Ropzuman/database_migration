@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysRevText"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Public Alku As String
@@ -113,12 +104,12 @@ Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
 Rev.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'Päivämäärä
+'Pï¿½ivï¿½mï¿½ï¿½rï¿½
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 DateFld.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'Tekijä
+'Tekijï¿½
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Drawn.Value = Left(Tieto, Osoitin - 1)
@@ -128,7 +119,7 @@ Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Checked.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'Hyväksyjä
+'Hyvï¿½ksyjï¿½
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Approved.Value = Left(Tieto, Osoitin - 1)

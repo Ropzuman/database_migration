@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysNewRecipient"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 Private Sub BExit_Click()
@@ -34,7 +25,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
   Set taulu = Nothing
 End Sub
 Private Sub Valmis_Click()
-'Tämä lisää uuden distribuution USysDISTRIBUTION taulukkoon ja
+'Tï¿½mï¿½ lisï¿½ï¿½ uuden distribuution USysDISTRIBUTION taulukkoon ja
 'Vastaanottajat USysRecipByDistr taulukkoon
 If IsNull(TName) Then
  MsgBox "You have to give name for the recipient!", vbCritical, "Error!"

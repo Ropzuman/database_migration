@@ -669,29 +669,29 @@ End If
 
 ### 🔥 CRITICAL (Do Immediately)
 
-1. **Delete Form_USysRevText_OLD.cls** - Dead code
-2. **Remove custom Replace() function** - Use VBA built-in
-3. **Add error handlers to database operations** - Prevent crashes
+- **Delete Form_USysRevText_OLD.cls** - Dead code
+- **Remove custom Replace() function** - Use VBA built-in
+- **Add error handlers to database operations** - Prevent crashes
 
 ### ⚠️ HIGH (Do Soon)
 
-4. **Fix redundant CurrentDb() calls** - Performance & correctness
-5. **Explicit DAO.Database typing** - Clarity & performance
-6. **Add Null checks to all field accesses** - Robustness
-7. **Remove unused VBA71.dll API declarations** - Code cleanliness
+- **Fix redundant CurrentDb() calls** - Performance & correctness
+- **Explicit DAO.Database typing** - Clarity & performance
+- **Add Null checks to all field accesses** - Robustness
+- **Remove unused VBA71.dll API declarations** - Code cleanliness
 
 ### 📋 MEDIUM (Nice to Have)
 
-8. **Consolidate duplicate code in Form_USysRevText** - Maintainability
-9. **Optimize string building in loops** - Performance
-10. **Add parameter validation** - Data integrity
-11. **Use transactions for multi-step operations** - Data consistency
+- **Consolidate duplicate code in Form_USysRevText** - Maintainability
+- **Optimize string building in loops** - Performance
+- **Add parameter validation** - Data integrity
+- **Use transactions for multi-step operations** - Data consistency
 
 ### 💡 LOW (Future Enhancement)
 
-12. **Replace FileSystemObject with Dir()** - Simplification
-13. **Add logging/debugging support** - Troubleshooting
-14. **Standardize error messages** - User experience
+- **Replace FileSystemObject with Dir()** - Simplification
+- **Add logging/debugging support** - Troubleshooting
+- **Standardize error messages** - User experience
 
 ---
 

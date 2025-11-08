@@ -1,14 +1,16 @@
-# Access_automaatio.ps1
+﻿# Access_automaatio.ps1
 
 # TARKOITUS: Korvaa VBA-moduulit (.bas) ja luokkamoduulit (.cls) kannassa.
-# YMPÄRISTÖ: Tämä skripti on suunniteltu ajettavaksi 64-bittisessä PowerShellissä, 
-#           ja se automatisoi 64-bittistä Microsoft Accessia.
+# YMPÄRISTÖ: Tämä skripti tukee sekä 32-bittistä että 64-bittistä Microsoft Accessia.
+#           Skripti tunnistaa automaattisesti Accessin arkkitehtuurin ja käynnistyy
+#           uudelleen oikeassa PowerShell-ympäristössä tarvittaessa.
 
 # KÄYTTÄYTYMINEN:
-# - Varmistaa, että skripti ajetaan 64-bittisessä (x64) PowerShellissä.
-# - Kysyy polun yhteen tietokantatiedostoon ja polun komponenttihakemistoon.
-# - Avaa .accdb-kannan, päivittää komponenttien sisällön suoraan (moduulit/luokat).
-# - Käyttää try...finally-lohkoa varmistaakseen, että Access-prosessi suljetaan aina.
+# - Tunnistaa Accessin bittisyyden (32-bit tai 64-bit)
+# - Jos PowerShell-bittisyys ei vastaa Accessia, käynnistyy automaattisesti uudelleen
+# - Kysyy polun yhteen tietokantatiedostoon ja polun komponenttihakemistoon
+# - Avaa .accdb-kannan, päivittää komponenttien sisällön suoraan (moduulit/luokat)
+# - Käyttää try...finally-lohkoa varmistaakseen, että Access-prosessi suljetaan aina
 
 # TÄRKEÄÄ - VBComponents.Import-ongelma:
 # - Tämä skripti KORVAA komponenttien sisällön suoraan CodeModule-rajapinnan kautta.
@@ -18,13 +20,79 @@
 # - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
-if ([System.IntPtr]::Size -ne 8) {
-    Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
-    Write-Error "Sulje tämä (x86) ikkuna ja käynnistä normaali 'Windows PowerShell'."
+# Tunnista Accessin bittisyys rekisteristä
+$accessPath = $null
+$accessIs32Bit = $false
+
+# Tarkista ensin 64-bit sijainti
+$accessPath = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\MSACCESS.EXE" -ErrorAction SilentlyContinue).'(default)'
+if ($accessPath -and ($accessPath -match 'x86' -or $accessPath -match 'Program Files \(x86\)')) {
+    $accessIs32Bit = $true
+}
+
+# Jos ei löytynyt, tarkista 32-bit sijainti (WOW6432Node)
+if (-not $accessPath) {
+    $accessPath = (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths\MSACCESS.EXE" -ErrorAction SilentlyContinue).'(default)'
+    if ($accessPath) {
+        $accessIs32Bit = $true
+    }
+}
+
+if (-not $accessPath) {
+    Write-Error "VIRHE: Microsoft Accessia ei löydy järjestelmästä."
+    Write-Error "Asenna Microsoft Access ennen tämän skriptin ajamista."
     Start-Sleep -Seconds 10
     exit 1
 }
-Write-Host "Tarkistus OK: Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
+
+# Tarkista PowerShellin bittisyys
+$psIs64Bit = [System.IntPtr]::Size -eq 8
+
+# Näytä tunnistetut arkkitehtuurit
+Write-Host "=== BITTISYYS-TARKISTUS ===" -ForegroundColor Cyan
+Write-Host "Access: $(if($accessIs32Bit){'32-bit'}else{'64-bit'}) ($accessPath)"
+Write-Host "PowerShell: $(if($psIs64Bit){'64-bit'}else{'32-bit'})"
+
+# Jos bittisyydet eivät täsmää, näytä virhe ja lopeta
+if ($accessIs32Bit -and $psIs64Bit) {
+    Write-Host ""
+    Write-Host "❌ VIRHE: Bittisyydet eivät täsmää!" -ForegroundColor Red
+    Write-Host "   Access on 32-bittinen, mutta PowerShell on 64-bittinen." -ForegroundColor Yellow
+    Write-Host "   64-bit PowerShell ei voi luoda COM-yhteyttä 32-bit Accessiin." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "RATKAISU: Aja skripti batch-tiedostolla:" -ForegroundColor Cyan
+    Write-Host "   Kaksoisklikkaa: RUN_ACCESS_AUTOMATION.bat" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "TAI käynnistä manuaalisesti 32-bit PowerShellissä:" -ForegroundColor Cyan
+    Write-Host "   1. Avaa Käynnistä-valikko" -ForegroundColor White
+    Write-Host "   2. Etsi 'PowerShell (x86)'" -ForegroundColor White
+    Write-Host "   3. Suorita siellä:" -ForegroundColor White
+    Write-Host "      cd c:\database_migration\Automations" -ForegroundColor Gray
+    Write-Host "      .\Access_automaatio.ps1" -ForegroundColor Gray
+    Write-Host ""
+    Start-Sleep -Seconds 15
+    exit 1
+}
+elseif (-not $accessIs32Bit -and -not $psIs64Bit) {
+    Write-Host ""
+    Write-Host "❌ VIRHE: Bittisyydet eivät täsmää!" -ForegroundColor Red
+    Write-Host "   Access on 64-bittinen, mutta PowerShell on 32-bittinen." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "RATKAISU: Käynnistä 64-bit PowerShellissä:" -ForegroundColor Cyan
+    Write-Host "   1. Avaa Käynnistä-valikko" -ForegroundColor White
+    Write-Host "   2. Etsi 'PowerShell' (ei x86)" -ForegroundColor White
+    Write-Host "   3. Suorita siellä:" -ForegroundColor White
+    Write-Host "      cd c:\database_migration\Automations" -ForegroundColor Gray
+    Write-Host "      .\Access_automaatio.ps1" -ForegroundColor Gray
+    Write-Host ""
+    Start-Sleep -Seconds 15
+    exit 1
+}
+else {
+    Write-Host "✅ Bittisyydet täsmäävät - jatketaan..." -ForegroundColor Green
+}
+
+Write-Host ""
 
 
 # Määritellään muuttujat ennalta 'finally'-lohkoa varten
@@ -50,7 +118,7 @@ try {
 
     # Polkujen tarkistus
     if (-not (Test-Path $databasePath -PathType Leaf)) {
-        Write-Error "Access-tiedostoa ei löydy (tai polku on hakemisto): $databasePath"
+        Write-Error "Access-tiedostoa ei löydy tai polku on hakemisto: $databasePath"
         exit 1
     }
     if (-not (Test-Path $componentPath -PathType Container)) {
@@ -61,14 +129,42 @@ try {
     # --- 3. Komponenttien määrittely ---
     # Määrittele kaikki ne moduulien ja luokkamoduulien nimet, jotka poistetaan ja tuodaan.
     # Älä käytä tiedostopäätteitä (.bas/.cls) nimissä.
+    # 
+    # PÄIVITETTY 2025-11-08: Phase 1 cleanup (dead code removal, Replace() optimization)
+    # - Poistettu: Form_USysRevText_OLD (dead code, korvattu Form_USysRevText:llä)
+    # - Muokattu: GlobalVBAs (custom Replace() poistettu, Pituus-muuttujat siivottu)
+    # - Muokattu: ForDocuments (VBA71.dll API-deklaraatiot poistettu)
     $componentNames = @(
-        "Module1", 
-        "General", 
-        "For ACAD Utility", 
-        "USysCheck", 
-        "Form_DBUsers", 
-        "Form_Linkkien vaihto", 
-        "Form_Tee Kuvat"
+        # Standard modules (.vba)
+        "GlobalVBAs",
+        "ForDocuments",
+        
+        # Form modules (.cls)
+        "Form_DBUsers",
+        "Form_DISTRIBUTION",
+        "Form_DOCUMENTS",
+        "Form_SETTINGS",
+        "Form_USysAddDocument",
+        "Form_USysAddedDistr",
+        "Form_USysAddToDistr",
+        "Form_USysDISTRIB",
+        "Form_USysDocs",
+        "Form_USysEditDistribution",
+        "Form_USysExcelReport",
+        "Form_USysNewDistribution",
+        "Form_USysNewRecipient",
+        "Form_USysOpenFile",
+        "Form_USysRecipientsFrm",
+        "Form_USysReserve",
+        "Form_USysRevText",
+        "Form_USysShowCommon",
+        "Form_USysStart",
+        
+        # Report modules (.cls)
+        "Report_Copy of TRANSMITTAL",
+        "Report_TRANSMITTAL Copy",
+        "Report_TRANSMITTAL",
+        "Report_USYSTRANSMITTALFP"
     ) 
 
     # Retry-asetukset
@@ -127,9 +223,9 @@ try {
             if ($null -eq $vbaProject) {
                 Write-Error "   ❌ KRIITTINEN VIRHE: VBA-projektiin (VBE) ei päästy käsiksi (palautti null)."
                 Write-Error "     SYY: Accessin turva-asetukset estävät tämän. Tarkista seuraavat:"
-                Write-Error "     1. Access > Asetukset > Luottamuskeskus > 'Luota VBA-projektin objektimallin käyttöön'."
-                Write-Error "     2. Access > Asetukset > Luottamuskeskus > 'Luotetut sijainnit' (lisää $databasePath ja $componentPath)."
-                Write-Error "     3. Tiedoston Ominaisuudet > 'Salli' (Unblock), jos se on ladattu verkosta."
+                Write-Error "     1. Access - Asetukset - Luottamuskeskus - Luota VBA-projektin objektimallin käyttöön"
+                Write-Error "     2. Access - Asetukset - Luottamuskeskus - Luotetut sijainnit - lisää polut: $databasePath ja $componentPath"
+                Write-Error "     3. Tiedoston Ominaisuudet - Salli eli Unblock, jos se on ladattu verkosta"
                 throw "VBA Project is null. Check Access Trust Center settings."
             }
             
@@ -151,7 +247,7 @@ try {
                 }
 
                 if (-not $fullModulePath) {
-                    Write-Error "   ❌ VIRHE: Komponenttitiedostoa ($name.bas/.cls) ei löydy polusta $componentPath. Ohitetaan päivitys."
+                    Write-Error "   ❌ VIRHE: Komponenttitiedostoa $name.bas tai $name.cls ei löydy polusta $componentPath. Ohitetaan päivitys."
                     continue
                 }
                 
@@ -159,18 +255,26 @@ try {
                     # Lue .bas/.cls-tiedoston sisältö
                     $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
                     
-                    # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
-                    # Säilytetään vain varsinainen VBA-koodi
+                    # Poista VBA-tiedoston header-rivit (.cls: VERSION, BEGIN/END, Attribute; .bas: Attribute)
+                    # Säilytetään vain varsinainen VBA-koodi (Option/Declare/Function/Sub/Dim jne.)
                     $lines = $moduleContent -split "`r?`n"
                     $codeStartIndex = 0
+                    
+                    # Käy läpi rivejä ja ohita kaikki header-rivit
                     for ($i = 0; $i -lt $lines.Count; $i++) {
-                        if ($lines[$i] -match "^Attribute\s+" -or $lines[$i] -match "^VERSION\s+") {
+                        $line = $lines[$i].Trim()
+                        
+                        # Ohita VERSION, BEGIN, END, Attribute, MultiUse ja tyhjät rivit
+                        if ($line -match "^VERSION\s+" -or 
+                            $line -match "^BEGIN$" -or 
+                            $line -match "^END$" -or 
+                            $line -match "^Attribute\s+" -or
+                            $line -match "^MultiUse\s*=" -or
+                            $line -eq "") {
                             $codeStartIndex = $i + 1
                         }
-                        elseif ($lines[$i].Trim() -eq "") {
-                            continue
-                        }
                         else {
+                            # Kun törmätään ensimmäiseen varsinaiseen koodiriviin, lopeta
                             break
                         }
                     }
@@ -198,7 +302,7 @@ try {
                     }
                     $codeModule.AddFromString($cleanCode)
                     
-                    Write-Host "   ✅ Päivitettiin $name ($(($cleanCode -split "`n").Count) riviä koodia)"
+                    Write-Host "   ✅ Paivitettiin $name - $(($cleanCode -split "`n").Count) rivia koodia"
                     
                 }
                 catch {

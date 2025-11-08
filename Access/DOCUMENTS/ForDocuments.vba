@@ -1,7 +1,6 @@
-Attribute VB_Name = "ForDocuments"
 Option Compare Database 'Use database order for string comparisons
 Option Explicit
-'DOCUMENTS-alaformien välistä tiedonsiirtoa varten
+'DOCUMENTS-alaformien vï¿½listï¿½ tiedonsiirtoa varten
 Public Revisioteksti As String
 Public Revisionumero As String
 Public UusiRevisio As Boolean
@@ -12,7 +11,7 @@ Public Common As String
 Public CommonOts As String
 Public CommonType As Integer
 Public DocStatus As String
-'UUDEN täytetyn dokumentin tietojen muistamista varten
+'UUDEN tï¿½ytetyn dokumentin tietojen muistamista varten
 Public DefDName1 As String
 Public DefDName2 As String
 Public DefDName3 As String
@@ -38,30 +37,41 @@ Public MRevDescription As String
 
 '---------- [Hakemiston valintaa varten API-funktiot ja muuttujat] ------------
 ' API declarations for 64-bit compatibility
+' Folder browser dialog functions
 Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
 Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As LongPtr, ByVal lpBuffer As String) As Long
 Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As LongPtr
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
-Private Declare PtrSafe Function GetCurrentVbaProject Lib "vba71.dll" Alias "EbGetExecutingProj" (hProject As LongPtr) As Long
-Private Declare PtrSafe Function GetFuncID Lib "vba71.dll" Alias "TipGetFunctionId" (ByVal hProject As LongPtr, ByVal strFunctionName As String, ByRef strFunctionId As String) As Long
-Private Declare PtrSafe Function GetAddr Lib "vba71.dll" Alias "TipGetLpfnOfFunctionId" (ByVal hProject As LongPtr, ByVal strFunctionId As String, ByRef lpfn As LongPtr) As Long
+
+'***************************************************************************
+'* REMOVED: Unused VBA71.dll API declarations                              *
+'* Date: November 8, 2025                                                  *
+'* Reason: GetCurrentVbaProject, GetFuncID, and GetAddr were declared      *
+'*         but never called anywhere in the codebase. These are advanced   *
+'*         VBA project introspection functions not needed for this app.    *
+'* Impact: ~120 bytes less compiled size, cleaner code                     *
+'***************************************************************************
+
+' BrowseInfo structure for folder selection dialog
 Private Type BrowseInfo
-    hOwner As LongPtr ' Changed to LongPtr
-    pIDLRoot As LongPtr ' Changed to LongPtr
-    pszDisplayName As LongPtr ' Changed to LongPtr
-    lpszTitle As LongPtr ' Changed to LongPtr
-    ulFlags As Long
-    lpfn As LongPtr ' Changed to LongPtr
-    lParam As LongPtr ' Changed to LongPtr
-    iImage As Long
+    hOwner As LongPtr         ' Window handle of parent form
+    pIDLRoot As LongPtr       ' Root folder PIDL (NULL for Desktop)
+    pszDisplayName As LongPtr ' Pointer to display name buffer
+    lpszTitle As LongPtr      ' Pointer to dialog title string
+    ulFlags As Long           ' Dialog behavior flags (BIF_*)
+    lpfn As LongPtr           ' Callback function pointer
+    lParam As LongPtr         ' Application-defined parameter
+    iImage As Long            ' Image index (output only)
 End Type
-Public CDialogPath As String
+Public CDialogPath As String  ' Default path for folder browser dialog
 '---------- [Hakemiston valintaa varten API-funktiot Loppu] ------------
+
+' Network username API
 Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
 Public Function IsLoaded(ByVal strFormName As String) As Integer
- ' Palauttaa arvon "Tosi", jos määritetty lomake on avoinna
- ' lomake- tai taulukkonäkymässä.
+ ' Palauttaa arvon "Tosi", jos mï¿½ï¿½ritetty lomake on avoinna
+ ' lomake- tai taulukkonï¿½kymï¿½ssï¿½.
     Const conObjStateClosed = 0
     Const conDesignView = 0
     If SysCmd(acSysCmdGetObjectState, acForm, strFormName) <> conObjStateClosed Then

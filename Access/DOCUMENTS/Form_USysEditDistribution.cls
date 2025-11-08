@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysEditDistribution"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 Private Sub BExit_Click()
@@ -30,7 +21,7 @@ End With
 Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & Common
 End Sub
 Private Sub Lisaa_Click()
-'Lisää uusi vastaanottaja
+'Lisï¿½ï¿½ uusi vastaanottaja
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
    Lista.Requery
 End Sub
@@ -73,7 +64,7 @@ Private Sub Vastaanottajat_DblClick(Cancel As Integer)
   Vastaanottajat.Requery
 End Sub
 Private Sub Valmis_Click()
-'Tämä lisää uuden distribuution USysDISTRIBUTION taulukkoon ja
+'Tï¿½mï¿½ lisï¿½ï¿½ uuden distribuution USysDISTRIBUTION taulukkoon ja
 'Vastaanottajat USysRecipByDistr taulukkoon
 Dim SQL As String
 Dim DB As Database
@@ -103,4 +94,3 @@ Else
   DoCmd.Close
 End If
 End Sub
-

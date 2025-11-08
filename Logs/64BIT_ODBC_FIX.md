@@ -82,15 +82,14 @@ If brackets don't work, other options include:
 
 Change Main sheet SQL from:
 
-```
+```sql
 sql
 SELECT * FROM _qryForExcel WHERE DocName3 like 'Kytkentälista'
 ```
 
 To just:
 
-```
-sql
+```sql
 _qryForExcel
 ```
 

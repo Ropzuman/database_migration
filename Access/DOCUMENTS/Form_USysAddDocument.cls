@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysAddDocument"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Public SelDept As String
@@ -21,7 +12,7 @@ End Sub
 Private Sub Form_Load()
 Dim taulu As Recordset
   Varaaja = NetworkUserName
-'Annetaan dokumentille pohjaksi viimeksi lisätyn dokumentin tiedot
+'Annetaan dokumentille pohjaksi viimeksi lisï¿½tyn dokumentin tiedot
   Set taulu = CurrentDb.OpenRecordset("SELECT Path FROM ProjInfo")
   TDocName1.Value = IIf(DefDName1 <> "", DefDName1, Null)
   TDocName2.Value = IIf(DefDName2 <> "", DefDName2, Null)
@@ -56,13 +47,13 @@ Private Sub TalletaNappi_Click()
         SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & TNumber.Value & "'"
         Set taulu = DB.OpenRecordset(SQL, , dbDenyWrite)
         If taulu.EOF = False Then
-          If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan että kyseinen numero on yhä vapaana
+          If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan ettï¿½ kyseinen numero on yhï¿½ vapaana
             taulu.Edit
             taulu.Fields("Number") = TClientDocNo.Value
             taulu.Fields("Reserved") = Varaaja & "@" & Now
             taulu.Update
             taulu.Close
-          Else 'Virhe joku kerkesi jo varaamaan numeron välissä
+          Else 'Virhe joku kerkesi jo varaamaan numeron vï¿½lissï¿½
             MsgBox "Someone reserved number " & TClientDocNo.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
             taulu.Close
             DB.Close
@@ -80,21 +71,21 @@ Private Sub TalletaNappi_Click()
         .Fields("DocName3") = TDocName3.Value   'Dokumentin nimi sarake3
         .Fields("Area") = TArea.Value           'Dokumentin osasto
         .Fields("Pick2") = TPick2.Value         'Metson laji piirustukselle
-        .Fields("Rev") = TRev.Value             'Revisiomerkintä
+        .Fields("Rev") = TRev.Value             'Revisiomerkintï¿½
         .Fields("ClientNo") = TClientDocNo.Value    'Asiakkaan piirustunumero
         .Fields("MetsoDocNo") = TMetsoDocNo.Value 'Metson dokumenttinumero
-        .Fields("ExtDocID") = TExtDocID.Value     'Extra dokumentin numero, ellei muuta niin ainakin tämä pitä laittaa
-        .Fields("Pages") = TPages.Value           'Sivumäärä
-        .Fields("WorkPath") = TPath.Value         'Hakemisto josta dokumentti löytyy tai tulee löytymään
+        .Fields("ExtDocID") = TExtDocID.Value     'Extra dokumentin numero, ellei muuta niin ainakin tï¿½mï¿½ pitï¿½ laittaa
+        .Fields("Pages") = TPages.Value           'Sivumï¿½ï¿½rï¿½
+        .Fields("WorkPath") = TPath.Value         'Hakemisto josta dokumentti lï¿½ytyy tai tulee lï¿½ytymï¿½ï¿½n
         .Fields("Note") = TNote.Value             'Huomautus
-        CurRecord = .Fields("Counter")            'Otetaan ylös Counter-fieldin arvo, jotta voidaan palata kyseiseen recordiin pääformissa
+        CurRecord = .Fields("Counter")            'Otetaan ylï¿½s Counter-fieldin arvo, jotta voidaan palata kyseiseen recordiin pï¿½ï¿½formissa
         .Update
       End With
       taulu.Close
       DB.Close
       Set taulu = Nothing
       Set DB = Nothing
-'Otetaan ylös dokumentin tiedot, jotta niitä voidaan käyttää seuraavan dokumentin pohjana
+'Otetaan ylï¿½s dokumentin tiedot, jotta niitï¿½ voidaan kï¿½yttï¿½ï¿½ seuraavan dokumentin pohjana
       DefDName1 = Nz(TDocName1.Value)
       DefDName2 = Nz(TDocName2.Value)
       DefDName3 = Nz(TDocName3.Value)

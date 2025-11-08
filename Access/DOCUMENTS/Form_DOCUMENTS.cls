@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_DOCUMENTS"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Private Sub Add_Distr_Click()
@@ -24,7 +15,7 @@ Private Sub Add_Distr_Click()
   End If
 End Sub
 Private Sub AvaaTiedosto_Click()
-'Tämä avaa määritellyn tiedosto
+'Tï¿½mï¿½ avaa mï¿½ï¿½ritellyn tiedosto
 Dim fso As New FileSystemObject
 Dim Avattava As String
 If IsNull(File.Value) Then
@@ -39,7 +30,7 @@ Else
     Avattava = fso.BuildPath(WorkPath.Value, File.Value)
     If fso.FileExists(Avattava) Then
          Application.FollowHyperlink Avattava, , True, False
-    Else 'Tiedostoa ei löytynyt
+    Else 'Tiedostoa ei lï¿½ytynyt
       MsgBox "File not found: " & WorkPath.Value & File.Value, vbCritical, "Open File"
     End If
   End If
@@ -47,7 +38,7 @@ End If
 Set fso = Nothing
 End Sub
 Private Sub ClientDwg_Click()
-  If IsNull(ClientNo.Value) Then 'Numeroa ei vielä varattu, joten voidaan suorittaa varaus
+  If IsNull(ClientNo.Value) Then 'Numeroa ei vielï¿½ varattu, joten voidaan suorittaa varaus
     DoCmd.OpenForm "USysReserve", , , "Counter = " & Counterfield.Value, , acDialog
     Me.Refresh
   Else

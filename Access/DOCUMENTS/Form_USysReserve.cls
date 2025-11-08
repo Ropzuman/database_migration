@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysReserve"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Public SelDept As String
@@ -28,13 +19,13 @@ Private Sub TalletaNappi_Click()
     Dim SQL As String
     SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & TNumber.Value & "'"
     Set taulu = CurrentDb.OpenRecordset(SQL, , dbDenyWrite)
-    If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan että kyseinen numero on yhä vapaana
+    If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan ettï¿½ kyseinen numero on yhï¿½ vapaana
       taulu.Edit
       taulu.Fields("Number") = TClientNo.Caption
       taulu.Fields("Reserved") = Varaaja & "@" & Now
       taulu.Update
       taulu.Close
-    Else 'Virhe joku kerkesi jo varaamaan numeron välissä
+    Else 'Virhe joku kerkesi jo varaamaan numeron vï¿½lissï¿½
       MsgBox "Someone reserved number " & TNumber.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
       taulu.Close
       Set taulu = Nothing

@@ -1,4 +1,3 @@
-Attribute VB_Name = "GlobalVBAs"
 Option Explicit
 '---------------------------------------------
 ' 2001 VG Codes for checking current user name
@@ -66,31 +65,14 @@ Select Case apu
     Yhdista = T1 & vbCrLf & T2 & vbCrLf & T3
 End Select
 End Function
-Public Function Replace(Src As String, Etsi As String, Uusi As String) As String
 '***************************************************************************
-'* This function replaces all the replaceable characters (Etsi) in the     *
-'* given string with the replacement character (Uusi) and returns          *
-'* the string with the replacements made.                                  *
-'* E.g., Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"   *
-'* Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"      *
+'* REMOVED: Custom Replace() function                                       *
+'* Date: November 8, 2025                                                  *
+'* Reason: Shadowed VBA's built-in Replace() function with identical       *
+'*         functionality. VBA built-in is faster (compiled C vs VBA loop). *
+'* Impact: No code changes needed - built-in has same signature.           *
+'* Used in: Form_USysRevText.cls (2 locations)                             *
 '***************************************************************************
-Dim Pos As Long
-Dim Pointer As Long
-Dim Tmp As String
-Dim Pituus As Long ' Changed to Long
-Dim Pituus2 As Long ' Changed to Long
-    Replace = Src
-    Pointer = 1
-    Pituus = Len(Etsi)
-    Pituus2 = Len(Uusi)
-    Do
-      Pos = InStr(Pointer, Replace, Etsi)
-      If Pos = 0 Then Exit Do
-      Tmp = Left(Replace, Pos - 1) 'Beginning of the variable
-      Replace = Tmp & Uusi & Mid(Replace, Pos + Pituus) 'Beginning + New + End
-      Pointer = Pos + Pituus2
-    Loop
-End Function
 Public Function aReplace(Source As String) As String
 '***************************************************************************
 '* This function replaces all unsuitable characters in the given string    *
@@ -122,21 +104,26 @@ End Function
 ' HaePaiva: Returns the date of the first revision
 '
 ' - VG/22.3.2002
+' - Updated: November 8, 2025 - Removed unused variables for code clarity
 '---------------------------------------------------------
 Function HaeTekija(Revisio As Variant) As String
-Dim i As Long ' Changed to Long
-Dim Pituus As Long
+'''
+' Extracts the original author name from a multi-line revision string.
+' Parses backward to find the first (oldest) revision entry.
+' @param Revisio: Revision string with format "Rev Date/Author/Checker/..." separated by vbCrLf
+' @return Author name from the first revision, or empty string if Null
+'''
+Dim i As Long
   If IsNull(Revisio) Then
     HaeTekija = ""
   Else
     i = 2
-    Pituus = Len(Revisio)
-    'Look for the first revision
+    'Look for the first revision (parse from end to find oldest entry)
     If InStr(Revisio, vbCrLf) Then
       Do
         i = i + 1
-      Loop Until InStr(Right(Revisio, i), vbCrLf) = 1 Or i = Pituus
-      Revisio = Mid(Revisio, Pituus - i + 3)
+      Loop Until InStr(Right(Revisio, i), vbCrLf) = 1 Or i = Len(Revisio)
+      Revisio = Mid(Revisio, Len(Revisio) - i + 3)
     End If
     Revisio = Mid(Revisio, InStr(Revisio, "/") + 1)
     HaeTekija = Left(Revisio, InStr(Revisio, "/") - 1)
@@ -175,25 +162,35 @@ Public Function EkaRevRivi(Revisio As String) As String
   End If
 End Function
 Public Function HaeRevisio(Revisio As Variant) As String
+'''
+' Extracts the revision mark (e.g., "A", "B", "0") from revision string.
+' @param Revisio: Revision string with format "Rev Date/Author/..."
+' @return Revision mark before the first space, or empty string if Null
+'''
   If IsNull(Revisio) Then
     HaeRevisio = ""
   Else
     HaeRevisio = Left(Revisio, InStr(Revisio, " ") - 1)
   End If
 End Function
+
 Function HaeViimPaiva(Revisio As String) As String
-Dim i As Long ' Changed to Long
-Dim Pituus As Long
+'''
+' Extracts the date from the first (oldest) revision entry.
+' Parses backward through multi-line revision string to find original date.
+' @param Revisio: Revision string with format "Rev Date/Author/..." separated by vbCrLf
+' @return Date string from the first revision
+'''
+Dim i As Long
 Dim Teksti As String
   Teksti = Revisio
   i = 2
-  Pituus = Len(Teksti)
-  'Look for the first revision
+  'Look for the first revision (parse from end to find oldest entry)
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
     Do
       i = i + 1
-    Loop Until InStr(Right(Teksti, i), vbCrLf) = 1 Or i = Pituus
-    Teksti = Mid(Teksti, Pituus - i + 3)
+    Loop Until InStr(Right(Teksti, i), vbCrLf) = 1 Or i = Len(Teksti)
+    Teksti = Mid(Teksti, Len(Teksti) - i + 3)
   End If
   Teksti = Mid(Teksti, InStr(Teksti, " ") + 1)
   HaeViimPaiva = Left(Teksti, InStr(Teksti, "/") - 1)

@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysAddToDistr"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 
@@ -15,7 +6,7 @@ Dim DB As Database
 Dim taulu As Recordset
    Set DB = CurrentDb
    Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurRecord & " AND TDistr=" & Distribution.Value)
-   If taulu.RecordCount <> 0 Then 'Dokumentti on jo lisätty
+   If taulu.RecordCount <> 0 Then 'Dokumentti on jo lisï¿½tty
      MsgBox "Document were already on selected distribution!", vbCritical, "Add document to distribution"
      taulu.Close
      Set taulu = Nothing
