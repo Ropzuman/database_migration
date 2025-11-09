@@ -100,7 +100,7 @@ _qryForExcel
 Replace the saved query reference with the actual SQL:
 
 ```sql
-SELECT DOCUMENTS.*, ProjInfo.*, Status.Status
+SELECT DOCUMENTS.*, ProjInfo.*, Status.StatusI
 FROM (DOCUMENTS LEFT JOIN ProjInfo ON DOCUMENTS.ProjID = ProjInfo.ProjID)
 LEFT JOIN Status ON DOCUMENTS.StatusID = Status.StatusID
 WHERE DOCUMENTS.DocName3 like 'Kytkentälista'

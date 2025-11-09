@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_DBUsers"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -19,12 +10,22 @@ End Type
 
 Private Sub Form_Open(Cancel As Integer)
    On Error GoTo ErrHandler
-   Me.LoggedOn.RowSource = WhosOn()
+   
+   Dim sRowSource As String
+   sRowSource = WhosOn()
+   
+   If Len(sRowSource) > 0 Then
+      Me.LoggedOn.RowSource = sRowSource
+   Else
+      Me.LoggedOn.RowSource = ""
+   End If
+   
    Exit Sub
    
 ErrHandler:
-   MsgBox "Error opening form: " & Err.Description, vbCritical, "Form Error"
-   Cancel = True
+   ' Don't cancel form open, just show error
+   MsgBox "Error opening form: " & Err.Number & " - " & Err.Description, vbExclamation, "Form Error"
+   Me.LoggedOn.RowSource = ""
 End Sub
 
 Private Sub OKBtn_Click()
@@ -32,16 +33,28 @@ Private Sub OKBtn_Click()
 End Sub
 
 Private Sub UpdateBtn_Click()
-    On Error Resume Next
-    Me.LoggedOn.RowSource = WhosOn()
+    On Error GoTo ErrHandler
+    
+    Dim sRowSource As String
+    sRowSource = WhosOn()
+    
+    If Len(sRowSource) > 0 Then
+       Me.LoggedOn.RowSource = sRowSource
+    Else
+       Me.LoggedOn.RowSource = ""
+    End If
+    
     Me.Requery
-    On Error GoTo 0
+    Exit Sub
+    
+ErrHandler:
+    MsgBox "Error updating: " & Err.Number & " - " & Err.Description, vbExclamation, "Update Error"
 End Sub
 
 ' Reads the .LACCDB lock file to determine who's currently logged on
 ' Lock file has 64-byte records: station name (bytes 1-32) and login name (bytes 33-64), null-terminated
 Private Function WhosOn() As String
-On Error GoTo Err_WhosOn
+   On Error GoTo Err_WhosOn
 
    Dim iLDBFile As Integer
    Dim SPath As String
@@ -51,15 +64,11 @@ On Error GoTo Err_WhosOn
    Dim sMach As String
    Dim sUser As String
    Dim rUser As UserRec
-   Dim dbCurrent As DAO.Database
    Dim i As Long
 
    ' Get current database path and construct lock file path
-   Set dbCurrent = DBEngine.Workspaces(0).Databases(0)
-   SPath = dbCurrent.Name
-   dbCurrent.Close
-   Set dbCurrent = Nothing
-
+   SPath = CurrentDb.Name
+   
    ' For Access 2007+ the lock file extension is .laccdb (not .ldb)
    SPath = Left(SPath, InStr(1, SPath, ".")) & "laccdb"
 
@@ -107,6 +116,12 @@ On Error GoTo Err_WhosOn
    Loop
    
    Close iLDBFile
+   
+   ' Remove trailing semicolon if present
+   If Len(sLogins) > 0 And Right(sLogins, 1) = ";" Then
+      sLogins = Left(sLogins, Len(sLogins) - 1)
+   End If
+   
    WhosOn = sLogins
 
 Exit_WhosOn:
@@ -116,6 +131,8 @@ Err_WhosOn:
    On Error Resume Next
    Close iLDBFile
    On Error GoTo 0
+   
+   WhosOn = ""
    
    If Err.Number = 68 Then
       MsgBox "Couldn't populate the list - lock file not found.", vbExclamation, "No Lock File"

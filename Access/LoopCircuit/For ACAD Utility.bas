@@ -1,5 +1,3 @@
-Attribute VB_Name = "For ACAD Utility"
-
 Option Compare Database
 Option Explicit
 

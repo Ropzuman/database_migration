@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_Tee Kuvat"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -34,7 +25,7 @@ Private Sub Tila(Tiedosto As String)
     sec = CLng(Timer - Ajastin)
     min = sec \ 60
     sec = sec Mod 60
-    SysCmd acSysCmdSetStatus, "K‰sittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
+    SysCmd acSysCmdSetStatus, "K√§sittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
 End Sub
 
 Private Sub Form_Load()
@@ -111,8 +102,8 @@ Cleanup:
         Set oAcad = Nothing
     End If
     On Error GoTo 0
-    
-    MsgBox "Valmis", vbInformation, "P‰ivit‰ tekstit"
+
+    MsgBox "Valmis", vbInformation, "P√§ivit√§ tekstit"
     Exit Sub
 
 ErrHandler:
@@ -159,7 +150,7 @@ Private Sub HaeValitutTekstit_Click()
     Joukko.Select 4, , , FilterType, FilterData ' acSelectionSetPrevious = 4
     
     If Joukko.Count = 0 Then
-        MsgBox "Kuvasta ei lˆytynyt valittuja blokkeja!", vbCritical, "Tuo DATA"
+        MsgBox "Kuvasta ei l√∂ytynyt valittuja blokkeja!", vbCritical, "Tuo DATA"
         Exit Sub
     End If
     
@@ -196,8 +187,8 @@ Cleanup:
     Set db = Nothing
     Set oAcad = Nothing
     On Error GoTo 0
-    
-    MsgBox "Valmis - K‰sitelty " & Rivi & " blokkia.", vbInformation, "P‰ivit‰ tekstit"
+
+    MsgBox "Valmis - K√§sitelty " & Rivi & " blokkia.", vbInformation, "P√§ivit√§ tekstit"
     Exit Sub
 
 ErrHandler:
@@ -238,9 +229,9 @@ Private Sub TeeKuvat_Click()
     Burst = TBurst.Value
     BlockTaulukko = TBlockTaulukko.Value
     BlockTaulukkoTyhjennys = TBlockTaulukko.Value
-    
-    Vastaus = MsgBox("P‰ivitet‰‰nkˆ " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
-    
+
+    Vastaus = MsgBox("P√§ivitet√§√§nk√∂ " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
+
     If Vastaus = vbCancel Then Exit Sub
     
     If Vastaus = vbYes Then
@@ -263,8 +254,8 @@ Private Sub TeeKuvat_Click()
                 Os = Os2 + 2
             End If
         Loop
-        
-        LisaaLokiin "- P‰ivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
+
+        LisaaLokiin "- P√§ivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
     End If
     
     ' Validate folders
@@ -272,18 +263,18 @@ Private Sub TeeKuvat_Click()
     
     If IsNull(KuvaHakem.Value) Then
         KuvaHakem.Value = PohjaHakem.Value
-        LisaaLokiin "- Kuvahakemistoa ei m‰‰ritelty, k‰ytet‰‰n pohjahakemistoa"
+        LisaaLokiin "- Kuvahakemistoa ei m√§√§ritelty, k√§ytet√§√§n pohjahakemistoa"
     End If
     
     If Not FSO.FolderExists(PohjaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei lˆytynyt (" & PohjaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei lˆytynyt!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Hakemistoa ei l√∂ytynyt (" & PohjaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei l√∂ytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
     If Not FSO.FolderExists(KuvaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei lˆytynyt (" & KuvaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei lˆytynyt!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Hakemistoa ei l√∂ytynyt (" & KuvaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei l√∂ytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
@@ -294,8 +285,8 @@ Private Sub TeeKuvat_Click()
     Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko)
     
     If Kuvat.EOF Then
-        LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei lˆytynyt kuvia"
-        MsgBox "Taulukosta """ & OtsTaulukko & """ ei lˆytyny tietoja!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei l√∂ytynyt kuvia"
+        MsgBox "Taulukosta """ & OtsTaulukko & """ ei l√∂ytynyt tietoja!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
@@ -340,7 +331,7 @@ Private Sub TeeKuvat_Click()
                                 If Not Tiedot.NoMatch Then
                                     Attribuutit(i).TextString = IIf(IsNull(Tiedot.Fields("Teksti").Value), "", Tiedot.Fields("Teksti").Value)
                                 Else
-                                    LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei lˆytynyt arvoa"
+                                    LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei l√∂ytynyt arvoa"
                                 End If
                             Next i
                             
@@ -351,7 +342,7 @@ Private Sub TeeKuvat_Click()
                             Tiedot.Close
                             Set Tiedot = Nothing
                         Else
-                            LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei lˆytynyt"
+                            LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei l√∂ytynyt"
                         End If
                         DbBlokit.MoveNext
                     Loop
@@ -372,7 +363,7 @@ Private Sub TeeKuvat_Click()
             oDoc.SaveAs KuvaNimi
             oDoc.Close
         Else
-            LisaaLokiin "Virhe: M‰‰ritelty‰ tiedostoa ei lˆytynyt (" & Tiedosto & ")"
+            LisaaLokiin "Virhe: M√§√§ritelty√§ tiedostoa ei l√∂ytynyt (" & Tiedosto & ")"
         End If
         
         Kuvat.MoveNext
@@ -448,11 +439,11 @@ Private Function HaeIPoints(ByVal Kuva As String) As Boolean
                 Paikat(Numero).Pisteet(2) = iPaikka(2)
             Next i
         Else
-            LisaaLokiin "Virhe: Insertointipaikat sis‰lt‰v‰st‰ blokista ei lˆytynyt attribuutteja (Kuva:" & Kuva & ")"
+            LisaaLokiin "Virhe: Insertointipaikat sis√§ltyv√§st√§ blokista ei l√∂ytynyt attribuutteja (Kuva:" & Kuva & ")"
             Virhe = True
         End If
     Else
-        LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei lˆytynyt insertointipaikkoja sis‰lt‰v‰‰ blokkia (" & Paikkablokki & ")"
+        LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei l√∂ytynyt insertointipaikkoja sis√§lt√§v√§√§ blokkia (" & Paikkablokki & ")"
         Virhe = True
     End If
     
@@ -515,15 +506,15 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
                         Next j
                         
                         If Not Loytyi Then
-                            LisaaLokiin "- Taulukosta ei lˆytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
+                            LisaaLokiin "- Taulukosta ei l√∂ytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
                         End If
                     Next i
                 Else
-                    LisaaLokiin "Virhe: Otsikkoblokista ei lˆytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
+                    LisaaLokiin "Virhe: Otsikkoblokista ei l√∂ytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
                     Virhe = True
                 End If
             Else
-                LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei lˆytynyt otsikkotietoja sis‰lt‰v‰‰ blokkia (" & Titleblokki & ")"
+                LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei l√∂ytynyt otsikkotietoja sis√§lt√§v√§√§ blokkia (" & Titleblokki & ")"
                 Virhe = True
             End If
         Next b
@@ -578,7 +569,7 @@ Private Function PoimiHakemisto(AHakem As String) As String
     On Error GoTo ErrHandler
     
     Filtteri = "AutoCAD Drawing (*.dwg)" & Chr(0) & "*.DWG" & Chr(0)
-    Otsikko = "Valitse AutoCAD piirustus saadaksesi ylˆs hakemiston"
+    Otsikko = "Valitse AutoCAD piirustus saadaksesi hakemiston"
     
     With OpenFile
         .lStructSize = Len(OpenFile)

@@ -1,4 +1,3 @@
-Attribute VB_Name = "General"
 Option Compare Database
 Option Explicit
 
@@ -44,10 +43,10 @@ Function SniffUser()
   
   ' Get network username
   BufferSize_Long = 256
-  NBuffer = Space$(BufferSize_Long)  ' 1. Käytä Long-muuttujaa Space$-funktiolle
+  NBuffer = Space$(BufferSize_Long)  ' 1. Kï¿½ytï¿½ Long-muuttujaa Space$-funktiolle
   BufferSize_Ptr = BufferSize_Long   ' 2. Kopioi arvo LongPtr-muuttujaan
   
-  ' 3. Käytä LongPtr-muuttujaa API-kutsussa. Nyt tyypit täsmäävät (LongPtr -> LongPtr)
+  ' 3. Kï¿½ytï¿½ LongPtr-muuttujaa API-kutsussa. Nyt tyypit tï¿½smï¿½ï¿½vï¿½t (LongPtr -> LongPtr)
   If api_GetUserName(NBuffer, BufferSize_Ptr) Then
      NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else
@@ -70,16 +69,15 @@ Function SniffUser()
   DBEngine.BeginTrans
   
   Set Taulu = db.OpenRecordset("UsysUsers", dbOpenDynaset)
-  With Taulu
-    .AddNew
-    .Fields(0) = NWUserName      ' Network username
-    .Fields(1) = CurrentUser()   ' Database username
-    .Fields(2) = CName           ' Computer name
-    .Fields(3) = Now             ' Timestamp
-    .Update
-  End With
-  
-  DBEngine.CommitTrans
+        With Taulu
+            .AddNew
+            .Fields(0) = NWUserName      ' Network username
+            .Fields(1) = CurrentUser()   ' Database username
+            .Fields(2) = CName           ' Computer name
+            .Fields(3) = Now             ' Timestamp
+            .Update
+        End With  
+            DBEngine.CommitTrans
 
 Cleanup:
   On Error Resume Next
