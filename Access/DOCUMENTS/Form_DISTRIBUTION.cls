@@ -105,7 +105,7 @@ Private Sub BExit_Click()
   DoCmd.Close
 End Sub
 Private Sub Command23_Click()
-'Tehd��n ensin kysely transmittaalia varten
+'Tehdään ensin kysely transmittaalia varten
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else
@@ -113,7 +113,7 @@ Private Sub Command23_Click()
   End If
 End Sub
 Private Sub Command27_Click()
-'Tehd��n uusi DISTRIBUUTIO
+'Tehdään uusi DISTRIBUUTIO
     Common = ""
     DoCmd.OpenForm "USysNewDISTRIBUTION"
     TDistr.Requery
@@ -190,7 +190,7 @@ End Sub
 ' Form Load Event - Initialize form with project information
 ' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
 '''
-Private Sub Form_Load()
+Public Sub Form_Load()
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
     

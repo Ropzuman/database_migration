@@ -104,12 +104,12 @@ Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
 Rev.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'P�iv�m��r�
+'Päivämäärä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 DateFld.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'Tekij�
+'Tekijä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Drawn.Value = Left(Tieto, Osoitin - 1)
@@ -119,7 +119,7 @@ Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Checked.Value = Left(Tieto, Osoitin - 1)
 Tieto = Mid(Tieto, Osoitin + 1)
-'Hyv�ksyj�
+'Hyväksyjä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Approved.Value = Left(Tieto, Osoitin - 1)

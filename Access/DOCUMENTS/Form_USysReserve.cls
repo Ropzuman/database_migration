@@ -19,13 +19,13 @@ Private Sub TalletaNappi_Click()
     Dim SQL As String
     SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & TNumber.Value & "'"
     Set taulu = CurrentDb.OpenRecordset(SQL, , dbDenyWrite)
-    If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan ett� kyseinen numero on yh� vapaana
+    If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan että kyseinen numero on vielä vapaana
       taulu.Edit
       taulu.Fields("Number") = TClientNo.Caption
       taulu.Fields("Reserved") = Varaaja & "@" & Now
       taulu.Update
       taulu.Close
-    Else 'Virhe joku kerkesi jo varaamaan numeron v�liss�
+    Else 'Virhe joku kerkesi jo varaamaan numeron välissä
       MsgBox "Someone reserved number " & TNumber.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
       taulu.Close
       Set taulu = Nothing

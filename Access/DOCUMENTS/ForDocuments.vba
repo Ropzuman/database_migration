@@ -1,6 +1,6 @@
 Option Compare Database 'Use database order for string comparisons
 Option Explicit
-'DOCUMENTS-alaformien v�list� tiedonsiirtoa varten
+'DOCUMENTS-alaformien välistä tiedonsiirtoa varten
 Public Revisioteksti As String
 Public Revisionumero As String
 Public UusiRevisio As Boolean
@@ -11,7 +11,7 @@ Public Common As String
 Public CommonOts As String
 Public CommonType As Integer
 Public DocStatus As String
-'UUDEN t�ytetyn dokumentin tietojen muistamista varten
+'UUDEN täytetyn dokumentin tietojen muistamista varten
 Public DefDName1 As String
 Public DefDName2 As String
 Public DefDName3 As String

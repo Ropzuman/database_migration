@@ -38,10 +38,10 @@ Else
   End If
 End If
 On Error GoTo Err_OK_Click
-      'Tyhjennet��n ensin taulukko
+      'Tyhjennetään ensin taulukko
       DB.Execute "DELETE * FROM USysTblForExcel;"
       DB.Execute "DELETE * FROM USysDIForExcel;"
-      'T�ytet��n taulukko tiedoilla
+      'Täytetään taulukko tiedoilla
       DB.Execute Kysely
       DB.Execute Kysely2
       Set ExcelTaulu = DB.OpenRecordset("USysTblForExcel")
@@ -65,7 +65,7 @@ On Error GoTo Err_OK_Click
         ExcelTaulu.MoveNext
       Loop
       Set DB = Nothing
-      'K�ynnistet��n excel ja tiedosto jossa kyseinen makro on (makro k�ynnistyy automaattisesti)
+      'Käynnistetään excel ja tiedosto jossa kyseinen makro on (makro käynnistyy automaattisesti)
       Set xlApp = CreateObject("Excel.Application")
       xlApp.Workbooks.Open "l:\projekti\valdivia\sheets\tools\DocumentReport.xls", , True
       xlApp.Visible = True
