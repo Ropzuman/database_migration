@@ -10,8 +10,5 @@ Type POINTAPI ' Declare types
     X As Long
     Y As Long
 End Type
-#If VBA7 Then
-  Private Declare PtrSafe Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
-#Else
-  Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
-#End If
+Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long ' Declare API
+

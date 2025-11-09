@@ -10,12 +10,12 @@ Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim Hakem As String
-Dim fso As New FileSystemObject
+Dim FSO As New FileSystemObject
 Private Sub Command4_Click()
   DoCmd.Close
 End Sub
 Private Sub Command52_Click()
-  If fso.FolderExists(Hakem) Then
+  If FSO.FolderExists(Hakem) Then
     Call Shell("C:\WINNT\EXPLORER.EXE /e, " & Hakem, vbNormalFocus)
   Else 'Hakemistoa ei ole
     MsgBox "Invalid path! " & Hakem, vbCritical, "Open Path"
@@ -48,10 +48,10 @@ Private Sub Form_Load()
   Set DB = Nothing
 End Sub
 Private Sub Form_Unload(Cancel As Integer)
-  Set fso = Nothing
+  Set FSO = Nothing
 End Sub
 Private Sub Tied_DblClick(Cancel As Integer)
-  If fso.FileExists(Hakem & Tied.Value) Then
+  If FSO.FileExists(Hakem & Tied.Value) Then
     Application.FollowHyperlink Hakem & Tied.Value, , True, False
   Else
       MsgBox "File not found: " & Hakem & Tied.Value, vbCritical, "Open File"

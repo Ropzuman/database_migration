@@ -25,7 +25,7 @@ Private Sub Add_Distr_Click()
 End Sub
 Private Sub AvaaTiedosto_Click()
 'Tämä avaa määritellyn tiedosto
-Dim fso As New FileSystemObject
+Dim FSO As New FileSystemObject
 Dim Avattava As String
 If IsNull(File.Value) Then
   MsgBox "No filename defined", vbCritical, "Open File"
@@ -36,15 +36,15 @@ Else
     Common = Counter.Value
     DoCmd.OpenForm "USysOpenFile", , , , , acDialog
   Else
-    Avattava = fso.BuildPath(WorkPath.Value, File.Value)
-    If fso.FileExists(Avattava) Then
+    Avattava = FSO.BuildPath(WorkPath.Value, File.Value)
+    If FSO.FileExists(Avattava) Then
          Application.FollowHyperlink Avattava, , True, False
     Else 'Tiedostoa ei löytynyt
       MsgBox "File not found: " & WorkPath.Value & File.Value, vbCritical, "Open File"
     End If
   End If
 End If
-Set fso = Nothing
+Set FSO = Nothing
 End Sub
 Private Sub ClientDwg_Click()
   If IsNull(ClientNo.Value) Then 'Numeroa ei vielä varattu, joten voidaan suorittaa varaus
@@ -117,17 +117,17 @@ Private Sub Note_Click()
   Note.Value = IIf(Common = "", Null, Common)
 End Sub
 Private Sub OpenPath_Click()
-Dim fso As New FileSystemObject
+Dim FSO As New FileSystemObject
 If IsNull(WorkPath.Value) Then
   MsgBox "No path defined", vbCritical, "Open Path"
 Else
-  If fso.FolderExists(WorkPath.Value) Then
+  If FSO.FolderExists(WorkPath.Value) Then
     Application.FollowHyperlink WorkPath.Value
   Else 'Hakemistoa ei ole
     MsgBox "Invalid path", vbCritical, "Open Path"
   End If
 End If
-Set fso = Nothing
+Set FSO = Nothing
 End Sub
 Private Sub Pos_Click()
   Common = IIf(IsNull(Pos.Value), "", Pos.Value)
