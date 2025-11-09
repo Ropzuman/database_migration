@@ -9,25 +9,59 @@ Dim Hakemisto As String
     TPath.Value = Hakemisto
   End If
 End Sub
+'''
+' Form Load Event - Initialize form with default values from previous document
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
+'''
 Private Sub Form_Load()
-Dim taulu As Recordset
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
+  
+  On Error GoTo ErrorHandler
+  
   Varaaja = NetworkUserName
-'Annetaan dokumentille pohjaksi viimeksi lis�tyn dokumentin tiedot
-  Set taulu = CurrentDb.OpenRecordset("SELECT Path FROM ProjInfo")
+  
+  ' Set default values from previous document entry
+  Set DB = CurrentDb
+  Set taulu = DB.OpenRecordset("SELECT Path FROM ProjInfo", dbOpenSnapshot)
+  
   TDocName1.Value = IIf(DefDName1 <> "", DefDName1, Null)
   TDocName2.Value = IIf(DefDName2 <> "", DefDName2, Null)
   TDocName3.Value = IIf(DefDName3 <> "", DefDName3, Null)
   TPages.Value = IIf(DefPages <> "", DefPages, 1)
-  TPath.Value = IIf(DefPath <> "", DefPath, taulu("Path"))
+  TPath.Value = IIf(DefPath <> "", DefPath, Nz(taulu("Path"), ""))
   TRev.Value = IIf(DefRev <> "", DefRev, Null)
-  Set taulu = Nothing
-'--------------------------------------------------
+  
+Cleanup:
+  If Not taulu Is Nothing Then
+    If taulu.State = 1 Then taulu.Close
+    Set taulu = Nothing
+  End If
+  If Not DB Is Nothing Then
+    DB.Close
+    Set DB = Nothing
+  End If
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error loading form defaults: " & Err.Description, vbExclamation, "Form Load Error"
+  Resume Cleanup
 End Sub
 Private Sub Peruuta_Click()
   DoCmd.Close
 End Sub
+'''
+' Save Document - Validate and save new document to database
+' OPTIMIZED 2025-11-09: Added transaction support, error handling, DAO typing, null-checking
+'''
 Private Sub TalletaNappi_Click()
-    'Formin tietojen talletus ja sulkeminen
+    Dim DB As DAO.Database
+    Dim taulu As DAO.Recordset
+    Dim SQL As String
+    
+    On Error GoTo ErrorHandler
+    
+    ' Validation
     If IsNull(TDocName1.Value) And IsNull(TDocName2.Value) Then
       MsgBox "You can't leave Document Name empty!" & vbCrLf _
            & "If you don't know document name now, put something like:" & vbCrLf _
@@ -38,65 +72,90 @@ Private Sub TalletaNappi_Click()
            & "If document is not going to client put at least Extra Document ID", vbCritical
       Exit Sub
     End If
-    'Kaikki kunnossa, voidaan tallettaa tiedot ja poistua formista
-    Dim DB As Database
-    Dim taulu As Recordset
-    Dim SQL As String
+    
     Set DB = CurrentDb
-      If IsNull(TClientDocNo.Value) = False And TClientDocNo.Value <> "" Then
+    DB.BeginTrans
+    
+    ' Check and reserve client document number if provided
+    If IsNull(TClientDocNo.Value) = False And TClientDocNo.Value <> "" Then
         SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & TNumber.Value & "'"
-        Set taulu = DB.OpenRecordset(SQL, , dbDenyWrite)
+        Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset, dbDenyWrite)
+        
         If taulu.EOF = False Then
-          If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan ett� kyseinen numero on yh� vapaana
+          If IsNull(taulu.Fields("Reserved")) Then
             taulu.Edit
             taulu.Fields("Number") = TClientDocNo.Value
             taulu.Fields("Reserved") = Varaaja & "@" & Now
             taulu.Update
             taulu.Close
-          Else 'Virhe joku kerkesi jo varaamaan numeron v�liss�
-            MsgBox "Someone reserved number " & TClientDocNo.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
-            taulu.Close
-            DB.Close
             Set taulu = Nothing
+          Else
+            ' Number already reserved
+            taulu.Close
+            Set taulu = Nothing
+            DB.Rollback
+            DB.Close
             Set DB = Nothing
+            MsgBox "Someone reserved number " & TClientDocNo.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
             Exit Sub
           End If
+        Else
+          taulu.Close
+          Set taulu = Nothing
         End If
-      End If
-      Set taulu = DB.OpenRecordset("DOCUMENTS", dbOpenTable)
-      With taulu
+    End If
+    
+    ' Add new document
+    Set taulu = DB.OpenRecordset("DOCUMENTS", dbOpenTable)
+    With taulu
         .AddNew
-        .Fields("DocName1") = TDocName1.Value   'Dokumentin nimi sarake1
-        .Fields("DocName2") = TDocName2.Value   'Dokumentin nimi sarake2
-        .Fields("DocName3") = TDocName3.Value   'Dokumentin nimi sarake3
-        .Fields("Area") = TArea.Value           'Dokumentin osasto
-        .Fields("Pick2") = TPick2.Value         'Metson laji piirustukselle
-        .Fields("Rev") = TRev.Value             'Revisiomerkint�
-        .Fields("ClientNo") = TClientDocNo.Value    'Asiakkaan piirustunumero
-        .Fields("MetsoDocNo") = TMetsoDocNo.Value 'Metson dokumenttinumero
-        .Fields("ExtDocID") = TExtDocID.Value     'Extra dokumentin numero, ellei muuta niin ainakin t�m� pit� laittaa
-        .Fields("Pages") = TPages.Value           'Sivum��r�
-        .Fields("WorkPath") = TPath.Value         'Hakemisto josta dokumentti l�ytyy tai tulee l�ytym��n
-        .Fields("Note") = TNote.Value             'Huomautus
-        CurRecord = .Fields("Counter")            'Otetaan yl�s Counter-fieldin arvo, jotta voidaan palata kyseiseen recordiin p��formissa
+        .Fields("DocName1") = TDocName1.Value
+        .Fields("DocName2") = TDocName2.Value
+        .Fields("DocName3") = TDocName3.Value
+        .Fields("Area") = TArea.Value
+        .Fields("Pick2") = TPick2.Value
+        .Fields("Rev") = TRev.Value
+        .Fields("ClientNo") = TClientDocNo.Value
+        .Fields("MetsoDocNo") = TMetsoDocNo.Value
+        .Fields("ExtDocID") = TExtDocID.Value
+        .Fields("Pages") = TPages.Value
+        .Fields("WorkPath") = TPath.Value
+        .Fields("Note") = TNote.Value
+        CurRecord = .Fields("Counter")
         .Update
-      End With
-      taulu.Close
-      DB.Close
+    End With
+    
+    DB.CommitTrans
+    
+    ' Save defaults for next document
+    DefDName1 = Nz(TDocName1.Value, "")
+    DefDName2 = Nz(TDocName2.Value, "")
+    DefDName3 = Nz(TDocName3.Value, "")
+    DefArea = Nz(TArea.Value, "")
+    DefSort = Nz(TPick2.Value, "")
+    DefPages = Nz(TPages.Value, "")
+    DefPath = Nz(TPath.Value, "")
+    DefRev = Nz(TRev.Value, "")
+    
+Cleanup:
+    If Not taulu Is Nothing Then
+      If taulu.State = 1 Then taulu.Close
       Set taulu = Nothing
+    End If
+    If Not DB Is Nothing Then
+      DB.Close
       Set DB = Nothing
-'Otetaan yl�s dokumentin tiedot, jotta niit� voidaan k�ytt�� seuraavan dokumentin pohjana
-      DefDName1 = Nz(TDocName1.Value)
-      DefDName2 = Nz(TDocName2.Value)
-      DefDName3 = Nz(TDocName3.Value)
-      DefArea = Nz(TArea.Value)
-'      DefCDocNo = Nz(TClientDocNo.Value)
-      DefSort = Nz(TPick2.Value)
-      DefPages = Nz(TPages.Value)
-      DefPath = Nz(TPath.Value)
-      DefRev = Nz(TRev.Value)
-'--------------------------------------------------
-      DoCmd.Close
+    End If
+    DoCmd.Close
+    Exit Sub
+    
+ErrorHandler:
+    If Not DB Is Nothing Then
+        On Error Resume Next
+        DB.Rollback
+    End If
+    MsgBox "Error saving document: " & Err.Description, vbCritical, "Save Error"
+    Resume Cleanup
 End Sub
 
 Private Sub TDiscipline_Change()

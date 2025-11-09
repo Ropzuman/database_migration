@@ -45,6 +45,11 @@ End Sub
 '             also null terminated.
 '
 '-------------------------------------------------------------------------------------
+'''
+' WhosOn - Read LDB file to show who's currently logged on
+' OPTIMIZED 2025-11-09: Added explicit DAO typing, removed redundant CurrentDb call
+' @return String - Semicolon-delimited list of "Machine -- User" entries
+'''
 Private Function WhosOn() As String
 
 On Error GoTo Err_WhosOn
@@ -55,12 +60,13 @@ On Error GoTo Err_WhosOn
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As Database
+   Dim dbCurrent As DAO.Database
 
 ' Get Path of current database.  Should substitute this code
 ' for an attached table path in a multi-user environment.
 
-   sPath = CurrentDb.Name
+   Set dbCurrent = CurrentDb
+   sPath = dbCurrent.Name
 
 ' Iterate thru dbCurrent.LDB file for login names.
 
@@ -100,6 +106,10 @@ On Error GoTo Err_WhosOn
    WhosOn = sLogins
 
 Exit_WhosOn:
+   If Not dbCurrent Is Nothing Then
+      dbCurrent.Close
+      Set dbCurrent = Nothing
+   End If
    Exit Function
 
 Err_WhosOn:

@@ -4,46 +4,90 @@ Private Sub BExit_Click()
   DoCmd.Close
 End Sub
 
+'''
+' Form Load Event - Initialize distribution form
+' OPTIMIZED 2025-11-09: Added explicit DAO typing, error handling
+'''
 Private Sub Form_Load()
-  CurrentDb.Execute "UPDATE USysRecipients SET USysRecipients.[To Distribution] = No;"
+  Dim DB As DAO.Database
+  
+  On Error GoTo ErrorHandler
+  
+  Set DB = CurrentDb
+  DB.Execute "UPDATE USysRecipients SET USysRecipients.[To Distribution] = No;"
   TDate.Value = Date
+  
+  DB.Close
+  Set DB = Nothing
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error initializing form: " & Err.Description, vbExclamation, "Form Load Error"
+  If Not DB Is Nothing Then
+    DB.Close
+    Set DB = Nothing
+  End If
 End Sub
 
 Private Sub Lisaa_Click()
-'Lis�� uusi vastaanottaja
+'Lisää uusi vastaanottaja
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
    Lista.Requery
 End Sub
+
+'''
+' Lista Double Click - Toggle recipient selection for distribution
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
+'''
 Private Sub Lista_DblClick(Cancel As Integer)
-  Dim DB As Database
-  Dim taulu As Recordset
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
   Dim SQL As String
   Dim Oletus As String
   Dim Kopioita As String
   
+  On Error GoTo ErrorHandler
+  
   Set DB = CurrentDb
   SQL = "SELECT * FROM USysRecipients WHERE ID=" & Lista.ItemData(Lista.ItemsSelected(0))
-  Set taulu = DB.OpenRecordset(SQL)
-  taulu.Edit
-  If taulu.Fields("To Distribution") Then
-     taulu.Fields("To Distribution") = False
-  Else
-    Oletus = IIf(IsNull(taulu.Fields("Copies")), "", taulu.Fields("Copies"))
-    Kopioita = InputBox("How many copies are been sent? E.g. 4 paper copies and e-mail are marked as ""4+e"".", "Copies", Oletus)
-    If Kopioita <> "" Then
-      taulu.Fields("To Distribution") = True
-      taulu.Fields("Copies") = Kopioita
+  Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset)
+  
+  If Not taulu.EOF Then
+    taulu.Edit
+    If taulu.Fields("To Distribution") Then
+       taulu.Fields("To Distribution") = False
+    Else
+      Oletus = IIf(IsNull(taulu.Fields("Copies")), "", taulu.Fields("Copies"))
+      Kopioita = InputBox("How many copies are been sent? E.g. 4 paper copies and e-mail are marked as ""4+e"".", "Copies", Oletus)
+      If Kopioita <> "" Then
+        taulu.Fields("To Distribution") = True
+        taulu.Fields("Copies") = Kopioita
+      End If
     End If
+    taulu.Update
   End If
-  taulu.Update
-  Set DB = Nothing
-  Set taulu = Nothing
+  
   Lista.Requery
+  
+Cleanup:
+  If Not taulu Is Nothing Then
+    If taulu.State = 1 Then taulu.Close
+    Set taulu = Nothing
+  End If
+  If Not DB Is Nothing Then
+    DB.Close
+    Set DB = Nothing
+  End If
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error updating recipient: " & Err.Description, vbExclamation, "Update Error"
+  Resume Cleanup
 End Sub
 
 Private Sub Valmis_Click()
-'T�m� lis�� uuden distribuution USysDISTRIBUTION taulukkoon ja
-'Vastaanottajat USysRecipByDistr taulukkoon
+' Tämä lisää uuden distribuution USysDISTRIBUTION taulukkoon ja
+' Vastaanottajat USysRecipByDistr taulukkoon
 Dim TRecipients As String
 'Dim FSO As New FileSystemObject
 Dim i As Integer
@@ -75,7 +119,7 @@ ElseIf IsNull(TReason) Then
 Else
   SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & DistrNo & "'"
   Set taulu = DB.OpenRecordset(SQL)
-  If taulu.EOF Then 'Ei viel yht��n saman ID:n omaavaa Distribuutiota
+  If taulu.EOF Then 'Ei vielä yhtään saman ID:n omaavaa Distribuutiota
     Hakemisto = aReplace(DistrNo) & "\"
 '    If FSO.FolderExists(OutboxPath & Hakemisto) = False Then
 '      FSO.CreateFolder (OutboxPath & Hakemisto)

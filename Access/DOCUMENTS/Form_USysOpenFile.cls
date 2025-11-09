@@ -13,30 +13,55 @@ Private Sub Command52_Click()
   End If
 End Sub
 
+'''
+' Form Load Event - Load document files from database
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
+'''
 Private Sub Form_Load()
-  Dim DB As Database
-  Dim taulu As Recordset
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
   Dim Tiedostot As String
   Dim Rivit As String
   Dim Osoitin As Long
   
+  On Error GoTo ErrorHandler
+  
   Set DB = CurrentDb
-  Set taulu = DB.OpenRecordset("SELECT File, WorkPath FROM DOCUMENTS WHERE Counter=" & Common)
-  Tiedostot = taulu.Fields(0).Value & vbCrLf
-  Hakem = taulu.Fields(1).Value
-  MyPath.Caption = "Path: " & Hakem
-  Osoitin = InStr(Tiedostot, vbCrLf)
-  Rivit = Left(Tiedostot, Osoitin - 1)
-  Tiedostot = Mid(Tiedostot, Osoitin + 2)
-  Do
+  Set taulu = DB.OpenRecordset("SELECT File, WorkPath FROM DOCUMENTS WHERE Counter=" & Common, dbOpenSnapshot)
+  
+  If Not taulu.EOF Then
+    Tiedostot = Nz(taulu.Fields(0).Value, "") & vbCrLf
+    Hakem = Nz(taulu.Fields(1).Value, "")
+    MyPath.Caption = "Path: " & Hakem
+    
     Osoitin = InStr(Tiedostot, vbCrLf)
-    If Osoitin = 0 Then Exit Do
-    Rivit = Rivit & ";" & Left(Tiedostot, Osoitin - 1)
-    Tiedostot = Mid(Tiedostot, Osoitin + 2)
-  Loop
-  Tied.RowSource = Rivit
-  Set taulu = Nothing
-  Set DB = Nothing
+    If Osoitin > 0 Then
+      Rivit = Left(Tiedostot, Osoitin - 1)
+      Tiedostot = Mid(Tiedostot, Osoitin + 2)
+      Do
+        Osoitin = InStr(Tiedostot, vbCrLf)
+        If Osoitin = 0 Then Exit Do
+        Rivit = Rivit & ";" & Left(Tiedostot, Osoitin - 1)
+        Tiedostot = Mid(Tiedostot, Osoitin + 2)
+      Loop
+      Tied.RowSource = Rivit
+    End If
+  End If
+  
+Cleanup:
+  If Not taulu Is Nothing Then
+    If taulu.State = 1 Then taulu.Close
+    Set taulu = Nothing
+  End If
+  If Not DB Is Nothing Then
+    DB.Close
+    Set DB = Nothing
+  End If
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error loading files: " & Err.Description, vbExclamation, "Form Load Error"
+  Resume Cleanup
 End Sub
 Private Sub Form_Unload(Cancel As Integer)
   Set fso = Nothing

@@ -85,16 +85,37 @@ Private Sub File_Click()
   DoCmd.OpenForm "USysShowCommon", , , , , acDialog
   File.Value = IIf(Common = "", Null, Common)
 End Sub
+'''
+' Form Load Event - Initialize form with project information
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, removed redundant CurrentDb call
+'''
 Private Sub Form_Load()
-Dim DB As Database
-Dim taulu As Recordset
-Set DB = CurrentDb
-Set taulu = CurrentDb.OpenRecordset("ProjInfo")
-tProjekti.Caption = taulu("Name")
-taulu.Close
-DB.Close
-Set taulu = Nothing
-Set DB = Nothing
+    Dim DB As DAO.Database
+    Dim taulu As DAO.Recordset
+    
+    On Error GoTo ErrorHandler
+    
+    Set DB = CurrentDb
+    Set taulu = DB.OpenRecordset("ProjInfo")
+    
+    If Not taulu.EOF Then
+        tProjekti.Caption = Nz(taulu("Name"), "")
+    End If
+    
+Cleanup:
+    If Not taulu Is Nothing Then
+        taulu.Close
+        Set taulu = Nothing
+    End If
+    If Not DB Is Nothing Then
+        DB.Close
+        Set DB = Nothing
+    End If
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error loading project information: " & Err.Description, vbExclamation, "Form Load Error"
+    Resume Cleanup
 End Sub
 Private Sub Form_Unload(Cancel As Integer)
   Me.Filter = ""
