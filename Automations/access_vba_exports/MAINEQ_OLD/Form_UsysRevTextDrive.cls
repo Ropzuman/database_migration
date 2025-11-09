@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_UsysRevTextDrive"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim Uusi As Boolean
@@ -82,7 +73,7 @@ Eka = False
     Else
       Rev.Value = "0"
       TOtsikko.Caption = "First Revision"
-      TOtsikko2.Caption = "Ensimmäinen revisio"
+      TOtsikko2.Caption = "Ensimmï¿½inen revisio"
       AddNew.Enabled = False
       Uusi = True
       Eka = True

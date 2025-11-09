@@ -1,16 +1,7 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_DISTRIBUTION"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 
-Private Sub Add_Click() 'Lisää Valitut Dokumentit valittuun Distribuutioon
+Private Sub Add_Click() 'Lisï¿½ï¿½ Valitut Dokumentit valittuun Distribuutioon
   If Nz(TDistr.Value) = "" Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   ElseIf Docs.ItemsSelected.Count = 0 Then
@@ -34,16 +25,16 @@ Private Sub Add_Click() 'Lisää Valitut Dokumentit valittuun Distribuutioon
 '      Else
         For i = 0 To Docs.ItemsSelected.Count - 1
           j = Docs.ItemData(Docs.ItemsSelected.Item(i))
-          'Etsitään dokumentti Documents taulukosta
+          'Etsitï¿½ï¿½n dokumentti Documents taulukosta
           Set Taulu2 = DB.OpenRecordset("SELECT Rev, Counter, Status From DOCUMENTS WHERE Counter=" & j)
           If IsNull(Taulu2.Fields("Rev")) Then
             KaikkiOK = False
           Else
-            'Tarkistetaan ettei dokumenttia olla vielä lisätty tähän lähetykseen
+            'Tarkistetaan ettei dokumenttia olla vielï¿½ lisï¿½tty tï¿½hï¿½n lï¿½hetykseen
             Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & j & " AND TDistr=" & TDistr.Value)
-            If Not taulu.EOF Then  'Dokumentti on jo lisätty
+            If Not taulu.EOF Then  'Dokumentti on jo lisï¿½tty
               taulu.Close
-            Else 'dokumenttia ei ole vielä kyseisessä lähetyksessä, joten lisätään se
+            Else 'dokumenttia ei ole vielï¿½ kyseisessï¿½ lï¿½hetyksessï¿½, joten lisï¿½tï¿½ï¿½n se
               With taulu
                 .AddNew
                 .Fields(0) = j
@@ -73,7 +64,7 @@ Private Sub BExit_Click()
   DoCmd.Close
 End Sub
 Private Sub Command23_Click()
-'Tehdään ensin kysely transmittaalia varten
+'Tehdï¿½ï¿½n ensin kysely transmittaalia varten
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else
@@ -81,7 +72,7 @@ Private Sub Command23_Click()
   End If
 End Sub
 Private Sub Command27_Click()
-'Tehdään uusi DISTRIBUUTIO
+'Tehdï¿½ï¿½n uusi DISTRIBUUTIO
     Common = ""
     DoCmd.OpenForm "USysNewDISTRIBUTION"
     TDistr.Requery
@@ -122,7 +113,7 @@ DoCmd.OpenForm "Reserve Number"
 End Sub
 
 Private Sub EditDistrib_Click()
-  'Muokataan vastaanottajia kyseisessä lähetyksessä
+  'Muokataan vastaanottajia kyseisessï¿½ lï¿½hetyksessï¿½
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else

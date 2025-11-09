@@ -1,4 +1,3 @@
-Attribute VB_Name = "APIKoodit"
 Option Compare Database
 Option Explicit
 Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
@@ -110,7 +109,7 @@ Public Function DummyFunc(ByVal param As Long) As Long
   DummyFunc = param
 End Function
 Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
-'Tämä valitsee tiedoston hakemistosta
+'Tï¿½mï¿½ valitsee tiedoston hakemistosta
     Dim OpenFile As OPENFILENAME
     Dim lReturn As Long
     Dim Filtteri As String
@@ -143,8 +142,8 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
     End With
     lReturn = GetOpenFileName(OpenFile)
     If lReturn = 0 Then
-        'Painettiin Cancel painiketta. Ei tehdä mitään
-    Else 'Otetaan ylös Tiedostonimi ja Hakemisto
+        'Painettiin Cancel painiketta. Ei tehdï¿½ mitï¿½ï¿½n
+    Else 'Otetaan ylï¿½s Tiedostonimi ja Hakemisto
        ValitseTiedosto = Left(OpenFile.lpstrFile, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
     End If
 

@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_KuvienGenerointi"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim oAcad As AcadApplication
@@ -23,9 +14,9 @@ Dim i As Integer
 Dim j As Integer
 Dim Spositio  As String
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-  MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+  MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If
@@ -38,7 +29,7 @@ Do While Not Kuvat.EOF
   Talletus = Kuvat.Fields("Hakemisto").Value & Kuvat.Fields("PiirNro").Value & "_INDICE.DWG"
   'Avataan kuva
   Set oDoc = oAcad.Documents.Open(Pohja)
-  'Haetaan kuvaan lisättävät revisiot
+  'Haetaan kuvaan lisï¿½ttï¿½vï¿½t revisiot
   i = 1
   LisaaTeksti i, 0, "01/INDICE"
   LisaaTeksti i, 1, "X"
@@ -158,9 +149,9 @@ Dim DB As Database
 Dim i As Integer, Maara As Integer
 
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-  MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+  MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If
@@ -175,7 +166,7 @@ oAcad.Preferences.System.SingleDocumentMode = False
 Do While Not Kuvat.EOF
   i = i + 1
   Set Tiedot = DB.OpenRecordset("SELECT HNDL, Tieto FROM qryKuviin WHERE TalletusKuva='" & Kuvat("Talletuskuva").Value & "'")
-  SysCmd acSysCmdSetStatus, "Käsittelee kuvaa (" & i & "/" & Maara & "): " & Kuvat("Talletuskuva").Value & "..."
+  SysCmd acSysCmdSetStatus, "Kï¿½sittelee kuvaa (" & i & "/" & Maara & "): " & Kuvat("Talletuskuva").Value & "..."
   oAcad.Documents.Close
   Set oDoc = oAcad.Documents.Open(Kuvat("Avaa").Value, True)
   Do While Not Tiedot.EOF

@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_FuncBlock"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Private Sub NEWVALUE_DblClick(Cancel As Integer)
 Dim DB As Database
@@ -41,7 +32,7 @@ Taulu.Fields("value") = taginarvo
 Taulu.Fields("TagID") = tagiid
 Taulu.Update
 
-MsgBox "Uusi arvo lisätty"
+MsgBox "Uusi arvo lisï¿½tty"
 
 End Sub
 

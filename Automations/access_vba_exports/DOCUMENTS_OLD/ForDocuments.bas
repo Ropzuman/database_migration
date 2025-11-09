@@ -1,7 +1,6 @@
-Attribute VB_Name = "ForDocuments"
 Option Compare Database 'Use database order for string comparisons
 Option Explicit
-'DOCUMENTS-alaformien välistä tiedosiirtoa varten
+'DOCUMENTS-alaformien vï¿½listï¿½ tiedosiirtoa varten
 Public Revisioteksti As String
 Public Revisionumero As String
 Public UusiRevisio As Boolean
@@ -12,7 +11,7 @@ Public Common As String
 Public CommonOts As String
 Public CommonType As Integer
 Public DocStatus As String
-'UUDEN täytetyn dokumentin tietojen muistamista varten
+'UUDEN tï¿½ytetyn dokumentin tietojen muistamista varten
 Public DefDName1 As String
 Public DefDName2 As String
 Public DefDName3 As String
@@ -59,8 +58,8 @@ Public CDialogPath As String
 '---------- [Hakemiston valintaa varten API-funktiot Loppu] ------------
 Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
 Public Function IsLoaded(ByVal strFormName As String) As Integer
- ' Palauttaa arvon "Tosi", jos määritetty lomake on avoinna
- ' lomake- tai taulukkonäkymässä.
+ ' Palauttaa arvon "Tosi", jos mï¿½ï¿½ritetty lomake on avoinna
+ ' lomake- tai taulukkonï¿½kymï¿½ssï¿½.
     Const conObjStateClosed = 0
     Const conDesignView = 0
     If SysCmd(acSysCmdGetObjectState, acForm, strFormName) <> conObjStateClosed Then

@@ -1,13 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_EQUIPMENT"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 
@@ -115,10 +105,10 @@ suffix_afterupdate
 End Sub
 
 Private Sub ExtData_Click()
-'Avaa formin, jossa on lisätiedot
+'Avaa formin, jossa on lisï¿½tiedot
 'Dim stDocName As String
 'Dim stDocNamePu As String
-' EI KÄYTÖSSÄ
+' EI Kï¿½YTï¿½SSï¿½
 'stDocNamePu = "PumpsSubform"
 '    If Me.EqGroup.Value = "Pumps" Then
 '    Pumps

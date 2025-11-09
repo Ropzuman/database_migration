@@ -1,4 +1,3 @@
-Attribute VB_Name = "Sivunumerointi"
 Option Compare Database
 Option Explicit
 Public Function Sivu(ALUE As String) As String

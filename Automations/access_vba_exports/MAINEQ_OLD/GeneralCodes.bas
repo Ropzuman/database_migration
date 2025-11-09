@@ -1,4 +1,3 @@
-Attribute VB_Name = "GeneralCodes"
 Option Compare Database
 Option Explicit
 Public Revisioteksti As String
@@ -13,8 +12,8 @@ Public MRevDescription As String
 Public TRevHist As String
 Public TRevDesc As String
 Function IsLoaded(ByVal strFormName As String) As Integer
- ' Palauttaa arvon "Tosi", jos määritetty lomake on avoinna
- ' lomake- tai taulukkonäkymässä.
+ ' Palauttaa arvon "Tosi", jos mï¿½ï¿½ritetty lomake on avoinna
+ ' lomake- tai taulukkonï¿½kymï¿½ssï¿½.
     
     Const conObjStateClosed = 0
     Const conDesignView = 0
@@ -33,8 +32,8 @@ Dim teksti As String
   teksti = Revisio
   i = 2
   Pituus = Len(teksti)
-  'Etsitään ensimmäine revisio
-  If InStr(teksti, vbCrLf) Then 'Jos syötteestä löytyy rivinvaihto
+  'Etsitï¿½ï¿½n ensimmï¿½ine revisio
+  If InStr(teksti, vbCrLf) Then 'Jos syï¿½tteestï¿½ lï¿½ytyy rivinvaihto
     Do
       i = i + 1
     Loop Until InStr(Right(teksti, i), vbCrLf) = 1 Or i = Pituus
@@ -46,8 +45,8 @@ End Function
 
 Public Function Replace(ByVal Source As String, Replaced As String, Replacement As String) As String
 '***************************************************************************
-'* Tämä Funktio korvaa annetusta merkkijonosta kaikki vaihdettavat         *
-'* merkit (Replaced) vaihdettavalla merkillä (Replacement) ja              *
+'* Tï¿½mï¿½ Funktio korvaa annetusta merkkijonosta kaikki vaihdettavat         *
+'* merkit (Replaced) vaihdettavalla merkillï¿½ (Replacement) ja              *
 '* palauttaa merkkijonon, jossa korvaukset on tehty.                       *
 '* Esim. Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"   *
 '*      Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"       *
@@ -149,4 +148,4 @@ Dim i As Integer
 End Function
 
 'Esim.
-'Kenttä: LisaaNo(Kentannimi;100)
+'Kenttï¿½: LisaaNo(Kentannimi;100)

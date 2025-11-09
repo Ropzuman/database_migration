@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysExcelReport"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 
@@ -47,10 +38,10 @@ Else
   End If
 End If
 On Error GoTo Err_OK_Click
-      'Tyhjennetään ensin taulukko
+      'Tyhjennetï¿½ï¿½n ensin taulukko
       DB.Execute "DELETE * FROM USysTblForExcel;"
       DB.Execute "DELETE * FROM USysDIForExcel;"
-      'Täytetään taulukko tiedoilla
+      'Tï¿½ytetï¿½ï¿½n taulukko tiedoilla
       DB.Execute Kysely
       DB.Execute Kysely2
       Set ExcelTaulu = DB.OpenRecordset("USysTblForExcel")
@@ -74,7 +65,7 @@ On Error GoTo Err_OK_Click
         ExcelTaulu.MoveNext
       Loop
       Set DB = Nothing
-      'Käynnistetään excel ja tiedosto jossa kyseinen makro on (makro käynnistyy automaattisesti)
+      'Kï¿½ynnistetï¿½ï¿½n excel ja tiedosto jossa kyseinen makro on (makro kï¿½ynnistyy automaattisesti)
       Set xlApp = CreateObject("Excel.Application")
       xlApp.Workbooks.Open "l:\projekti\valdivia\sheets\tools\DocumentReport.xls", , True
       xlApp.Visible = True

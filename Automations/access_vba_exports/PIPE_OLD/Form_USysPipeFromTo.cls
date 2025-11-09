@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysPipeFromTo"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim oACAD As AcadApplication
@@ -231,9 +222,9 @@ Next j
 End Sub
 Private Function Yhdista() As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function

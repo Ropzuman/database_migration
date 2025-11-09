@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_TYÖKALUT"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Dim oACAD As AcadApplication
 Dim oDOC As AcadDocument
@@ -14,8 +5,8 @@ Dim Tied As String
 Dim Joukko As AcadSelectionSet
 
 Private Sub BPipelineToManval_Click()
-'Putkilinjatiedot käsiventtiileihin
-   If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
+'Putkilinjatiedot kï¿½siventtiileihin
+   If MsgBox("Onko haluttu P&I kaavio auki AutoCADissï¿½?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
     DoCmd.OpenForm "USysPipeToOther", , , , , , "MANUALVALVE_DATA" 'MANVALVEBLOCK
   End If
 End Sub
@@ -29,56 +20,56 @@ Private Sub Command11_Click()
 End Sub
 
 Private Sub Command12_Click()
-  ' Lisää putkilinjat taulukkoon
+  ' Lisï¿½ï¿½ putkilinjat taulukkoon
   CurrentDb.Execute "PIPELINES_APPEND"
-  MsgBox "Putkilinjojen lisäys valmis"
+  MsgBox "Putkilinjojen lisï¿½ys valmis"
 End Sub
 
 Private Sub Command13_Click()
-' Lisää putkilinjat taulukosta tietokantaan
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+' Lisï¿½ï¿½ putkilinjat taulukosta tietokantaan
+  If MsgBox("Varoitus! Tï¿½mï¿½ ajaa kaavioissa olevat tiedot kannassa olevien tietojen pï¿½ï¿½lle." & vbCrLf & "Haluatko jatkaa?", vbYesNo, "Pï¿½ivitï¿½ tiedot") = vbYes Then
     CurrentDb.Execute "DELETE * From UsysPIPEUPD"
     CurrentDb.Execute "PIPELINES_UPDATE_START"
     CurrentDb.Execute "PIPELINES_UPDATE"
-    MsgBox "Putkilinjojen päivitys valmis"
+    MsgBox "Putkilinjojen pï¿½ivitys valmis"
   End If
 End Sub
 
 Private Sub Command18_Click()
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "FlowPickNo") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissï¿½?", vbYesNo, "FlowPickNo") = vbYes Then
     DoCmd.OpenForm "USysFlowpickNo"
   End If
 End Sub
 
 Private Sub Command19_Click()
 'FROM/TO
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline From/To") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissï¿½?", vbYesNo, "Pipeline From/To") = vbYes Then
     DoCmd.OpenForm "USysPipeFromTo"
   End If
 End Sub
 
 Private Sub Command21_Click()
-  'Lue käsiventtiilit
+  'Lue kï¿½siventtiilit
   Tied = ""
   LueTiedot "MANVALVEDATA", "MANUALVALVE_DATA"
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Käsiventtiilien luku valmis"
+  MsgBox "Kï¿½siventtiilien luku valmis"
 End Sub
 
 Private Sub Command22_Click()
-  'Lisää käsiventtiilit taulukkoon
+  'Lisï¿½ï¿½ kï¿½siventtiilit taulukkoon
   CurrentDb.Execute "MANVALVE_APPEND"
-  MsgBox "Käsiventtiilien lisäys valmis"
+  MsgBox "Kï¿½siventtiilien lisï¿½ys valmis"
 End Sub
 
 Private Sub Command23_Click()
-'Lisää käsiventtiilit taulukosta tietokantaan
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
+'Lisï¿½ï¿½ kï¿½siventtiilit taulukosta tietokantaan
+  If MsgBox("Varoitus! Tï¿½mï¿½ ajaa kaavioissa olevat tiedot kannassa olevien tietojen pï¿½ï¿½lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia nï¿½ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbYesNo, "Pï¿½ivitï¿½ tiedot") = vbYes Then
     CurrentDb.Execute "MANVALVE_UPDATE"
-    MsgBox "Käsiventtiilien päivitys valmis"
+    MsgBox "Kï¿½siventtiilien pï¿½ivitys valmis"
   End If
 End Sub
 
@@ -91,51 +82,51 @@ Private Sub Command31_Click()
 End Sub
 
 Private Sub Command32_Click()
-  'Lisää instrumenttiventtiilit taulukkoon
+  'Lisï¿½ï¿½ instrumenttiventtiilit taulukkoon
   CurrentDb.Execute "INSTVALVE_APPEND"
-  MsgBox "Instrumenttiventtiilien lisäys valmis"
+  MsgBox "Instrumenttiventtiilien lisï¿½ys valmis"
 End Sub
 
 Private Sub Command33_Click()
-  'Lisää instrumenttiventtiilit taulukosta tietokantaan
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
+  'Lisï¿½ï¿½ instrumenttiventtiilit taulukosta tietokantaan
+  If MsgBox("Varoitus! Tï¿½mï¿½ ajaa kaavioissa olevat tiedot kannassa olevien tietojen pï¿½ï¿½lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia nï¿½ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbYesNo, "Pï¿½ivitï¿½ tiedot") = vbYes Then
     CurrentDb.Execute "INSTVALVE_UPDATE"
-    MsgBox "Instrumenttiventtiilien päivitys valmis"
+    MsgBox "Instrumenttiventtiilien pï¿½ivitys valmis"
   End If
 End Sub
 
 Private Sub Command40_Click()
 'Putkilinjatiedot piireihin
-   If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
+   If MsgBox("Onko haluttu P&I kaavio auki AutoCADissï¿½?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
     DoCmd.OpenForm "USysPipeToOther", , , , , , "UP079D,UP008C,UP085D,UP08C,"
   End If
 End Sub
 
 Private Sub Command41_Click()
-  'Lue kenttäinstrumenttit
+  'Lue kenttï¿½instrumenttit
   Tied = ""
   LueTiedot "FIELDINSTDATA", "FIELDINST_DATA"
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Kenttäinstrumenttien luku valmis"
+  MsgBox "Kenttï¿½instrumenttien luku valmis"
 End Sub
 
 Private Sub Command42_Click()
-  'Lisää kenttäinstrumentit taulukkoon
+  'Lisï¿½ï¿½ kenttï¿½instrumentit taulukkoon
   CurrentDb.Execute "FIELDINST_APPEND"
-  MsgBox "Kenttäinstrumenttien lisäys valmis"
+  MsgBox "Kenttï¿½instrumenttien lisï¿½ys valmis"
 End Sub
 
 Private Sub Command43_Click()
-  'Lisää kenttäinstrumentit taulukosta tietokantaan
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
+  'Lisï¿½ï¿½ kenttï¿½instrumentit taulukosta tietokantaan
+  If MsgBox("Varoitus! Tï¿½mï¿½ ajaa kaavioissa olevat tiedot kannassa olevien tietojen pï¿½ï¿½lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia nï¿½ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbYesNo, "Pï¿½ivitï¿½ tiedot") = vbYes Then
     CurrentDb.Execute "FIELDINST_UPDATE"
-    MsgBox "Kenttäinstrumenttien päivitys valmis"
+    MsgBox "Kenttï¿½instrumenttien pï¿½ivitys valmis"
   End If
 End Sub
 
@@ -148,19 +139,19 @@ Private Sub Command51_Click()
 End Sub
 
 Private Sub Command52_Click()
-  'Lisää ohjauspiirit taulukkoon
+  'Lisï¿½ï¿½ ohjauspiirit taulukkoon
   CurrentDb.Execute "INSTLOOP_APPEND"
-  MsgBox "Instrumenttipiirien lisäys valmis"
+  MsgBox "Instrumenttipiirien lisï¿½ys valmis"
 End Sub
 
 Private Sub Command53_Click()
-  'Lisää ohjauspiirit taulukosta tietokantaan
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
+  'Lisï¿½ï¿½ ohjauspiirit taulukosta tietokantaan
+  If MsgBox("Varoitus! Tï¿½mï¿½ ajaa kaavioissa olevat tiedot kannassa olevien tietojen pï¿½ï¿½lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia nï¿½ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbYesNo, "Pï¿½ivitï¿½ tiedot") = vbYes Then
     CurrentDb.Execute "INSTLOOP_UPDATE"
-    MsgBox "Instrumenttipiirien päivitys valmis"
+    MsgBox "Instrumenttipiirien pï¿½ivitys valmis"
   End If
 End Sub
 
@@ -203,9 +194,9 @@ Dim Tiedot As Recordset
 End Sub
 Private Function Yhdista() As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function

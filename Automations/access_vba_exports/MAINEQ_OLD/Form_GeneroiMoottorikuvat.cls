@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_GeneroiMoottorikuvat"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim oAcad As AcadApplication
@@ -26,9 +17,9 @@ Dim FilterData(0) As Variant
 Dim Laitettu As Integer
 
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-  MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+  MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If

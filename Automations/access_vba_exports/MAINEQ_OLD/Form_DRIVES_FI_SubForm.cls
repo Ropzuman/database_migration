@@ -1,13 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_DRIVES_FI_SubForm"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-
 Option Compare Database
 Option Explicit
 
@@ -46,7 +36,7 @@ Exit Sub
 Else
 If Not IsNull(Me.Rpm) And Me.Rpm <> "0" Then
     If Me.Rpm <> "3000" And Me.Rpm <> "1500" And Me.Rpm <> "1000" And Me.Rpm <> "750" Then
-        MsgBox "Huom!@Arvo pitää olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
+        MsgBox "Huom!@Arvo pitï¿½ï¿½ olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
         Me.Rpm.SetFocus
     End If
 End If

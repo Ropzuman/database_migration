@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_Funktiokaavio_testi"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Private Declare Function api_GetUserName _
                 Lib "advapi32.dll" _
@@ -101,17 +92,17 @@ End Sub
 
 
 Private Sub Command83_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+'Tï¿½mï¿½ pï¿½ivittï¿½ï¿½ reseptit kaikkiin piireihin, joissa on kï¿½ytetty tiettyï¿½ reseptiï¿½.
 Dim DB As Database
 Dim Vastaus As VbMsgBoxResult
 
-Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritely resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
-If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+Vastaus = MsgBox("Tï¿½mï¿½ pï¿½ivittï¿½ï¿½ reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistï¿½, joille on mï¿½ï¿½ritely resepti?", vbYesNoCancel, "Pï¿½IVITï¿½ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistï¿½ piireistï¿½, joissa on resepti
   CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID
 End If
 If Vastaus <> vbCancel Then
   CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID
-  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
+  MsgBox "Piirit pï¿½ivitetty!", vbOKOnly, "Pï¿½IVITï¿½ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
   Me.Refresh
 End If
 End Sub
@@ -159,11 +150,11 @@ Set oDoc = oAcad.Documents.Open("Y:\base\int\" & IndexBase & ".dwg")
 aX = 30        'Aloituspiste Xl
 
 aY = 275       'Aloituspiste Y
-PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
-Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40      'Mini Y koordinaatti johon asti tektejä tehdään
-MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
-RiviVali = 5   'Tekstien riviväli
+PosSivu = 40   'Position ja sivun vï¿½linen etï¿½isyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etï¿½isyys edellisestï¿½
+MinY = 40      'Mini Y koordinaatti johon asti tektejï¿½ tehdï¿½ï¿½n
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdï¿½ï¿½n ennen sivunvaihtoa
+RiviVali = 5   'Tekstien rivivï¿½li
 TextSize = 2.5 'Tekstien koko
 
 
@@ -179,7 +170,7 @@ End If
   If edPOS <> Taul.Fields("position") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lisätään ensin otsikot
+        'Lisï¿½tï¿½ï¿½n ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDoc.ModelSpace.AddText "DESCRIPTION", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
@@ -268,10 +259,10 @@ Do While Not Taul.EOF
       SYMB = Mid(PIIRI, OS2 + 1)
     End If
     
-    If Intpage.Fields("Ensimmäinenkohteestapage") <> "" Then
-      Intpage.Fields("Ensimmäinenkohteestapage") = Intpage.Fields("Ensimmäinenkohteestapage") & "/" & Taul.Fields("PAGE")
+    If Intpage.Fields("Ensimmï¿½inenkohteestapage") <> "" Then
+      Intpage.Fields("Ensimmï¿½inenkohteestapage") = Intpage.Fields("Ensimmï¿½inenkohteestapage") & "/" & Taul.Fields("PAGE")
     Else
-      Intpage.Fields("Ensimmäinenkohteestapage") = Taul.Fields("PAGE")
+      Intpage.Fields("Ensimmï¿½inenkohteestapage") = Taul.Fields("PAGE")
     End If
     Intpage.Fields("PIIRNRO") = PIIR
     Intpage.Fields("looppisymb") = PIIRI
@@ -285,7 +276,7 @@ Intpage.Update
 Set Taul = Nothing
 Set Intpage = Nothing
 Set DB = Nothing
-MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
+MsgBox "Lukituskaavioiden sivutiedot pï¿½ivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
 
 
 
@@ -318,7 +309,7 @@ MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInformat
 '                tbl.Edit
 '             '   OnJo = InStr(tbl!Page, qry!Page)
 '              '  If OnJo = 0 Then
-'                    tbl!Ensimmäinenkohteestapage = tbl!Ensimmäinenkohteestapage & "/" & qry!Page
+'                    tbl!Ensimmï¿½inenkohteestapage = tbl!Ensimmï¿½inenkohteestapage & "/" & qry!Page
 '               '     tbl!Filename = tbl!Filename & "/" & qry!Filename
 '               tbl.Update
 '               'Else
@@ -381,13 +372,13 @@ Dim RID As Long
 Dim Taul As Recordset
 Dim sSQL As String
 If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
-  MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
+  MsgBox "Syï¿½tï¿½ ensin Process ja Code reseptille", vbCritical, "Tee resepti"
   Exit Sub
 End If
 Set DB = CurrentDb
 Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & RProcess.Value & "' and Code = '" & RCode.Value & "'")
 If Taul.RecordCount > 0 Then
-  MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
+  MsgBox "Anna reseptille Process ja Code, jota ei ole vielï¿½ kï¿½ytï¿½ssï¿½.", vbCritical, "Tee resepti"
   Exit Sub
 End If
 'Luodaan uusi resepti RECIPES taulukkoon.
@@ -395,7 +386,7 @@ Taul.AddNew
 Taul.Fields("PROCESS") = RProcess.Value
 Taul.Fields("CODE") = RCode.Value
 Taul.Fields("INFO") = RInfo.Value
-'Otetaan ylös luodun reseptin ID
+'Otetaan ylï¿½s luodun reseptin ID
 RID = Taul.Fields("ID")
 Taul.Update
 'Kirjoitetana reseptin ID piirille (Loops tai drives)
@@ -405,7 +396,7 @@ sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description
 sSQL = sSQL & "SELECT " & RID & " AS ID, Control.FBlock, Control.LoopSymb, Control.Suffix, Control.Description2, Control.BlockPlace, Control.Note, Control.Sivu, Control.Sivuja "
 sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
 DB.Execute sSQL
-'Kirjoitetaan vielä Control taulukkoon, mikä resepti piirillä on käytössä
+'Kirjoitetaan vielï¿½ Control taulukkoon, mikï¿½ resepti piirillï¿½ on kï¿½ytï¿½ssï¿½
 sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
 sSQL = sSQL & "WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
 DB.Execute sSQL
@@ -416,18 +407,18 @@ End Sub
 
 
 Private Sub Komento80_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+'Tï¿½mï¿½ pï¿½ivittï¿½ï¿½ reseptit kaikkiin piireihin, joissa on kï¿½ytetty tiettyï¿½ reseptiï¿½.
 Dim DB As Database
 Dim Vastaus As VbMsgBoxResult
 
-Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritely resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
+Vastaus = MsgBox("Poistetaanko vanhat blokit piireistï¿½, joille on mï¿½ï¿½ritely resepti?", vbYesNoCancel, "Pï¿½IVITï¿½ RESEPTIT KAIKKIIn PIIREIHIN")
 
-If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistï¿½ piireistï¿½, joissa on resepti
   CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null"
 End If
 If Vastaus <> vbCancel Then
   CurrentDb.Execute "RECIPES_ADD"
-  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN"
+  MsgBox "Piirit pï¿½ivitetty!", vbOKOnly, "Pï¿½IVITï¿½ RESEPTIT KAIKKIIn PIIREIHIN"
   Me.Refresh
 End If
 End Sub
@@ -459,11 +450,11 @@ Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
 aX = 30        'Aloituspiste Xl
 
 aY = 275       'Aloituspiste Y
-PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
-Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40      'Mini Y koordinaatti johon asti tektejä tehdään
-MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
-RiviVali = 5   'Tekstien riviväli
+PosSivu = 40   'Position ja sivun vï¿½linen etï¿½isyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etï¿½isyys edellisestï¿½
+MinY = 40      'Mini Y koordinaatti johon asti tektejï¿½ tehdï¿½ï¿½n
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdï¿½ï¿½n ennen sivunvaihtoa
+RiviVali = 5   'Tekstien rivivï¿½li
 TextSize = 2.5 'Tekstien koko
 
 
@@ -479,7 +470,7 @@ End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lisätään ensin otsikot
+        'Lisï¿½tï¿½ï¿½n ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDoc.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1

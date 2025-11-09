@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_frmOpenPIPELINE"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 
 Private Sub Command3_Click()
@@ -23,7 +14,7 @@ Dim Alue As String
 Dim Linja As String
 Dim Parametrit As Variant
   If IsNull(Me.OpenArgs) Then
-     MsgBox "Avaa tämä lomake putkilinjataulukon kautta," & vbCrLf & "painamalla Add-Ins valikosta 'Etsi kohde'", vbCritical, "Virhe"
+     MsgBox "Avaa tï¿½mï¿½ lomake putkilinjataulukon kautta," & vbCrLf & "painamalla Add-Ins valikosta 'Etsi kohde'", vbCritical, "Virhe"
   Else
     Parametrit = Split(Me.OpenArgs, ",")
     If UBound(Parametrit) = 1 Then

@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysFlowPickNo"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Dim oACAD As AcadApplication
 Dim oDOC As AcadDocument
@@ -56,10 +47,10 @@ For j = 0 To Joukko.Count - 1
   EtsiLinja
 Next j
 If EiLinjaa Then
-  MsgBox "Kaikki linjat on käyty läpi. Yksi tai useampia virtausarvoblokkeja jäi ilman putkilinjanumeroa.", vbOKOnly
+  MsgBox "Kaikki linjat on kï¿½yty lï¿½pi. Yksi tai useampia virtausarvoblokkeja jï¿½i ilman putkilinjanumeroa.", vbOKOnly
   BSeurT_Click
 Else
-  MsgBox "Kaikki linjat on käyty läpi. Kaikkiin virtausarvoblokkeihin löytyi putkilinjanumero.", vbOKOnly
+  MsgBox "Kaikki linjat on kï¿½yty lï¿½pi. Kaikkiin virtausarvoblokkeihin lï¿½ytyi putkilinjanumero.", vbOKOnly
 End If
 End Sub
 Private Sub BPoimi_Click()
@@ -126,7 +117,7 @@ Dim i As Integer
     If TRefNo.Value = "" Then
       Exit Do
     ElseIf j = Joukko.Count - 1 Then
-      MsgBox "Sellaisia virtausarvoblokkeja ei löytynyt, joissa putkilinja olisi tyhjä.", vbInformation
+      MsgBox "Sellaisia virtausarvoblokkeja ei lï¿½ytynyt, joissa putkilinja olisi tyhjï¿½.", vbInformation
       Exit Do
     End If
   Loop
@@ -180,7 +171,7 @@ For ii = 0 To UBound(Attrib)
   End If
 Next ii
 If Loytyi = False Then
-  MsgBox "Tasearvoblokki ei sisältänyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPicNo"
+  MsgBox "Tasearvoblokki ei sisï¿½ltï¿½nyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPicNo"
   DoCmd.Close
   Exit Sub
 End If
@@ -188,9 +179,9 @@ TRefNo.Value = oAttrib.TextString
 End Sub
 Private Function Yhdista() As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function

@@ -1,4 +1,3 @@
-Attribute VB_Name = "GeneralCodes"
 Option Compare Database
 Option Explicit
 Public oTaulu As Recordset

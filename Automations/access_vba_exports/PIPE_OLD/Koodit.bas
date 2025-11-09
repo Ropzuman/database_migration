@@ -1,4 +1,3 @@
-Attribute VB_Name = "Koodit"
 Option Compare Database
 Option Explicit
 Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
@@ -33,7 +32,7 @@ If UCase(Application.CurrentObjectName) = "MANUALVALVES" Or UCase(Application.Cu
     Exit Sub
   End If
   If Polku = "" Then
-    MsgBox "Ei ole tietoa missä kuvassa kohde " & Info & " on !", vbCritical, "Etsi kohde"
+    MsgBox "Ei ole tietoa missï¿½ kuvassa kohde " & Info & " on !", vbCritical, "Etsi kohde"
     Exit Sub
   End If
   AvaaKuvasta Polku, DWG, Handle, Info
@@ -50,7 +49,7 @@ ElseIf UCase(Application.CurrentObjectName) = "PIPELINEDATA" Or UCase(Applicatio
     End If
     AvaaKuvasta Polku, DWG, Handle, Info
 Else
-  MsgBox "MANUALVALVES tai PIPELINES taulukon tulee avaoinna näytöllä!", vbCritical, "Etsi kohde"
+  MsgBox "MANUALVALVES tai PIPELINES taulukon tulee avaoinna nï¿½ytï¿½llï¿½!", vbCritical, "Etsi kohde"
 End If
 End Sub
 Sub AvaaKuvasta(Polku As String, Nimi As String, Handle As String, Info As String)
@@ -61,9 +60,9 @@ Dim MaxPoint As Variant
 Dim i As Integer
 Dim OK As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"
     Set oACAD = Nothing
     Exit Sub
   End If
@@ -95,7 +94,7 @@ Dim OK As Boolean
       On Error Resume Next
       Set Entity = oACAD.ActiveDocument.HandleToObject(Handle)
       If Err <> 0 Then
-        MsgBox "Kuvasta ei löytynyt kohdetta tietokannan tiedoilla (Handle oli väärä)!", vbCritical, "Etsi kohde"
+        MsgBox "Kuvasta ei lï¿½ytynyt kohdetta tietokannan tiedoilla (Handle oli vï¿½ï¿½rï¿½)!", vbCritical, "Etsi kohde"
         Err.Clear
       Else
         Entity.GetBoundingBox MinPoint, MaxPoint

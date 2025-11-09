@@ -1,4 +1,3 @@
-Attribute VB_Name = "KAANNOS"
 Option Compare Database
 Function Kaanna(Tieto As Variant) As Variant
 Dim OS As Long, OS2 As Long, OS3 As Long, OS4 As Long

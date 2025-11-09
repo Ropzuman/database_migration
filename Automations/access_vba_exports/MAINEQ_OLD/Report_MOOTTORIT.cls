@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Report_MOOTTORIT"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -21,8 +12,8 @@ Dim Sar As Integer
 Set Tiedot = CurrentDB.OpenRecordset("_qryMOTOR")
 Rivi = 10
   
-  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kestää noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
-    SysCmd acSysCmdSetStatus, "Käynnistää Exceliä..."
+  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kestï¿½ï¿½ noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
+    SysCmd acSysCmdSetStatus, "Kï¿½ynnistï¿½ï¿½ Exceliï¿½..."
     Set xlApp = CreateObject("Excel.Application")
     Set WB = xlApp.Workbooks.Open("N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\MotorTEMPLATE.xls", , True)
     SysCmd acSysCmdSetStatus, "Vie tietoa Exceliin..."

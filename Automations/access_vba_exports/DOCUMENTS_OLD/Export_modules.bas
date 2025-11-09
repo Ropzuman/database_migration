@@ -1,11 +1,10 @@
-Attribute VB_Name = "Export_modules"
 Sub ExportAllModules()
     Dim vbc As VBIDE.VBComponent
     Dim sPath As String
-    
-    ' M‰‰rit‰ polku, johon moduulit vied‰‰n.
-    ' T‰m‰n kansion pit‰‰ olla olemassa, tai koodi antaa virheen.
-    sPath = "C:\Data\Opinn‰ytetyˆ\VBA\Access\"
+
+    ' M√§√§rit√§ polku, johon moduulit vied√§√§n.
+    ' T√§m√§n kansion pit√§√§ olla olemassa, tai koodi antaa virheen.
+    sPath = "C:\Data\Opinn√§ytety√∂\VBA\Access\"
     
     ' Luo FileSystemObject, jolla varmistetaan kansion olemassaolo
     Dim fso As Object
@@ -16,24 +15,24 @@ Sub ExportAllModules()
         fso.CreateFolder (sPath)
     End If
     
-    ' T‰ss‰ silmukka k‰y l‰pi kaikki aktiivisen tyˆkirjan VBA-komponentit
+    ' T√§ss√§ silmukka k√§y l√§pi kaikki aktiivisen ty√∂kirjan VBA-komponentit
     For Each vbc In ActiveWorkbook.VBProject.VBComponents
-        ' Vie moduuli riippuen sen tyypist‰
+        ' Vie moduuli riippuen sen tyypist√§
         Select Case vbc.Type
             Case vbext_ct_StdModule
                 ' Standardimoduuli (.bas)
                 vbc.Export sPath & vbc.Name & ".bas"
             Case vbext_ct_MSForm
-                ' K‰ytt‰j‰liittym‰ (UserForm) (.frm)
+                ' K√§ytt√∂liittym√§ (UserForm) (.frm)
                 vbc.Export sPath & vbc.Name & ".frm"
             Case vbext_ct_ClassModule
                 ' Luokkamoduuli (.cls)
                 vbc.Export sPath & vbc.Name & ".cls"
-            ' Tyyppi vbext_ct_Document j‰tet‰‰n tarkoituksella huomioimatta.
-            ' Se viittaa tyˆkirjan (esim. Sheet1 tai ThisWorkbook) koodeihin.
+            ' Tyyppi vbext_ct_Document j√§tet√§√§n tarkoituksella huomioimatta.
+            ' Se viittaa ty√∂kirjan (esim. Sheet1 tai ThisWorkbook) koodeihin.
         End Select
     Next vbc
-    
-    ' Ilmoita k‰ytt‰j‰lle onnistuneesta viennist‰
+
+    ' Ilmoita k√§ytt√§j√§lle onnistuneesta viennist√§
     MsgBox "Kaikki moduulit vietiin onnistuneesti kansioon: " & sPath, vbInformation, "Vienti valmis"
 End Sub

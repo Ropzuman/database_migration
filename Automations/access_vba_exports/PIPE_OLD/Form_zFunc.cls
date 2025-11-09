@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_zFunc"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -98,7 +89,7 @@ Err_Command3_Click:
 End Sub
 
 Private Sub Command4_Click()
-DoCmd.OpenQuery "Function_zDetails03_lisättävät", acNormal, acEdit
+DoCmd.OpenQuery "Function_zDetails03_lisï¿½ttï¿½vï¿½t", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails04_FileID", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails09_update", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails14_Fileid2", acNormal, acEdit
@@ -106,7 +97,7 @@ End Sub
 
 
 Private Sub Command5_Click()
-'tuhoaa zdetails taulukosta tiedot joita ei ole enään instrumentindexsissä
+'tuhoaa zdetails taulukosta tiedot joita ei ole enï¿½ï¿½n instrumentindexsissï¿½
 Dim DB As Database
 Dim tbl As Recordset
 Dim tbl2 As Recordset

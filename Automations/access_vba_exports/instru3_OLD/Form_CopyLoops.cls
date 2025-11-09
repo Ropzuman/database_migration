@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_CopyLoops"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim LahdeDB As Database
@@ -67,8 +58,8 @@ Else
 '        TTiedot.Value = TTiedot.Value & "Table not in currentdb: " & LahdeDB.TableDefs(i).Name
 '        Err.Clear
 '      Else
-        Do While Not LahdeTaulu.EOF 'Käytään läpi kaikki taulukon recordit
-          For j = 1 To UBound(Kopioitavat) 'Tarkistetaan että ko. recordi kuuluu kopioitaviin
+        Do While Not LahdeTaulu.EOF 'Kï¿½ytï¿½ï¿½n lï¿½pi kaikki taulukon recordit
+          For j = 1 To UBound(Kopioitavat) 'Tarkistetaan ettï¿½ ko. recordi kuuluu kopioitaviin
             If Kopioitavat(j) = LahdeTaulu.Fields("AreaCode").Value & "-" & LahdeTaulu.Fields("LoopNo").Value Then
               KohdeTaulu.AddNew
               For a = 0 To LahdeTaulu.Fields.Count - 1
@@ -148,7 +139,7 @@ Private Sub ValitseKanta_Click()
     lReturn = GetOpenFileName(OpenFile)
     If lReturn <> 0 Then
       Kanta.Value = Mid(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
-      Set LahdeDB = OpenDatabase(Kanta.Value) 'Vertailukanta johon päivitetään
+      Set LahdeDB = OpenDatabase(Kanta.Value) 'Vertailukanta johon pï¿½ivitetï¿½ï¿½n
       On Error Resume Next
       CurrentDb.TableDefs.Delete "LOOPLINK"
       Err.Clear

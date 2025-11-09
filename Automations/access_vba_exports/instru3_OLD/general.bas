@@ -1,4 +1,3 @@
-Attribute VB_Name = "general"
 Option Compare Database
 Option Explicit
 Public Sivunro As Integer

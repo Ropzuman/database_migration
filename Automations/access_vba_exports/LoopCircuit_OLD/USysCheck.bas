@@ -1,4 +1,3 @@
-Attribute VB_Name = "USysCheck"
 Option Compare Database
 Option Explicit
 '---------------------------------------------

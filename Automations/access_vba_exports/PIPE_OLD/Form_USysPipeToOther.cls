@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysPipeToOther"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim oACAD As AcadApplication
@@ -218,14 +209,14 @@ For j = 0 To UBound(Attrib)
   End If
 Next j
 If PipeAttrib Is Nothing Then
-  MsgBox "Blokista ei löytynyt 'PIPELINE'-attribuuttia.", vbCritical, "VIRHE"
+  MsgBox "Blokista ei lï¿½ytynyt 'PIPELINE'-attribuuttia.", vbCritical, "VIRHE"
 End If
 End Sub
 Private Function Yhdista() As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function

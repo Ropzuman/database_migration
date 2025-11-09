@@ -1,4 +1,3 @@
-Attribute VB_Name = "DataToACAD"
 Option Compare Database   'Use database order for string comparisons
                            
 ' Circuit and Jb -dwgs

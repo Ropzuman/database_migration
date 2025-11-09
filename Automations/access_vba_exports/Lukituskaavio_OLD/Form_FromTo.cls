@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_FromTo"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 
 Private Sub Command0_Click()
@@ -121,7 +112,7 @@ Do Until tbl.EOF
 Loop
        
 qry2.MoveFirst
-qry.MoveFirst 'lisätty jotta saataisiin myös eka
+qry.MoveFirst 'lisï¿½tty jotta saataisiin myï¿½s eka
 
 Do Until qry2.EOF
 
@@ -181,9 +172,9 @@ Dim ATTRIB As Variant
 Dim i As Integer
 Set Taul = CurrentDb.OpenRecordset("SELECT * FROM DATA9 order by Path, DWG")
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If
@@ -244,12 +235,12 @@ End Sub
 Private Sub NoudaTiedot(Listalta As Boolean)
 Dim i As Integer
 Dim Tied As String
-'Yhdistetään ensin AutoCADiin
+'Yhdistetï¿½ï¿½n ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistï¿½ï¿½ AutoCADiin
+  If Err <> 0 Then 'Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt
+    MsgBox "Kï¿½ynnissï¿½ olevaa AutoCADiï¿½ ei lï¿½ytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If

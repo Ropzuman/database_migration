@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_Motors_Subform"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -20,9 +11,9 @@ Dim Ilmoitus As String
 
 Set frm = Forms("MotorTypes")
 
-'Tarkistetaan onko moottori Siemenss ja onko tyyppimerkinnässä vaihdettava piste(.).
+'Tarkistetaan onko moottori Siemenss ja onko tyyppimerkinnï¿½ssï¿½ vaihdettava piste(.).
 If frm!MotorManuf = "SIEMENS" And InStr(1, Me.MotorType, ".") > 0 Then
-    'Jos B3, pisteen tilalle "0", muuten koodi kysytään erikseen.
+    'Jos B3, pisteen tilalle "0", muuten koodi kysytï¿½ï¿½n erikseen.
     If frm!MountType <> "B3" Then
         Tyyppi = Me.MotorType
         Merkki = True
@@ -31,12 +22,12 @@ If frm!MotorManuf = "SIEMENS" And InStr(1, Me.MotorType, ".") > 0 Then
         Tyyppi = Replace(Me.MotorType, ".", "0")
     End If
 Else
-    'Kone ei ollut Siemens, tai ei pistettä
+    'Kone ei ollut Siemens, tai ei pistettï¿½
     Tyyppi = Me.MotorType
 End If
 
 
-If IsNull(frm!MotorType) Then 'Tarkistetaan onko tyyppiruutu tyhjä ja laitetaan siihen tyyppi + muut tiedot.
+If IsNull(frm!MotorType) Then 'Tarkistetaan onko tyyppiruutu tyhjï¿½ ja laitetaan siihen tyyppi + muut tiedot.
     frm!MotorTypeID = Me.ID
     frm!MotorType = Tyyppi
     If frm![IEC Frame] <> Me.IEC_Frame Then
@@ -55,7 +46,7 @@ Else
                 End If
                 frm![IEC Frame] = Me.IEC_Frame
                 ElseIf Ilmoitus = 7 Then
-                    MsgBox "Valitse toinen tyyppi!@Tai täydennä MotorData taulukkoa @ja valitse sen jälkeen toinen tyyppi.", vbOKOnly
+                    MsgBox "Valitse toinen tyyppi!@Tai tï¿½ydennï¿½ MotorData taulukkoa @ja valitse sen jï¿½lkeen toinen tyyppi.", vbOKOnly
                 End If
     End If
     If frm!MotorType = Tyyppi Then

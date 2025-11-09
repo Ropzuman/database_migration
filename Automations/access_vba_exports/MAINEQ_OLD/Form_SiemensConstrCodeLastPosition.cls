@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_SiemensConstrCodeLastPosition"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 
@@ -27,7 +18,7 @@ Else
     If IsLoaded("SiemensConstrCodeLastPosition") Then
     DoCmd.Close
     End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
+    MsgBox "Koodia ei muutettu!@Tyyppimerkissï¿½ ei ollut pistettï¿½.@Tarkista luettelosta!"
 End If
 
 End Sub
@@ -49,7 +40,7 @@ Else
     If IsLoaded("SiemensConstrCodeLastPosition") Then
     DoCmd.Close
     End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
+    MsgBox "Koodia ei muutettu!@Tyyppimerkissï¿½ ei ollut pistettï¿½.@Tarkista luettelosta!"
 End If
 
 End Sub

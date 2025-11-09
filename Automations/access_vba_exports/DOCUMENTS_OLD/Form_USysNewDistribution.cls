@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_USysNewDistribution"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database   'Use database order for string comparisons
 Option Explicit
 Private Sub BExit_Click()
@@ -19,7 +10,7 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub Lisaa_Click()
-'Lisää uusi vastaanottaja
+'Lisï¿½ï¿½ uusi vastaanottaja
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
    Lista.Requery
 End Sub
@@ -51,7 +42,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
 End Sub
 
 Private Sub Valmis_Click()
-'Tämä lisää uuden distribuution USysDISTRIBUTION taulukkoon ja
+'Tï¿½mï¿½ lisï¿½ï¿½ uuden distribuution USysDISTRIBUTION taulukkoon ja
 'Vastaanottajat USysRecipByDistr taulukkoon
 Dim TRecipients As String
 'Dim FSO As New FileSystemObject
@@ -84,7 +75,7 @@ ElseIf IsNull(TReason) Then
 Else
   SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & DistrNo & "'"
   Set taulu = DB.OpenRecordset(SQL)
-  If taulu.EOF Then 'Ei viel yhtään saman ID:n omaavaa Distribuutiota
+  If taulu.EOF Then 'Ei viel yhtï¿½ï¿½n saman ID:n omaavaa Distribuutiota
     Hakemisto = aReplace(DistrNo) & "\"
 '    If FSO.FolderExists(OutboxPath & Hakemisto) = False Then
 '      FSO.CreateFolder (OutboxPath & Hakemisto)

@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_LineForm"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Dim EkaViiva As AcadLine
@@ -32,8 +23,8 @@ Else 'Piste
   Lyhennys = 0
 End If
 If Sijainti.VALUE = 1 Then
-  'Ei piirretä viivaa
-ElseIf Sijainti.VALUE = 2 Then 'Piirretään nuoli alkuun
+  'Ei piirretï¿½ viivaa
+ElseIf Sijainti.VALUE = 2 Then 'Piirretï¿½ï¿½n nuoli alkuun
   With EkaViiva
     iPoint(0) = .StartPoint(0)
     iPoint(1) = .StartPoint(1)
@@ -43,7 +34,7 @@ ElseIf Sijainti.VALUE = 2 Then 'Piirretään nuoli alkuun
     .StartPoint = LoppuPiste
   End With
   oDOC.ModelSpace.InsertBlock iPoint, BName, 1, 1, 1, Rotation
-Else 'Piirretään nuoli loppuun
+Else 'Piirretï¿½ï¿½n nuoli loppuun
   With ViimViiva
     iPoint(0) = .EndPoint(0)
     iPoint(1) = .EndPoint(1)
@@ -62,7 +53,7 @@ End Sub
 
 
 Private Sub Form_Load()
-'Viivan piirto aloitetaan heti kun tämä formi aukeaa
+'Viivan piirto aloitetaan heti kun tï¿½mï¿½ formi aukeaa
 
 Dim iPoint As Variant
 Dim sPoint(2) As Double
@@ -71,7 +62,7 @@ If Valmis = False Then
   On Error Resume Next
   
   AppActivate oACAD.Caption
-  oDOC.SendCommand "^C^C" & vbCr 'Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
+  oDOC.SendCommand "^C^C" & vbCr 'Chr(27) & Chr(27) 'Varmistetaan ettï¿½ ollaan poistuttu komennosta
   
   
 '  For i = 0 To oDOC.Layers.Count - 1
@@ -87,7 +78,7 @@ If Valmis = False Then
     Do
       iPoint = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
       If Err <> 0 Then
-        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtäkään viiva oli piirretty
+        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtï¿½kï¿½ï¿½n viiva oli piirretty
           DoCmd.Close acForm
         Else
           Valmis = True
@@ -112,7 +103,7 @@ End If
 End Sub
 
 Private Sub Form_Open(Cancel As Integer)
-'Jos AutoCAD linkkiä ei ole alustettu (tätä formia ei avattu lukituskaavio formista, niin poistutaan)
+'Jos AutoCAD linkkiï¿½ ei ole alustettu (tï¿½tï¿½ formia ei avattu lukituskaavio formista, niin poistutaan)
 If oACAD Is Nothing Then
   Cancel = True
 End If

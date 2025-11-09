@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Form_Revisiointi"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Option Compare Database
 Option Explicit
 Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
@@ -84,11 +75,11 @@ Dim Vert As Recordset
 Dim Muuttunut As Boolean
 Dim i As Integer
 If ATaulu = "" Or UTaulu = "" Or ID = "" Or Rev = "" Then
-  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinnät"
+  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinnï¿½t"
   Exit Sub
 End If
 If TRev = "" Or TDate = "" Or TMaker = "" Then
-  MsgBox "Laita ensin revisiomerkinnät", vbCritical, "Tee merkinnät"
+  MsgBox "Laita ensin revisiomerkinnï¿½t", vbCritical, "Tee merkinnï¿½t"
   Exit Sub
 End If
 Merk.Visible = True
@@ -118,6 +109,6 @@ Do While Not Vert.EOF
   Vert.MoveNext
 Loop
 Merk.Visible = False
-MsgBox "Valmis", vbOKOnly, "Tee merkinnät"
+MsgBox "Valmis", vbOKOnly, "Tee merkinnï¿½t"
 
 End Sub

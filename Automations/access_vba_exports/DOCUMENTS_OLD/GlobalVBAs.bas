@@ -1,4 +1,3 @@
-Attribute VB_Name = "GlobalVBAs"
 Option Explicit
 '---------------------------------------------
 ' 2001 VG Codes for checking current user name
@@ -43,8 +42,8 @@ Function SetStartup()
     Set taulu = Nothing
 End Function
 Public Function Yhdista(T1 As String, T2 As String, T3 As String) As String
-'Tämä yhdistää Dokumentin nimikentät yhdeksi sarakkeeksi.
-'Suoraan kyselyssä tämä ei onnistu, koska Access tulkitsee kyselyyn asetetun rivinvaihdon kenttänimeksi  (vbCrLf)
+'Tï¿½mï¿½ yhdistï¿½ï¿½ Dokumentin nimikentï¿½t yhdeksi sarakkeeksi.
+'Suoraan kyselyssï¿½ tï¿½mï¿½ ei onnistu, koska Access tulkitsee kyselyyn asetetun rivinvaihdon kenttï¿½nimeksi  (vbCrLf)
 Dim apu As String
 apu = IIf(T1 = "", "0", "1") & IIf(T2 = "", "0", "1") & IIf(T3 = "", "0", "1")
 Select Case apu
@@ -68,8 +67,8 @@ End Select
 End Function
 Public Function Replace(Src As String, Etsi As String, Uusi As String) As String
 '***************************************************************************
-'* Tämä Funktio korvaa annetusta merkkijonosta kaikki vaihdettavat         *
-'* merkit (Etsi) vaihdettavalla merkillä (Uusi) ja                         *
+'* Tï¿½mï¿½ Funktio korvaa annetusta merkkijonosta kaikki vaihdettavat         *
+'* merkit (Etsi) vaihdettavalla merkillï¿½ (Uusi) ja                         *
 '* palauttaa merkkijonon, jossa korvaukset on tehty.                       *
 '* Esim. Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"   *
 '*      Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"       *
@@ -93,7 +92,7 @@ Dim Pituus2 As Integer
 End Function
 Public Function aReplace(Source As String) As String
 '***************************************************************************
-'* Tämä Funktio korvaa annetusta merkkijonosta kaikki sopimattomat merkit  *
+'* Tï¿½mï¿½ Funktio korvaa annetusta merkkijonosta kaikki sopimattomat merkit  *
 '***************************************************************************
 Dim Tmp As String
 Dim Lahde As String
@@ -114,12 +113,12 @@ Tmp = ""
 End Function
 '---------------------------------------------------------
 ' Funktiot Revisioiden parsimista varten
-' Seuraaville funktiolle annetaan revisiomerkintä syötteenä ja ne palauttavat syötteestä halutun osan
-' HaeTekija: Palauttaa tekijän (siis ihka ensimmäisen authorin)
-' HaeRevisioija: Palauttaa viimeisimmäin authorin (jos on vain yksi rivi tietoa, sekä tekijä että revisioija ovat samat)
-' HaeRevisio: Palauttaa viimeisen revision merkinnän
-' HaeViimPaiva: Palauttaa viimeisimmän merkitys revision päivämäärän
-' HaePaiva: Palauttaa ensimmäisen revision päivämäärään
+' Seuraaville funktiolle annetaan revisiomerkintï¿½ syï¿½tteenï¿½ ja ne palauttavat syï¿½tteestï¿½ halutun osan
+' HaeTekija: Palauttaa tekijï¿½n (siis ihka ensimmï¿½isen authorin)
+' HaeRevisioija: Palauttaa viimeisimmï¿½in authorin (jos on vain yksi rivi tietoa, sekï¿½ tekijï¿½ ettï¿½ revisioija ovat samat)
+' HaeRevisio: Palauttaa viimeisen revision merkinnï¿½n
+' HaeViimPaiva: Palauttaa viimeisimmï¿½n merkitys revision pï¿½ivï¿½mï¿½ï¿½rï¿½n
+' HaePaiva: Palauttaa ensimmï¿½isen revision pï¿½ivï¿½mï¿½ï¿½rï¿½ï¿½n
 '
 ' - VG/22.3.2002
 '---------------------------------------------------------
@@ -131,7 +130,7 @@ Dim Pituus As Long
   Else
     i = 2
     Pituus = Len(Revisio)
-    'Etsitään ensimmäine revisio
+    'Etsitï¿½ï¿½n ensimmï¿½ine revisio
     If InStr(Revisio, vbCrLf) Then
       Do
         i = i + 1
@@ -145,10 +144,10 @@ End Function
 Function HaeRevisioija(Revisio As String) As String
 Dim Teksti As String
   Teksti = Revisio
-  If InStr(Teksti, vbCrLf) Then 'Jos syötteestä löytyy rivinvaihto
+  If InStr(Teksti, vbCrLf) Then 'Jos syï¿½tteestï¿½ lï¿½ytyy rivinvaihto
     Teksti = Mid(Teksti, InStr(Teksti, "/") + 1)
     HaeRevisioija = Left(Teksti, InStr(Teksti, "/") - 1)
-  Else 'Koska syötteessä on vain yksi revisio, revisioijaa ei tarvita
+  Else 'Koska syï¿½tteessï¿½ on vain yksi revisio, revisioijaa ei tarvita
     HaeRevisioija = ""
   End If
 End Function
@@ -157,13 +156,13 @@ Dim Teksti As String
 Dim Tekija As String
 Dim Pvm As String
   Teksti = Revisio
-  If InStr(Teksti, vbCrLf) Then 'Jos syötteestä löytyy rivinvaihto
+  If InStr(Teksti, vbCrLf) Then 'Jos syï¿½tteestï¿½ lï¿½ytyy rivinvaihto
     Pvm = Mid(Teksti, InStr(Teksti, " ") + 1)
     Pvm = Left(Pvm, InStr(Pvm, "/") - 1)
     Teksti = Mid(Teksti, InStr(Teksti, "/") + 1)
     Tekija = Left(Teksti, InStr(Teksti, "/") - 1)
     HaeRevisioijaPvm = Tekija & ": " & Pvm
-  Else 'Koska syötteessä on vain yksi revisio, revisioijaa ei tarvita
+  Else 'Koska syï¿½tteessï¿½ on vain yksi revisio, revisioijaa ei tarvita
     HaeRevisioijaPvm = ""
   End If
 End Function
@@ -188,8 +187,8 @@ Dim Teksti As String
   Teksti = Revisio
   i = 2
   Pituus = Len(Teksti)
-  'Etsitään ensimmäine revisio
-  If InStr(Teksti, vbCrLf) Then 'Jos syötteestä löytyy rivinvaihto
+  'Etsitï¿½ï¿½n ensimmï¿½ine revisio
+  If InStr(Teksti, vbCrLf) Then 'Jos syï¿½tteestï¿½ lï¿½ytyy rivinvaihto
     Do
       i = i + 1
     Loop Until InStr(Right(Teksti, i), vbCrLf) = 1 Or i = Pituus
