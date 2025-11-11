@@ -1,6 +1,6 @@
 Option Compare Database
 Option Explicit
-Dim LahdeDB As Database
+Dim LahdeDB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 
 Private Sub Form_Unload(Cancel As Integer)
   On Error Resume Next
@@ -14,8 +14,8 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 Private Sub HaeLoopit_Click()
 Dim OliJo As String
-Dim LahdeTaulu As Recordset
-Dim KohdeTaulu As Recordset
+Dim LahdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim KohdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Kopioitavat() As String
 Dim i As Integer, j As Integer, a As Integer
 Dim Taulukko As String
@@ -58,8 +58,8 @@ Else
 '        TTiedot.Value = TTiedot.Value & "Table not in currentdb: " & LahdeDB.TableDefs(i).Name
 '        Err.Clear
 '      Else
-        Do While Not LahdeTaulu.EOF 'K�yt��n l�pi kaikki taulukon recordit
-          For j = 1 To UBound(Kopioitavat) 'Tarkistetaan ett� ko. recordi kuuluu kopioitaviin
+        Do While Not LahdeTaulu.EOF 'Käydään läpi kaikki taulukon recordit
+          For j = 1 To UBound(Kopioitavat) 'Tarkistetaan että ko. recordi kuuluu kopioitaviin
             If Kopioitavat(j) = LahdeTaulu.Fields("AreaCode").Value & "-" & LahdeTaulu.Fields("LoopNo").Value Then
               KohdeTaulu.AddNew
               For a = 0 To LahdeTaulu.Fields.Count - 1
@@ -105,7 +105,7 @@ Private Sub ValitseKanta_Click()
     Dim AHakem As String
     Dim Otsikko As String
     Dim i As Integer
-    Dim Linkki As TableDef
+    Dim Linkki As DAO.TableDef  ' Updated 2025-11-11: Added DAO prefix for early binding
     
     
     If InStr(Nz(Kanta.Value), "\") Then
@@ -139,7 +139,7 @@ Private Sub ValitseKanta_Click()
     lReturn = GetOpenFileName(OpenFile)
     If lReturn <> 0 Then
       Kanta.Value = Mid(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
-      Set LahdeDB = OpenDatabase(Kanta.Value) 'Vertailukanta johon p�ivitet��n
+      Set LahdeDB = OpenDatabase(Kanta.Value) 'Vertailukanta johon päivitetään
       On Error Resume Next
       CurrentDb.TableDefs.Delete "LOOPLINK"
       Err.Clear

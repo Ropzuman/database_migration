@@ -8,7 +8,7 @@ Dim Polku2 As String
 Dim Nimi As String
 Dim Taulut() As String
 Dim s As Integer
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Taulu As String
 
 

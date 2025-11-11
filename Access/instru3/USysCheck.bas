@@ -2,18 +2,30 @@ Option Compare Database
 Option Explicit
 '---------------------------------------------
 ' 2001 VG Codes for checking current user
+' Updated 2025-11-11: Added VBA7/64-bit support
 '---------------------------------------------
-Private Declare Function api_GetUserName _
-                Lib "advapi32.dll" _
-                Alias "GetUserNameA" _
-                (ByVal lpBuffer As String, nSize As Long) As Long
-Private Declare Function api_GetComputerName _
-                Lib "kernel32" _
-                Alias "GetComputerNameA" _
-                (ByVal lpBuffer As String, nSize As Long) As Long
+#If VBA7 Then
+    Private Declare PtrSafe Function api_GetUserName _
+                    Lib "advapi32.dll" _
+                    Alias "GetUserNameA" _
+                    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+    Private Declare PtrSafe Function api_GetComputerName _
+                    Lib "kernel32" _
+                    Alias "GetComputerNameA" _
+                    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+#Else
+    Private Declare Function api_GetUserName _
+                    Lib "advapi32.dll" _
+                    Alias "GetUserNameA" _
+                    (ByVal lpBuffer As String, nSize As Long) As Long
+    Private Declare Function api_GetComputerName _
+                    Lib "kernel32" _
+                    Alias "GetComputerNameA" _
+                    (ByVal lpBuffer As String, nSize As Long) As Long
+#End If
 Function SniffUser()
-    Dim DB As Database
-    Dim Taulu As Recordset
+    Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
+    Dim Taulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
     Dim NWUserName As String
     Dim CName As String
     Dim BuffSize As Long

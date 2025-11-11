@@ -2,8 +2,8 @@ Option Compare Database
 Option Explicit
 
 Private Sub Command8_Click()
-Dim DB As Database
-Dim Taulu As Recordset
+Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim Taulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim FSO As New FileSystemObject
 Dim Tiedosto As Object
 Dim Path As String
