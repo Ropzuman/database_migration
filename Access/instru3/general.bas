@@ -55,48 +55,81 @@ Public Sivuja As Integer
     End Type
 #End If
 Public Function PilkkuPiste(Luku As Variant) As String
-Dim Osoitin As Long
-If Nz(Luku) = "" Then
-PilkkuPiste = ""
-Else
+On Error GoTo ErrorHandler
+    Dim Osoitin As Long
+    
+    If Nz(Luku) = "" Then
+        PilkkuPiste = ""
+        Exit Function
+    End If
 
-  Osoitin = InStr(Luku, ",")
-  If Osoitin = 0 Then
-    PilkkuPiste = Luku
-  Else
-    PilkkuPiste = Left(Luku, Osoitin - 1) & "." & Mid(Luku, Osoitin + 1)
-  End If
-End If
+    Osoitin = InStr(Luku, ",")
+    If Osoitin = 0 Then
+        PilkkuPiste = Luku
+    Else
+        PilkkuPiste = Left(Luku, Osoitin - 1) & "." & Mid(Luku, Osoitin + 1)
+    End If
+    Exit Function
+
+ErrorHandler:
+    PilkkuPiste = ""
 End Function
 Public Function UdNoteToRev(UdNote As Variant) As Variant
-Dim Paiva As String
-Dim Os As Long
-Dim VP As Date
-Dim RevTaul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
-If IsNull(UdNote) Then
-  UdNoteToRev = Null
-Else
- Os = InStr(UdNote, ":")
- If Os > 0 Then
-   Paiva = Mid(UdNote, Os + 1)
-   Paiva = Left(Paiva, InStr(Paiva, "|") - 1)
-   VP = DateValue(Paiva)
-   Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   'Esim. 2/1/2007
-   Set RevTaul = CurrentDb.OpenRecordset("SELECT * FROM _Revisions WHERE (((BeforeDate) > #" & Paiva & "#)) ORDER BY BeforeDate ASC;")
-   If RevTaul.RecordCount > 0 Then
-     UdNoteToRev = RevTaul.Fields("Rev").Value
-   End If
- End If
-End If
+On Error GoTo ErrorHandler
+    Dim Paiva As String
+    Dim Os As Long
+    Dim VP As Date
+    Dim RevTaul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+    
+    If IsNull(UdNote) Then
+        UdNoteToRev = Null
+        Exit Function
+    End If
+    
+    Os = InStr(UdNote, ":")
+    If Os > 0 Then
+        Paiva = Mid(UdNote, Os + 1)
+        Paiva = Left(Paiva, InStr(Paiva, "|") - 1)
+        VP = DateValue(Paiva)
+        Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   'Esim. 2/1/2007
+        Set RevTaul = CurrentDb.OpenRecordset("SELECT * FROM _Revisions WHERE (((BeforeDate) > #" & Paiva & "#)) ORDER BY BeforeDate ASC;")
+        If RevTaul.RecordCount > 0 Then
+            UdNoteToRev = RevTaul.Fields("Rev").Value
+        Else
+            UdNoteToRev = Null
+        End If
+        RevTaul.Close
+        Set RevTaul = Nothing
+    Else
+        UdNoteToRev = Null
+    End If
+    Exit Function
+
+ErrorHandler:
+    On Error Resume Next
+    If Not RevTaul Is Nothing Then RevTaul.Close
+    Set RevTaul = Nothing
+    On Error GoTo 0
+    UdNoteToRev = Null
 End Function
 Function EtsiLoop(Alue As String, Looppi As String) As String
-Dim Taul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
-Set Taul = CurrentDb.OpenRecordset("SELECT * From qrysolvalve WHERE AreaCode='" & Alue & "' AND LoopNo='" & Looppi & "'")
-If Taul.EOF Then
-  EtsiLoop = ""
-Else
-  EtsiLoop = "1"
-End If
-Taul.Close
-Set Taul = Nothing
+On Error GoTo ErrorHandler
+    Dim Taul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+    
+    Set Taul = CurrentDb.OpenRecordset("SELECT * From qrysolvalve WHERE AreaCode='" & Alue & "' AND LoopNo='" & Looppi & "'")
+    If Taul.EOF Then
+        EtsiLoop = ""
+    Else
+        EtsiLoop = "1"
+    End If
+    Taul.Close
+    Set Taul = Nothing
+    Exit Function
+
+ErrorHandler:
+    On Error Resume Next
+    If Not Taul Is Nothing Then Taul.Close
+    Set Taul = Nothing
+    On Error GoTo 0
+    EtsiLoop = ""
 End Function

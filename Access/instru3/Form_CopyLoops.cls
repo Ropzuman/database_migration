@@ -13,16 +13,20 @@ Private Sub Form_Unload(Cancel As Integer)
   End If
 End Sub
 Private Sub HaeLoopit_Click()
-Dim OliJo As String
-Dim LahdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim KohdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim Kopioitavat() As String
-Dim i As Integer, j As Integer, a As Integer
-Dim Taulukko As String
-ReDim Kopioitavat(0)
-If LahdeDB Is Nothing Then
-  MsgBox "Select database first!", vbCritical, "Get Loops"
-Else
+On Error GoTo ErrorHandler
+    Dim OliJo As String
+    Dim LahdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+    Dim KohdeTaulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+    Dim Kopioitavat() As String
+    Dim i As Integer, j As Integer, a As Integer
+    Dim Taulukko As String
+    
+    ReDim Kopioitavat(0)
+    
+    If LahdeDB Is Nothing Then
+        MsgBox "Select database first!", vbCritical, "Get Loops"
+        Exit Sub
+    End If
   'Kopioidaan ensin Loopit Loops taulukkoon
   TTiedot.Value = ""
   With Loopit.Form.RecordsetClone
@@ -89,16 +93,34 @@ Else
   TTiedot.Value = TTiedot.Value & "Ready!"
   SysCmd acSysCmdClearStatus
   MsgBox "Ready!", vbInformation, "Get Loops"
-  KohdeTaulu.Close
+  
+  ' Cleanup
+  If Not KohdeTaulu Is Nothing Then
+    KohdeTaulu.Close
+    Set KohdeTaulu = Nothing
+  End If
+  If Not LahdeTaulu Is Nothing Then
+    LahdeTaulu.Close
+    Set LahdeTaulu = Nothing
+  End If
+  Exit Sub
+
+ErrorHandler:
+  SysCmd acSysCmdClearStatus
+  MsgBox "Error during loop import: " & Err.Description, vbCritical, "Get Loops"
+  On Error Resume Next
+  If Not KohdeTaulu Is Nothing Then KohdeTaulu.Close
+  If Not LahdeTaulu Is Nothing Then LahdeTaulu.Close
   Set KohdeTaulu = Nothing
   Set LahdeTaulu = Nothing
-End If
+  On Error GoTo 0
 End Sub
 Private Sub Ulos_Click()
   DoCmd.Close
 End Sub
 Private Sub ValitseKanta_Click()
-'Valitaan tietokanta
+On Error GoTo ErrorHandler
+    'Valitaan tietokanta
     Dim OpenFile As OPENFILENAME
     Dim lReturn As Long
     Dim Filtteri As String
@@ -152,6 +174,13 @@ Private Sub ValitseKanta_Click()
       Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
     End If
     Me.Refresh
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error selecting database: " & Err.Description, vbCritical, "Choose Database"
+    On Error Resume Next
+    Set Linkki = Nothing
+    On Error GoTo 0
 End Sub
 Private Sub Form_Resize()
   Loopit.Width = Me.WindowWidth - 400

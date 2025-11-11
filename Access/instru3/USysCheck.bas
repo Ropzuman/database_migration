@@ -24,6 +24,7 @@ Option Explicit
                     (ByVal lpBuffer As String, nSize As Long) As Long
 #End If
 Function SniffUser()
+On Error GoTo ErrorHandler
     Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
     Dim Taulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
     Dim NWUserName As String
@@ -39,6 +40,7 @@ Function SniffUser()
     Else
       NWUserName = "Unknown"
     End If
+    
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     If api_GetComputerName(NBuffer, BuffSize) Then
@@ -57,6 +59,18 @@ Function SniffUser()
         .Fields(3) = Now            'Time At the Moment
         .Update
     End With
-    Set DB = Nothing
+    
+    ' Cleanup
+    Taulu.Close
     Set Taulu = Nothing
+    Set DB = Nothing
+    Exit Function
+
+ErrorHandler:
+    ' Silent error handling for logging function
+    On Error Resume Next
+    If Not Taulu Is Nothing Then Taulu.Close
+    Set Taulu = Nothing
+    Set DB = Nothing
+    On Error GoTo 0
 End Function
