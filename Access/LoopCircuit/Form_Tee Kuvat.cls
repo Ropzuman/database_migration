@@ -298,29 +298,32 @@ Private Sub TeeKuvat_Click()
     Set oAcad = CreateObject("AutoCAD.Application")
     
     Do While Not Kuvat.EOF
+        LisaaLokiin "=== Käsitellään: " & Kuvat.Fields("FileID").Value & " ==="
         Tiedosto = PohjaHakem.Value & Kuvat.Fields("BaseDWG").Value
         If LCase(Right(Tiedosto, 4)) <> ".dwg" Then
             Tiedosto = Tiedosto & ".dwg"
         End If
         
         If FSO.FileExists(Tiedosto) Then
+            ' LisaaLokiin "- Avataan pohjakuva: " & Tiedosto
             Tila Kuvat.Fields("FileID").Value
             Set oDoc = oAcad.Documents.Open(Tiedosto)
             OSMODE = oDoc.GetVariable("OSMODE")
             oDoc.SetVariable "OSMODE", 0
             
             If HaeIPoints(Kuvat.Fields("BaseDWG").Value) Then
-                LisaaLokiin "- Haettu insertointipaikat kuvalle: " & Kuvat.Fields("BaseDWG").Value
+                ' LisaaLokiin "- Haettu insertointipaikat kuvalle: " & Kuvat.Fields("BaseDWG").Value
                 If VaihdaOtsikkotiedot(Kuvat) Then
-                    LisaaLokiin "- Vaihdettu otsikkotiedot kuvalle: " & Kuvat.Fields("FileID").Value
+                    ' LisaaLokiin "- Vaihdettu otsikkotiedot kuvalle: " & Kuvat.Fields("FileID").Value
                     Sql = "SELECT Block, Blocknumber FROM " & BlockTaulukko & _
                           " WHERE FileID='" & Replace(Kuvat.Fields("FileID").Value, "'", "''") & _
                           "' GROUP BY Block, Blocknumber HAVING (Blocknumber Is Not Null);"
                     Set DbBlokit = db.OpenRecordset(Sql)
                     
-                    LisaaLokiin "- Blokkeja insertointia varten: " & DbBlokit.RecordCount
+                    ' LisaaLokiin "- Blokkeja insertointia varten: " & DbBlokit.RecordCount
                     
                     Do While Not DbBlokit.EOF
+                        ' LisaaLokiin "  - Insertoitava blokki: " & DbBlokit.Fields("Block").Value & " paikkaan #" & DbBlokit.Fields("Blocknumber").Value
                         If FSO.FileExists(PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then
                             Sql = "SELECT * FROM " & BlockTaulukko & _
                                   " WHERE FileID='" & Replace(Kuvat.Fields("FileID").Value, "'", "''") & _
@@ -332,15 +335,17 @@ Private Sub TeeKuvat_Click()
                             Paikka = CLng(DbBlokit.Fields("Blocknumber").Value)
                             BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg"
                             
+                            ' LisaaLokiin "    Inserting block: " & DbBlokit.Fields("Block").Value & " at position " & Paikka
                             Set Blokki = oDoc.ModelSpace.InsertBlock(Paikat(Paikka).Pisteet, BNimi, 1, 1, 1, 0)
+                            ' LisaaLokiin "    Block inserted successfully"
                             
                             Attribuutit = Blokki.GetAttributes
                             For i = 0 To UBound(Attribuutit)
                                 Tiedot.FindFirst "AttrTag = '" & Replace(Attribuutit(i).TagString, "'", "''") & "'"
                                 If Not Tiedot.NoMatch Then
                                     Attribuutit(i).TextString = IIf(IsNull(Tiedot.Fields("Teksti").Value), "", Tiedot.Fields("Teksti").Value)
-                                Else
-                                    LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei löytynyt arvoa"
+                                ' Else
+                                '     LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei löytynyt arvoa"
                                 End If
                             Next i
                             
@@ -350,19 +355,19 @@ Private Sub TeeKuvat_Click()
                             
                             Tiedot.Close
                             Set Tiedot = Nothing
-                        Else
-                            LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
+                        ' Else
+                        '     LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
                         End If
                         DbBlokit.MoveNext
                     Loop
                     
                     DbBlokit.Close
                     Set DbBlokit = Nothing
-                Else
-                    LisaaLokiin "VIRHE: VaihdaOtsikkotiedot epäonnistui kuvalle: " & Kuvat.Fields("FileID").Value
+                ' Else
+                '     LisaaLokiin "VIRHE: VaihdaOtsikkotiedot epäonnistui kuvalle: " & Kuvat.Fields("FileID").Value
                 End If
-            Else
-                LisaaLokiin "VIRHE: HaeIPoints epäonnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
+            ' Else
+            '     LisaaLokiin "VIRHE: HaeIPoints epäonnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
             End If
             
             KuvaNimi = KuvaHakem.Value & Kuvat.Fields("FileID").Value
@@ -375,8 +380,9 @@ Private Sub TeeKuvat_Click()
             oDoc.SetVariable "OSMODE", OSMODE
             oDoc.SaveAs KuvaNimi
             oDoc.Close
-        Else
-            LisaaLokiin "Virhe: Määriteltyä tiedostoa ei löytynyt (" & Tiedosto & ")"
+            LisaaLokiin "Valmis: " & KuvaNimi
+        ' Else
+        '     LisaaLokiin "Virhe: Määriteltyä tiedostoa ei löytynyt (" & Tiedosto & ")"
         End If
         
         Kuvat.MoveNext
@@ -432,9 +438,11 @@ Private Function HaeIPoints(ByVal Kuva As String) As Boolean
     FilterType(0) = 2
     FilterData(0) = Paikkablokki
     
-    Set Joukko = oDoc.ActiveSelectionSet
-    Joukko.Clear
-    Joukko.Select 2, , , FilterType, FilterData ' acSelectionSetAll = 2
+    Set Joukko = oDoc.SelectionSets.Add("TempSet_IPoints_" & Format(Now, "hhnnss"))
+    
+    On Error Resume Next
+    Joukko.Select 5, , , FilterType, FilterData ' acSelectionSetAll = 5 (select all with filter)
+    On Error GoTo ErrHandler
     
     If Joukko.Count > 0 Then
         Set Blokki = Joukko(0)
@@ -451,21 +459,25 @@ Private Function HaeIPoints(ByVal Kuva As String) As Boolean
                 Paikat(Numero).Pisteet(1) = iPaikka(1)
                 Paikat(Numero).Pisteet(2) = iPaikka(2)
             Next i
-        Else
-            LisaaLokiin "Virhe: Insertointipaikat sisältyvästä blokista ei löytynyt attribuutteja (Kuva:" & Kuva & ")"
-            Virhe = True
+        ' Else
+        '     LisaaLokiin "Virhe: Insertointipaikat sisältyvästä blokista ei löytynyt attribuutteja (Kuva:" & Kuva & ")"
+        '     Virhe = True
         End If
-    Else
-        LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei löytynyt insertointipaikkoja sisältävää blokkia (" & Paikkablokki & ")"
-        Virhe = True
+    ' Else
+    '     LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei löytynyt insertointipaikkoja sisältävää blokkia (" & Paikkablokki & ")"
+    '     Virhe = True
     End If
+    
+    On Error Resume Next
+    Joukko.Delete
+    On Error GoTo 0
     
     Set Blokki = Nothing
     HaeIPoints = Not Virhe
     Exit Function
 
 ErrHandler:
-    LisaaLokiin "Virhe HaeIPoints: " & Err.Description
+    ' LisaaLokiin "Virhe HaeIPoints: " & Err.Description
     HaeIPoints = False
 End Function
 
@@ -492,9 +504,11 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
     FilterType(0) = 2
     FilterData(0) = Titleblokki
     
-    Set Joukko = oDoc.ActiveSelectionSet
-    Joukko.Clear
-    Joukko.Select 2, , , FilterType, FilterData ' acSelectionSetAll = 2
+    Set Joukko = oDoc.SelectionSets.Add("TempSet_Title_" & Format(Now, "hhnnss"))
+    
+    On Error Resume Next
+    Joukko.Select 5, , , FilterType, FilterData ' acSelectionSetAll = 5 (select all with filter)
+    On Error GoTo ErrHandler
     
     If Joukko.Count > 0 Then
         For b = 0 To Joukko.Count - 1
@@ -519,26 +533,30 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
                         Next j
                         
                         If Not Loytyi Then
-                            LisaaLokiin "- Taulukosta ei löytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
+                            ' LisaaLokiin "- Taulukosta ei löytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
                         End If
                     Next i
-                Else
-                    LisaaLokiin "Virhe: Otsikkoblokista ei löytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
-                    Virhe = True
+                ' Else
+                '     LisaaLokiin "Virhe: Otsikkoblokista ei löytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
+                '     Virhe = True
                 End If
-            Else
-                LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei löytynyt otsikkotietoja sisältävää blokkia (" & Titleblokki & ")"
-                Virhe = True
+            ' Else
+            '     LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei löytynyt otsikkotietoja sisältävää blokkia (" & Titleblokki & ")"
+            '     Virhe = True
             End If
         Next b
     End If
+    
+    On Error Resume Next
+    Joukko.Delete
+    On Error GoTo 0
     
     Set Blokki = Nothing
     VaihdaOtsikkotiedot = Not Virhe
     Exit Function
 
 ErrHandler:
-    LisaaLokiin "Virhe VaihdaOtsikkotiedot: " & Err.Description
+    ' LisaaLokiin "Virhe VaihdaOtsikkotiedot: " & Err.Description
     VaihdaOtsikkotiedot = False
 End Function
 
@@ -551,7 +569,6 @@ Private Sub LisaaLokiin(Tieto As String)
         Loki.Value = Tieto
         LokiPituus = 1
     End If
-    Me.Repaint
     On Error GoTo 0
 End Sub
 
