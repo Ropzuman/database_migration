@@ -6,7 +6,8 @@
 **Migration Date**: November 11-12, 2025  
 **Migration Type**: 32-bit → 64-bit VBA7 compatibility  
 **Files Modified**: 5 of 7 files  
-**Git Commits**: 
+**Git Commits**:
+
 - `d897f05` - Initial migration (VBA7/DAO typing)
 - `1793c9d` - Optimization pass (error handling)
 - `7e9d36c` - Comprehensive documentation
@@ -18,6 +19,7 @@
 ## Migration Statistics
 
 ### Files Overview
+
 | File Type | Total Files | Modified | No Changes | Lines Added | Lines Removed |
 |-----------|-------------|----------|------------|-------------|---------------|
 | Modules (.bas) | 3 | 2 | 1 | 191 | 45 |
@@ -25,6 +27,7 @@
 | **TOTAL** | **7** | **5** | **2** | **725** | **171** |
 
 ### Changes by Category
+
 - **API Declarations**: 2 files (USysCheck.bas, general.bas)
 - **DAO Explicit Typing**: 5 files (all modified files)
 - **Error Handling**: 5 files (comprehensive error handlers added)
@@ -51,6 +54,7 @@ All Windows API declarations updated with VBA7 conditional compilation:
 ```
 
 **Files Modified**:
+
 - `USysCheck.bas`: api_GetUserName, api_GetComputerName
 - `general.bas`: GetOpenFileName
 
@@ -131,30 +135,37 @@ Set DB = Nothing  ' Clear reference
 ## File-by-File Changes
 
 ### 1. USysCheck.bas (Module)
+
 **Purpose**: User login tracking  
 **Lines**: 91 (after documentation)  
 **Changes Applied**:
+
 - ✅ VBA7/PtrSafe on 2 API declarations (api_GetUserName, api_GetComputerName)
 - ✅ Error handler added to SniffUser function
 - ✅ Silent error handling for non-critical logging
 - ✅ Comprehensive module and function documentation
 
 **API Dependencies**:
+
 - `advapi32.dll`: GetUserName
 - `kernel32.dll`: GetComputerName
 
 **Table Dependencies**:
+
 - `UsysUsers`: Login tracking table
 
 **Functions**:
+
 - `SniffUser()`: Logs network username, computer name, DB username, and timestamp
 
 ---
 
 ### 2. general.bas (Module)
+
 **Purpose**: General utility functions and file dialog  
 **Lines**: ~185 (after documentation)  
 **Changes Applied**:
+
 - ✅ VBA7/PtrSafe on GetOpenFileName API
 - ✅ LongPtr for 4 OPENFILENAME structure members
 - ✅ DAO typing on 2 recordsets
@@ -162,27 +173,31 @@ Set DB = Nothing  ' Clear reference
 - ✅ Comprehensive module and function documentation
 
 **API Dependencies**:
+
 - `comdlg32.dll`: GetOpenFileName
 
 **Table Dependencies**:
+
 - `_Revisions`: Revision tracking table
 - `qrysolvalve`: Loop existence query
 
 **Functions**:
+
 1. `PilkkuPiste(Luku As Variant) As String`
    - Converts decimal comma to period (Finnish → international)
    - Used for CSV export and data formatting
-   
+
 2. `UdNoteToRev(UdNote As Variant) As Variant`
    - Extracts revision code from user notes based on date
    - Parses format: "text:MM/DD/YYYY|moretext"
    - Returns matching revision from _Revisions table
-   
+
 3. `EtsiLoop(Alue As String, Looppi As String) As String`
    - Checks if loop exists in qrysolvalve
    - Returns "1" if found, "" if not (backward compatibility)
 
 **Public Variables**:
+
 - `Sivunro As Integer`: Current page number
 - `EdelArea As Integer`: Previous area code
 - `Sivuja As Integer`: Page counter
@@ -190,11 +205,13 @@ Set DB = Nothing  ' Clear reference
 ---
 
 ### 3. Sivunumerointi.bas (Module)
+
 **Purpose**: Page numbering for reports  
 **Lines**: 17  
 **Changes Applied**: ❌ **NONE** (No 64-bit compatibility issues)
 
 **Functions**:
+
 - `Sivu()`: Simple page numbering function
 
 **Notes**: No API calls, no database operations, no changes needed.
@@ -202,11 +219,13 @@ Set DB = Nothing  ' Clear reference
 ---
 
 ### 4. Form_DBUsers.cls (Form)
+
 **Purpose**: Display currently logged users  
 **Lines**: ~40  
 **Changes Applied**: ❌ **NONE** (Already 64-bit compatible)
 
 **Functions**:
+
 - `WhosOn()`: Reads .LACCDB file to show logged users
 
 **Notes**: Uses Access 2007+ .LACCDB file format, no API dependencies.
@@ -214,9 +233,11 @@ Set DB = Nothing  ' Clear reference
 ---
 
 ### 5. Form_CopyLoops.cls (Form)
+
 **Purpose**: Import loops from external database  
 **Lines**: 272 (after documentation)  
 **Changes Applied**:
+
 - ✅ DAO typing on 4 recordset variables
 - ✅ Error handlers on 3 procedures
 - ✅ Proper recordset cleanup
@@ -224,25 +245,28 @@ Set DB = Nothing  ' Clear reference
 - ✅ Comprehensive form and procedure documentation
 
 **Encoding Fixes**:
+
 - Line 61: `Käydään läpi että` (was: K�yd��n l�pi ett�)
 - Line 142: `päivitetään` (was: p�ivitet��n)
 
 **Controls**:
+
 - `Kanta`: TextBox for source database path
 - `Loopit`: Subform displaying available loops
 - `TTiedot`: TextBox for status messages
 
 **Event Procedures**:
+
 1. `HaeLoopit_Click()`: Main import function
    - Copies loops from LOOPLINK to LOOPS table
    - Imports device records from devTbl* tables
    - Prevents duplicates and provides status feedback
-   
+
 2. `ValitseKanta_Click()`: Database selection
    - Uses GetOpenFileName API for file dialog
    - Creates LOOPLINK temporary linked table
    - Opens source database connection
-   
+
 3. `Form_Unload()`: Cleanup
    - Deletes LOOPLINK temporary table
    - Closes database connection
@@ -253,6 +277,7 @@ Set DB = Nothing  ' Clear reference
 5. `Ulos_Click()`: Close form
 
 **Dependencies**:
+
 - LOOPS table (target)
 - LOOPLINK temporary table
 - devTable table
@@ -262,14 +287,17 @@ Set DB = Nothing  ' Clear reference
 ---
 
 ### 6. Form_Linkkien vaihto.cls (Form)
+
 **Purpose**: Update linked table paths  
 **Lines**: 102 (after documentation)  
 **Changes Applied**:
+
 - ✅ DAO typing on recordset variable
 - ✅ Error handler with proper cleanup
 - ✅ Comprehensive form and procedure documentation
 
 **Event Procedures**:
+
 1. `Command0_Click()`: Relink tables
    - Scans MSysObjects for linked tables
    - Extracts database filename from link path
@@ -280,41 +308,48 @@ Set DB = Nothing  ' Clear reference
 When database is moved to new folder, this form updates all linked table paths to current directory.
 
 **Dependencies**:
+
 - MSysObjects system table
 - Linked Access database tables
 
 ---
 
 ### 7. Form_SizingOut.cls (Form)
+
 **Purpose**: Export query to CSV file  
 **Lines**: 130 (after documentation)  
 **Changes Applied**:
+
 - ✅ DAO typing on 2 database object variables
 - ✅ Error handler with comprehensive cleanup
 - ✅ Comprehensive form and procedure documentation
 
 **Controls**:
+
 - `Taulukko`: Query/table name (default: qryValveSizingOut)
 - `Hakem`: Output directory path
 - `FileName`: Output filename (without .csv)
 
 **Event Procedures**:
+
 1. `Command8_Click()`: Export to CSV
    - Validates output directory
    - Exports all records from selected query
    - Converts commas to periods (Finnish → international)
    - Opens output folder after export
-   
+
 2. `Form_Load()`: Initialize defaults
    - Sets default query to qryValveSizingOut
 
 **CSV Format**:
+
 - Semicolon (;) delimited
 - All values quoted ("value")
 - Decimal separator: period (.)
 - Line ending: CRLF
 
 **Dependencies**:
+
 - FileSystemObject (Microsoft Scripting Runtime)
 - User-specified query/table
 
@@ -323,6 +358,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Migration Workflow Applied
 
 ### Phase 1: Initial Migration (Commit d897f05)
+
 1. ✅ Applied VBA7 conditional compilation to API declarations
 2. ✅ Updated OPENFILENAME structure with LongPtr
 3. ✅ Added DAO prefix to all Database/Recordset/TableDef declarations
@@ -332,6 +368,7 @@ When database is moved to new folder, this form updates all linked table paths t
 **Result**: 5 files changed, +85 insertions, -45 deletions
 
 ### Phase 2: Optimization (Commit 1793c9d)
+
 1. ✅ Added comprehensive error handling to all functions
 2. ✅ Implemented proper resource cleanup patterns
 3. ✅ Enhanced user feedback with titled message boxes
@@ -341,6 +378,7 @@ When database is moved to new folder, this form updates all linked table paths t
 **Result**: 5 files changed, +234 insertions, -126 deletions
 
 ### Phase 3: Documentation (Commit 7e9d36c)
+
 1. ✅ Added professional module/form headers to all files
 2. ✅ Created detailed function/procedure documentation
 3. ✅ Added inline comments explaining complex logic
@@ -354,6 +392,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Testing Checklist
 
 ### ✅ Compilation Testing
+
 - [ ] Import all modules using ImportModules.bas
 - [ ] Compile in Access VBA editor (Debug → Compile)
 - [ ] Verify no compilation errors
@@ -362,6 +401,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ### ✅ Functional Testing
 
 #### USysCheck.bas
+
 - [ ] Test SniffUser function on startup
 - [ ] Verify UsysUsers table receives login record
 - [ ] Check network username captured correctly
@@ -369,6 +409,7 @@ When database is moved to new folder, this form updates all linked table paths t
 - [ ] Confirm errors are suppressed silently
 
 #### general.bas
+
 - [ ] Test PilkkuPiste with "3,14" → "3.14"
 - [ ] Test UdNoteToRev with sample user notes
 - [ ] Verify revision lookup works correctly
@@ -376,6 +417,7 @@ When database is moved to new folder, this form updates all linked table paths t
 - [ ] Verify GetOpenFileName dialog opens correctly
 
 #### Form_CopyLoops
+
 - [ ] Test ValitseKanta button - file dialog opens
 - [ ] Select source database and verify LOOPLINK creation
 - [ ] Verify available loops display in subform
@@ -385,12 +427,14 @@ When database is moved to new folder, this form updates all linked table paths t
 - [ ] Verify LOOPLINK deleted on form close
 
 #### Form_Linkkien vaihto
+
 - [ ] Test link update after moving database
 - [ ] Verify linked tables relink to current directory
 - [ ] Check MotorData exclusion works
 - [ ] Verify success message displays
 
 #### Form_SizingOut
+
 - [ ] Set output directory and filename
 - [ ] Test export from qryValveSizingOut
 - [ ] Verify CSV file created with semicolon delimiter
@@ -402,14 +446,17 @@ When database is moved to new folder, this form updates all linked table paths t
 ## API Dependencies Summary
 
 ### advapi32.dll
+
 - `GetUserName` - Used by: USysCheck.bas
 - Purpose: Retrieve Windows network username
 
 ### kernel32.dll
+
 - `GetComputerName` - Used by: USysCheck.bas
 - Purpose: Retrieve computer name
 
 ### comdlg32.dll
+
 - `GetOpenFileName` - Used by: general.bas, Form_CopyLoops.cls
 - Purpose: Windows file open dialog
 
@@ -418,6 +465,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Database Dependencies
 
 ### Tables
+
 - **UsysUsers**: Login tracking (USysCheck.bas)
 - **_Revisions**: Revision tracking (general.bas)
 - **LOOPS**: Loop master table (Form_CopyLoops.cls)
@@ -427,6 +475,7 @@ When database is moved to new folder, this form updates all linked table paths t
 - **MSysObjects**: System table for linked tables (Form_Linkkien vaihto.cls)
 
 ### Queries
+
 - **qrysolvalve**: Loop existence check (general.bas)
 - **qryValveSizingOut**: Default export query (Form_SizingOut.cls)
 
@@ -435,23 +484,27 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Known Issues and Limitations
 
 ### 1. Form_CopyLoops Complex Import Logic
+
 **Issue**: Complex nested loops for device table import  
 **Impact**: Performance may degrade with large datasets  
 **Mitigation**: Import tested and working correctly  
 **Future**: Consider SQL-based import for better performance
 
 ### 2. Form_Linkkien vaihto Directory Comparison
+
 **Issue**: Case-insensitive path comparison only  
 **Impact**: May miss UNC path vs local path differences  
 **Mitigation**: Works correctly for typical use cases  
 **Future**: Consider normalizing paths before comparison
 
 ### 3. Encoding Issues
+
 **Issue**: 3 instances of Finnish character corruption fixed  
 **Impact**: Finnish text now displays correctly  
 **Status**: ✅ RESOLVED in commit d897f05
 
 ### 4. MotorData Table Exclusion
+
 **Issue**: MotorData table hardcoded exclusion in link updater  
 **Impact**: This table won't be relinked automatically  
 **Reason**: Requires special handling (reason not documented)  
@@ -462,6 +515,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Performance Considerations
 
 ### Optimizations Applied
+
 1. ✅ Early Exit Function for better control flow
 2. ✅ Recordset closed before Set Nothing
 3. ✅ Error handlers use Resume Next for cleanup
@@ -469,6 +523,7 @@ When database is moved to new folder, this form updates all linked table paths t
 5. ✅ Validation checks before expensive operations
 
 ### Potential Improvements
+
 1. **Form_CopyLoops Import**: Use SQL INSERT INTO instead of nested loops
 2. **Bulk Operations**: Use Execute for multi-record operations
 3. **Transaction Support**: Wrap large imports in transactions
@@ -479,6 +534,7 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Migration Best Practices Followed
 
 ### ✅ Code Quality
+
 - [x] VBA7 conditional compilation for backward compatibility
 - [x] Explicit DAO typing to prevent library conflicts
 - [x] Comprehensive error handling in all functions
@@ -487,12 +543,14 @@ When database is moved to new folder, this form updates all linked table paths t
 - [x] Professional code documentation
 
 ### ✅ Testing
+
 - [x] Code compiles without errors
 - [x] No runtime errors introduced
 - [x] Original functionality preserved
 - [x] Finnish character encoding verified
 
 ### ✅ Documentation
+
 - [x] Module/form headers with purpose and dependencies
 - [x] Function documentation with parameters and returns
 - [x] Inline comments for complex logic
@@ -504,27 +562,35 @@ When database is moved to new folder, this form updates all linked table paths t
 ## Lessons Learned
 
 ### 1. OPENFILENAME Structure Complexity
+
 The OPENFILENAME structure required careful attention to pointer types:
+
 - hwndOwner, hInstance, lCustData, lpfnHook all need LongPtr
 - Must maintain separate 32-bit and 64-bit definitions
 - VBA7 conditional compilation essential for compatibility
 
 ### 2. Complex Form Logic
+
 Form_CopyLoops has sophisticated import logic:
+
 - Multiple table iteration with nested loops
 - Dynamic array management for tracking imported loops
 - Temporary linked table creation and cleanup
 - Required extensive documentation to understand flow
 
 ### 3. Finnish Character Encoding
+
 Found 3 instances of encoding corruption:
+
 - All in Form_CopyLoops.cls
 - Pattern: Ä→�, ö→�
 - Fixed by retyping characters correctly
 - Important to verify Finnish text in all migrations
 
 ### 4. Resource Management Critical
+
 Proper cleanup prevents database locking:
+
 - Always Close recordsets before Set Nothing
 - Close external database connections
 - Delete temporary tables in Form_Unload
@@ -535,6 +601,7 @@ Proper cleanup prevents database locking:
 ## Comparison with Other Databases
 
 ### vs. MAINEQ Database
+
 | Aspect | instru3 | MAINEQ |
 |--------|---------|---------|
 | Files Modified | 5 of 7 | 20 of 70+ |
@@ -544,6 +611,7 @@ Proper cleanup prevents database locking:
 | Lines Changed | ~725 | ~1,078 |
 
 ### vs. DOCUMENTS Database
+
 | Aspect | instru3 | DOCUMENTS |
 |--------|---------|-----------|
 | Purpose | Loop/device import | Document management |
@@ -556,17 +624,20 @@ Proper cleanup prevents database locking:
 ## Future Maintenance
 
 ### Code Maintenance
+
 1. **Keep Documentation Updated**: Update module headers when adding functions
 2. **Follow Error Handling Pattern**: All new functions need error handlers
 3. **Test on 32-bit and 64-bit**: VBA7 conditional compilation allows both
 4. **Maintain DAO Prefix**: Prevent future library conflicts
 
 ### Performance Monitoring
+
 1. Monitor import performance with large datasets
 2. Consider SQL-based bulk operations if performance degrades
 3. Add transaction support for data integrity
 
 ### Testing Strategy
+
 1. Test each form after Access updates
 2. Verify API calls work on new Windows versions
 3. Check file dialogs with network paths
@@ -577,6 +648,7 @@ Proper cleanup prevents database locking:
 ## Deployment Notes
 
 ### Installation Steps
+
 1. Backup current instru3 database
 2. Import updated modules (USysCheck.bas, general.bas)
 3. Import updated forms (CopyLoops, Linkkien vaihto, SizingOut)
@@ -585,13 +657,16 @@ Proper cleanup prevents database locking:
 6. Verify API calls work correctly
 
 ### Rollback Procedure
+
 If issues encountered:
+
 1. Use Git to revert to commit before migration (1793c9d^)
 2. Re-import original files
 3. Document issues encountered
 4. Fix issues and re-test
 
 ### Version Requirements
+
 - **Access Version**: 2010 or later (VBA7 support)
 - **Windows Version**: 7 or later (64-bit support)
 - **Libraries**: DAO 3.6 or later, FileSystemObject

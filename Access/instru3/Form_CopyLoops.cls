@@ -7,7 +7,7 @@ Option Explicit
 ' Updated: 2025-11-11 - Added VBA7/64-bit support
 '
 ' Description:
-'   Complex loop import utility that:
+'   Loop import utility that:
 '   - Links to external instru3 database
 '   - Displays available loops from source database
 '   - Imports selected loops to LOOPS table
