@@ -67,10 +67,8 @@ Cleanup:
         Taul.Close
         Set Taul = Nothing
     End If
-    If Not db Is Nothing Then
-        db.Close
-        Set db = Nothing
-    End If
+    ' Note: Do NOT close db if it's CurrentDb - it's the currently open database
+    Set db = Nothing
     On Error GoTo 0
 
     MsgBox "Valmis - Päivitetty " & UpdateCount & " taulukkoa.", vbInformation, "Linkkien vaihto"

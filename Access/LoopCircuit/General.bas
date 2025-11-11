@@ -71,9 +71,9 @@ Function SniffUser()
   Set Taulu = db.OpenRecordset("UsysUsers", dbOpenDynaset)
         With Taulu
             .AddNew
-            .Fields(0) = NWUserName      ' Network username
-            .Fields(1) = CurrentUser()   ' Database username
-            .Fields(2) = CName           ' Computer name
+            .Fields(0) = Nz(NWUserName, "Unknown")      ' Network username (null-safe)
+            .Fields(1) = Nz(CurrentUser(), "Unknown")   ' Database username (null-safe)
+            .Fields(2) = Nz(CName, "Unknown")           ' Computer name (null-safe)
             .Fields(3) = Now             ' Timestamp
             .Update
         End With  

@@ -1,5 +1,4 @@
 Option Compare Database   'Use database order for string comparisons
-                           
 ' Circuit and Jb -dwgs
 ' 1997-02-21 Fr 11:10 /tw
 ' 1997-03-19 We 15:46 /tw

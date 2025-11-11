@@ -29,7 +29,12 @@ Private Sub Tila(Tiedosto As String)
 End Sub
 
 Private Sub Form_Load()
+    ' Initialize log textbox
+    On Error Resume Next
     Loki.Value = ""
+    Loki.Locked = False
+    Loki.Enabled = True
+    On Error GoTo 0
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -305,11 +310,15 @@ Private Sub TeeKuvat_Click()
             oDoc.SetVariable "OSMODE", 0
             
             If HaeIPoints(Kuvat.Fields("BaseDWG").Value) Then
+                LisaaLokiin "- Haettu insertointipaikat kuvalle: " & Kuvat.Fields("BaseDWG").Value
                 If VaihdaOtsikkotiedot(Kuvat) Then
+                    LisaaLokiin "- Vaihdettu otsikkotiedot kuvalle: " & Kuvat.Fields("FileID").Value
                     Sql = "SELECT Block, Blocknumber FROM " & BlockTaulukko & _
                           " WHERE FileID='" & Replace(Kuvat.Fields("FileID").Value, "'", "''") & _
                           "' GROUP BY Block, Blocknumber HAVING (Blocknumber Is Not Null);"
                     Set DbBlokit = db.OpenRecordset(Sql)
+                    
+                    LisaaLokiin "- Blokkeja insertointia varten: " & DbBlokit.RecordCount
                     
                     Do While Not DbBlokit.EOF
                         If FSO.FileExists(PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then
@@ -349,7 +358,11 @@ Private Sub TeeKuvat_Click()
                     
                     DbBlokit.Close
                     Set DbBlokit = Nothing
+                Else
+                    LisaaLokiin "VIRHE: VaihdaOtsikkotiedot epäonnistui kuvalle: " & Kuvat.Fields("FileID").Value
                 End If
+            Else
+                LisaaLokiin "VIRHE: HaeIPoints epäonnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
             End If
             
             KuvaNimi = KuvaHakem.Value & Kuvat.Fields("FileID").Value
@@ -529,16 +542,17 @@ ErrHandler:
     VaihdaOtsikkotiedot = False
 End Function
 
-' Add entry to log (currently disabled for performance)
+' Add entry to log
 Private Sub LisaaLokiin(Tieto As String)
-    ' Log output disabled - can be re-enabled by uncommenting:
-    ' If LokiPituus > 0 Then
-    '     Loki.Value = Loki.Value & vbCrLf & Tieto
-    ' Else
-    '     Loki.Value = Tieto
-    '     LokiPituus = 1
-    ' End If
-    ' Me.Repaint
+    On Error Resume Next
+    If LokiPituus > 0 Then
+        Loki.Value = Loki.Value & vbCrLf & Tieto
+    Else
+        Loki.Value = Tieto
+        LokiPituus = 1
+    End If
+    Me.Repaint
+    On Error GoTo 0
 End Sub
 
 ' Browse for folder
