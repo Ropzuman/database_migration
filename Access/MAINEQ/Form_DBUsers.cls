@@ -55,14 +55,17 @@ On Error GoTo Err_WhosOn
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As Database
+   Dim dbCurrent As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 
 ' Get Path of current database.  Should substitute this code
 ' for an attached table path in a multi-user environment.
 
-   Set dbCurrent = CurrentDB
+   ' Updated 2025-11-11: Changed from CurrentDB to CurrentDb (standard capitalization)
+   ' Removed dbCurrent.Close - CurrentDb returns a new instance each time,
+   ' closing it causes Error 0 crash. Object auto-closes when out of scope.
+   Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
-   dbCurrent.Close
+   ' REMOVED: dbCurrent.Close  ' This line causes Error 0 - CurrentDb should not be closed
 
 ' Iterate thru dbCurrent.LDB file for login names.
 

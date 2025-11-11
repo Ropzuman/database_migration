@@ -1,13 +1,28 @@
 Option Compare Database
 Option Explicit
+
+'==============================================================================
+' Form: GeneroiMoottorikuvat
+' Purpose: Generate motor specification drawings in AutoCAD
+' Updated: 2025-11-11 - Added DAO typing, documented hard-coded paths
+'
+' HARD-CODED PATHS - Santa Fe Project 220018:
+'   Base drawings: N:\whldata\Projekti\Santa Fe 220018\Sahko\MotMittakuvat\BASE\
+'   Output drawings: N:\whldata\Projekti\Santa Fe 220018\Sahko\MotMittakuvat\DWG\
+'
+' Note: These paths are specific to the Santa Fe 220018 project.
+' For new projects, update these paths in the GenKuvat_Click procedure.
+'==============================================================================
+
 Dim oAcad As AcadApplication
 Dim oDoc As AcadDocument
+
 Private Sub GenKuvat_Click()
 Dim Kuvat As DAO.Recordset
 Dim Tiedot As DAO.Recordset
 Dim oBlock As AcadBlockReference
 Dim DocTila As Boolean
-Dim DB As Database
+Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix
 Dim i As Integer, K As Integer, Maara As Integer
 Dim Attrib As Variant
 Dim iPoint(2) As Double
@@ -24,7 +39,7 @@ If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
   Exit Sub
 End If
 On Error GoTo 0
-Set DB = CurrentDB
+Set DB = CurrentDb
 Set Kuvat = DB.OpenRecordset("_qry_MotMittakuvat")
 Kuvat.MoveLast
 Kuvat.MoveFirst

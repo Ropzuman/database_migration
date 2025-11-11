@@ -2,9 +2,9 @@ Option Compare Database
 Option Explicit
 
 Private Sub Form_BeforeInsert(Cancel As Integer)
-Dim Taulukko As Recordset
+Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Uusi As String
-Set Taulukko = CurrentDB.OpenRecordset("SELECT Suffix From CONVEYORS WHERE Department = '" & Me.Parent.Department.Value & "' AND Eqtype='" & Me.Parent.EqType.Value & "' AND EqSeq='" & Me.Parent.EqSeq.Value & "' ORDER BY Suffix DESC;")
+Set Taulukko = CurrentDb.OpenRecordset("SELECT Suffix From CONVEYORS WHERE Department = '" & Me.Parent.Department.Value & "' AND Eqtype='" & Me.Parent.EqType.Value & "' AND EqSeq='" & Me.Parent.EqSeq.Value & "' ORDER BY Suffix DESC;")
 If Taulukko.RecordCount = 0 Then
   Uusi = "01"
 Else
@@ -32,3 +32,5 @@ End Sub
 Private Sub RevHistory_Click()
  MuutaRevisio
 End Sub
+
+

@@ -254,9 +254,9 @@ Private Sub Form_Current()
 End Sub
 
 Private Sub EqType_AfterUpdate()
-Dim Taulukko As Recordset
+Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
 Dim Uusi As String
-Set Taulukko = CurrentDB.OpenRecordset("SELECT EqSeq From MAINEQ WHERE Department = '" & Me.Department.Value & "' AND Eqtype='" & Me.EqType.Value & "' ORDER By EqSeq DESC;")
+Set Taulukko = CurrentDb.OpenRecordset("SELECT EqSeq From MAINEQ WHERE Department = '" & Me.Department.Value & "' AND Eqtype='" & Me.EqType.Value & "' ORDER By EqSeq DESC;")
 
 If Taulukko.RecordCount = 0 Then
   Uusi = "001"

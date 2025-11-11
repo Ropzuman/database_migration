@@ -1,99 +1,192 @@
 Option Compare Database   'Use database order for string comparisons
-' Circuit and Jb -dwgs
-' 1997-02-21 Fr 11:10 /tw
-' 1997-03-19 We 15:46 /tw
-' 1997-03-21 Fr 16:07 /tw
-' 1997-07-14 Mo 14:29 /tw
+'==============================================================================
+' Module: DataToACAD
+' Purpose: Generate AutoCAD LISP files from database data for circuit diagrams
+' Original: 1997-02-21 Fr 11:10 /tw
+' Revised: 1997-03-19 We 15:46 /tw
+' Revised: 1997-03-21 Fr 16:07 /tw
+' Revised: 1997-07-14 Mo 14:29 /tw
+' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
+'                       Fixed DBEngine pattern, replaced deprecated constants
+'==============================================================================
 
+'------------------------------------------------------------------------------
+' Function: CrsRefLink
+' Purpose: Look up LISP code from cross-reference table
+' Parameters:
+'   tblnimi - Table name identifier
+'   teksti - Cross-reference ID to look up
+' Returns: LISP code string or original text if not found
+' Updated: 2025-11-11 - Added DAO typing, error handling, comments
+'------------------------------------------------------------------------------
 Function CrsRefLink(tblnimi, teksti)
+On Error GoTo ErrorHandler
 
-Dim DB As Database
-Dim tble As Recordset
-Set DB = DBEngine.Workspaces(0).Databases(0)
+Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim tble As DAO.Recordset   ' Updated 2025-11-11: Added DAO prefix for early binding
+
+Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
 
 If tblnimi = "CRSREF" Then
-    Set tble = DB.OpenRecordset("CrsRefLisps", DB_OPEN_DYNASET)
+    ' Open cross-reference LISP lookup table
+    Set tble = DB.OpenRecordset("CrsRefLisps", dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
     Do Until tble.EOF
         If tble!CrsRefID = teksti Then
             CrsRefLink = tble!Lisp
+            tble.Close
+            Set tble = Nothing
             Exit Function
         End If
     tble.MoveNext
     Loop
-    CrsRefLink = teksti
-
+    CrsRefLink = teksti  ' Return original text if not found
+    tble.Close
 Else
+    ' Not a cross-reference, return original text
     CrsRefLink = teksti
 End If
 
+Set tble = Nothing
+Exit Function
+
+ErrorHandler:
+    MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
+    CrsRefLink = teksti  ' Return original text on error
+    If Not tble Is Nothing Then
+        tble.Close
+        Set tble = Nothing
+    End If
 End Function
 
+'------------------------------------------------------------------------------
+' Function: get_filename
+' Purpose: Extract 8-character filename from table name
+' Parameters:
+'   taulnimi - Table name (may contain asterisk separator)
+' Returns: 8-character uppercase filename
+' Notes: Handles legacy naming convention with asterisk markers
+' Updated: 2025-11-11 - Added error handling and comments
+'------------------------------------------------------------------------------
 Function get_filename(taulnimi)
+On Error GoTo ErrorHandler
+
+Dim ast As Integer
 
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
+    ' No asterisk, take first 8 characters
     get_filename = UCase(Mid(taulnimi, 1, 8))
 Else
-  get_filename = UCase(Mid(Mid(taulnimi, 1, ast - 1), 1, 8))
-
+    ' Asterisk found, take first 8 characters before it
+    get_filename = UCase(Mid(Mid(taulnimi, 1, ast - 1), 1, 8))
 End If
 
+Exit Function
+
+ErrorHandler:
+    MsgBox "Error in get_filename: " & Err.Description, vbCritical, "Filename Extraction Error"
+    get_filename = "ERROR"
 End Function
 
+'------------------------------------------------------------------------------
+' Function: inch
+' Purpose: Escape double quotes for AutoCAD LISP syntax
+' Parameters:
+'   a - String containing double quotes to be escaped
+' Returns: String with double quotes replaced by \042 (octal code)
+' Notes: LISP requires special escaping of quote characters
+' Updated: 2025-11-11 - Added error handling, improved variable names, comments
+'------------------------------------------------------------------------------
 Function inch(a)
-L = Chr(34)
+On Error GoTo ErrorHandler
+
+Dim L As String     ' Double quote character
+Dim E As String     ' Working string
+Dim b As Integer    ' Position of quote
+Dim c As String     ' String before quote
+Dim D As String     ' String after quote
+
+L = Chr(34)  ' Double quote character
 E = a
+
 Do
     b = InStr(1, E, L)
     If b = 0 Then
+        ' No more quotes found, return result
         inch = E
         Exit Function
     End If
+    ' Split string at quote position
     c = Mid$(E, 1, b - 1)
     D = Mid$(E, b + 1, Len(a))
+    ' Replace quote with LISP escape sequence
     E = c & "\042" & D
 Loop
 
+Exit Function
+
+ErrorHandler:
+    MsgBox "Error in inch: " & Err.Description, vbCritical, "LISP Quote Escaping Error"
+    inch = a  ' Return original string on error
 End Function
 
+'------------------------------------------------------------------------------
+' Function: makeFiles
+' Purpose: Main orchestrator for generating AutoCAD LISP files
+' Parameters:
+'   common - Name of configuration table containing file generation settings
+' Process:
+'   1. Reads configuration from common table
+'   2. Resets/initializes output .txt files
+'   3. Generates non-loop-based lists
+'   4. Generates loop-based lists (if applicable)
+'   5. Closes all files properly
+' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
+'------------------------------------------------------------------------------
 Function makeFiles(common)
+On Error GoTo ErrorHandler
 
-'common = "COMMON"
+Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim cmmn As DAO.Recordset   ' Configuration recordset
+Dim tbl As DAO.Recordset    ' Data recordset
+Dim L As String             ' Double quote character
+Dim suod As Variant         ' Filter value
+Dim direc As String         ' Output directory path
 
-Dim DB As Database
-Dim cmmn As Recordset
-Dim tbl As Recordset
+Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
+Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
 
-Set DB = DBEngine.Workspaces(0).Databases(0)
-Set cmmn = DB.OpenRecordset(common, DB_OPEN_DYNASET)
-
-L = Chr(34)
+L = Chr(34)  ' Double quote character for LISP
 
 cmmn.MoveFirst
 suod = cmmn.Fields("Filter")
-direc = cmmn!AcadDirectory
+direc = cmmn!AcadDirectory  ' Directory where LISP .txt files will be created
 
+' If only generating script file, skip LISP file generation
 If cmmn!OnlyScript Then GoTo scrtest
 
-' reset txt-files
+'--- Reset/Initialize all output .txt files with opening parenthesis ---
 cmmn.MoveFirst
 Do Until cmmn.EOF
+    ' Initialize non-loop-based files
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Output As #1
-        Print #1, "("
-        Close
+        Print #1, "("  ' Opening parenthesis for LISP list
+        Close #1
     End If
+    ' Initialize loop-based files
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Output As #1
-        Print #1, "("
-        Close
+        Print #1, "("  ' Opening parenthesis for LISP list
+        Close #1
     End If
     cmmn.MoveNext
 Loop
 
 cmmn.MoveFirst
 
-' print no-loop -lists to files
+'--- Generate non-loop-based LISP lists ---
+' These are simple lists without filtering by loop ID
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         MakeListNoLoopID cmmn!TablesOrQueriesNoLoop.Value, direc
@@ -101,71 +194,110 @@ Do Until cmmn.EOF
     cmmn.MoveNext
 Loop
 
-
 cmmn.MoveFirst
+' If no loop ID tables, skip to script generation
 If cmmn!NoLoopIDTables Then GoTo scrtest
-'Set tbl = db.OpenRecordset(cmmn.TablesOrQueries.value, db_open_dynaset)
 
-' print loop based lists to files
-
-'tbl.MoveFirst
-'Do Until tbl.eof
-  ' print loop to files
-'  If tbl.fields(0).value = suod Then
-    ' print datas to files
-    cmmn.MoveFirst
-    Do Until cmmn.EOF
-        If Not IsNull(cmmn!TablesOrQueries.Value) Then
-            MakeListWithLoopID cmmn!TablesOrQueries.Value, direc, cmmn!NoIDCount, suod, cmmn!LoopIDColumn
-        End If
-        cmmn.MoveNext
-    Loop
-
-cmmn.MoveFirst
-
-' print last ')'-mark to files
+'--- Generate loop-based LISP lists ---
+' These lists are filtered by loop ID column
 cmmn.MoveFirst
 Do Until cmmn.EOF
+    If Not IsNull(cmmn!TablesOrQueries.Value) Then
+        MakeListWithLoopID cmmn!TablesOrQueries.Value, direc, cmmn!NoIDCount, suod, cmmn!LoopIDColumn
+    End If
+    cmmn.MoveNext
+Loop
+
+cmmn.MoveFirst
+
+'--- Close all files with closing parenthesis ---
+'--- Close all files with closing parenthesis ---
+cmmn.MoveFirst
+Do Until cmmn.EOF
+    ' Close non-loop-based files
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Append As #1
-        Print #1, ")"
-        Close
+        Print #1, ")"  ' Closing parenthesis for LISP list
+        Close #1
     End If
+    ' Close loop-based files
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Append As #1
-        Print #1, ")"
-        Close
+        Print #1, ")"  ' Closing parenthesis for LISP list
+        Close #1
     End If
     cmmn.MoveNext
 Loop
 
 scrtest:
+' Generate AutoCAD script file for batch processing
 cmmn.MoveFirst
 MakeScript common, suod, cmmn!LoopIDColumn
 
+' Cleanup
+cmmn.Close
+Set cmmn = Nothing
+Set DB = Nothing
+
+Exit Function
+
+ErrorHandler:
+    MsgBox "Error in makeFiles: " & Err.Description & vbCrLf & _
+           "Error occurred while generating LISP files.", vbCritical, "File Generation Error"
+    ' Cleanup on error
+    On Error Resume Next
+    Close #1  ' Close any open file handle
+    If Not cmmn Is Nothing Then
+        cmmn.Close
+        Set cmmn = Nothing
+    End If
+    Set DB = Nothing
 End Function
 
+End Function
+
+'------------------------------------------------------------------------------
+' Sub: MakeListNoLoopID
+' Purpose: Generate LISP lists from tables/queries that don't require loop ID filtering
+' Parameters:
+'   tanimi - Table or query name (may contain asterisk for wildcard matching)
+'   Hakem - Output directory path
+' Notes: Handles both single tables and wildcard table groups (e.g., "CIRCUIT*")
+' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
+'------------------------------------------------------------------------------
 Sub MakeListNoLoopID(tanimi, Hakem)
+On Error GoTo ErrorHandler
 
-Dim DB As Database
-Dim tble As Recordset
-Set DB = DBEngine.Workspaces(0).Databases(0)
+Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim tble As DAO.Recordset   ' Updated 2025-11-11: Added DAO prefix
+Dim L As String             ' Double quote character
+Dim aster As Integer        ' Position of asterisk in table name
+Dim filenum As Integer      ' File handle number
+Dim i As Integer, ii As Integer  ' Loop counters
+Dim preref As String        ' Prefix reference for LISP variable names
 
-L = Chr(34)
+Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
+
+L = Chr(34)  ' Double quote character for LISP
 
 aster = InStr(tanimi, "*")
+
+'--- Handle wildcard table names (e.g., "CIRCUIT*") ---
 If aster <> 0 Then
-  
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
+  ' Loop through all tables matching the prefix
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tanimi) Then
-        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, DB_OPEN_DYNASET)
+        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
         If Not tble.EOF Then tble.MoveFirst
         preref = get_filename(tanimi)
+        
+        ' Process each record in the table
         Do Until tble.EOF
             preref = get_filename(tanimi)
+            ' Build reference prefix from ID fields
             For ii = 0 To tble.Fields.Count - 1
                 If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                     preref = preref & "." & tble.Fields(ii).Value
@@ -173,6 +305,7 @@ If aster <> 0 Then
                     Exit For
                 End If
             Next
+            ' Write non-null field values to LISP file
             For ii = 0 To tble.Fields.Count - 1
                 If Not IsNull(tble.Fields(ii).Value) Then
                     Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(ii).Name);
@@ -181,22 +314,23 @@ If aster <> 0 Then
             Next
             tble.MoveNext
         Loop
+        tble.Close
       End If
   Next
-  Close
-  
+  Close filenum
 
+'--- Handle single table/query names ---
 Else
+  Set tble = DB.OpenRecordset(tanimi, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
+  If Not tble.EOF Then tble.MoveFirst
 
-Set tble = DB.OpenRecordset(tanimi, DB_OPEN_DYNASET)
-If Not tble.EOF Then tble.MoveFirst
+  filenum = FreeFile
+  Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
-filenum = FreeFile
-Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
-
-'Print #filenum, "( "
-Do Until tble.EOF
+  ' Process each record
+  Do Until tble.EOF
     preref = get_filename(tanimi)
+    ' Build reference prefix from ID fields
     For ii = 0 To tble.Fields.Count - 1
         If Right$(tble.Fields(ii).Name, 2) = "ID" Then
             preref = preref & "." & tble.Fields(ii).Value
@@ -204,6 +338,7 @@ Do Until tble.EOF
             Exit For
         End If
     Next
+    ' Write non-null field values to LISP file (with cross-reference lookup)
     For ii = 0 To tble.Fields.Count - 1
         If Not IsNull(tble.Fields(ii).Value) Then
             Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(ii).Name);
@@ -211,20 +346,36 @@ Do Until tble.EOF
         End If
     Next
     tble.MoveNext
-Loop
-'Print #filenum, " )"
+  Loop
 
-Close filenum
-
+  Close filenum
+  tble.Close
 End If
 
+' Cleanup
+Set tble = Nothing
+Set DB = Nothing
+
+Exit Sub
+
+ErrorHandler:
+    MsgBox "Error in MakeListNoLoopID: " & Err.Description & vbCrLf & _
+           "Table/Query: " & tanimi, vbCritical, "LISP Generation Error"
+    ' Cleanup on error
+    On Error Resume Next
+    Close filenum
+    If Not tble Is Nothing Then
+        tble.Close
+        Set tble = Nothing
+    End If
+    Set DB = Nothing
 End Sub
 
 Sub MakeListWithLoopID(tblnimipre, Hakem, idsyst, suoda, Looppid)
 
-Dim DB As Database
-Dim tble As Recordset
-Set DB = DBEngine.Workspaces(0).Databases(0)
+Dim DB As DAO.Database
+Dim tble As DAO.Recordset
+Set DB = CurrentDb
 L = Chr(34)
 
 aster = InStr(tblnimipre, "*")
@@ -235,7 +386,7 @@ If aster <> 0 Then
   ' tables
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tblnimipre) Then
-        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, DB_OPEN_DYNASET)
+        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
         ' records
         Do Until tble.EOF
@@ -275,7 +426,7 @@ If aster <> 0 Then
 
 Else
 
-  Set tble = DB.OpenRecordset(tblnimipre, DB_OPEN_DYNASET)
+  Set tble = DB.OpenRecordset(tblnimipre, dbOpenDynaset)
   If Not tble.EOF Then tble.MoveFirst
 
   filenum = FreeFile
@@ -317,17 +468,28 @@ End If
 
 End Sub
 
+'------------------------------------------------------------------------------
+' Function: MakeLocFiles
+' Purpose: Generate installation location files for AutoCAD
+' Updated: 2025-11-11 - Documented hard-coded paths
+'
+' HARD-CODED PATHS - Project Specific:
+'   P:\acaddata\projekti\agropm10\tyo\instloc.txt
+'
+' Note: These paths are specific to the "AGROPM10" project structure.
+' If adapting for new projects, update these paths or move to configuration table.
+'------------------------------------------------------------------------------
 Function MakeLocFiles()
 
-Dim DB As Database
-Dim cmmn As Recordset
-Dim tbl As Recordset
+Dim DB As DAO.Database
+Dim cmmn As DAO.Recordset
+Dim tbl As DAO.Recordset
 Dim Taulukko As TableDef
-Dim Taul As Recordset
-Dim tble As Recordset
+Dim Taul As DAO.Recordset
+Dim tble As DAO.Recordset
 
-Set DB = DBEngine.Workspaces(0).Databases(0)
-Set tble = DB.OpenRecordset("Loops", DB_OPEN_DYNASET)
+Set DB = CurrentDb
+Set tble = DB.OpenRecordset("Loops", dbOpenDynaset)
 
 L = Chr(34)
 
@@ -390,16 +552,16 @@ Sub MakeScript(common, suod, Looppid)
 
 'common = "COMMON"
 
-Dim DB As Database
-Dim cmmn As Recordset
-Dim tblmain As Recordset
+Dim DB As DAO.Database
+Dim cmmn As DAO.Recordset
+Dim tblmain As DAO.Recordset
 
-Set DB = DBEngine.Workspaces(0).Databases(0)
-Set cmmn = DB.OpenRecordset(common, DB_OPEN_DYNASET)
+Set DB = CurrentDb
+Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
 
 L = Chr(34)
 cmmn.MoveFirst
-Set tblmain = DB.OpenRecordset(cmmn.Fields(0).Value, DB_OPEN_DYNASET)
+Set tblmain = DB.OpenRecordset(cmmn.Fields(0).Value, dbOpenDynaset)
 
 Open cmmn!AcadDirectory.Value & cmmn!ScriptFileName.Value For Output As #1
 
@@ -469,4 +631,6 @@ Close
 
 
 End Function
+
+
 

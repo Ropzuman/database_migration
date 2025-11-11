@@ -1,6 +1,16 @@
 Option Compare Database
 Option Explicit
-Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
+
+' Updated 2025-11-11: Added VBA7 conditional compilation for 64-bit compatibility
+' This API retrieves the current Windows user name for revision tracking
+#If VBA7 Then
+    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, nSize As Long) As Long
+#Else
+    Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, nSize As Long) As Long
+#End If
+
 Private Sub ATaulu_Change()
   PaivitaIDRev
 End Sub
@@ -32,9 +42,13 @@ Private Sub PaivitaTaulut()
   UTaulu.Value = ATaulu.ItemData(0)
   PaivitaIDRev
 End Sub
+
+' PaivitaIDRev: Updates the ID and Revision combo boxes based on selected table
+' Automatically detects AutoNumber fields and revision columns
+' Updated 2025-11-11: Added DAO typing, improved comments
 Private Sub PaivitaIDRev()
 Dim i As Integer
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Revi As String
   ID.RowSource = ATaulu.Value
   Rev.RowSource = ATaulu.Value
@@ -44,7 +58,7 @@ For i = 0 To Rev.ListCount - 1
     Exit For
   End If
 Next i
-Set Taul = CurrentDB.OpenRecordset(ATaulu.Value)
+Set Taul = CurrentDb.OpenRecordset(ATaulu.Value)  ' Updated 2025-11-11: CurrentDB -> CurrentDb
 For i = 0 To Taul.Fields.Count - 1
   If Taul.Fields(i).Type = 4 And Taul.Fields(i).Attributes = 49 Then
     ID.Value = Taul.Fields(i).Name
@@ -52,7 +66,7 @@ For i = 0 To Taul.Fields.Count - 1
   End If
 Next i
 If ATaulu <> "" And Rev <> "" Then
-  Set Taul = CurrentDB.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")
+  Set Taul = CurrentDb.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")  ' Updated 2025-11-11: CurrentDB -> CurrentDb
   If Not Taul.EOF Then
     Revi = Left(Taul.Fields(0), InStr(Taul.Fields(0), " ") - 1)
     If Len(Revi) > 1 Then
@@ -70,10 +84,16 @@ End Sub
 Private Sub Sulje_Click()
  DoCmd.Close
 End Sub
+
+' Tee: Main revision marking function
+' Compares two tables and marks changed records with revision information
+' Updated 2025-11-11: Added DAO typing, improved comments
 Private Sub Tee_Click()
-Dim Vert As Recordset
+Dim Vert As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Muuttunut As Boolean
 Dim i As Integer
+
+' Validate that all required selections are made
 If ATaulu = "" Or UTaulu = "" Or ID = "" Or Rev = "" Then
   MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinn�t"
   Exit Sub
@@ -82,24 +102,33 @@ If TRev = "" Or TDate = "" Or TMaker = "" Then
   MsgBox "Laita ensin revisiomerkinn�t", vbCritical, "Tee merkinn�t"
   Exit Sub
 End If
+
 Merk.Visible = True
 Me.Repaint
-Set Vert = CurrentDB.OpenRecordset("SELECT [" & ATaulu & "].*, [" & UTaulu & "].* FROM [" & ATaulu & "] RIGHT JOIN [" & UTaulu & "] ON [" & UTaulu & "]." & ID & " = [" & ATaulu & "]." & ID & ";")
+
+' Create a joined recordset comparing the two tables
+Set Vert = CurrentDb.OpenRecordset("SELECT [" & ATaulu & "].*, [" & UTaulu & "].* FROM [" & ATaulu & "] RIGHT JOIN [" & UTaulu & "] ON [" & UTaulu & "]." & ID & " = [" & ATaulu & "]." & ID & ";")  ' Updated 2025-11-11: CurrentDB -> CurrentDb
 Do While Not Vert.EOF
   Muuttunut = False
+  ' Check each field (except ID and Rev) for changes
   For i = 0 To ID.ListCount - 1
     If ID.ItemData(i) <> ID.Value And ID.ItemData(i) <> Rev.Value Then
+      ' Compare values between the two tables (Nz handles nulls)
       If Nz(Vert.Fields(ATaulu & "." & ID.ItemData(i)).Value) <> Nz(Vert.Fields(UTaulu & "." & ID.ItemData(i)).Value) Then
         Muuttunut = True
         Exit For
       End If
     End If
   Next i
+  
+  ' If record has changed, update revision information
   If Muuttunut Then
     Vert.Edit
     If IsNull(Vert.Fields(UTaulu & "." & Rev).Value) Or Vert.Fields(UTaulu & "." & Rev).Value = "" Then
+      ' First revision entry
       Vert.Fields(UTaulu & "." & Rev).Value = TRev & " " & TDate & "/" & TMaker & "/" & TComment
     Else
+      ' Append to existing revision history
       Vert.Fields(UTaulu & "." & Rev).Value = TRev & " " & TDate & "/" & TMaker & "/" & TComment & vbCrLf & Vert.Fields(UTaulu & "." & Rev).Value
     End If
     Vert.Update

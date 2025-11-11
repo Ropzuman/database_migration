@@ -1,15 +1,28 @@
 Option Compare Database
 Option Explicit
 
+'==============================================================================
+' Report: MOOTTORIT (Motors)
+' Purpose: Export motor list to Excel using template
+' Updated: 2025-11-11 - Added DAO typing, documented hard-coded paths
+'
+' HARD-CODED PATHS - Santa Fe Project 220018:
+'   Template: N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\MotorTEMPLATE.xls
+'   Output: N:\whldata\Projekti\Santa Fe 220018\Sahko\SAHKOSUUNN\1A  Customer File\VL  3  Motor and Instrument List\MOTOR LIST\A4-2090-210-03-0101.xls
+'
+' Note: These paths are specific to the Santa Fe 220018 project.
+' For new projects, update these paths in the Report_Open procedure.
+'==============================================================================
+
 Private Sub Report_Open(Cancel As Integer)
 Dim xlApp As Excel.Application
 Dim Alue As Excel.Range
 Dim WB As Excel.Workbook
-Dim Tiedot As Recordset
+Dim Tiedot As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim FSO As New FileSystemObject
 Dim Rivi As Integer
 Dim Sar As Integer
-Set Tiedot = CurrentDB.OpenRecordset("_qryMOTOR")
+Set Tiedot = CurrentDb.OpenRecordset("_qryMOTOR")
 Rivi = 10
   
   If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest�� noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
@@ -47,3 +60,4 @@ Set WB = Nothing
 Set Tiedot = Nothing
 Set xlApp = Nothing
 End Sub
+

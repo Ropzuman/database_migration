@@ -5,11 +5,11 @@ Private Sub Report_Open(Cancel As Integer)
 Dim xlApp As Excel.Application
 Dim Alue As Excel.Range
 Dim WB As Excel.Workbook
-Dim Tiedot As Recordset
+Dim Tiedot As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
 Dim FSO As New FileSystemObject
 Dim Rivi As Integer
 Dim Sar As Integer
-Set Tiedot = CurrentDB.OpenRecordset("_qryMAINEQCust")
+Set Tiedot = CurrentDb.OpenRecordset("_qryMAINEQCust")
 Rivi = 9
   
   If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest�� noin minuutin.", vbYesNo, "P��laiteluettelo") = vbYes Then

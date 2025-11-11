@@ -58,8 +58,8 @@ Set XL = Nothing
 End Sub
 
 Private Sub Command3_Click()
-Dim Taulu As Recordset
-Set Taulu = CurrentDB.OpenRecordset("Select * FROM qryMottilaus2 WHERE Elementti='340301'")
+Dim Taulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
+Set Taulu = CurrentDb.OpenRecordset("Select * FROM qryMottilaus2 WHERE Elementti='340301'")
 Debug.Print Taulu.Fields("Teksti").Value & Taulu.Fields("CustPos").Value
 
 Debug.Print Taulu.Fields("CustPos").Value
@@ -67,8 +67,8 @@ Set Taulu = Nothing
 End Sub
 
 Private Sub Form_Load()
-  CurrentDB.Execute "DROP TABLE TblMotorsOptions"
-  CurrentDB.Execute "MakeTblMotorsOptions"
+  CurrentDb.Execute "DROP TABLE TblMotorsOptions"
+  CurrentDb.Execute "MakeTblMotorsOptions"
   Valm.Value = Valm.ItemData(0)
   Valm_AfterUpdate
 End Sub

@@ -11,6 +11,7 @@
 The LoopCircuit database VBA code has been thoroughly analyzed, optimized, and debugged. All critical issues have been resolved, and the codebase is now 64-bit compatible and production-ready.
 
 **Key Achievements:**
+
 - ✅ 100% 64-bit compatibility verified
 - ✅ Critical AutoCAD integration bugs fixed
 - ✅ Database operation bugs resolved (db.Close crashes)
@@ -27,6 +28,7 @@ The LoopCircuit database VBA code has been thoroughly analyzed, optimized, and d
 **Scope:** Comprehensive review of all 7 VBA files
 
 **Files Analyzed:**
+
 1. General.bas (98 lines)
 2. USysCheck.bas (75 lines)
 3. For ACAD Utility.bas (23 lines)
@@ -36,6 +38,7 @@ The LoopCircuit database VBA code has been thoroughly analyzed, optimized, and d
 7. Form_Tee Kuvat.cls (617 lines)
 
 **Findings:**
+
 - ✅ All files already 64-bit compatible (VBA7, PtrSafe, LongPtr)
 - ✅ All database operations use explicit DAO typing
 - ✅ Excellent error handling throughout
@@ -51,6 +54,7 @@ The LoopCircuit database VBA code has been thoroughly analyzed, optimized, and d
 **Issue:** Export metadata (VERSION/BEGIN/Attribute blocks) incompatible with Access
 
 **Files Cleaned:**
+
 - Form_DBUsers.cls
 - Form_Linkkien vaihto.cls
 - Form_Tee Kuvat.cls
@@ -70,6 +74,7 @@ The LoopCircuit database VBA code has been thoroughly analyzed, optimized, and d
 **Root Cause:** Calling `db.Close` on `DBEngine.Workspaces(0).Databases(0)` (closes currently open database)
 
 **Fix Applied:**
+
 ```vba
 ' OLD (CRASHED):
 Set dbCurrent = DBEngine.Workspaces(0).Databases(0)
@@ -96,6 +101,7 @@ Set dbCurrent = Nothing
 **Root Cause:** Calling `db.Close` on CurrentDb object
 
 **Fix Applied:**
+
 ```vba
 ' OLD (CRASHED):
 Set db = CurrentDb
@@ -122,6 +128,7 @@ Set db = Nothing
 **Symptom:** "Tee Kuvat" generates drawings with base frame only, no equipment symbols
 
 **Investigation Steps:**
+
 1. Enabled logging (was disabled for performance)
 2. Added comprehensive debug logging
 3. User ran tool and provided log output
@@ -130,6 +137,7 @@ Set db = Nothing
 **Root Cause:** Incorrect AutoCAD SelectionSet API usage
 
 **Problem Code:**
+
 ```vba
 Set Joukko = oDoc.ActiveSelectionSet
 Joukko.Clear
@@ -137,11 +145,13 @@ Joukko.Select 2, , , FilterType, FilterData  ' WRONG: Mode 2, wrong object
 ```
 
 **Technical Issue:**
+
 - ActiveSelectionSet is persistent user selection (not for programmatic use)
 - Select mode 2 (acSelectionSetCrossing) requires selection window
 - Should use temporary SelectionSets with mode 5 (acSelectionSetAll)
 
 **Fix Applied:**
+
 ```vba
 ' Create temporary SelectionSet with unique name
 Set Joukko = oDoc.SelectionSets.Add("TempSet_IPoints_" & Format(Now, "hhnnss"))
@@ -158,6 +168,7 @@ On Error GoTo 0
 ```
 
 **Functions Modified:**
+
 - HaeIPoints() - Lines 430-434, 454
 - VaihdaOtsikkotiedot() - Lines 477-481, 529
 
@@ -174,6 +185,7 @@ On Error GoTo 0
 **Purpose:** Prevent null insertion if Windows API calls fail
 
 **Code Enhanced:**
+
 ```vba
 ' Before:
 .Fields(0) = NWUserName
@@ -199,6 +211,7 @@ On Error GoTo 0
 #### Issue: Logging Disabled for Performance
 
 **Original State:**
+
 ```vba
 Private Sub LisaaLokiin(Tieto As String)
     ' Entire function body commented out for performance
@@ -210,6 +223,7 @@ End Sub
 **Solution Phase 1:** Re-enabled logging with comprehensive debug output
 
 **Added Log Points:**
+
 - File processing start: `=== Käsitellään: [FileID] ===`
 - Base drawing opening
 - Insertion points found
@@ -229,6 +243,7 @@ End Sub
 **Final Solution:** Minimal logging with commented-out detail
 
 **Active Logging:**
+
 ```vba
 LisaaLokiin "=== Käsitellään: " & Kuvat.Fields("FileID").Value & " ==="
 ' ... process drawing ...
@@ -236,6 +251,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 ```
 
 **Commented-Out (Available for Debugging):**
+
 ```vba
 ' LisaaLokiin "- Avataan pohjakuva: " & Tiedosto
 ' LisaaLokiin "- Haettu insertointipaikat kuvalle: " & Kuvat.Fields("BaseDWG").Value
@@ -244,7 +260,8 @@ LisaaLokiin "Valmis: " & KuvaNimi
 ' LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
 ```
 
-**Benefit:** 
+**Benefit:**
+
 - Clean production log (start/finish only)
 - Detailed debugging available by uncommenting
 - Easy to enable/disable specific log points
@@ -260,6 +277,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 **User Request:** Make log scroll during macro execution
 
 **Attempts Made:**
+
 1. ✅ Added DoEvents calls throughout main loop
 2. ✅ Added Me.Repaint before DoEvents
 3. ✅ Added Loki.SelStart auto-scroll
@@ -270,6 +288,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 **Conclusion:** All attempts ineffective due to VBA architecture
 
 **Technical Reality:**
+
 - VBA is single-threaded
 - AutoCAD COM operations block execution
 - Access UI freezes during long operations (by design)
@@ -299,6 +318,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 ### Code Quality Metrics
 
 **Before Project:**
+
 - 64-bit Compatibility: ✅ 100%
 - Error Handling: ✅ 95%
 - Null Safety: ⚠️ 85%
@@ -307,6 +327,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 - Metadata: ❌ INCOMPATIBLE
 
 **After Project:**
+
 - 64-bit Compatibility: ✅ 100%
 - Error Handling: ✅ 100%
 - Null Safety: ✅ 95%
@@ -375,6 +396,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 **Rationale:** Required for Access form compatibility (Form_Tee Kuvat uses OPENFILENAME)
 
 **Code Comment:**
+
 ```vba
 ' Updated 2025-10-23: Changed API Declarations from Private to Public
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
@@ -407,6 +429,7 @@ LisaaLokiin "Valmis: " & KuvaNimi
 **Effect:** Closing them crashes Access with Error 0
 
 **Correct Pattern:**
+
 ```vba
 Set db = CurrentDb
 ' ... use db ...
@@ -423,6 +446,7 @@ Set db = Nothing  ' Let Access manage cleanup
 **Rule:** Use temporary SelectionSets for programmatic selection, not ActiveSelectionSet
 
 **Correct Pattern:**
+
 ```vba
 ' Create temporary set with unique name
 Set Joukko = oDoc.SelectionSets.Add("TempSet_" & Format(Now, "hhnnss"))
@@ -437,6 +461,7 @@ On Error GoTo 0
 ```
 
 **Wrong Pattern:**
+
 ```vba
 Set Joukko = oDoc.ActiveSelectionSet  ' WRONG: User's selection
 Joukko.Select 2, , , FilterType, FilterData  ' WRONG: Mode 2 needs window
@@ -451,6 +476,7 @@ Joukko.Select 2, , , FilterType, FilterData  ' WRONG: Mode 2 needs window
 **Rule:** VBA files exported from Access contain metadata that breaks re-import
 
 **Metadata Types:**
+
 - VERSION blocks
 - BEGIN/MultiUse/END blocks
 - Attribute VB_Name declarations
@@ -466,6 +492,7 @@ Joukko.Select 2, , , FilterType, FilterData  ' WRONG: Mode 2 needs window
 **Rule:** DoEvents cannot make VBA truly responsive during blocking operations
 
 **Reality:** Access will freeze during:
+
 - AutoCAD COM calls
 - Large file operations
 - Complex database queries
@@ -505,6 +532,7 @@ Joukko.Select 2, , , FilterType, FilterData  ' WRONG: Mode 2 needs window
 All changes committed to branch: `access_updates`
 
 **Key Commits:**
+
 - Initial analysis and documentation
 - General.bas null-checking optimization
 - Form_DBUsers db.Close fix
@@ -522,12 +550,14 @@ All changes committed to branch: `access_updates`
 **Status:** Ready to begin analysis
 
 **Known State:**
+
 - Metadata cleanup already completed (37 .cls, 4 .bas files)
 - No functional testing performed yet
 - Unknown 64-bit compatibility status
 - Unknown optimization status
 
 **Recommended Approach:**
+
 1. Comprehensive 64-bit compatibility analysis
 2. Database operation review
 3. Error handling assessment

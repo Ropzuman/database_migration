@@ -5,9 +5,9 @@ Dim oDoc As AcadDocument
 
 Private Sub GenRev_Click()
 'Generoidaan revisiosivut
-Dim Kuvat As Recordset
-Dim Revisiot As Recordset
-Dim DB As Database
+Dim Kuvat As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim Revisiot As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim Pohja As String
 Dim Talletus As String
 Dim i As Integer
@@ -21,7 +21,7 @@ If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
   Exit Sub
 End If
 On Error GoTo 0
-Set DB = CurrentDB
+Set DB = CurrentDb
 Set Kuvat = DB.OpenRecordset("SELECT TyyppipHak, Hakemisto, PiirNro FROM zTITLE_Tbl GROUP BY TyyppipHak, Hakemisto, PiirNro;")
 Pohja = Kuvat.Fields("TyyppipHak").Value & "IndexForRevision.DWG"
 Do While Not Kuvat.EOF
@@ -62,7 +62,7 @@ Dim Spositio As String
 Dim Tyyppipiir As String
 Dim Maara As Integer
 Dim i As Integer
-Dim DB As Database
+Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 
 Dim zTitleTbl As DAO.Recordset
 Dim KuviinTbl As DAO.Recordset
@@ -71,7 +71,7 @@ Dim Taulu As DAO.Recordset
 Dim EntType As String
 
 Dim Tieto As Variant
-Set DB = CurrentDB
+Set DB = CurrentDb
 DB.Execute "DELETE * FROM TiedotKuviin WHERE Frozen=0"
 
 Set KuviinTbl = DB.OpenRecordset("TiedotKuviin", dbOpenDynaset)
@@ -145,7 +145,7 @@ Dim Kuvat As DAO.Recordset
 Dim Tiedot As DAO.Recordset
 Dim oEntity As Object
 Dim DocTila As Boolean
-Dim DB As Database
+Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim i As Integer, Maara As Integer
 
 On Error Resume Next
@@ -156,7 +156,7 @@ If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
   Exit Sub
 End If
 On Error GoTo 0
-Set DB = CurrentDB
+Set DB = CurrentDb
 Set Kuvat = DB.OpenRecordset("SELECT TalletusKuva, [phakem] & [pohjakuva] AS Avaa, [UHakem] & [talletuskuva] AS Talleta FROM qryKuviin GROUP BY TalletusKuva, [phakem] & [pohjakuva], [UHakem] & [talletuskuva]")
 Kuvat.MoveLast
 Kuvat.MoveFirst
@@ -234,4 +234,5 @@ Select Case UCase(Kirjain)
     AnnaSarake = 9
 End Select
 End Function
+
 
