@@ -1,4 +1,5 @@
 Option Compare Database   'Use database order for string comparisons
+Option Explicit           'Require variable declaration
 '==============================================================================
 ' Module: DataToACAD
 ' Purpose: Generate AutoCAD LISP files from database data for circuit diagrams
@@ -19,7 +20,7 @@ Option Compare Database   'Use database order for string comparisons
 ' Returns: LISP code string or original text if not found
 ' Updated: 2025-11-11 - Added DAO typing, error handling, comments
 '------------------------------------------------------------------------------
-Function CrsRefLink(tblnimi, teksti)
+Function CrsRefLink(tblnimi As String, teksti As String) As String
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
@@ -67,7 +68,7 @@ End Function
 ' Notes: Handles legacy naming convention with asterisk markers
 ' Updated: 2025-11-11 - Added error handling and comments
 '------------------------------------------------------------------------------
-Function get_filename(taulnimi)
+Function get_filename(taulnimi As String) As String
 On Error GoTo ErrorHandler
 
 Dim ast As Integer
@@ -97,7 +98,7 @@ End Function
 ' Notes: LISP requires special escaping of quote characters
 ' Updated: 2025-11-11 - Added error handling, improved variable names, comments
 '------------------------------------------------------------------------------
-Function inch(a)
+Function inch(a As String) As String
 On Error GoTo ErrorHandler
 
 Dim L As String     ' Double quote character
@@ -143,7 +144,7 @@ End Function
 '   5. Closes all files properly
 ' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
 '------------------------------------------------------------------------------
-Function makeFiles(common)
+Function makeFiles(common As String) As Integer
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
@@ -254,8 +255,6 @@ ErrorHandler:
     Set DB = Nothing
 End Function
 
-End Function
-
 '------------------------------------------------------------------------------
 ' Sub: MakeListNoLoopID
 ' Purpose: Generate LISP lists from tables/queries that don't require loop ID filtering
@@ -265,7 +264,7 @@ End Function
 ' Notes: Handles both single tables and wildcard table groups (e.g., "CIRCUIT*")
 ' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
 '------------------------------------------------------------------------------
-Sub MakeListNoLoopID(tanimi, Hakem)
+Sub MakeListNoLoopID(tanimi As String, Hakem As String)
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
@@ -371,10 +370,19 @@ ErrorHandler:
     Set DB = Nothing
 End Sub
 
-Sub MakeListWithLoopID(tblnimipre, Hakem, idsyst, suoda, Looppid)
+Sub MakeListWithLoopID(tblnimipre As String, Hakem As String, idsyst As String, suoda As Variant, Looppid As Integer)
+On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database
 Dim tble As DAO.Recordset
+Dim L As String
+Dim aster As Integer
+Dim filenum As Integer
+Dim i As Integer
+Dim ii As Integer
+Dim iii As Integer
+Dim preref As String
+
 Set DB = CurrentDb
 L = Chr(34)
 
@@ -466,6 +474,13 @@ Else
 
 End If
 
+Exit Sub
+
+ErrorHandler:
+    MsgBox "Error in MakeListWithLoopID: " & Err.Description, vbCritical, "Loop ID List Error"
+    On Error Resume Next
+    If Not tble Is Nothing Then tble.Close
+    Close filenum
 End Sub
 
 '------------------------------------------------------------------------------
@@ -480,6 +495,7 @@ End Sub
 ' If adapting for new projects, update these paths or move to configuration table.
 '------------------------------------------------------------------------------
 Function MakeLocFiles()
+On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database
 Dim cmmn As DAO.Recordset
@@ -487,6 +503,10 @@ Dim tbl As DAO.Recordset
 Dim Taulukko As TableDef
 Dim Taul As DAO.Recordset
 Dim tble As DAO.Recordset
+Dim L As String
+Dim i As Integer
+Dim kentta1 As Variant
+Dim kentta2 As Variant
 
 Set DB = CurrentDb
 Set tble = DB.OpenRecordset("Loops", dbOpenDynaset)
@@ -546,15 +566,26 @@ Next
         Print #1, ")"
         Close
 
+Exit Function
+
+ErrorHandler:
+    MsgBox "Error in MakeLocFiles: " & Err.Description, vbCritical, "Location Files Error"
+    On Error Resume Next
+    Close #1
+    If Not tble Is Nothing Then tble.Close
+    If Not Taul Is Nothing Then Taul.Close
 End Function
 
-Sub MakeScript(common, suod, Looppid)
+Sub MakeScript(common As String, suod As Variant, Looppid As Integer)
+On Error GoTo ErrorHandler
 
 'common = "COMMON"
 
 Dim DB As DAO.Database
 Dim cmmn As DAO.Recordset
 Dim tblmain As DAO.Recordset
+Dim L As String
+Dim iii As Integer
 
 Set DB = CurrentDb
 Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
@@ -612,10 +643,17 @@ If Not IsNull(cmmn.Fields("ScriptInTheEnd").Value) Then Print #1, cmmn.Fields("S
 
 Close
 
+Exit Sub
 
+ErrorHandler:
+    MsgBox "Error in MakeScript: " & Err.Description, vbCritical, "Script Generation Error"
+    On Error Resume Next
+    Close #1
+    Close #2
 End Sub
 
 Function test()
+Dim Tied As Integer
 
 Tied = FreeFile
 Open "twroska.txt" For Output As Tied

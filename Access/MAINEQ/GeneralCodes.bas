@@ -49,7 +49,6 @@ ErrorHandler:
     ' Form doesn't exist or error occurred - return False
     IsLoaded = False
 End Function
-End Function
 
 '------------------------------------------------------------------------------
 ' Function: HaeViimPaiva
@@ -71,8 +70,8 @@ Dim teksti As String
   i = 2
   Pituus = Len(teksti)
   
-  ' Etsit��n viimeisin revisio (Find the last revision entry)
-  If InStr(teksti, vbCrLf) Then  ' Jos sy�tteest� l�ytyy rivinvaihto (If multi-line)
+  ' Etsitään viimeisin revisio (Find the last revision entry)
+  If InStr(teksti, vbCrLf) Then  ' Jos syötteestä löytyy rivinvaihto (If multi-line)
     ' Find the start of the last line
     Do
       i = i + 1
@@ -89,8 +88,6 @@ Exit Function
 ErrorHandler:
     MsgBox "Error in HaeViimPaiva: " & Err.Description, vbCritical, "Revision Date Extraction Error"
     HaeViimPaiva = ""  ' Return empty string on error
-End Function
-
 End Function
 
 '------------------------------------------------------------------------------
@@ -177,7 +174,6 @@ ErrorHandler:
     End If
     Set DB = Nothing
 End Function
-End Function
 
 '------------------------------------------------------------------------------
 ' Function: Positiot
@@ -239,7 +235,6 @@ ErrorHandler:
     End If
     Set DB = Nothing
 End Function
-End Function
 
 '------------------------------------------------------------------------------
 ' Function: Vaihekulma
@@ -262,7 +257,6 @@ ErrorHandler:
     MsgBox "Error in Vaihekulma: " & Err.Description & vbCrLf & _
            "Power Factor: " & Cosfii, vbCritical, "Phase Angle Calculation Error"
     Vaihekulma = 0  ' Return 0 on error
-End Function
 End Function
 
 '------------------------------------------------------------------------------
@@ -305,7 +299,6 @@ MotKaapUhErr:
            vbCritical, "Cable Voltage Drop Calculation Error"
     MotKaapUh = "Error"  ' Updated 2025-11-11: Changed from "00" to "Error" for clarity
     Resume Exit_Function
-End Function
 End Function
 
 '------------------------------------------------------------------------------

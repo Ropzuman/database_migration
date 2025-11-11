@@ -34,7 +34,7 @@ Exit Sub
 Else
 If Not IsNull(Me.Rpm) And Me.Rpm <> "0" Then
     If Me.Rpm <> "3000" And Me.Rpm <> "1500" And Me.Rpm <> "1000" And Me.Rpm <> "750" Then
-        MsgBox "Huom!@Arvo pit�� olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
+        MsgBox "Huom!@Arvo pitää olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
         Me.Rpm.SetFocus
     End If
 End If

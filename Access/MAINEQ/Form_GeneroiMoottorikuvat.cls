@@ -14,27 +14,29 @@ Option Explicit
 ' For new projects, update these paths in the GenKuvat_Click procedure.
 '==============================================================================
 
-Dim oAcad As AcadApplication
-Dim oDoc As AcadDocument
+' Using late binding for AutoCAD - no type library reference needed
+' Updated 2025-11-11: Changed from early binding (AcadApplication) to late binding (Object)
+Dim oAcad As Object  ' AcadApplication
+Dim oDoc As Object   ' AcadDocument
 
 Private Sub GenKuvat_Click()
 Dim Kuvat As DAO.Recordset
 Dim Tiedot As DAO.Recordset
-Dim oBlock As AcadBlockReference
+Dim oBlock As Object  ' AcadBlockReference - late binding
 Dim DocTila As Boolean
 Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix
 Dim i As Integer, K As Integer, Maara As Integer
 Dim Attrib As Variant
 Dim iPoint(2) As Double
-Dim Joukko As AcadSelectionSet
+Dim Joukko As Object  ' AcadSelectionSet - late binding
 Dim FilterType(0) As Integer
 Dim FilterData(0) As Variant
 Dim Laitettu As Integer
 
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
-  MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+  MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If
@@ -94,7 +96,7 @@ Do While Not Kuvat.EOF
   Next i
   Set Joukko = oDoc.ActiveSelectionSet
   Joukko.Clear
-  Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+  Joukko.Select 5, , , FilterType, FilterData  ' 5 = acSelectionSetAll (late binding)
   Set oBlock = Joukko(0)
   Attrib = oBlock.GetAttributes
   Laitettu = 0

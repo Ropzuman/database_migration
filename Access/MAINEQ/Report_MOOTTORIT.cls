@@ -25,8 +25,8 @@ Dim Sar As Integer
 Set Tiedot = CurrentDb.OpenRecordset("_qryMOTOR")
 Rivi = 10
   
-  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest�� noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
-    SysCmd acSysCmdSetStatus, "K�ynnist�� Exceli�..."
+  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kestää noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
+    SysCmd acSysCmdSetStatus, "Käynnistää Exceliä..."
     Set xlApp = CreateObject("Excel.Application")
     Set WB = xlApp.Workbooks.Open("N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\MotorTEMPLATE.xls", , True)
     SysCmd acSysCmdSetStatus, "Vie tietoa Exceliin..."

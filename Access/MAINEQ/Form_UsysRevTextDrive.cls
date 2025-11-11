@@ -73,7 +73,7 @@ Eka = False
     Else
       Rev.Value = "0"
       TOtsikko.Caption = "First Revision"
-      TOtsikko2.Caption = "Ensimm�inen revisio"
+      TOtsikko2.Caption = "Ensimmäinen revisio"
       AddNew.Enabled = False
       Uusi = True
       Eka = True

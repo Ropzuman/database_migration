@@ -95,11 +95,11 @@ Dim i As Integer
 
 ' Validate that all required selections are made
 If ATaulu = "" Or UTaulu = "" Or ID = "" Or Rev = "" Then
-  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinn�t"
+  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinnät"
   Exit Sub
 End If
 If TRev = "" Or TDate = "" Or TMaker = "" Then
-  MsgBox "Laita ensin revisiomerkinn�t", vbCritical, "Tee merkinn�t"
+  MsgBox "Laita ensin revisiomerkinnät", vbCritical, "Tee merkinnät"
   Exit Sub
 End If
 
@@ -138,6 +138,6 @@ Do While Not Vert.EOF
   Vert.MoveNext
 Loop
 Merk.Visible = False
-MsgBox "Valmis", vbOKOnly, "Tee merkinn�t"
+MsgBox "Valmis", vbOKOnly, "Tee merkinnät"
 
 End Sub

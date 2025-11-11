@@ -18,7 +18,7 @@ Else
     If IsLoaded("SiemensConstrCodeLastPosition") Then
     DoCmd.Close
     End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkiss� ei ollut pistett�.@Tarkista luettelosta!"
+    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
 End If
 
 End Sub
@@ -40,7 +40,7 @@ Else
     If IsLoaded("SiemensConstrCodeLastPosition") Then
     DoCmd.Close
     End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkiss� ei ollut pistett�.@Tarkista luettelosta!"
+    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
 End If
 
 End Sub

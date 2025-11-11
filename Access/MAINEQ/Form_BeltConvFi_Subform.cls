@@ -32,7 +32,8 @@ ID_Nro = Me.KompValinta.Column(0)
 End Sub
 
 Private Sub LisaaOsa_Click()
-Dim RS As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding, UusiSf As String
+Dim RS As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+Dim UusiSf As String
 Set RS = Me.RecordsetClone
 If Not Me.KompValinta Then
   If RS.RecordCount = 0 Then
