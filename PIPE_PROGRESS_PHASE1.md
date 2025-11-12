@@ -378,7 +378,7 @@ PIPE database has extensive COM automation with AutoCAD:
 
 ## Optimization Summary (NEW)
 
-### Performance Improvements:
+### Performance Improvements
 
 1. **String Functions**: Replaced `LCase` → `LCase$`, `Left` → `Left$`, `Mid` → `Mid$`, `Trim` → `Trim$` throughout
 2. **Cached Comparisons**: AvaaKuvasta caches lowercase drawing name, Form_Linkkien vaihto caches path
@@ -414,7 +414,7 @@ PIPE database has extensive COM automation with AutoCAD:
 
 ## Next Steps (Phase 2)
 
-### Immediate Priorities:
+### Immediate Priorities
 
 1. ✅ **Optimization pass on Phase 1 files** (DONE)
 2. ✅ **Update documentation** (DONE)
@@ -427,7 +427,7 @@ PIPE database has extensive COM automation with AutoCAD:
    - **Form_DBUsers.cls** (likely minimal changes)
    - **Form_USysFlowPickNo_OLD.cls** (skip or migrate)
 
-### Testing Checklist (Phase 1):
+### Testing Checklist (Phase 1)
 
 - [ ] **Compile all modules** in Access VBA editor (Debug → Compile)
 - [ ] **Test Koodit.bas functions**:
@@ -504,7 +504,7 @@ PIPE database has extensive COM automation with AutoCAD:
 
 ## Phase 1 Completion Summary
 
-### What Worked Well:
+### What Worked Well
 
 - Systematic encoding fix before migration saves time
 - Module documentation before proceeding helps understanding
@@ -514,7 +514,7 @@ PIPE database has extensive COM automation with AutoCAD:
 - **Transaction support critical for batch operations**
 - **String function optimization ($-variants) measurably faster**
 
-### Challenges Encountered:
+### Challenges Encountered
 
 - AutoCAD object model distinct from DAO (don't mix)
 - Navigation logic bugs (wraparound conditions)
@@ -522,7 +522,7 @@ PIPE database has extensive COM automation with AutoCAD:
 - Finnish text encoding requires careful attention
 - **Performance issues with per-field Edit/Update in batch operations**
 
-### Improvements for Phase 2:
+### Improvements for Phase 2
 
 - Document AutoCAD object patterns as encountered
 - Test AutoCAD integration early
