@@ -66,6 +66,7 @@ End Sub
 Private Sub Command11_Click()
 On Error GoTo ErrorHandler
     Dim DB As DAO.Database  ' Current database
+    Dim WS As DAO.Workspace  ' Workspace for transaction support
     Dim Taulu As DAO.Recordset  ' Selected table
     Dim i As Integer  ' Field counter
     Dim RecordsProcessed As Long  ' Counter for processed records
@@ -73,6 +74,7 @@ On Error GoTo ErrorHandler
     Dim NeedsUpdate As Boolean  ' Flag if current record needs update
     
     Set DB = CurrentDb
+    Set WS = DBEngine.Workspaces(0)  ' Get default workspace
     Set Taulu = DB.OpenRecordset(KaikkiTaulukot.Value, dbOpenDynaset)
     
     If Taulu.EOF Then
@@ -85,7 +87,7 @@ On Error GoTo ErrorHandler
     End If
     
     ' Begin transaction for better performance
-    DB.BeginTrans
+    WS.BeginTrans
     
     Do While Not Taulu.EOF
       NeedsUpdate = False
@@ -112,13 +114,14 @@ On Error GoTo ErrorHandler
     Loop
     
     ' Commit transaction
-    DB.CommitTrans
+    WS.CommitTrans
     
     MsgBox "Valmis: " & RecordsProcessed & " riviä käyty, " & RecordsUpdated & " päivitetty", vbInformation, "Empty to Null"  ' "Ready"
     
     ' Cleanup
     Taulu.Close
     Set Taulu = Nothing
+    Set WS = Nothing
     DB.Close
     Set DB = Nothing
     Exit Sub
@@ -126,9 +129,10 @@ On Error GoTo ErrorHandler
 ErrorHandler:
     ' Rollback transaction on error
     On Error Resume Next
-    If Not DB Is Nothing Then DB.Rollback
+    If Not WS Is Nothing Then WS.Rollback
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
+    Set WS = Nothing
     If Not DB Is Nothing Then DB.Close
     Set DB = Nothing
     On Error GoTo 0
@@ -220,6 +224,7 @@ Private Sub Command5_Click()
 On Error GoTo ErrorHandler
     ' Clean up orphaned zDetails records
     Dim DB As DAO.Database  ' Current database
+    Dim WS As DAO.Workspace  ' Workspace for transaction support
     Dim tbl As DAO.Recordset  ' Query results (orphaned records)
     Dim tbl2 As DAO.Recordset  ' zDetails deletion target
     Dim qry As DAO.Recordset  ' Query recordset (unused)
@@ -236,6 +241,7 @@ On Error GoTo ErrorHandler
     DeleteCount = 0
 
     Set DB = CurrentDb
+    Set WS = DBEngine.Workspaces(0)  ' Get default workspace
 
     ' Build query to find orphaned zDetails records
     sSQL = ""
@@ -247,7 +253,7 @@ On Error GoTo ErrorHandler
 
     If Not tbl.EOF Then
       DoCmd.Hourglass True
-      DB.BeginTrans  ' Start transaction
+      WS.BeginTrans  ' Start transaction
       
       tbl.MoveFirst
       Do Until tbl.EOF
@@ -273,7 +279,7 @@ On Error GoTo ErrorHandler
           tbl.MoveNext
       Loop
       
-      DB.CommitTrans  ' Commit transaction
+      WS.CommitTrans  ' Commit transaction
       DoCmd.Hourglass False
       
       tbl.Close
@@ -285,13 +291,14 @@ On Error GoTo ErrorHandler
     
     ' Cleanup
     Set tbl2 = Nothing
+    Set WS = Nothing
     Set DB = Nothing
     Exit Sub
 
 ErrorHandler:
     DoCmd.Hourglass False
     On Error Resume Next
-    If Not DB Is Nothing Then DB.Rollback
+    If Not WS Is Nothing Then WS.Rollback
     If Not tbl Is Nothing Then tbl.Close
     Set tbl = Nothing
     Set tbl2 = Nothing
