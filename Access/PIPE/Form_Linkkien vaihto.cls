@@ -51,12 +51,25 @@ On Error GoTo ErrorHandler
     Dim s As Integer  ' Counter (unused)
     Dim Taul As DAO.Recordset  ' MSysObjects query results
     Dim Taulu As String  ' Current table name being processed
+    Dim LowerPolku As String  ' Lowercase current path for comparison
+    Dim LinksUpdated As Integer  ' Counter for updated links
 
+    ' Initialize counter
+    LinksUpdated = 0
+    
     ' Get current database directory path
-    Polku = Left(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
+    Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir$(CurrentDb.Name)))
+    LowerPolku = LCase$(Polku)  ' Cache lowercase for comparison
     
     ' Query for all linked tables
     Set Taul = CurrentDb.OpenRecordset("SELECT DATABASE, ForeignName, Name FROM MSysObjects WHERE Database Is Not Null")
+    
+    If Taul.EOF Then
+        MsgBox "Ei linkitettyjä tauluja löytynyt", vbInformation, "Link Update"  ' "No linked tables found"
+        Taul.Close
+        Set Taul = Nothing
+        Exit Sub
+    End If
     
     ' Process each linked table
     Do While Not Taul.EOF
@@ -64,23 +77,26 @@ On Error GoTo ErrorHandler
       If Taul.Fields("Name") <> Taulu Then
           ' Extract directory and filename from current link path
           For i = Len(Taul.Fields("Database")) To 1 Step -1
-            If Mid(Taul.Fields("Database"), i, 1) = "\" Then
-              Polku2 = LCase(Left(Taul.Fields("Database"), i))  ' Directory path
-              Nimi = Mid(Taul.Fields("Database"), i + 1)  ' Filename
+            If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
+              Polku2 = LCase$(Left$(Taul.Fields("Database"), i))  ' Directory path
+              Nimi = Mid$(Taul.Fields("Database"), i + 1)  ' Filename
               Exit For
             End If
           Next i
           
           ' Check if link path differs from current database path
-          If Polku2 <> LCase(Polku) Then
+          If Polku2 <> LowerPolku Then
             Taulu = Taul.Fields("Name")
             
             ' Drop existing linked table
-            CurrentDb.Execute "DROP TABLE [" & Taul.Fields("Name") & "]"
+            CurrentDb.Execute "DROP TABLE [" & Taulu & "]"
             
             ' Recreate link to current directory
             On Error Resume Next
             DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, acTable, Taulu, Taulu, False
+            If Err = 0 Then
+                LinksUpdated = LinksUpdated + 1
+            End If
             Err.Clear
             On Error GoTo ErrorHandler
           End If
@@ -91,7 +107,12 @@ On Error GoTo ErrorHandler
     ' Cleanup
     Taul.Close
     Set Taul = Nothing
-    MsgBox "Valmis", vbInformation, "Link Update"  ' "Ready"
+    
+    If LinksUpdated > 0 Then
+        MsgBox "Päivitetty " & LinksUpdated & " linkkiä", vbInformation, "Link Update"  ' "Updated X links"
+    Else
+        MsgBox "Ei linkkejä päivitettävänä", vbInformation, "Link Update"  ' "No links to update"
+    End If
     Exit Sub
 
 ErrorHandler:

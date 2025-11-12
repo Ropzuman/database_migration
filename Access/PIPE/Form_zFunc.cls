@@ -55,34 +55,66 @@ End Sub
 '   1. Open selected table from KaikkiTaulukot combo
 '   2. Iterate through all records
 '   3. For each field, if value is empty string, set to Null
-'   4. Update record
+'   4. Update record with transaction support
 '
 ' Notes:
 '   - Improves database normalization
 '   - Prevents empty strings in database
 '   - Can be time-consuming for large tables
+'   - Optimized: Uses Edit once per record, transaction support
 '--------------------------------------------------------------------------------
 Private Sub Command11_Click()
 On Error GoTo ErrorHandler
     Dim DB As DAO.Database  ' Current database
     Dim Taulu As DAO.Recordset  ' Selected table
-    Dim i As Integer, j As Integer  ' Loop counters
+    Dim i As Integer  ' Field counter
+    Dim RecordsProcessed As Long  ' Counter for processed records
+    Dim RecordsUpdated As Long  ' Counter for updated records
+    Dim NeedsUpdate As Boolean  ' Flag if current record needs update
     
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset(KaikkiTaulukot.Value)
+    Set Taulu = DB.OpenRecordset(KaikkiTaulukot.Value, dbOpenDynaset)
+    
+    If Taulu.EOF Then
+        MsgBox "Taulu on tyhjä", vbInformation, "Empty to Null"
+        Taulu.Close
+        Set Taulu = Nothing
+        DB.Close
+        Set DB = Nothing
+        Exit Sub
+    End If
+    
+    ' Begin transaction for better performance
+    DB.BeginTrans
     
     Do While Not Taulu.EOF
+      NeedsUpdate = False
+      RecordsProcessed = RecordsProcessed + 1
+      
+      ' Check all fields first before editing
       For i = 0 To Taulu.Fields.Count - 1
         If Taulu.Fields(i) = "" Then
-          Taulu.Edit
+          If Not NeedsUpdate Then
+            Taulu.Edit
+            NeedsUpdate = True
+          End If
           Taulu.Fields(i) = Null
-          Taulu.Update
         End If
       Next i
+      
+      ' Only update if changes were made
+      If NeedsUpdate Then
+        Taulu.Update
+        RecordsUpdated = RecordsUpdated + 1
+      End If
+      
       Taulu.MoveNext
     Loop
     
-    MsgBox "Valmis", vbInformation, "Empty to Null"  ' "Ready"
+    ' Commit transaction
+    DB.CommitTrans
+    
+    MsgBox "Valmis: " & RecordsProcessed & " riviä käyty, " & RecordsUpdated & " päivitetty", vbInformation, "Empty to Null"  ' "Ready"
     
     ' Cleanup
     Taulu.Close
@@ -92,13 +124,15 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error converting empty strings: " & Err.Description, vbCritical, "Error"
+    ' Rollback transaction on error
     On Error Resume Next
+    If Not DB Is Nothing Then DB.Rollback
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
     If Not DB Is Nothing Then DB.Close
     Set DB = Nothing
     On Error GoTo 0
+    MsgBox "Error converting empty strings: " & Err.Description, vbCritical, "Error"
 End Sub
 
 '--------------------------------------------------------------------------------
@@ -159,7 +193,7 @@ Err_Command3_Click:
 End Sub
 
 Private Sub Command4_Click()
-DoCmd.OpenQuery "Function_zDetails03_lis�tt�v�t", acNormal, acEdit
+DoCmd.OpenQuery "Function_zDetails03_lisättävät", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails04_FileID", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails09_update", acNormal, acEdit
 DoCmd.OpenQuery "Function_zDetails14_Fileid2", acNormal, acEdit
@@ -174,11 +208,13 @@ End Sub
 '   1. Find zDetails records with no matching record in Function_zdetails01
 '   2. For each orphaned record, delete it from zDetails
 '   3. Use hourglass cursor to indicate progress
+'   4. Transaction support for data integrity
 '
 ' Notes:
 '   - Cleans up obsolete instrument detail records
 '   - Uses LEFT JOIN to find unmatched records
 '   - L = Chr(34) for quote character in SQL
+'   - Optimized: Hourglass only shown during processing
 '--------------------------------------------------------------------------------
 Private Sub Command5_Click()
 On Error GoTo ErrorHandler
@@ -194,8 +230,10 @@ On Error GoTo ErrorHandler
     Dim LoopSymb As String  ' Loop symbol
     Dim Suffix As String  ' Tag suffix
     Dim L As String  ' Quote character
+    Dim DeleteCount As Long  ' Count of deleted records
 
-    L = Chr(34)  ' Double quote for SQL strings
+    L = Chr$(34)  ' Double quote for SQL strings
+    DeleteCount = 0
 
     Set DB = CurrentDb
 
@@ -208,10 +246,11 @@ On Error GoTo ErrorHandler
     Set tbl = DB.OpenRecordset(sSQL)
 
     If Not tbl.EOF Then
+      DoCmd.Hourglass True
+      DB.BeginTrans  ' Start transaction
+      
       tbl.MoveFirst
       Do Until tbl.EOF
-          DoCmd.Hourglass True
-
           acode = tbl!AreaCode
           LoopNo = tbl!LoopNo
           Suffix = tbl!Suffix
@@ -224,18 +263,24 @@ On Error GoTo ErrorHandler
           ssSQL = ssSQL & " WHERE (((zDetails.AreaCode)=" & L & acode & L & ") AND ((zDetails.LoopNo)=" & L & LoopNo & L & ") AND ((zDetails.LoopSymb)=" & L & LoopSymb & L & ") AND ((zDetails.Suffix)=" & L & Suffix & L & "));"
           Set tbl2 = DB.OpenRecordset(ssSQL)
 
-          tbl2.Delete
-          tbl2.MovePrevious
-
+          If Not tbl2.EOF Then
+              tbl2.Delete
+              DeleteCount = DeleteCount + 1
+          End If
+          
+          tbl2.Close
+          Set tbl2 = Nothing
           tbl.MoveNext
       Loop
+      
+      DB.CommitTrans  ' Commit transaction
       DoCmd.Hourglass False
       
       tbl.Close
       Set tbl = Nothing
-      MsgBox "Orphaned records deleted", vbInformation, "Cleanup Complete"
+      MsgBox "Poistettu " & DeleteCount & " vanhentunutta tietuetta", vbInformation, "Cleanup Complete"  ' "Deleted X orphaned records"
     Else
-      MsgBox "No orphaned records found", vbInformation, "Cleanup Complete"
+      MsgBox "Ei vanhentuneita tietueita", vbInformation, "Cleanup Complete"  ' "No orphaned records found"
     End If
     
     ' Cleanup
@@ -245,13 +290,14 @@ On Error GoTo ErrorHandler
 
 ErrorHandler:
     DoCmd.Hourglass False
-    MsgBox "Error deleting orphaned records: " & Err.Description, vbCritical, "Error"
     On Error Resume Next
+    If Not DB Is Nothing Then DB.Rollback
     If Not tbl Is Nothing Then tbl.Close
     Set tbl = Nothing
     Set tbl2 = Nothing
     Set DB = Nothing
     On Error GoTo 0
+    MsgBox "Error deleting orphaned records: " & Err.Description, vbCritical, "Error"
 End Sub
 
 Private Sub Command6_Click()

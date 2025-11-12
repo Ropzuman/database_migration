@@ -127,6 +127,7 @@ End Sub
 '   - Requires AutoCAD to be running
 '   - Handles missing drawings gracefully
 '   - Finnish: "Kohde" = "Object/target"
+'   - Optimized: Uses lowercase comparison consistently
 '--------------------------------------------------------------------------------
 Sub AvaaKuvasta(Polku As String, Nimi As String, Handle As String, Info As String)
 On Error GoTo ErrorHandler
@@ -136,21 +137,24 @@ On Error GoTo ErrorHandler
     Dim MaxPoint As Variant  ' Bounding box maximum point
     Dim i As Integer  ' Loop counter
     Dim OK As Boolean  ' Drawing open flag
+    Dim LowerNimi As String  ' Lowercase drawing name for comparison
   
+    ' Normalize drawing name for consistent comparison
+    LowerNimi = LCase$(Nimi)
+    
     ' Try to connect to running AutoCAD
     On Error Resume Next
     Set oACAD = GetObject(, "AutoCAD.Application")
     If Err <> 0 Then
       MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"  ' "Running AutoCAD not found!"
-      Set oACAD = Nothing
       Exit Sub
     End If
     On Error GoTo ErrorHandler
     
-    ' Check if drawing already open
+    ' Check if drawing already open (use cached lowercase name)
     OK = False
     For i = 0 To oACAD.Documents.Count - 1
-      If LCase(oACAD.Documents(i).Name) = Nimi Then
+      If LCase$(oACAD.Documents(i).Name) = LowerNimi Then
         oACAD.Documents(i).Activate
         OK = True
         Exit For
@@ -181,7 +185,9 @@ On Error GoTo ErrorHandler
         If Err <> 0 Then
           MsgBox "Kuvasta ei löytynyt kohdetta tietokannan tiedoilla (Handle oli väärä)!", vbCritical, "Etsi kohde"  ' "Block not found (wrong handle)"
           Err.Clear
+          On Error GoTo ErrorHandler
         Else
+          On Error GoTo ErrorHandler
           ' Zoom to block and highlight
           Entity.GetBoundingBox MinPoint, MaxPoint
           oACAD.ActiveDocument.WindowState = acMax
@@ -189,7 +195,6 @@ On Error GoTo ErrorHandler
           oACAD.ZoomScaled 0.3, acZoomScaledRelative
           Entity.Highlight True
         End If
-        On Error GoTo ErrorHandler
       End If
       AppActivate oACAD.Caption, True
     End If
