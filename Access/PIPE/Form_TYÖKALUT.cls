@@ -205,12 +205,13 @@ End Sub
 '================================================================================
 ' Event: Command31_Click
 ' Purpose: Read instrument valve data from AutoCAD drawings
+' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
 '================================================================================
 Private Sub Command31_Click()
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "INSTVALVEDATA", "INSTVALVE_DATA"
+  LueTiedotByBlockAndAttribute "INSTVALVEDATA", "UP079D", "LOOPNO", "AA"
   Application.SysCmd acSysCmdClearStatus
   MsgBox "Instrumenttiventtiilien luku valmis", vbInformation
   
@@ -274,13 +275,13 @@ End Sub
 '===== Field Instrument Workflow (Commands 41-43) =====
 '================================================================================
 ' Event: Command41_Click
-' Purpose: Read field instrument data from AutoCAD drawings
+' Purpose: Read field instrument data from AutoCAD drawings (UP080D blocks)
 '================================================================================
 Private Sub Command41_Click()
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "FIELDINSTDATA", "FIELDINST_DATA"
+  LueTiedot "FIELDINSTDATA", "UP080D"
   Application.SysCmd acSysCmdClearStatus
   MsgBox "Kenttäinstrumenttien luku valmis", vbInformation
   
@@ -334,7 +335,7 @@ Private Sub Command51_Click()
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "INSTLOOPDATA", "UP079D"
+  LueTiedot "INSTLOOPDATA", "UP080D"
   Application.SysCmd acSysCmdClearStatus
   MsgBox "Instrumenttipiirien luku valmis", vbInformation
   
@@ -446,6 +447,138 @@ ErrorHandler:
 End Sub
 
 '================================================================================
+' Sub: LueTiedotByAttribute
+' Purpose: Read block data from AutoCAD drawings filtered by attribute names
+' Parameters:
+'   Taulukko - Target Access table name
+'   AttribNames - Attribute tag name(s) to filter by (comma-separated)
+'================================================================================
+Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
+  Dim i As Integer, j As Integer
+  Dim oBlock As AcadBlockReference
+  Dim Attrib As Variant
+  Dim Tiedot As DAO.Recordset
+  
+  On Error GoTo ErrorHandler
+  
+  CurrentDb.Execute "DELETE * FROM " & Taulukko
+  
+  Do
+    If SeuraavaKuva = False Then
+      Exit Do
+    Else
+      Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+      PoimiJoukkoByAttribute AttribNames
+      
+      For i = 0 To Joukko.Count - 1
+         Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+         Set oBlock = Joukko(i)
+         Attrib = oBlock.GetAttributes
+         
+         Tiedot.AddNew
+         Tiedot.Fields("PATH") = oDOC.Path
+         Tiedot.Fields("ImpFileID") = oDOC.Name
+         Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+         Tiedot.Fields("Handles") = oBlock.Handle
+         
+         For j = 0 To UBound(Attrib)
+           If Attrib(j).TextString <> "" Then
+             Tiedot.Fields("[" & Attrib(j).TagString & "]") = Attrib(j).TextString
+           End If
+         Next j
+         
+         Tiedot.Update
+      Next i
+      
+      Tiedot.Close
+      Set Tiedot = Nothing
+      Joukko.Delete
+      Set Joukko = Nothing
+    End If
+  Loop
+  
+  ' Cleanup
+  Set oACAD = Nothing
+  Set oDOC = Nothing
+  Exit Sub
+  
+ErrorHandler:
+  Application.SysCmd acSysCmdClearStatus
+  If Not Tiedot Is Nothing Then
+    Tiedot.Close
+    Set Tiedot = Nothing
+  End If
+  MsgBox "Error reading data by attribute: " & Err.Description, vbExclamation
+End Sub
+
+'================================================================================
+' Sub: LueTiedotByBlockAndAttribute
+' Purpose: Read blocks with specific name and attribute value
+' Parameters:
+'   Taulukko - Target Access table name
+'   BlockName - Block name to search for
+'   AttribName - Attribute tag to check
+'   ContainsValue - Value that attribute must contain
+'================================================================================
+Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
+  Dim i As Integer, j As Integer
+  Dim oBlock As AcadBlockReference
+  Dim Attrib As Variant
+  Dim Tiedot As DAO.Recordset
+  
+  On Error GoTo ErrorHandler
+  
+  CurrentDb.Execute "DELETE * FROM " & Taulukko
+  
+  Do
+    If SeuraavaKuva = False Then
+      Exit Do
+    Else
+      Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+      PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, ContainsValue
+      
+      For i = 0 To Joukko.Count - 1
+         Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+         Set oBlock = Joukko(i)
+         Attrib = oBlock.GetAttributes
+         
+         Tiedot.AddNew
+         Tiedot.Fields("PATH") = oDOC.Path
+         Tiedot.Fields("ImpFileID") = oDOC.Name
+         Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+         Tiedot.Fields("Handles") = oBlock.Handle
+         
+         For j = 0 To UBound(Attrib)
+           If Attrib(j).TextString <> "" Then
+             Tiedot.Fields("[" & Attrib(j).TagString & "]") = Attrib(j).TextString
+           End If
+         Next j
+         
+         Tiedot.Update
+      Next i
+      
+      Tiedot.Close
+      Set Tiedot = Nothing
+      Joukko.Delete
+      Set Joukko = Nothing
+    End If
+  Loop
+  
+  ' Cleanup
+  Set oACAD = Nothing
+  Set oDOC = Nothing
+  Exit Sub
+  
+ErrorHandler:
+  Application.SysCmd acSysCmdClearStatus
+  If Not Tiedot Is Nothing Then
+    Tiedot.Close
+    Set Tiedot = Nothing
+  End If
+  MsgBox "Error reading filtered data: " & Err.Description, vbExclamation
+End Sub
+
+'================================================================================
 ' Function: Yhdista
 ' Purpose: Connect to running AutoCAD instance
 ' Returns: True if connection successful, False otherwise
@@ -533,7 +666,7 @@ Private Sub PoimiJoukko(Nimet As String)
   ' Parse block names
   Blokit = Split(Nimet, ",")
   For i = 0 To UBound(Blokit)
-    Blokit(i) = Trim$(Blokit(i))
+    Blokit(i) = UCase$(Trim$(Blokit(i)))
   Next i
   
   ' Create selection set
@@ -574,4 +707,163 @@ Private Sub PoimiJoukko(Nimet As String)
   
 ErrorHandler:
   MsgBox "Error creating selection set: " & Err.Description, vbExclamation
+End Sub
+
+'================================================================================
+' Sub: PoimiJoukkoByAttribute
+' Purpose: Create selection set of blocks containing specific attributes
+' Parameters:
+'   AttribNames - Attribute tag name(s) to look for, comma-separated
+'================================================================================
+Private Sub PoimiJoukkoByAttribute(AttribNames As String)
+  Dim FilterType(0) As Integer
+  Dim FilterData(0) As Variant
+  Dim i As Integer
+  Dim j As Integer
+  Dim k As Integer
+  Dim Attribs As Variant
+  Dim AttribList As Variant
+  Dim Poista() As AcadEntity
+  Dim L As Integer
+  Dim HasAttribute As Boolean
+  
+  On Error GoTo ErrorHandler
+  
+  ' Parse attribute names to search for
+  AttribList = Split(AttribNames, ",")
+  For i = 0 To UBound(AttribList)
+    AttribList(i) = UCase$(Trim$(AttribList(i)))
+  Next i
+  
+  ' Create selection set of all blocks
+  FilterType(0) = 0
+  FilterData(0) = "INSERT"
+  
+  For i = 0 To oDOC.SelectionSets.Count - 1
+    If oDOC.SelectionSets(i).Name = "APUPICK" Then
+      oDOC.SelectionSets(i).Delete
+      Exit For
+    End If
+  Next i
+  
+  Set Joukko = oDOC.SelectionSets.Add("APUPICK")
+  Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+  
+  ' Filter: Keep only blocks that have the specified attributes
+  L = 0
+  For j = 0 To Joukko.Count - 1
+    If Joukko(j).EntityName = "AcDbBlockReference" Then
+      HasAttribute = False
+      
+      ' Check if block has attributes
+      If Joukko(j).HasAttributes Then
+        Attribs = Joukko(j).GetAttributes
+        
+        ' Check each attribute in the block
+        For k = 0 To UBound(Attribs)
+          ' Check if this attribute matches any in our search list
+          For i = 0 To UBound(AttribList)
+            If UCase$(Attribs(k).TagString) = AttribList(i) Then
+              HasAttribute = True
+              Exit For
+            End If
+          Next i
+          If HasAttribute Then Exit For
+        Next k
+      End If
+      
+      ' If block doesn't have the attribute, mark for removal
+      If Not HasAttribute Then
+        ReDim Preserve Poista(L)
+        Set Poista(L) = Joukko(j)
+        L = L + 1
+      End If
+    End If
+  Next j
+  
+  If L > 0 Then Joukko.RemoveItems Poista
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error creating attribute-filtered selection set: " & Err.Description, vbExclamation
+End Sub
+
+'================================================================================
+' Sub: PoimiJoukkoByBlockAndAttributeValue
+' Purpose: Create selection set of specific blocks with attribute containing value
+' Parameters:
+'   BlockName - Block name to search for
+'   AttribName - Attribute tag name to check
+'   ContainsValue - Value that attribute must contain (case-insensitive)
+'================================================================================
+Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, ContainsValue As String)
+  Dim FilterType(0) As Integer
+  Dim FilterData(0) As Variant
+  Dim i As Integer
+  Dim j As Integer
+  Dim Attribs As Variant
+  Dim Poista() As AcadEntity
+  Dim L As Integer
+  Dim HasMatch As Boolean
+  Dim AttribValue As String
+  
+  On Error GoTo ErrorHandler
+  
+  BlockName = UCase$(Trim$(BlockName))
+  AttribName = UCase$(Trim$(AttribName))
+  ContainsValue = UCase$(Trim$(ContainsValue))
+  
+  ' Create selection set of all blocks
+  FilterType(0) = 0
+  FilterData(0) = "INSERT"
+  
+  For i = 0 To oDOC.SelectionSets.Count - 1
+    If oDOC.SelectionSets(i).Name = "APUPICK" Then
+      oDOC.SelectionSets(i).Delete
+      Exit For
+    End If
+  Next i
+  
+  Set Joukko = oDOC.SelectionSets.Add("APUPICK")
+  Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+  
+  ' Filter: Keep only matching blocks with matching attribute value
+  L = 0
+  For j = 0 To Joukko.Count - 1
+    If Joukko(j).EntityName = "AcDbBlockReference" Then
+      HasMatch = False
+      
+      ' Check block name
+      If UCase$(Joukko(j).EffectiveName) = BlockName Then
+        ' Check if block has attributes
+        If Joukko(j).HasAttributes Then
+          Attribs = Joukko(j).GetAttributes
+          
+          ' Check each attribute
+          For i = 0 To UBound(Attribs)
+            If UCase$(Attribs(i).TagString) = AttribName Then
+              AttribValue = UCase$(Attribs(i).TextString)
+              If InStr(AttribValue, ContainsValue) > 0 Then
+                HasMatch = True
+                Exit For
+              End If
+            End If
+          Next i
+        End If
+      End If
+      
+      ' If block doesn't match criteria, mark for removal
+      If Not HasMatch Then
+        ReDim Preserve Poista(L)
+        Set Poista(L) = Joukko(j)
+        L = L + 1
+      End If
+    End If
+  Next j
+  
+  If L > 0 Then Joukko.RemoveItems Poista
+  Exit Sub
+  
+ErrorHandler:
+  MsgBox "Error creating filtered selection set: " & Err.Description, vbExclamation
 End Sub
