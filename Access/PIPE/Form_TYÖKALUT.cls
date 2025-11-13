@@ -522,6 +522,7 @@ Private Sub PoimiJoukko(Nimet As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
   Dim i As Integer
+  Dim j As Integer
   Dim Blokit As Variant
   Dim Poista() As AcadEntity
   Dim L As Integer
