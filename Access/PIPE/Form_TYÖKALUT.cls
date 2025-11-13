@@ -335,7 +335,7 @@ Private Sub Command51_Click()
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "INSTLOOPDATA", "UP080D"
+  LueTiedot "INSTLOOPDATA", "UP079D"
   Application.SysCmd acSysCmdClearStatus
   MsgBox "Instrumenttipiirien luku valmis", vbInformation
   
@@ -382,6 +382,22 @@ End Sub
 
 '===== Helper Functions =====
 '================================================================================
+' Function: FieldExists
+' Purpose: Check if a field exists in a recordset
+' Parameters:
+'   RS - Recordset to check
+'   FieldName - Field name to look for
+' Returns: True if field exists, False otherwise
+'================================================================================
+Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
+  Dim fld As DAO.Field
+  On Error Resume Next
+  Set fld = RS.Fields(FieldName)
+  FieldExists = (Err.Number = 0)
+  On Error GoTo 0
+End Function
+
+'================================================================================
 ' Sub: LueTiedot
 ' Purpose: Read block data from AutoCAD drawings and store in Access table
 ' Parameters:
@@ -393,46 +409,44 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
   Dim oBlock As AcadBlockReference
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
+  Dim fld As DAO.Field
   
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "DELETE * FROM " & Taulukko
   
-  Do
-    If SeuraavaKuva = False Then
-      Exit Do
-    Else
-      Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-      PoimiJoukko Blokki
+  Do While SeuraavaKuva
+    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+    PoimiJoukko Blokki
+    
+    For i = 0 To Joukko.Count - 1
+      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+      Set oBlock = Joukko(i)
+      Attrib = oBlock.GetAttributes
       
-      For i = 0 To Joukko.Count - 1
-         Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
-         Set oBlock = Joukko(i)
-         Attrib = oBlock.GetAttributes
-         
-         Tiedot.AddNew
-         Tiedot.Fields("PATH") = oDOC.Path
-         Tiedot.Fields("ImpFileID") = oDOC.Name
-         Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-         Tiedot.Fields("Handles") = oBlock.Handle
-         
-         For j = 0 To UBound(Attrib)
-           If Attrib(j).TextString <> "" Then
-             Tiedot.Fields("[" & Attrib(j).TagString & "]") = Attrib(j).TextString
-           End If
-         Next j
-         
-         Tiedot.Update
-      Next i
+      Tiedot.AddNew
+      Tiedot.Fields("PATH") = oDOC.Path
+      Tiedot.Fields("ImpFileID") = oDOC.Name
+      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("Handles") = oBlock.Handle
       
-      Tiedot.Close
-      Set Tiedot = Nothing
-      Joukko.Delete
-      Set Joukko = Nothing
-    End If
+      For j = 0 To UBound(Attrib)
+        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
+          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
+          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+        End If
+      Next j
+      
+      Tiedot.Update
+    Next i
+    
+    Tiedot.Close
+    Set Tiedot = Nothing
+    Joukko.Delete
+    Set Joukko = Nothing
   Loop
   
-  ' Cleanup
+  Application.SysCmd acSysCmdClearStatus
   Set oACAD = Nothing
   Set oDOC = Nothing
   Exit Sub
@@ -458,46 +472,44 @@ Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   Dim oBlock As AcadBlockReference
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
+  Dim fld As DAO.Field
   
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "DELETE * FROM " & Taulukko
   
-  Do
-    If SeuraavaKuva = False Then
-      Exit Do
-    Else
-      Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-      PoimiJoukkoByAttribute AttribNames
+  Do While SeuraavaKuva
+    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+    PoimiJoukkoByAttribute AttribNames
+    
+    For i = 0 To Joukko.Count - 1
+      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+      Set oBlock = Joukko(i)
+      Attrib = oBlock.GetAttributes
       
-      For i = 0 To Joukko.Count - 1
-         Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
-         Set oBlock = Joukko(i)
-         Attrib = oBlock.GetAttributes
-         
-         Tiedot.AddNew
-         Tiedot.Fields("PATH") = oDOC.Path
-         Tiedot.Fields("ImpFileID") = oDOC.Name
-         Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-         Tiedot.Fields("Handles") = oBlock.Handle
-         
-         For j = 0 To UBound(Attrib)
-           If Attrib(j).TextString <> "" Then
-             Tiedot.Fields("[" & Attrib(j).TagString & "]") = Attrib(j).TextString
-           End If
-         Next j
-         
-         Tiedot.Update
-      Next i
+      Tiedot.AddNew
+      Tiedot.Fields("PATH") = oDOC.Path
+      Tiedot.Fields("ImpFileID") = oDOC.Name
+      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("Handles") = oBlock.Handle
       
-      Tiedot.Close
-      Set Tiedot = Nothing
-      Joukko.Delete
-      Set Joukko = Nothing
-    End If
+      For j = 0 To UBound(Attrib)
+        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
+          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
+          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+        End If
+      Next j
+      
+      Tiedot.Update
+    Next i
+    
+    Tiedot.Close
+    Set Tiedot = Nothing
+    Joukko.Delete
+    Set Joukko = Nothing
   Loop
   
-  ' Cleanup
+  Application.SysCmd acSysCmdClearStatus
   Set oACAD = Nothing
   Set oDOC = Nothing
   Exit Sub
@@ -518,53 +530,51 @@ End Sub
 '   Taulukko - Target Access table name
 '   BlockName - Block name to search for
 '   AttribName - Attribute tag to check
-'   ContainsValue - Value that attribute must contain
+'   ContainsValue - Value that attribute must start with
 '================================================================================
 Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
   Dim i As Integer, j As Integer
   Dim oBlock As AcadBlockReference
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
+  Dim fld As DAO.Field
   
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "DELETE * FROM " & Taulukko
   
-  Do
-    If SeuraavaKuva = False Then
-      Exit Do
-    Else
-      Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-      PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, ContainsValue
+  Do While SeuraavaKuva
+    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+    PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, ContainsValue
+    
+    For i = 0 To Joukko.Count - 1
+      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+      Set oBlock = Joukko(i)
+      Attrib = oBlock.GetAttributes
       
-      For i = 0 To Joukko.Count - 1
-         Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
-         Set oBlock = Joukko(i)
-         Attrib = oBlock.GetAttributes
-         
-         Tiedot.AddNew
-         Tiedot.Fields("PATH") = oDOC.Path
-         Tiedot.Fields("ImpFileID") = oDOC.Name
-         Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-         Tiedot.Fields("Handles") = oBlock.Handle
-         
-         For j = 0 To UBound(Attrib)
-           If Attrib(j).TextString <> "" Then
-             Tiedot.Fields("[" & Attrib(j).TagString & "]") = Attrib(j).TextString
-           End If
-         Next j
-         
-         Tiedot.Update
-      Next i
+      Tiedot.AddNew
+      Tiedot.Fields("PATH") = oDOC.Path
+      Tiedot.Fields("ImpFileID") = oDOC.Name
+      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("Handles") = oBlock.Handle
       
-      Tiedot.Close
-      Set Tiedot = Nothing
-      Joukko.Delete
-      Set Joukko = Nothing
-    End If
+      For j = 0 To UBound(Attrib)
+        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
+          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
+          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+        End If
+      Next j
+      
+      Tiedot.Update
+    Next i
+    
+    Tiedot.Close
+    Set Tiedot = Nothing
+    Joukko.Delete
+    Set Joukko = Nothing
   Loop
   
-  ' Cleanup
+  Application.SysCmd acSysCmdClearStatus
   Set oACAD = Nothing
   Set oDOC = Nothing
   Exit Sub
@@ -843,7 +853,8 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
           For i = 0 To UBound(Attribs)
             If UCase$(Attribs(i).TagString) = AttribName Then
               AttribValue = UCase$(Attribs(i).TextString)
-              If InStr(AttribValue, ContainsValue) > 0 Then
+              ' Check if attribute value starts with the specified value
+              If Left$(AttribValue, Len(ContainsValue)) = ContainsValue Then
                 HasMatch = True
                 Exit For
               End If
