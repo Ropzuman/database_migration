@@ -70,13 +70,13 @@ Private Function WhosOn() As String
    SPath = CurrentDb.Name
    
    ' For Access 2007+ the lock file extension is .laccdb (not .ldb)
-   SPath = Left(SPath, InStr(1, SPath, ".")) & "laccdb"
+   SPath = Left$(SPath, InStr(1, SPath, ".")) & "laccdb"
 
    ' Test for valid file
    X = Dir(SPath)
    If X = "" Then
       ' Try legacy .ldb extension for older Access versions
-      SPath = Left(SPath, InStr(1, SPath, ".")) & "ldb"
+      SPath = Left$(SPath, InStr(1, SPath, ".")) & "ldb"
       X = Dir(SPath)
       If X = "" Then
          Err.Raise 68 ' File not found
@@ -118,8 +118,8 @@ Private Function WhosOn() As String
    Close iLDBFile
    
    ' Remove trailing semicolon if present
-   If Len(sLogins) > 0 And Right(sLogins, 1) = ";" Then
-      sLogins = Left(sLogins, Len(sLogins) - 1)
+   If Len(sLogins) > 0 And Right$(sLogins, 1) = ";" Then
+      sLogins = Left$(sLogins, Len(sLogins) - 1)
    End If
    
    WhosOn = sLogins

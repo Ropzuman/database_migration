@@ -61,7 +61,7 @@ Private Sub HaeTekstit_Click()
     Set oAcad = CreateObject("AutoCAD.Application")
     
     Polku = PohjaHakem.Value
-    If Right(Polku, 1) <> "\" Then Polku = Polku & "\"
+    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
     
     Tied = Dir(Polku & "*.dwg")
     
@@ -71,10 +71,10 @@ Private Sub HaeTekstit_Click()
     Set Taulu = db.OpenRecordset("Blokit", dbOpenDynaset)
     
     Do While Tied <> ""
-        Nimi = Left(Tied, Len(Tied) - 4)
+        Nimi = Left$(Tied, Len(Tied) - 4)
         
         ' Skip BASE* and BLOCKMAP* files
-        If UCase(Left(Tied, 4)) <> "BASE" And UCase(Left(Tied, 8)) <> "BLOCKMAP" Then
+        If UCase$(Left$(Tied, 4)) <> "BASE" And UCase$(Left$(Tied, 8)) <> "BLOCKMAP" Then
             Set oDoc = oAcad.Documents.Open(Polku & Tied)
             Tila Tied
             
@@ -143,10 +143,10 @@ Private Sub HaeValitutTekstit_Click()
     
     Set oAcad = GetObject(, "AutoCAD.Application")
     Polku = PohjaHakem.Value
-    If Right(Polku, 1) <> "\" Then Polku = Polku & "\"
+    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
     
     Set oDoc = oAcad.ActiveDocument
-    DWGName = Left(oDoc.Name, Len(oDoc.Name) - 4)
+    DWGName = Left$(oDoc.Name, Len(oDoc.Name) - 4)
     Hakemisto = oDoc.Path
     
     Set Joukko = oDoc.ActiveSelectionSet
@@ -248,12 +248,12 @@ Private Sub TeeKuvat_Click()
         Do
             Os2 = InStr(Os, TKyselyt.Value, vbCrLf)
             If Os2 = 0 Then
-                Kysely = Mid(TKyselyt.Value, Os)
+                Kysely = Mid$(TKyselyt.Value, Os)
                 db.Execute Kysely
                 LisaaLokiin "- Ajettiin kysely " & Kysely
                 Exit Do
             Else
-                Kysely = Mid(TKyselyt.Value, Os, Os2 - Os)
+                Kysely = Mid$(TKyselyt.Value, Os, Os2 - Os)
                 db.Execute Kysely
                 LisaaLokiin "- Ajettiin kysely '" & Kysely & "'"
                 Os = Os2 + 2
@@ -284,8 +284,8 @@ Private Sub TeeKuvat_Click()
     End If
     
     ' Ensure paths end with backslash
-    If Right(PohjaHakem.Value, 1) <> "\" Then PohjaHakem.Value = PohjaHakem.Value & "\"
-    If Right(KuvaHakem.Value, 1) <> "\" Then KuvaHakem.Value = KuvaHakem.Value & "\"
+    If Right$(PohjaHakem.Value, 1) <> "\" Then PohjaHakem.Value = PohjaHakem.Value & "\"
+    If Right$(KuvaHakem.Value, 1) <> "\" Then KuvaHakem.Value = KuvaHakem.Value & "\"
     
     Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko)
     

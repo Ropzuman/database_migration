@@ -355,14 +355,14 @@ On Error GoTo ErrorHandler
     For i = 0 To DB.TableDefs.Count - 1
       Taulukko = DB.TableDefs(i).Name
       ' Filter system tables and old tables
-      If Left(Taulukko, 4) <> "USys" And Left(Taulukko, 4) <> "MSys" And Left(Taulukko, 3) <> "Dev" And InStr(Taulukko, "old") = 0 Then
+      If Left$(Taulukko, 4) <> "USys" And Left$(Taulukko, 4) <> "MSys" And Left$(Taulukko, 3) <> "Dev" And InStr(Taulukko, "old") = 0 Then
         TJoukko = TJoukko & Taulukko & ";"
       End If
     Next i
     
     ' Set combo box row source and default value
     KaikkiTaulukot.RowSource = TJoukko
-    KaikkiTaulukot.Value = Left(TJoukko, InStr(TJoukko, ";") - 1)
+    KaikkiTaulukot.Value = Left$(TJoukko, InStr(TJoukko, ";") - 1)
     
     Set DB = Nothing
     Exit Sub

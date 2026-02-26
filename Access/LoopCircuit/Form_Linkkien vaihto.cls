@@ -19,7 +19,7 @@ Private Sub Command0_Click()
     ' Get current database path
     Set db = CurrentDb
     DbName = db.Name
-    Polku = Left(DbName, Len(DbName) - Len(Dir(DbName)))
+    Polku = Left$(DbName, Len(DbName) - Len(Dir(DbName)))
 
     ' Query linked tables (excluding MotorData)
     Set Taul = db.OpenRecordset( _
@@ -32,15 +32,15 @@ Private Sub Command0_Click()
         If Taul.Fields("Name") <> Taulu Then
             ' Extract path and filename from database field
             For i = Len(Taul.Fields("Database")) To 1 Step -1
-                If Mid(Taul.Fields("Database"), i, 1) = "\" Then
-                    Polku2 = LCase(Left(Taul.Fields("Database"), i))
-                    Nimi = Mid(Taul.Fields("Database"), i + 1)
+                If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
+                    Polku2 = LCase$(Left$(Taul.Fields("Database"), i))
+                    Nimi = Mid$(Taul.Fields("Database"), i + 1)
                     Exit For
                 End If
             Next i
 
             ' Relink if path doesn't match current path
-            If Polku2 <> LCase(Polku) Then
+            If Polku2 <> LCase$(Polku) Then
                 Taulu = Taul.Fields("Name")
 
                 ' Drop and relink table

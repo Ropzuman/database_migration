@@ -368,19 +368,19 @@ Private Sub MuutaTeksti(TEKSTI As String)
       End If
       TOUT.WriteLine "        <dl>"
       TOUT.WriteLine "          <dd>"
-      TOUT.WriteLine "             " & Trim(Mid(Rivit(r), 3))
+      TOUT.WriteLine "             " & Trim$(Mid$(Rivit(r), 3))
       TOUT.WriteLine "          </dd>"
       TOUT.WriteLine "        </dl>"
       If r = Riveja Then ' Ollaan viimeisell� rivill�, lopetetaan sisennys
         TOUT.WriteLine "      </dl>"
       End If
-     ElseIf Left(Rivit(r), 1) = "-" Then 'Ollaan sisennetyll� rivill� tehd��n rivist� sisennetty
+     ElseIf Left$(Rivit(r), 1) = "-" Then 'Ollaan sisennetyll� rivill� tehd��n rivist� sisennetty
       If Sis = False Then
           TOUT.WriteLine "      <dl>"
           Sis = True
       End If
       TOUT.WriteLine "        <dd>"
-      TOUT.WriteLine "           " & Trim(Mid(Rivit(r), 2))
+      TOUT.WriteLine "           " & Trim$(Mid$(Rivit(r), 2))
       TOUT.WriteLine "        </dd>"
       If r = Riveja Then ' Ollaan viimeisell� rivill�, lopetetaan sisennys
         TOUT.WriteLine "      </dl>"
@@ -392,7 +392,7 @@ Private Sub MuutaTeksti(TEKSTI As String)
         End If
       End If
       If r < Riveja Then  'Ei olla viimeisell� rivill�
-        If Left(Rivit(r + 1), 1) = "-" Then 'Seuraava rivi on sisennetty, tehd��n t�st� otsikkorivi
+        If Left$(Rivit(r + 1), 1) = "-" Then 'Seuraava rivi on sisennetty, tehd��n t�st� otsikkorivi
           If Rivit(r) = "" Then
             TOUT.WriteLine "      <dl>"
             Sis = True
@@ -576,12 +576,12 @@ Private Sub MuutaTiedot()
   End If
   Korvaa "[PIDwgNo]", Nz(Tiedot.Fields("PIDwgNo"))
   If Suomeksi Then
-    Korvaa "[LOOPDESCR]", UCase(Tiedot.Fields("DescriptionFI"))
+    Korvaa "[LOOPDESCR]", UCase$(Tiedot.Fields("DescriptionFI"))
     Korvaa "[LOOPTAG]", Tagi
     Korvaa "[PROCESS]", Nz(Tiedot.Fields("ProcessFI"))
     Korvaa "[FUNCTION]", Tiedot.Fields("FunctionFI")
   Else
-    Korvaa "[LOOPDESCR]", UCase(Tiedot.Fields("Description"))
+    Korvaa "[LOOPDESCR]", UCase$(Tiedot.Fields("Description"))
     Korvaa "[LOOPTAG]", Tagi
     Korvaa "[PROCESS]", Nz(Tiedot.Fields("Process"))
     Korvaa "[FUNCTION]", Nz(Tiedot.Fields("Function"))

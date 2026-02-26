@@ -62,15 +62,15 @@ On Error GoTo ErrorHandler
     Dim Linja As String  ' Line number
 
     ' Get relative path to flowsheets folder
-    Polku = Left(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name))) & "..\..\R\FlowSheets\"
+    Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name))) & "..\..\R\FlowSheets\"
 
     ' Determine source table
-    If UCase(Application.CurrentObjectName) = "MANUALVALVES" Or UCase(Application.CurrentObjectName) = "PIPELINES" Then
-      If UCase(Application.CurrentObjectName) = "MANUALVALVES" Then Tyyppi = 1
+    If UCase$(Application.CurrentObjectName) = "MANUALVALVES" Or UCase$(Application.CurrentObjectName) = "PIPELINES" Then
+      If UCase$(Application.CurrentObjectName) = "MANUALVALVES" Then Tyyppi = 1
       If Tyyppi = 1 Then
         ' Get manual valve block information
         Set Taulu = CurrentDb.OpenRecordset("SELECT * FROM MANVALVEDATA WHERE AREACODE = '" & Screen.ActiveDatasheet("Area").Value & "' AND VAL_NO = '" & Screen.ActiveDatasheet("ValveNo").Value & "'")
-        DWG = LCase(Taulu.Fields("ImpFileID"))
+        DWG = LCase$(Taulu.Fields("ImpFileID"))
         Handle = Taulu.Fields("Handles")
         Info = Taulu.Fields("AREACODE") & "-" & Taulu.Fields("VAL_NO")
       Else
@@ -85,14 +85,14 @@ On Error GoTo ErrorHandler
         Exit Sub
       End If
       AvaaKuvasta Polku, DWG, Handle, Info
-    ElseIf UCase(Application.CurrentObjectName) = "PIPELINEDATA" Or UCase(Application.CurrentObjectName) = "MANVALVEDATA" Then
+    ElseIf UCase$(Application.CurrentObjectName) = "PIPELINEDATA" Or UCase$(Application.CurrentObjectName) = "MANVALVEDATA" Then
         ' Open from detail table view
         Polku = Screen.ActiveDatasheet("PATH").Value
-        If Right(Polku, 1) <> "\" Then Polku = Polku & "\"
+        If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
         
-        DWG = LCase(Screen.ActiveDatasheet("ImpFileID").Value)
+        DWG = LCase$(Screen.ActiveDatasheet("ImpFileID").Value)
         Handle = Screen.ActiveDatasheet("Handles").Value
-        If UCase(Application.CurrentObjectName) = "PIPELINEDATA" Then
+        If UCase$(Application.CurrentObjectName) = "PIPELINEDATA" Then
           Info = Screen.ActiveDatasheet("DEP").Value & "-" & Screen.ActiveDatasheet("LINENO").Value
         Else
           Info = Screen.ActiveDatasheet("AREACODE").Value & "-" & Screen.ActiveDatasheet("VALVE_NO").Value
