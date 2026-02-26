@@ -55,7 +55,7 @@ On Error GoTo Err_WhosOn
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As Database
+   Dim dbCurrent As DAO.Database
 
 ' Get Path of current database.  Should substitute this code
 ' for an attached table path in a multi-user environment.

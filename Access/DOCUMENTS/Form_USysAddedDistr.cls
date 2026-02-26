@@ -6,9 +6,9 @@ Private Sub BOK_Click()
 End Sub
 Private Sub Form_Load()
 Dim SQL As String
-Dim taulu As Recordset
+Dim taulu As DAO.Recordset
 Dim SentPath As String
-Dim DB As Database
+Dim DB As DAO.Database
 Set DB = CurrentDb
 'Haetaan ensin projektin Outbox laatikon sijainti
 SQL = "SELECT Name, Path FROM ProjPaths WHERE Name Like 'SENT'"

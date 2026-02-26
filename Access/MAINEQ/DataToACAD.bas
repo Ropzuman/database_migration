@@ -500,7 +500,7 @@ On Error GoTo ErrorHandler
 Dim DB As DAO.Database
 Dim cmmn As DAO.Recordset
 Dim tbl As DAO.Recordset
-Dim Taulukko As TableDef
+Dim Taulukko As DAO.TableDef
 Dim Taul As DAO.Recordset
 Dim tble As DAO.Recordset
 Dim L As String

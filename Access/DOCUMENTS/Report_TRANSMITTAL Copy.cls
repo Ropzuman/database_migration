@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
 Private Sub Report_Open(Cancel As Integer)
-Dim taulu As Recordset
+Dim taulu As DAO.Recordset
 Set taulu = CurrentDb.OpenRecordset("Projinfo")
 TContractNo1.Caption = Nz(taulu("ContractNo"))
 TContractNo2.Caption = Nz(taulu("ContractNo"))

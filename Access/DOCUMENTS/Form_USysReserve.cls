@@ -15,7 +15,7 @@ Private Sub TalletaNappi_Click()
            & "Please fill all fields and try again.", vbCritical, "Error!"
       Exit Sub
     End If
-    Dim taulu As Recordset
+    Dim taulu As DAO.Recordset
     Dim SQL As String
     SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & TNumber.Value & "'"
     Set taulu = CurrentDb.OpenRecordset(SQL, , dbDenyWrite)

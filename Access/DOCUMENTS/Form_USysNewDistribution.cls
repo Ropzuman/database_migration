@@ -92,9 +92,9 @@ Dim TRecipients As String
 'Dim FSO As New FileSystemObject
 Dim i As Integer
 Dim SQL As String
-Dim DB As Database
-Dim taulu As Recordset
-Dim Taulu2 As Recordset
+Dim DB As DAO.Database
+Dim taulu As DAO.Recordset
+Dim Taulu2 As DAO.Recordset
 Dim Hakemisto As String
 Dim OutboxPath As String
 Dim DistrID As Long

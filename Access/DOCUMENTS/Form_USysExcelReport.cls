@@ -11,12 +11,12 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub OK_Click()
-Dim DB As Database
+Dim DB As DAO.Database
 Dim Kysely As String
 Dim Kysely2 As String
 Dim xlApp As Excel.Application
-Dim ExcelTaulu As Recordset
-Dim DTaulu As Recordset
+Dim ExcelTaulu As DAO.Recordset
+Dim DTaulu As DAO.Recordset
 Dim Itemi As String
 
 Set DB = CurrentDb

@@ -10,7 +10,7 @@ Dim Hakemisto As String
   End If
 End Sub
 Private Sub Form_Load()
-Dim taulu As Recordset
+Dim taulu As DAO.Recordset
   Varaaja = NetworkUserName
 'Annetaan dokumentille pohjaksi viimeksi lisätyn dokumentin tiedot
   Set taulu = CurrentDb.OpenRecordset("SELECT Path FROM ProjInfo")
@@ -39,8 +39,8 @@ Private Sub TalletaNappi_Click()
       Exit Sub
     End If
     'Kaikki kunnossa, voidaan tallettaa tiedot ja poistua formista
-    Dim DB As Database
-    Dim taulu As Recordset
+    Dim DB As DAO.Database
+    Dim taulu As DAO.Recordset
     Dim SQL As String
     Set DB = CurrentDb
       If IsNull(TClientDocNo.Value) = False And TClientDocNo.Value <> "" Then
