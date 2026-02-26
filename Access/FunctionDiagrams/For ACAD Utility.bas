@@ -4,7 +4,7 @@ End Type
 Public Paikat() As iPoint
 'Etsii temp hakemiston
 'Public Declare Function GetTempPath Lib "kernel32" Alias "GetTempPathA" (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
-'Hiiren kursorin sijainnin m��ritt�minen
+'Hiiren kursorin sijainnin määrittäminen
 Type POINTAPI ' Declare types
     X As Long
     Y As Long

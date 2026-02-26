@@ -18,7 +18,7 @@ Private Sub Tila(Tiedosto As String)
   sec = CInt(Timer - Ajastin)
   min = sec \ 60
   sec = sec Mod 60
-  SysCmd acSysCmdSetStatus, "K�sittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
+  SysCmd acSysCmdSetStatus, "Käsittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
 End Sub
 Private Sub Form_Load()
   Debug.Print "Form_LisääKuviin_ACAD: Form loaded"
@@ -149,7 +149,7 @@ Set Taulu = CurrentDb.OpenRecordset("Blokit")
 
 
      If Joukko.Count = 0 Then
-       MsgBox "Kuvasta ei l�ytynyt valittuja blokkeja, jotka t�ytt�isiv�t ehdon!", vbCritical, "Tuo DATA"
+       MsgBox "Kuvasta ei löytynyt valittuja blokkeja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
      End If '     Joukko.Select acSelectionSetPrevious,,,
     
   For i = 0 To Joukko.Count - 1
@@ -160,7 +160,7 @@ Set Taulu = CurrentDb.OpenRecordset("Blokit")
     CurrentDb.Execute "DELETE * FROM Blokit WHERE Block='" & Blokki.Name & "'"
 
      
-      If Blokki.HasAttributes Then            'Tarkistetaan ett� blokilla on attribuutteja
+      If Blokki.HasAttributes Then            'Tarkistetaan että blokilla on attribuutteja
         BlockArray = Blokki.GetAttributes     'Otetaan atribuutit talteen muuttujaan
         For j = 0 To UBound(BlockArray)
         Taulu.AddNew
@@ -205,11 +205,11 @@ Dim u As Integer
 
 Set dbs = CurrentDb
 
-'Avataan Documents-kannan back end -kanta k�sittely� varten.
+'Avataan Documents-kannan back end -kanta käsittelyä varten.
 Set dbsDocuments = OpenDatabase("W:\_DocumentDB\BackEnd\Documents_be.accdb")
 
 'Suoritetaan kysely monesta BE:n taulusta. Kyselyn tuloksen perusteella luodaan uusi
-'taulu nimelt� DocumentsDetail.
+'taulu nimeltä DocumentsDetail.
 
 SQLQry = "SELECT " & _
 "ProjectInfo.ProjectNo, ProjectInfo.ProjectName, " & _
@@ -226,7 +226,7 @@ SQLQry = "SELECT " & _
 "INNER JOIN Files ON Documents.CurrentFileID=Files.FileID) LEFT JOIN SAVDocNoTbl ON Documents.DocumentID=SAVDocNoTbl.DocumentID " & _
 "WHERE Documents.ProjectID=" & RefID.Value & ""
 
-'Edell� olevasta kyselyst� saadaan recordset rstSnapshot
+'Edellä olevasta kyselystä saadaan recordset rstSnapshot
 
 Set rstSnapshot = dbsDocuments.OpenRecordset(SQLQry, dbOpenSnapshot)
 

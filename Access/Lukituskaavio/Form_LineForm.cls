@@ -23,8 +23,8 @@ Else 'Piste
   Lyhennys = 0
 End If
 If Sijainti.VALUE = 1 Then
-  'Ei piirret� viivaa
-ElseIf Sijainti.VALUE = 2 Then 'Piirret��n nuoli alkuun
+  'Ei piirretä viivaa
+ElseIf Sijainti.VALUE = 2 Then 'Piirretään nuoli alkuun
   With EkaViiva
     iPoint(0) = .StartPoint(0)
     iPoint(1) = .StartPoint(1)
@@ -34,7 +34,7 @@ ElseIf Sijainti.VALUE = 2 Then 'Piirret��n nuoli alkuun
     .StartPoint = LoppuPiste
   End With
   oDOC.ModelSpace.InsertBlock iPoint, BName, 1, 1, 1, Rotation
-Else 'Piirret��n nuoli loppuun
+Else 'Piirretään nuoli loppuun
   With ViimViiva
     iPoint(0) = .EndPoint(0)
     iPoint(1) = .EndPoint(1)
@@ -53,7 +53,7 @@ End Sub
 
 
 Private Sub Form_Load()
-'Viivan piirto aloitetaan heti kun t�m� formi aukeaa
+'Viivan piirto aloitetaan heti kun tämä formi aukeaa
 
 Dim iPoint As Variant
 Dim sPoint(2) As Double
@@ -62,7 +62,7 @@ If Valmis = False Then
   On Error Resume Next
   
   AppActivate oACAD.Caption
-  oDOC.SendCommand "^C^C" & vbCr 'Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
+  oDOC.SendCommand "^C^C" & vbCr 'Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   
   
 '  For i = 0 To oDOC.Layers.Count - 1
@@ -78,7 +78,7 @@ If Valmis = False Then
     Do
       iPoint = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
       If Err <> 0 Then
-        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yht�k��n viiva oli piirretty
+        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtäkään viiva oli piirretty
           DoCmd.Close acForm
         Else
           Valmis = True
@@ -103,7 +103,7 @@ End If
 End Sub
 
 Private Sub Form_Open(Cancel As Integer)
-'Jos AutoCAD linkki� ei ole alustettu (t�t� formia ei avattu lukituskaavio formista, niin poistutaan)
+'Jos AutoCAD linkkiä ei ole alustettu (tätä formia ei avattu lukituskaavio formista, niin poistutaan)
 If oACAD Is Nothing Then
   Cancel = True
 End If

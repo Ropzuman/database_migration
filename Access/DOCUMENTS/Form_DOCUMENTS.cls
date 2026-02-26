@@ -15,7 +15,7 @@ Private Sub Add_Distr_Click()
   End If
 End Sub
 Private Sub AvaaTiedosto_Click()
-'T�m� avaa m��ritellyn tiedosto
+'Tämä avaa määritellyn tiedosto
 Dim fso As New FileSystemObject
 Dim Avattava As String
 If IsNull(File.Value) Then
@@ -30,7 +30,7 @@ Else
     Avattava = fso.BuildPath(WorkPath.Value, File.Value)
     If fso.FileExists(Avattava) Then
          Application.FollowHyperlink Avattava, , True, False
-    Else 'Tiedostoa ei l�ytynyt
+    Else 'Tiedostoa ei löytynyt
       MsgBox "File not found: " & WorkPath.Value & File.Value, vbCritical, "Open File"
     End If
   End If
@@ -38,7 +38,7 @@ End If
 Set fso = Nothing
 End Sub
 Private Sub ClientDwg_Click()
-  If IsNull(ClientNo.Value) Then 'Numeroa ei viel� varattu, joten voidaan suorittaa varaus
+  If IsNull(ClientNo.Value) Then 'Numeroa ei vielä varattu, joten voidaan suorittaa varaus
     DoCmd.OpenForm "USysReserve", , , "Counter = " & Counterfield.Value, , acDialog
     Me.Refresh
   Else

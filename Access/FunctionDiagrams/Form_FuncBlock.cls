@@ -32,7 +32,7 @@ Taulu.Fields("value") = taginarvo
 Taulu.Fields("TagID") = tagiid
 Taulu.Update
 
-MsgBox "Uusi arvo lis�tty"
+MsgBox "Uusi arvo lisätty"
 
 End Sub
 

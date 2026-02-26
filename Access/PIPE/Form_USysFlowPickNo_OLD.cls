@@ -47,10 +47,10 @@ For j = 0 To Joukko.Count - 1
   EtsiLinja
 Next j
 If EiLinjaa Then
-  MsgBox "Kaikki linjat on k�yty l�pi. Yksi tai useampia virtausarvoblokkeja j�i ilman putkilinjanumeroa.", vbOKOnly
+  MsgBox "Kaikki linjat on käyty läpi. Yksi tai useampia virtausarvoblokkeja jäi ilman putkilinjanumeroa.", vbOKOnly
   BSeurT_Click
 Else
-  MsgBox "Kaikki linjat on k�yty l�pi. Kaikkiin virtausarvoblokkeihin l�ytyi putkilinjanumero.", vbOKOnly
+  MsgBox "Kaikki linjat on käyty läpi. Kaikkiin virtausarvoblokkeihin löytyi putkilinjanumero.", vbOKOnly
 End If
 End Sub
 Private Sub BPoimi_Click()
@@ -117,7 +117,7 @@ Dim i As Integer
     If TRefNo.Value = "" Then
       Exit Do
     ElseIf j = Joukko.Count - 1 Then
-      MsgBox "Sellaisia virtausarvoblokkeja ei l�ytynyt, joissa putkilinja olisi tyhj�.", vbInformation
+      MsgBox "Sellaisia virtausarvoblokkeja ei löytynyt, joissa putkilinja olisi tyhjä.", vbInformation
       Exit Do
     End If
   Loop
@@ -171,7 +171,7 @@ For ii = 0 To UBound(Attrib)
   End If
 Next ii
 If Loytyi = False Then
-  MsgBox "Tasearvoblokki ei sis�lt�nyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPicNo"
+  MsgBox "Tasearvoblokki ei sisältänyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPicNo"
   DoCmd.Close
   Exit Sub
 End If
@@ -179,9 +179,9 @@ TRefNo.Value = oAttrib.TextString
 End Sub
 Private Function Yhdista() As Boolean
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-  If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
-    MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function

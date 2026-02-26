@@ -43,10 +43,10 @@ Function SniffUser()
   
   ' Get network username
   BufferSize_Long = 256
-  NBuffer = Space$(BufferSize_Long)  ' 1. K�yt� Long-muuttujaa Space$-funktiolle
+  NBuffer = Space$(BufferSize_Long)  ' 1. Käytä Long-muuttujaa Space$-funktiolle
   BufferSize_Ptr = BufferSize_Long   ' 2. Kopioi arvo LongPtr-muuttujaan
   
-  ' 3. K�yt� LongPtr-muuttujaa API-kutsussa. Nyt tyypit t�sm��v�t (LongPtr -> LongPtr)
+  ' 3. Käytä LongPtr-muuttujaa API-kutsussa. Nyt tyypit täsmäävät (LongPtr -> LongPtr)
   If api_GetUserName(NBuffer, BufferSize_Ptr) Then
      NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else

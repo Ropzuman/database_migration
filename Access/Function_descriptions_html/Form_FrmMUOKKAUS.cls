@@ -271,22 +271,22 @@ TOUT.WriteLine "    </h2>"
 TEKSTI = Nz(Tiedot.Fields("Interlocks"))
 MuutaTeksti TEKSTI
 
-'H�LYTYKSET
+'HÄLYTYKSET
 TOUT.WriteLine "    <h2 id=""alarms"">"
-TOUT.WriteLine "        H�lytykset"
+TOUT.WriteLine "        Hälytykset"
 TOUT.WriteLine "    </h2>"
 TEKSTI = Nz(Tiedot.Fields("Alarms"))
 MuutaTeksti TEKSTI
     
   If IsNull(Tiedot.Fields("AlarmDescrBL")) And IsNull(Tiedot.Fields("Alarms")) Then
 '    TOUT.WriteLine "    <p>"
-'    TOUT.WriteLine "Ei erityisi� h�lytyksi�"
+'    TOUT.WriteLine "Ei erityisiä hälytyksiä"
 '    TOUT.WriteLine "    </p>"
   Else
     If IsNull(Tiedot.Fields("HH")) And IsNull(Tiedot.Fields("H")) And IsNull(Tiedot.Fields("LL")) And IsNull(Tiedot.Fields("L")) Then
       If IsNull(Tiedot.Fields("Alarms")) Then
 '        TOUT.WriteLine "    <p>"
-'        TOUT.WriteLine "Ei h�lytyksi�"
+'        TOUT.WriteLine "Ei hälytyksiä"
 '        TOUT.WriteLine "    </p>"
       End If
     Else
@@ -371,10 +371,10 @@ Private Sub MuutaTeksti(TEKSTI As String)
       TOUT.WriteLine "             " & Trim$(Mid$(Rivit(r), 3))
       TOUT.WriteLine "          </dd>"
       TOUT.WriteLine "        </dl>"
-      If r = Riveja Then ' Ollaan viimeisell� rivill�, lopetetaan sisennys
+      If r = Riveja Then ' Ollaan viimeisellä rivillä, lopetetaan sisennys
         TOUT.WriteLine "      </dl>"
       End If
-     ElseIf Left$(Rivit(r), 1) = "-" Then 'Ollaan sisennetyll� rivill� tehd��n rivist� sisennetty
+     ElseIf Left$(Rivit(r), 1) = "-" Then 'Ollaan sisennetyllä rivillä tehdään rivistä sisennetty
       If Sis = False Then
           TOUT.WriteLine "      <dl>"
           Sis = True
@@ -382,17 +382,17 @@ Private Sub MuutaTeksti(TEKSTI As String)
       TOUT.WriteLine "        <dd>"
       TOUT.WriteLine "           " & Trim$(Mid$(Rivit(r), 2))
       TOUT.WriteLine "        </dd>"
-      If r = Riveja Then ' Ollaan viimeisell� rivill�, lopetetaan sisennys
+      If r = Riveja Then ' Ollaan viimeisellä rivillä, lopetetaan sisennys
         TOUT.WriteLine "      </dl>"
       End If
     Else
-      If r > 0 Then 'Ei ole ensimm�inen rivi
-        If Sis Then 'On Aloitettu sisennys aikaisemmin, joten p��tet��n edellinen sisennys
+      If r > 0 Then 'Ei ole ensimmäinen rivi
+        If Sis Then 'On Aloitettu sisennys aikaisemmin, joten päätetään edellinen sisennys
           TOUT.WriteLine "      </dl>"
         End If
       End If
-      If r < Riveja Then  'Ei olla viimeisell� rivill�
-        If Left$(Rivit(r + 1), 1) = "-" Then 'Seuraava rivi on sisennetty, tehd��n t�st� otsikkorivi
+      If r < Riveja Then  'Ei olla viimeisellä rivillä
+        If Left$(Rivit(r + 1), 1) = "-" Then 'Seuraava rivi on sisennetty, tehdään tästä otsikkorivi
           If Rivit(r) = "" Then
             TOUT.WriteLine "      <dl>"
             Sis = True
@@ -405,7 +405,7 @@ Private Sub MuutaTeksti(TEKSTI As String)
           End If
         ElseIf (Rivit(r)) = "" Then
           Sis = False
-        Else 'Seuraava rivi ei ole sisennetty, tehd��n t�st� rivist� normaali kappale
+        Else 'Seuraava rivi ei ole sisennetty, tehdään tästä rivistä normaali kappale
           TOUT.WriteLine "      <p>"
           TOUT.WriteLine "      " & Rivit(r)
           TOUT.WriteLine "      </p>"
@@ -417,7 +417,7 @@ Private Sub MuutaTeksti(TEKSTI As String)
         If (Rivit(r)) = "" Then
             Sis = False
         Else
-            'Viimeinen rivi, joka ei ole sisennetty, eik� seuraava rivi voi olla sisennetty, joten tehd��n normaali kappale
+            'Viimeinen rivi, joka ei ole sisennetty, eikä seuraava rivi voi olla sisennetty, joten tehdään normaali kappale
             TOUT.WriteLine "      <p>"
             TOUT.WriteLine "      " & Rivit(r)
             TOUT.WriteLine "      </p>"
@@ -536,7 +536,7 @@ Private Sub MuutaTiedot()
     If IsNull(Tiedot.Fields("AlarmDescrBL")) Then
 '    If Tiedot.Fields("VakioHaly") = "" Then
 '      If Suomeksi Then
-'        Halyt = "Ei erityisi� h�lytyksi�"
+'        Halyt = "Ei erityisiä hälytyksiä"
 '      Else
 '        Halyt = "No special alarms"
 '      End If
@@ -546,7 +546,7 @@ Private Sub MuutaTiedot()
   Else
     If IsNull(Tiedot.Fields("HH")) And IsNull(Tiedot.Fields("H")) And IsNull(Tiedot.Fields("LL")) And IsNull(Tiedot.Fields("L")) Then
       If Suomeksi Then
-        Halyt = "Ei h�lytyksi�"
+        Halyt = "Ei hälytyksiä"
       Else
         Halyt = "No alarms"
       End If
@@ -589,13 +589,13 @@ Private Sub MuutaTiedot()
   Korvaa "[LINKS]", Nz(Tiedot.Fields("Linkit"))
   Korvaa "[CHANGES]", Nz(Tiedot.Fields("Muutokset"))
   
-  If LomakePohja.Value = 1 Then ' Kysymyksess� piiri
+  If LomakePohja.Value = 1 Then ' Kysymyksessä piiri
     PID_D = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_D'")
     PID_U = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_U'")
      
    If IsNull(PID_D) = False Or IsNull(PID_U) = False Then
      If Suomeksi Then
-       Korvaa "[ACTION_T]", "S��timen toiminta"
+       Korvaa "[ACTION_T]", "Säätimen toiminta"
      Else
        Korvaa "[ACTION_T]", "Action of the controller"
      End If
@@ -608,7 +608,7 @@ Private Sub MuutaTiedot()
      End If
    ElseIf IsNull(PID_D) = False Then
      If Suomeksi Then
-       Korvaa "[ACTION]", "K��nteinen"
+       Korvaa "[ACTION]", "Käänteinen"
      Else
        Korvaa "[ACTION]", "Reverse"
      End If
@@ -621,7 +621,7 @@ Private Sub MuutaTiedot()
      POISTA "[SETPOINT]"
    Else
      If Suomeksi Then
-       Korvaa "[SETPOINT]", "S��timen tyypillinen asetusarvoalue on: " & Tiedot.Fields("SetPoint")
+       Korvaa "[SETPOINT]", "Säätimen tyypillinen asetusarvoalue on: " & Tiedot.Fields("SetPoint")
      Else
        Korvaa "[SETPOINT]", "Typical set point range of controller is: " & Tiedot.Fields("SetPoint")
      End If
@@ -992,23 +992,23 @@ LisaaTeksti " on <" & vbCrLf
 End Sub
 
 Private Sub Command65_Click()
-LisaaTeksti " �C"
+LisaaTeksti " °C"
 End Sub
 
 Private Sub Command66_Click()
-LisaaTeksti " �S/cm"
+LisaaTeksti " µS/cm"
 End Sub
 
 Private Sub Command67_Click()
-LisaaTeksti " , p��st�hidastettu 10s"
+LisaaTeksti " , päästöhidastettu 10s"
 End Sub
 
 Private Sub Command68_Click()
-LisaaTeksti " , p��st�hidastettu 30s"
+LisaaTeksti " , päästöhidastettu 30s"
 End Sub
 
 Private Sub Command69_Click()
-LisaaTeksti " , p��st�hidastettu 60s"
+LisaaTeksti " , päästöhidastettu 60s"
 End Sub
 
 Private Sub Command70_Click()
@@ -1061,7 +1061,7 @@ End Sub
 
 Private Sub Command102_Click()
 If KohdeTextBox.Name = "TFunction" Then
-    LisaaTeksti vbCrLf & "<h3>K�siajolla</h3>" & vbCrLf
+    LisaaTeksti vbCrLf & "<h3>Käsiajolla</h3>" & vbCrLf
 End If
 End Sub
 

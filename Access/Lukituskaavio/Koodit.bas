@@ -53,12 +53,12 @@ Debug.Print "  Table: " & TAULUKKO
     
     If Polku = "" Then
       Debug.Print "  ERROR: No path information"
-      MsgBox "Ei ole tietoa miss� kuvassa kohde on !", vbCritical, "Etsi kohde"
+      MsgBox "Ei ole tietoa missä kuvassa kohde on !", vbCritical, "Etsi kohde"
       Exit Function
     End If
     On Error Resume Next
-    Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-    If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
+    Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+    If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
       Debug.Print "  ERROR: AutoCAD not running"
       MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"
       Set oACAD = Nothing
@@ -102,7 +102,7 @@ Debug.Print "  Table: " & TAULUKKO
         On Error Resume Next
         Set Entity = oACAD.ActiveDocument.HandleToObject(Handle)
         If Err <> 0 Then
-          MsgBox "Kuvasta ei l�ytynyt kohdetta tietokannan tiedoilla (Handle oli v��r�)!", vbCritical, "Etsi kohde"
+          MsgBox "Kuvasta ei löytynyt kohdetta tietokannan tiedoilla (Handle oli väärä)!", vbCritical, "Etsi kohde"
           Err.Clear
         Else
           Entity.GetBoundingBox MinPoint, MaxPoint

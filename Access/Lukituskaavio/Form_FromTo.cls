@@ -112,7 +112,7 @@ Do Until tbl.EOF
 Loop
        
 qry2.MoveFirst
-qry.MoveFirst 'lis�tty jotta saataisiin my�s eka
+qry.MoveFirst 'lisätty jotta saataisiin myös eka
 
 Do Until qry2.EOF
 
@@ -172,9 +172,9 @@ Dim ATTRIB As Variant
 Dim i As Integer
 Set Taul = CurrentDb.OpenRecordset("SELECT * FROM DATA9 order by Path, DWG")
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-  If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
-    MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If
@@ -235,12 +235,12 @@ End Sub
 Private Sub NoudaTiedot(Listalta As Boolean)
 Dim i As Integer
 Dim Tied As String
-'Yhdistet��n ensin AutoCADiin
+'Yhdistetään ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-  If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
-    MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If

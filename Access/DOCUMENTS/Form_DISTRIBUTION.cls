@@ -176,7 +176,7 @@ DoCmd.OpenForm "Reserve Number"
 End Sub
 
 Private Sub EditDistrib_Click()
-  'Muokataan vastaanottajia kyseisess� l�hetyksess�
+  'Muokataan vastaanottajia kyseisessä lähetyksessä
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else

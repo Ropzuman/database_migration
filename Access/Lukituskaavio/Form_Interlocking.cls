@@ -130,7 +130,7 @@ On Error GoTo ErrorHandler
     Set Asetukset = CurrentDb.OpenRecordset("SETTINGS")
     BlockNimi = UCase$(Valinta.Name)
     Debug.Print "  Block Name: " & BlockNimi
-    Do While Not Asetukset.EOF 'Tarkistetaan ett� blokin nimi l�ytyy luettelosta
+    Do While Not Asetukset.EOF 'Tarkistetaan että blokin nimi löytyy luettelosta
       If UCase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then   'Löyty
         Oikea = True
         Exit Do
@@ -421,12 +421,12 @@ ErrorHandler:
 End Sub
 
 Private Sub Command89_Click()
-'Tyhjenn� IN
+'Tyhjennä IN
   Tyhjenna "IN"
 End Sub
 
 Private Sub Command90_Click()
-'Tyhjenn� OUT
+'Tyhjennä OUT
   Tyhjenna "OUT"
 End Sub
 
@@ -504,14 +504,14 @@ Dim i As Integer
     Do
       Piste = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
       If Err <> 0 Then
-        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yht�k��n viiva oli piirretty
-        Else 'Lopetettiin, piirret��n viivan p��
-        '------- VIIVJEN P��T ---------
+        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtäkään viiva oli piirretty
+        Else 'Lopetettiin, piirretään viivan pää
+        '------- VIIVJEN PÄÄT ---------
         
         ViivaPaa ALKU, BNameA, LyhennysA
         ViivaPaa LOPPU, BNameL, LyhennysL
 
-        If ALKU <> 4 Then 'Piirret��n alkuun joku symboli.
+        If ALKU <> 4 Then 'Piirretään alkuun joku symboli.
             With EkaViiva
               iPoint(0) = .StartPoint(0)
               iPoint(1) = .StartPoint(1)
@@ -523,7 +523,7 @@ Dim i As Integer
             oDOC.ModelSpace.InsertBlock iPoint, BNameA, 1, 1, 1, Rotation
         End If
         
-        If LOPPU <> 4 Then 'Piirret��n loppuun joku symboli
+        If LOPPU <> 4 Then 'Piirretään loppuun joku symboli
             With ViimViiva
               iPoint(0) = .EndPoint(0)
               iPoint(1) = .EndPoint(1)
@@ -537,7 +537,7 @@ Dim i As Integer
         Set EkaViiva = Nothing
         Set ViimViiva = Nothing
         
-        '------- VIIVAN P�� ---------
+        '------- VIIVAN PÄÄ ---------
         End If
         AppActivate CurrentDb.Properties("AppTitle").VALUE
         Exit Do
@@ -589,13 +589,13 @@ Private Sub Form_Load()
 'Yhdistet��n ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-  If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
     
     Set oACAD = CreateObject("AutoCad.Application")
     
     If oACAD Is Nothing Then
-        MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Virhe!"
+        MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
         Set oACAD = Nothing
         Unload Me
         Exit Sub
@@ -674,19 +674,19 @@ Dim iPoint(2) As Double
 Dim gPoint As Variant
 Dim Piste As String
 On Error GoTo Virhe
-'Liitet��n ensin blokki kuvaan
+'Liitetään ensin blokki kuvaan
   Set oDOC = oACAD.ActiveDocument
   
   If Dir(BlockPath & Blokki.VALUE & ".dwg") = "" Then
-    MsgBox "Insertoitavaa blokkia ei l�ytynyt", vbCritical, "Insertoi"
+    MsgBox "Insertoitavaa blokkia ei löytynyt", vbCritical, "Insertoi"
     Exit Sub
   End If
   
   AppActivate oACAD.Caption
-  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
+  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   
 'AutoCAD etsii itse pisteen
-'K�sket��n klikata jotain pistett�
+'Käsketään klikata jotain pistettä
 Virhe:
   gPoint = oDOC.Utility.GetPoint(, "Set start point")
   Err.Clear
@@ -701,7 +701,7 @@ Virhe:
   'Kirjoitetaan arvot textboxeista
   Debug.Print "  Writing attributes to block"
   KirjoitaAttribuutit
-  'Annetaan komentorivikomento jolla saadaan siirretty� blokkia haluttuun paikkaan
+  'Annetaan komentorivikomento jolla saadaan siirrettyä blokkia haluttuun paikkaan
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
   With oBlock
     If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
@@ -745,9 +745,9 @@ Private Function Arvo(Tieto As Variant) As String
 End Function
 Private Sub TaytaTextBoxit(oAttrib As Variant)
 Dim i As Integer
-'Tyhjennet��n ensin kaikki textBoxit
+'Tyhjennetään ensin kaikki textBoxit
   TyhjennaKentat
-  For i = 0 To UBound(oAttrib)  'K�yd��n l�pi kaikki blokin attribuutit
+  For i = 0 To UBound(oAttrib)  'Käydään läpi kaikki blokin attribuutit
     With oAttrib(i)
       Select Case Left$(UCase$(.TagString), Len(.TagString) - 1)
         Case "TXT", "TEXT_"
@@ -957,7 +957,7 @@ T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
-Text_2.VALUE = "K�Y"
+Text_2.VALUE = "KÄY"
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
@@ -1075,7 +1075,7 @@ T_IN2.VALUE = ""
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
 Text_1.VALUE = ""
-Text_2.VALUE = "H�t�seispainike 1"
+Text_2.VALUE = "Hätäseispainike 1"
 Text_3.VALUE = "ERITILAT"
 Text_4.VALUE = ""
 T_OUT1.VALUE = ""
