@@ -1,0 +1,659 @@
+Option Compare Database
+'Updated: 2025 - 64-bit compliance (PtrSafe, LongPtr)
+Private Declare PtrSafe Function api_GetUserName _
+                Lib "advapi32.dll" _
+                Alias "GetUserNameA" _
+                (ByVal lpBuffer As String, nSize As LongPtr) As Long
+Private Sub ADDNEWREV_Click()
+On Error GoTo ErrorHandler
+Debug.Print "ADDNEWREV_Click: Starting operation"
+Dim DB As DAO.Database
+Dim vrev As String
+Dim urev As String
+Dim Taulu As DAO.Recordset
+Dim ALUE As String
+Dim LooppiSymb As String
+Dim LooppiNo As String
+Dim paiva As String
+Dim kk As String
+Dim vuosi As String
+Dim revpaiva As String
+Dim revteki As String
+Dim BuffSize As LongPtr
+Dim NBuffer As String
+Set DB = CurrentDb
+Debug.Print "  Database connection established"
+
+'BuffSize = 256
+'NBuffer = Space$(BuffSize)
+'
+'    If api_GetUserName(NBuffer, BuffSize) Then
+'     revteki = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+'    Else
+'      revteki = "Unknown"
+'    End If
+
+revteki = Me!RevBy
+Debug.Print "  RevBy: " & revteki
+
+urev = Me!NEWREV
+ALUE = Me!AreaCode
+LooppiNo = Me!LoopNo
+Debug.Print "  NewRev: " & urev & ", Area: " & ALUE & ", LoopNo: " & LooppiNo
+paiva = Day(Date)
+kk = Month(Date)
+'vuosi = Right(Year(Date), 2)
+vuosi = Year(Date)
+revpaiva = paiva & "." & kk & "." & vuosi
+LooppiSymb = Me!LoopSymb
+
+If Me!FReV = urev Then
+    Debug.Print "  WARNING: Revision already exists: " & urev
+    Viesti = MsgBox("Uusi revisio on jo olemassa!", vbOKOnly)
+    Exit Sub
+End If
+
+Set Taulu = DB.OpenRecordset("rev", dbOpenTable)
+Debug.Print "  Adding new revision to 'rev' table"
+Taulu.AddNew
+Taulu.Fields("Area") = ALUE
+Taulu.Fields("no") = LooppiNo
+Taulu.Fields("symb") = LooppiSymb
+Taulu.Fields("rev") = urev
+Taulu.Fields("revdate") = revpaiva
+Taulu.Fields("revby") = revteki
+Taulu.Fields("doctype") = "F"
+Taulu.Fields("revdesc") = Me!RevDesc
+Taulu.Update
+Debug.Print "  Revision record updated successfully"
+
+'If IsNull(Forms!funktiokaavio.FReV.Value) Then
+Me!FReV = urev
+'Else
+'vrev = Me!FReV
+'Me!FReV = vrev & "/" & urev
+'End If
+
+Debug.Print "ADDNEWREV_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in ADDNEWREV_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Area: " & ALUE & ", LoopNo: " & LooppiNo & ", NewRev: " & urev
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error adding new revision: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Command50_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Command50_Click: Starting control update operation"
+Dim qry As Recordset
+Dim sql As String
+Dim DB As Object ' Database
+Set DB = CurrentDb
+
+Debug.Print "  AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value & ", TagID: " & Me!Muokkaus3.Value
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Control_Poistatulostus")
+'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+
+CurrentDb.Execute "UPDATE Control SET Sel = '" & KAYTTAJA() & "' WHERE AreaCode = """ & Me!Muokkaus0.Value & """ And LoopNo = """ & Me!Muokkaus4.Value & """ And TagID = """ & Me!Muokkaus3.Value & """"
+Debug.Print "  Control table updated"
+
+'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+
+
+'Set qry = db.OpenRecordset(sql)
+
+'DoCmd.OpenQuery ("Control_Lisaa_tulostus")
+DoCmd.SetWarnings True
+Debug.Print "Command50_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Command50_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    DoCmd.SetWarnings True
+    MsgBox "Error updating control: " & Err.Description, vbCritical
+End Sub
+
+
+Private Sub Command83_Click()
+'T�m� p�ivitt�� reseptit kaikkiin piireihin, joissa on k�ytetty tietty� resepti�.On Error GoTo ErrorHandler
+Debug.Print "Command83_Click: Starting recipe update operation"Dim DB As Database
+Dim Vastaus As VbMsgBoxResult
+
+Debug.Print "  RecipeID: " & RECIPES.Form.ID
+Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritely resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+  Debug.Print "  Deleting old blocks from Control table"
+  CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID
+End If
+If Vastaus <> vbCancel Then
+  Debug.Print "  Inserting recipe data into control table"
+  CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID
+  Debug.Print "  Recipe update completed"
+  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
+  Me.Refresh
+End If
+Debug.Print "Command83_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    RecipeID: " & RECIPES.Form.ID
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error updating recipe: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Command97_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Command97_Click: Starting link cleanup operation"
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Delete tolink from FunckblockAttr")
+DoCmd.OpenQuery ("Delete todesc from FunckblockAttr")
+DoCmd.OpenQuery ("Delete fromdesc from FunckblockAttr")
+DoCmd.OpenQuery ("LinkTo1ADD")
+DoCmd.OpenQuery ("LinkTo2ADD")
+DoCmd.OpenQuery ("LinkTo3ADD")
+DoCmd.OpenQuery ("LinkTo4ADD")
+DoCmd.OpenQuery ("LinkTo5ADD")
+DoCmd.OpenQuery ("LinkTo6ADD")
+DoCmd.OpenQuery ("TODESCADD")
+DoCmd.OpenQuery ("FROMDESCADD")
+DoCmd.SetWarnings True
+Debug.Print "Command97_Click: COMPLETED successfully - All link queries executed"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Command97_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    DoCmd.SetWarnings True
+    MsgBox "Error during link cleanup: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Command98_Click()
+'Luodaan indeksisivut
+On Error GoTo ErrorHandler
+Debug.Print "Command98_Click: Starting index page creation (AutoCAD)"
+Dim Taul As Recordset
+Dim edPOS As String
+Dim Sivut As String
+Dim Piste(2) As Double
+Dim Piste2(2) As Double
+Dim ind As Integer
+Dim aX As Double
+Dim aY As Double
+Dim PosSivu As Double
+Dim Seuraava As Double
+Dim MinY As Double
+Dim MaxX As Double
+Dim RiviVali As Double
+Dim TextSize As Double
+Dim IndexBase As String
+Dim edPiir As String
+
+IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
+Debug.Print "  IndexBase: " & IndexBase
+Set oAcad = GetObject(, "AutoCAD.Application")
+Debug.Print "  AutoCAD connection established"
+Set Taul = CurrentDb.OpenRecordset("Funtitle_Func")
+Set oDoc = oAcad.Documents.Open("Y:\base\int\" & IndexBase & ".dwg")
+Debug.Print "  Base document opened: " & IndexBase & ".dwg"
+
+aX = 30        'Aloituspiste Xl
+
+aY = 275       'Aloituspiste Y
+PosSivu = 40   'Position ja sivun v�linen et�isyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen et�isyys edellisest�
+MinY = 40      'Mini Y koordinaatti johon asti tektej� tehd��n
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehd��n ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviv�li
+TextSize = 2.5 'Tekstien koko
+
+
+Piste(0) = aX
+Piste(1) = aY
+Piste2(0) = aX + PosSivu
+Piste2(1) = aY
+
+Debug.Print "  Processing records..."
+Do While Not Taul.EOF
+If Taul.Fields("Position") = "=231P891A-A" Then
+  Debug.Print "  DEBUG MARKER: Position =231P891A-A"
+End If
+  If edPOS <> Taul.Fields("position") Then
+    If Sivut <> "" Then
+      If Piste(1) = aY Then
+        'Lis�t��n ensin otsikot
+        oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
+        oDoc.ModelSpace.AddText "DESCRIPTION", Piste2, TextSize + 0.5
+        Piste(1) = Piste(1) - RiviVali - 1
+        Piste2(1) = Piste(1)
+      End If
+      
+      oDoc.ModelSpace.AddText edPOS, Piste, TextSize
+      oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
+      Piste(1) = Piste(1) - RiviVali
+      Piste2(1) = Piste(1)
+      If Piste(1) < MinY Then
+        Piste(1) = aY
+        Piste2(1) = aY
+        Piste(0) = Piste(0) + Seuraava
+        Piste2(0) = Piste2(0) + Seuraava
+      End If
+      If Piste(0) > MaxX Then
+        If Taul.Fields("Piir") <> edPiir Then
+          ind = 0
+        End If
+        ind = ind + 1
+        oDoc.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
+        edPiir = Taul.Fields("Piir")
+        oDoc.Close
+        Set oDoc = oAcad.Documents.Open("y:\BASE\INT\" & IndexBase & ".dwg")
+        Piste(0) = aX
+        Piste2(0) = aX + PosSivu
+      End If
+    End If
+      
+    Sivut = Taul.Fields("Description1")
+    edPOS = Taul.Fields("Position")
+  Else
+    Sivut = Sivut & "/" & Taul.Fields("PAGE")
+  End If
+  Taul.MoveNext
+Loop
+    oDoc.ModelSpace.AddText edPOS, Piste, TextSize
+    oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
+  ind = ind + 1
+  Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
+  oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
+  'oDoc.Close
+  Debug.Print "Command98_Click: COMPLETED successfully - Index pages created"
+  MsgBox "Valmis"
+  Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Command98_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    IndexBase: " & IndexBase
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error creating index pages: " & Err.Description, vbCritical
+End Sub
+
+
+Private Sub Komento46_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Komento46_Click: Starting interlocking page update"
+Dim DB As Database
+Dim Taul As Recordset
+Dim Intpage As Recordset
+Dim EdLoop As String
+Dim PIIR As String
+Dim PIIRI As String
+Dim ALUE As String
+Dim SYMB As String
+Dim NRO As String
+Dim OS As Long
+Dim OS2 As Long
+Dim Tyyppi As String
+
+Set DB = CurrentDb
+Debug.Print "  Clearing Intpage table"
+DB.Execute "DELETE * FROM Intpage"
+Set Taul = DB.OpenRecordset("SELECT DWG, TEXT_4, PAGE FROM POSANDPAGES GROUP BY DWG, TEXT_4, PAGE HAVING (TEXT_4<>'') ORDER BY TEXT_4, PAGE;")
+Debug.Print "  Recordset opened with " & Taul.RecordCount & " records"
+Set Intpage = DB.OpenRecordset("Intpage")
+
+
+Do While Not Taul.EOF
+    If EdLoop <> Taul.Fields("TEXT_4") Then
+      If EdLoop <> "" Then
+        Intpage.Update
+      End If
+      Intpage.AddNew
+      EdLoop = Taul.Fields("TEXT_4")
+    End If
+    PIIR = Taul.Fields("DWG")
+    PIIR = Left$(PIIR, InStr(10, PIIR, "_") - 1)
+    PIIRI = Taul.Fields("TEXT_4")
+    Tyyppi = Mid$(PIIRI, 5, 1)
+    OS = InStr(PIIRI, Tyyppi)
+    ALUE = Mid$(PIIRI, 1, 4)
+    If Tyyppi = "-" Then
+      NRO = Right$(PIIRI, 3)
+    Else
+      OS2 = InStr(PIIRI, "-")
+      NRO = PIIRI
+      SYMB = Mid$(PIIRI, OS2 + 1)
+    End If
+    
+    If Intpage.Fields("Ensimm�inenkohteestapage") <> "" Then
+      Intpage.Fields("Ensimm�inenkohteestapage") = Intpage.Fields("Ensimm�inenkohteestapage") & "/" & Taul.Fields("PAGE")
+    Else
+      Intpage.Fields("Ensimm�inenkohteestapage") = Taul.Fields("PAGE")
+    End If
+    Intpage.Fields("PIIRNRO") = PIIR
+    Intpage.Fields("looppisymb") = PIIRI
+    Intpage.Fields("PIIRNRO") = PIIR
+   ' Intpage.Fields("Areacode") = ALUE
+'    Intpage.Fields("Loopsymb") = SYMB
+    Intpage.Fields("looppinro") = NRO
+    Taul.MoveNext
+Loop
+Intpage.Update
+Debug.Print "  Intpage table updated successfully"
+Set Taul = Nothing
+Set Intpage = Nothing
+Set DB = Nothing
+Debug.Print "Komento46_Click: COMPLETED successfully"
+MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento46_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error updating interlocking pages: " & Err.Description, vbCritical
+
+
+
+'DoCmd.Hourglass True
+
+'Dim DB As Database
+'Dim MyQuery As QueryDef
+'Dim qry As Recordset
+'Dim tbl As Recordset
+'Dim sSQL As String
+'Dim ssSQL As String
+'Dim qry2 As Recordset
+'
+'Set DB = CurrentDb
+'
+''L = Chr(34)
+'
+'DoCmd.OpenQuery ("Interlockingpage2")
+'Set qry = DB.OpenRecordset("Interlockinpage")
+'
+'
+'Set tbl = DB.OpenRecordset("Intpage")
+'
+'edel = ""
+'qry.MoveFirst
+'Do Until qry.EOF
+'
+'Do Until tbl.EOF
+'            If tbl!LooppiSymb = qry!text_4 Then
+'                tbl.Edit
+'             '   OnJo = InStr(tbl!Page, qry!Page)
+'              '  If OnJo = 0 Then
+'                    tbl!Ensimm�inenkohteestapage = tbl!Ensimm�inenkohteestapage & "/" & qry!Page
+'               '     tbl!Filename = tbl!Filename & "/" & qry!Filename
+'               tbl.Update
+'               'Else
+'               'tbl.MoveNext
+'            End If
+'   tbl.MoveNext
+'Loop
+'tbl.MoveFirst
+'    qry.MoveNext
+'
+'Loop
+'
+'
+'DoCmd.Hourglass False
+'
+'tbl.Close
+'qry.Close
+
+End Sub
+
+Private Sub Komento47_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Komento47_Click: Starting control print update"
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Control_Poistatulostus")
+DoCmd.OpenQuery ("Control_Lisaa_tulostus")
+DoCmd.SetWarnings True
+Debug.Print "Komento47_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento47_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    DoCmd.SetWarnings True
+    MsgBox "Error updating control print: " & Err.Description, vbCritical
+End Sub
+
+Private Sub hae_Click()
+On Error GoTo Err_hae_Click
+
+
+    Screen.PreviousControl.SetFocus.LoopNo
+    DoCmd.FindNext
+
+Exit_hae_Click:
+    Exit Sub
+
+Err_hae_Click:
+    MsgBox Err.Description
+    Resume Exit_hae_Click
+    
+End Sub
+
+Private Sub Komento57_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Komento57_Click: Switching to MOTORS view"
+  LTITLE.Caption = "MOTORS"
+  Me.RecordSource = "FuncDiag_Motors"
+  Me.Requery
+Debug.Print "Komento57_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento57_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error switching to motors view: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Komento58_Click()
+On Error GoTo ErrorHandler
+Debug.Print "Komento58_Click: Switching to LOOPS view"
+  LTITLE.Caption = "LOOPS"
+  Me.RecordSource = "FuncDiag_Loops"
+  Me.Requery
+Debug.Print "Komento58_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento58_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error switching to loops view: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Komento67_Click()
+'Luodaan valituista blokeista resepti
+On Error GoTo ErrorHandler
+Debug.Print "Komento67_Click: Starting recipe creation from blocks"
+Dim DB As Database
+Dim RID As Long
+Dim Taul As Recordset
+Dim sSQL As String
+If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
+  Debug.Print "  ERROR: Process or Code missing"
+  MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
+  Exit Sub
+End If
+Debug.Print "  Process: " & RProcess.Value & ", Code: " & RCode.Value
+Set DB = CurrentDb
+Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & RProcess.Value & "' and Code = '" & RCode.Value & "'")
+If Taul.RecordCount > 0 Then
+  Debug.Print "  ERROR: Recipe already exists"
+  MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
+  Exit Sub
+End If
+Debug.Print "  Creating new recipe in RECIPES table"
+'Luodaan uusi resepti RECIPES taulukkoon.
+Taul.AddNew
+Taul.Fields("PROCESS") = RProcess.Value
+Taul.Fields("CODE") = RCode.Value
+Taul.Fields("INFO") = RInfo.Value
+'Otetaan yl�s luodun reseptin ID
+RID = Taul.Fields("ID")
+Taul.UpdateDebug.Print "  New RecipeID: " & RID'Kirjoitetana reseptin ID piirille (Loops tai drives)
+Me.RecipeID = RID
+'Luodaan tiedoista rivit RECIPE_TMP taulukkoon
+sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description2, BlockPlace, [Note], Sivu, Sivuja )"
+sSQL = sSQL & "SELECT " & RID & " AS ID, Control.FBlock, Control.LoopSymb, Control.Suffix, Control.Description2, Control.BlockPlace, Control.Note, Control.Sivu, Control.Sivuja "
+sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
+DB.Execute sSQL
+'Kirjoitetaan viel� Control taulukkoon, mik� resepti piirill� on k�yt�ss�
+sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
+sSQL = sSQL & "WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
+DB.Execute sSQL
+Debug.Print "  Recipe assigned to control loops"
+Me.Refresh
+Debug.Print "Komento67_Click: COMPLETED successfully - Recipe created"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento67_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Process: " & RProcess.Value & ", Code: " & RCode.Value
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error creating recipe: " & Err.Description, vbCritical
+End Sub
+
+
+Private Sub Komento80_Click()
+'T�m� p�ivitt�� reseptit kaikkiin piireihin, joissa on k�ytetty tietty� resepti�.On Error GoTo ErrorHandler
+Debug.Print "Komento80_Click: Starting recipe update to all circuits"Dim DB As Database
+Dim Vastaus As VbMsgBoxResult
+
+Vastaus = MsgBox("Poistetaanko vanhat blokit piireist�, joille on m��ritely resepti?", vbYesNoCancel, "P�IVIT� RESEPTIT KAIKKIIn PIIREIHIN")
+
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niist� piireist�, joissa on resepti
+  Debug.Print "  Deleting old blocks from Control where RecipeID exists"
+  CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null"
+End If
+If Vastaus <> vbCancel Then
+  Debug.Print "  Executing RECIPES_ADD query"
+  CurrentDb.Execute "RECIPES_ADD"
+  Debug.Print "  All circuits updated with recipes"
+  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN"
+  Me.Refresh
+End If
+Debug.Print "Komento80_Click: COMPLETED successfully"
+Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in Komento80_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error updating recipes: " & Err.Description, vbCritical
+End Sub
+Private Sub CommandJANI_Click()
+'Private Sub Tiedot_Click()
+'Private Sub Command152_Click()
+'Luodaan indeksisivut
+On Error GoTo ErrorHandler
+Debug.Print "CommandJANI_Click: Starting index page generation (Intpage)"
+Dim Taul As Recordset
+Dim edPOS As String
+Dim Sivut As String
+Dim Piste(2) As Double
+Dim Piste2(2) As Double
+Dim ind As Integer
+Dim aX As Double
+Dim aY As Double
+Dim PosSivu As Double
+Dim Seuraava As Double
+Dim MinY As Double
+Dim MaxX As Double
+Dim RiviVali As Double
+Dim TextSize As Double
+Dim IndexBase As String
+Dim edPiir As String
+
+IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
+Debug.Print "  IndexBase: " & IndexBase
+Set Taul = CurrentDb.OpenRecordset("Intpage")
+Debug.Print "  Intpage recordset opened"
+Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
+Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
+
+aX = 30        'Aloituspiste Xl
+
+aY = 275       'Aloituspiste Y
+PosSivu = 40   'Position ja sivun v�linen et�isyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen et�isyys edellisest�
+MinY = 40      'Mini Y koordinaatti johon asti tektej� tehd��n
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehd��n ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviv�li
+TextSize = 2.5 'Tekstien koko
+
+
+Piste(0) = aX
+Piste(1) = aY
+Piste2(0) = aX + PosSivu
+Piste2(1) = aY
+
+Debug.Print "  Processing Intpage records..."
+Do While Not Taul.EOF
+If Taul.Fields("TEXT_4") = "=231P891A-A" Then
+  Debug.Print "  DEBUG MARKER: TEXT_4 =231P891A-A"
+End If
+  If edPOS <> Taul.Fields("TEXT_4") Then
+    If Sivut <> "" Then
+      If Piste(1) = aY Then
+        'Lis�t��n ensin otsikot
+        oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
+        oDoc.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
+        Piste(1) = Piste(1) - RiviVali - 1
+        Piste2(1) = Piste(1)
+      End If
+      
+      oDoc.ModelSpace.AddText edPOS, Piste, TextSize
+      oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
+      Piste(1) = Piste(1) - RiviVali
+      Piste2(1) = Piste(1)
+      If Piste(1) < MinY Then
+        Piste(1) = aY
+        Piste2(1) = aY
+        Piste(0) = Piste(0) + Seuraava
+        Piste2(0) = Piste2(0) + Seuraava
+      End If
+      If Piste(0) > MaxX Then
+        If Taul.Fields("Piir") <> edPiir Then
+          ind = 0
+        End If
+        ind = ind + 1
+        oDoc.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
+        edPiir = Taul.Fields("Piir")
+        oDoc.Close
+        Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
+        Piste(0) = aX
+        Piste2(0) = aX + PosSivu
+      End If
+    End If
+      
+    Sivut = Taul.Fields("PAGE")
+    edPOS = Taul.Fields("TEXT_4")
+  Else
+    Sivut = Sivut & "/" & Taul.Fields("PAGE")
+  End If
+  Taul.MoveNext
+Loop
+    oDoc.ModelSpace.AddText edPOS, Piste, TextSize
+    oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
+  ind = ind + 1
+  Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
+  oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
+  oDoc.Close
+  Debug.Print "CommandJANI_Click: COMPLETED successfully - Index pages created"
+  MsgBox "Valmis"
+  Exit Sub
+
+ErrorHandler:
+    Debug.Print "*** ERROR in CommandJANI_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    IndexBase: " & IndexBase
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    MsgBox "Error creating index pages: " & Err.Description, vbCritical
+End Sub

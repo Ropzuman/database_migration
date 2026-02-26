@@ -7,19 +7,23 @@ Lisätty kattava Debug.Print -lokitus kriittisiin Access VBA -tiedostoihin **VBA
 ## Muutetut Tiedostot
 
 ### 1. Access/MAINEQ/DataToACAD.bas
+
 **AutoCAD-integraatio - Kriittisin tiedosto**
 
 Lisätty lokitus 9 funktioon:
 
 #### `CrsRefLink(tblnimi, teksti)`
+
 - Aloitusviesti taulun ja tekstitunnisteiden kanssa
 - Virhekäsittely täydellisillä parametritiedoilla
 
 #### `get_filename(taulnimi)`
+
 - Taulunimen prosessointiviesti
 - Virhekonteksti
 
 #### `makeFiles(common)`
+
 - **Päätoiminto** - Kattava lokitus
 - Funktio-otsikko erottimilla
 - Suodatusarvo ja hakemistotiedot
@@ -32,20 +36,24 @@ Lisätty lokitus 9 funktioon:
 - Täydellinen virhekonteksti
 
 #### `MakeListNoLoopID(tanimi, Hakem)`
+
 - Taulun ja hakemiston lokitus
 - Virhekäsittely
 
 #### `inch(a)`
+
 - Merkkijonon pituustieto
 - Koodin poistumisviesti
 - Virhekonteksti syöttöparametrilla
 
 #### `MakeListWithLoopID(tblnimipre, Hakem, idsyst, suoda, Looppid)`
+
 - Taulun, hakemiston ja suodatusparametrien lokitus
 - Loop ID -kenttäindeksin näyttö
 - Virhekäsittely
 
 #### `MakeLocFiles()`
+
 - Funktio-otsikko
 - Instloc.txt -tiedoston alustusviesti
 - Laitetaulun prosessointiviestit
@@ -53,6 +61,7 @@ Lisätty lokitus 9 funktioon:
 - Valmistumisviesti
 
 #### `MakeScript(common, suod, Looppid)`
+
 - Funktio-otsikko parametreilla
 - Skriptitiedoston polku
 - QMEM-komentojen kirjoitusviesti
@@ -62,11 +71,13 @@ Lisätty lokitus 9 funktioon:
 ---
 
 ### 2. Access/instru3/Form_CopyLoops.cls
+
 **Monimutkainen tietokantaoperaatio**
 
 Lisätty lokitus 2 proseduuriin:
 
 #### `HaeLoopit_Click()`
+
 - Funktio-otsikko erottimilla
 - Lähdetietokannan validointi:
   - "ERROR: No source database selected" jos ei valittu
@@ -83,6 +94,7 @@ Lisätty lokitus 2 proseduuriin:
 - Täydellinen virhekäsittely
 
 #### `ValitseKanta_Click()`
+
 - Tietokantavalintadialogien aloitusviesti
 - Valitun tietokannan polku
 - "Database opened successfully" -vahvistus
@@ -91,44 +103,52 @@ Lisätty lokitus 2 proseduuriin:
 ---
 
 ### 3. Access/DOCUMENTS/GlobalVBAs.vba
+
 **Revisioparserointi - Paljon käytetty**
 
 Lisätty lokitus 7 funktioon:
 
 #### `HaeTekija(Revisio)`
+
 - Parseroidaan tekijä revisiojonosta
 - "Revisio is Null" -ilmoitus tyhjille arvoille
 - "Found author: [nimi]" löydetyille
 - Virhekäsittely revisioparametrilla
 
 #### `HaeRevisioija(Revisio)`
+
 - Parseroidaan revisoija
 - "No multi-line revision" jos yhden rivin revisio
 - "Found reviser: [nimi]" löydetyille
 - Virhekonteksti
 
 #### `HaeRevisioijaPvm(Revisio)`
+
 - Parseroidaan revisoija ja päivämäärä
 - "Found: [nimi]: [pvm]" löydetyille
 - Virhekäsittely
 
 #### `EkaRevRivi(Revisio)`
+
 - Ensimmäisen revisorivin ekstraktointi
 - "Result: [rivi]" -tulostus
 - Virhekonteksti
 
 #### `HaeRevisio(Revisio)`
+
 - Revisiotunnuksen (A, B, 0) ekstraktointi
 - Null-tarkistus
 - "Found mark: [tunnus]" -tulostus
 - Virhekäsittely
 
 #### `HaeViimPaiva(Revisio)`
+
 - Ensimmäisen revision päivämäärän ekstraktointi
 - "Found date: [päivämäärä]" -tulostus
 - Virhekonteksti
 
 #### `HaePaiva(Revisio)`
+
 - Viimeisimmän revision päivämäärän ekstraktointi
 - "Found date: [päivämäärä]" -tulostus
 - Virhekäsittely
@@ -140,6 +160,7 @@ Lisätty lokitus 7 funktioon:
 Kaikki funktiot noudattavat yhtenäistä mallia:
 
 ### Funktioiden Aloitus
+
 ```vba
 Debug.Print "FunctionName: Aloitetaan operaatio"
 Debug.Print "  Parametri1: " & parametri1
@@ -147,6 +168,7 @@ Debug.Print "  Parametri2: " & parametri2
 ```
 
 ### Kriittisten Toimintojen Otsikot
+
 ```vba
 Debug.Print "========================================"
 Debug.Print "FunctionName: Kuvaus"
@@ -154,12 +176,14 @@ Debug.Print "========================================"
 ```
 
 ### Edistymisviestit
+
 ```vba
 Debug.Print "  Prosessoidaan: " & kohde
 Debug.Print "  Kopioidaan: " & määrä & " kohdetta"
 ```
 
 ### Virhekäsittelijät
+
 ```vba
 ErrorHandler:
   Debug.Print "*** ERROR in FunctionName: " & Err.Number & " - " & Err.Description
@@ -169,6 +193,7 @@ ErrorHandler:
 ```
 
 ### Valmistumisviestit
+
 ```vba
 Debug.Print "FunctionName: VALMIS onnistuneesti"
 Debug.Print "========================================"
@@ -179,21 +204,27 @@ Debug.Print "========================================"
 ## Käyttöohje
 
 ### 1. Tuo Koodi Accessiin
+
 Käytä PowerShell-automaatioskriptia:
+
 ```powershell
 .\Automations\export_access_vba.ps1
 ```
 
 ### 2. Avaa VBA Editor
+
 Access → Alt+F11 → avaa VBA Editor
 
 ### 3. Avaa Immediate Window
+
 VBA Editor → Ctrl+G → avaa Immediate Window (tai View → Immediate Window)
 
 ### 4. Suorita Toiminto
+
 Esim. avaa Form_CopyLoops ja klikkaa "Hae Loopit" -nappia
 
 ### 5. Seuraa Lokeja Immediate Windowissa
+
 Näet reaaliaikaisen suorituksen:
 
 ```
@@ -213,6 +244,7 @@ HaeLoopit: COMPLETED successfully
 ```
 
 ### 6. Virheiden Diagnoosi
+
 Jos virhe tapahtuu, näet täydelliset tiedot:
 
 ```
@@ -222,6 +254,7 @@ Jos virhe tapahtuu, näet täydelliset tiedot:
 ```
 
 Tästä näet:
+
 - **Virhekoodin:** 3021
 - **Kuvauksen:** "No current record"
 - **Lähteen:** DAO.Recordset
@@ -233,18 +266,22 @@ Tästä näet:
 ## Edut
 
 ### 1. Reaaliaikainen Näkyvyys
+
 - Näet tarkalleen mitä koodi tekee
 - Ei tarvitse lisätä MsgBox-viestejä
 
 ### 2. Virheanalyysi
+
 - Täydelliset virhetiedot parametreilla
 - Helppo tunnistaa missä vaiheessa virhe tapahtui
 
 ### 3. Suorituskyvyn Seuranta
+
 - Näet kuinka kauan eri vaiheet kestävät
 - Voit tunnistaa hitaat kohdat
 
 ### 4. Ei Tuotantovaikutusta
+
 - Debug.Print -komennot poistetaan automaattisesti Release-buildeissa
 - Eivät hidasta merkittävästi (kirjoitetaan vain kun Immediate Window auki)
 
@@ -255,6 +292,7 @@ Tästä näet:
 Käytä tätä yhdessä **AGENT_TEST_VALIDATION_CHECKLIST.md**:n kanssa:
 
 ### Vaihe 1: Käännöksen Tarkistus
+
 1. Avaa Access-tietokanta
 2. Paina Alt+F11 → VBA Editor
 3. Debug → Compile [Projektin nimi]
@@ -263,6 +301,7 @@ Käytä tätä yhdessä **AGENT_TEST_VALIDATION_CHECKLIST.md**:n kanssa:
 ### Vaihe 2: Kriittisten Tiedostojen Testaus
 
 #### Test 1: DataToACAD.bas - makeFiles
+
 1. Avaa Immediate Window (Ctrl+G)
 2. Suorita: `makeFiles("COMMON")`
 3. Tarkista Immediate Windowista:
@@ -272,6 +311,7 @@ Käytä tätä yhdessä **AGENT_TEST_VALIDATION_CHECKLIST.md**:n kanssa:
    - Valmistumisviesti ilmestyy
 
 #### Test 2: Form_CopyLoops - HaeLoopit
+
 1. Avaa Form_CopyLoops
 2. Avaa Immediate Window
 3. Valitse lähdetietokanta
@@ -283,6 +323,7 @@ Käytä tätä yhdessä **AGENT_TEST_VALIDATION_CHECKLIST.md**:n kanssa:
    - Prosessoidut taulut
 
 #### Test 3: GlobalVBAs - Revisioparserointi
+
 1. Avaa Immediate Window
 2. Testaa: `? HaeTekija("A 01.01.2024/VG/RVA/" & vbCrLf & "B 01.02.2024/MT/RVA/")`
 3. Tarkista lokista:
@@ -314,6 +355,7 @@ Käytä tätä yhdessä **AGENT_TEST_VALIDATION_CHECKLIST.md**:n kanssa:
 **Viesti:** "Lisää Debug.Print -lokitusta VBA Immediate Window -virheenselvitystä varten"
 
 **Muutokset:**
+
 - 6 tiedostoa muutettu
 - 312 lisäystä
 - 11 poistoa
@@ -333,6 +375,7 @@ Kaikki kriittiset Access VBA -tiedostot on varustettu kattavalla Debug.Print -lo
 5. **Raportoida ongelmat** tarkoilla lokitiedoilla
 
 **Kaikki muutokset noudattavat:**
+
 - ✅ 64-bit compliance (PtrSafe, LongPtr)
 - ✅ DAO-etuliitteet
 - ✅ Optimoidut String-funktiot ($-suffiksit)

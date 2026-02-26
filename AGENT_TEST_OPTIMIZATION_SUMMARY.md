@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Systematic audit and optimization of all previously migrated 64-bit VBA code following Bachelor's Thesis requirements. Identified and fixed two critical compliance issues:
+Systematic audit and optimization of all previously migrated 64-bit VBA code following migration requirements. Identified and fixed two critical compliance issues:
 
 1. **Missing DAO Prefixes** (64-bit compliance violation)
 2. **Non-optimized String Functions** (performance issue)
