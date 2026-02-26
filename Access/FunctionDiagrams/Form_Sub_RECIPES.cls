@@ -15,7 +15,7 @@ Private Sub PROCESS_DblClick(Cancel As Integer)
   ReseptiKayttoon
 End Sub
 Private Sub ReseptiKayttoon()
-'T�m� scripti ottaa valitun reseptin k�ytt��n piirille
+'Tämä scripti ottaa valitun reseptin käyttöön piirille
 Dim TAreaCOde As String
 Dim TLoopNo As String
 Dim DB As DAO.Database

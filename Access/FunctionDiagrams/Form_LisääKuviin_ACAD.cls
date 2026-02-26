@@ -7,7 +7,7 @@ Dim LokiPituus As Long
 Dim oAcad As AcadApplication
 Public oDoc As AcadDocument
 Private Sub Odota(Aika As Integer)
-'T�m� aliohjema odottaa m��ritellyn ajan sekunnin sadasosina
+'Tämä aliohjema odottaa määritellyn ajan sekunnin sadasosina
 Dim odotus As Double
 odotus = CDbl(Timer) + CDbl((Aika / 100))
 Do While odotus > Timer
@@ -82,7 +82,7 @@ Taulu.Close
 oAcad.Quit
 Set oAcad = Nothing
 Debug.Print "HaeTekstit_Click: COMPLETED successfully"
-MsgBox "Valmis", vbInformation, "P�ivit� tekstit"
+MsgBox "Valmis", vbInformation, "Päivitä tekstit"
 Set Taulu = Nothing
 Exit Sub
 
@@ -139,7 +139,7 @@ Set Taulu = CurrentDb.OpenRecordset("Blokit")
   Nimi = Left$(Tied, Len(Tied) - 4)
     
     Set oDoc = oAcad.ActiveDocument
-  DWGName = Left$(oDoc.Name, Len(oDoc.Name) - 4)    'Poistetaan p��te (.dwg)
+  DWGName = Left$(oDoc.Name, Len(oDoc.Name) - 4)    'Poistetaan pääte (.dwg)
   Hakemisto = oDoc.PATH
   Set Joukko = oDoc.ActiveSelectionSet
   Joukko.Clear
@@ -177,7 +177,7 @@ Set Taulu = CurrentDb.OpenRecordset("Blokit")
     
 Taulu.Close
 Set oAcad = Nothing
-MsgBox "Valmis", vbInformation, "P�ivit� tekstit"
+MsgBox "Valmis", vbInformation, "Päivitä tekstit"
 Set Taulu = Nothing
 
 End Sub
@@ -243,7 +243,7 @@ LuoKentat = "("
 
 For laskuri = 0 To rstSnapshot.Fields.Count - 2
 
-'Tarvittavat ID-kent�t Long -tyypiksi, muut tekstikent�ksi
+'Tarvittavat ID-kentät Long -tyypiksi, muut tekstikentäksi
 If rstSnapshot.Fields(laskuri).Name = "DocumentID" Or rstSnapshot.Fields(laskuri).Name = "ProjectID" Then
     LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] long,"
 Else
@@ -262,7 +262,7 @@ dbs.Execute "CREATE TABLE DocumentsDetail " & LuoKentat
 rstSnapshot.MoveLast
 rstSnapshot.MoveFirst
 
-'K�yd��n recordset l�pi ja lis�t��n siin� olevat tiedot tauluun DocumentsDetail
+'Käydään recordset läpi ja lisätään siinä olevat tiedot tauluun DocumentsDetail
 
 For u = 1 To rstSnapshot.RecordCount
 
@@ -292,7 +292,7 @@ Next u
 rstSnapshot.Close
 
 'Suoritetaan kysely monesta BE:n taulusta. Kyselyn tuloksen perusteella luodaan uusi
-'taulu nimelt� DocumentsRevision.
+'taulu nimeltä DocumentsRevision.
 
 SQLQry = "SELECT " & _
 "Documents.ProjectID, Revision.DocumentID, Revision.Revision, Revision.RevNote, Status.Status, " & _
@@ -303,7 +303,7 @@ SQLQry = "SELECT " & _
 "WHERE Documents.ProjectID=" & RefID.Value & ""
 
 
-'Edell� olevasta kyselyst� saadaan recordset rstSnapshot
+'Edellä olevasta kyselystä saadaan recordset rstSnapshot
 
 Set rstSnapshot = dbsDocuments.OpenRecordset(SQLQry, dbOpenSnapshot)
 
@@ -320,7 +320,7 @@ LuoKentat = "("
 
 For laskuri = 0 To rstSnapshot.Fields.Count - 2
 
-'Tarvittavat ID-kent�t Long -tyypiksi, muut tekstikent�ksi
+'Tarvittavat ID-kentät Long -tyypiksi, muut tekstikentäksi
 If rstSnapshot.Fields(laskuri).Name = "DocumentID" Or rstSnapshot.Fields(laskuri).Name = "ProjectID" Then
     LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] long,"
 Else
@@ -339,7 +339,7 @@ dbs.Execute "CREATE TABLE DocumentsRevision " & LuoKentat
 rstSnapshot.MoveLast
 rstSnapshot.MoveFirst
 
-'K�yd��n recordset l�pi ja lis�t��n siin� olevat tiedot tauluun DocumentsDetail
+'Käydään recordset läpi ja lisätään siinä olevat tiedot tauluun DocumentsDetail
 
 For u = 1 To rstSnapshot.RecordCount
 
@@ -406,7 +406,7 @@ Public Function TableExists(sTable As String) As Boolean
 End Function
 
 Private Sub TeeKuvat_Click()
-'T�m� avaa kuvan insertoi kuvaan blokin/blokit, vaihtaa attribuuttien tiedot ja tallentaa kuvan
+'Tämä avaa kuvan insertoi kuvaan blokin/blokit, vaihtaa attribuuttien tiedot ja tallentaa kuvan
 On Error GoTo ErrorHandler
 Debug.Print "TeeKuvat_Click: Starting image creation operation (CRITICAL FUNCTION)"
 Dim DB As Object ' DAO.Database
@@ -444,12 +444,12 @@ End If
 BlockTaulukko = TBlockTaulukko.Value
 BlockTaulukkoTyhjennys = TBlockTaulukko.Value
 
-DoCmd.SetWarnings False 'MRu Lis�tty 26.04.2011
+DoCmd.SetWarnings False 'MRu Lisätty 26.04.2011
 DoCmd.OpenQuery ("RevisionPlaceQry")
 DoCmd.SetWarnings True
 
-Vastaus = MsgBox("P�ivitet��nk� " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
-If Vastaus = vbYes Then 'P�ivitet��n Kuviin1 taulukko
+Vastaus = MsgBox("Päivitetäänkö " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
+If Vastaus = vbYes Then 'Päivitetään Kuviin1 taulukko
   DB.Execute "DELETE * FROM " & BlockTaulukkoTyhjennys
   OS = 1
   Do
@@ -470,7 +470,7 @@ If Vastaus = vbYes Then 'P�ivitet��n Kuviin1 taulukko
     Debug.Print "  Creating references"
     LuoReferenssit
   End If
-  LisaaLokiin "-P�ivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
+  LisaaLokiin "-Päivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
 
 ElseIf Vastaus = vbCancel Then
   Debug.Print "  Operation cancelled by user"
@@ -480,16 +480,16 @@ End If
 
 If IsNull(KuvaHakem.Value) Then
   KuvaHakem.Value = PohjaHakem.Value
-  LisaaLokiin "-Kuva hakemistoa ei oltu m��ritelty, talletetaan oletuksena pohjahakemistoon.."
+  LisaaLokiin "-Kuva hakemistoa ei oltu määritelty, talletetaan oletuksena pohjahakemistoon.."
 End If
 
-If FSO.FolderExists(PohjaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytet��n
-  LisaaLokiin "Virhe: Hakemistoa ei l�ytynyt (" & KuvaHakem.Value & ")"
-  MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei l�ytynyt!" & vbCrLf & "Valitse hakemisto ja yrit� uudelleen.", vbCritical, "Tee kuvat"
+If FSO.FolderExists(PohjaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytetään
+  LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & KuvaHakem.Value & ")"
+  MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei löytynyt!" & vbCrLf & "Valitse hakemisto ja yritä uudelleen.", vbCritical, "Tee kuvat"
 
-ElseIf FSO.FolderExists(KuvaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytet��n
-  LisaaLokiin "Virhe: Hakemistoa ei l�ytynyt (" & KuvaHakem.Value & ")"
-  MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei l�ytynyt!" & vbCrLf & "Valitse hakemisto ja yrit� uudelleen.", vbCritical, "Tee kuvat"
+ElseIf FSO.FolderExists(KuvaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytetään
+  LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & KuvaHakem.Value & ")"
+  MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei löytynyt!" & vbCrLf & "Valitse hakemisto ja yritä uudelleen.", vbCritical, "Tee kuvat"
 
 Else
   
@@ -499,17 +499,17 @@ Else
   If Right$(KuvaHakem.Value, 1) <> "\" Then KuvaHakem.Value = KuvaHakem.Value & "\"
   Set Kuvat = DB.OpenRecordset("SELECT * FROM " & OtsTaulukko)
   
-  If Kuvat.EOF Then 'Taulukossa ei ollut tarvittavia tietoja, annetaan virhe ja keskeytet��n
-    LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei l�ytynyt kuvia"
-    MsgBox "Taulukosta/kyselyst� """ & OtsTaulukko & """ ei l�ytyny tietoja!" & vbCrLf & "Valitse taulukko ja yrit� uudelleen.", vbCritical, "Tee kuvat"
+  If Kuvat.EOF Then 'Taulukossa ei ollut tarvittavia tietoja, annetaan virhe ja keskeytetään
+    LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei löytynyt kuvia"
+    MsgBox "Taulukosta/kyselystä """ & OtsTaulukko & """ ei löytyny tietoja!" & vbCrLf & "Valitse taulukko ja yritä uudelleen.", vbCritical, "Tee kuvat"
   
-  Else 'OK hakemisto l�ytyi ja taulukossa oli tietoja, ruvetaan k�ym��n taulukon kuvia l�pi
+  Else 'OK hakemisto löytyi ja taulukossa oli tietoja, ruvetaan käymään taulukon kuvia läpi
        
        'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist�� AutoCADiin
-  If Err <> 0 Then 'K�ynniss� olevaa AutoCADi� ei l�ytynyt
-    'MsgBox "K�ynniss� olevaa AutoCADi� ei l�ytynyt!", vbCritical, "Virhe!"
+  Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    'MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
     Set oAcad = CreateObject("AutoCAD.Application")
     'Set oAcad = Nothing
     'Exit Sub
@@ -521,16 +521,16 @@ Else
     Do While Not Kuvat.EOF
       Tiedosto = PohjaHakem.Value & Kuvat.Fields("BaseDWG").Value
       
-      If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan ett� tiedostonimen p��te on .dwg
+      If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan että tiedostonimen pääte on .dwg
         Tiedosto = Tiedosto & ".dwg"
       End If
       
-      If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
+      If FSO.FileExists(Tiedosto) Then 'Tiedosto löytyi voidaan avata se AutoCADissä
         Tila Kuvat.Fields("FileID").Value
         
         Set oDoc = oAcad.Documents.Open(Tiedosto)   'Avataan uusi dokumentti
         OSMODE = oDoc.GetVariable("OSMODE")
-        oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois p��lt�
+        oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois päältä
         
         
         
@@ -539,7 +539,7 @@ Else
         If HaeIPoints(Kuvat.Fields("BaseDWG").Value) Then
           
           'Vaihdetaan otsikkotaulun tiedot
-          If VaihdaOtsikkotiedot(Kuvat, "", "", "") Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa menn� eteenp�in
+          If VaihdaOtsikkotiedot(Kuvat, "", "", "") Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa mennä eteenpäin
             
             'Valitaan taulukosta kuvaan insertoitavat blokit
             sql = "SELECT Block, Blocknumber FROM " & BlockTaulukko & " WHERE FileID='" & Kuvat.Fields("FileID").Value & "' GROUP BY Block, Blocknumber HAVING (Blocknumber Is Not Null);"
@@ -547,27 +547,27 @@ Else
             
             Do While Not DbBlokit.EOF
               
-              If FSO.FileExists(PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then 'Blokki l�ytyi
+              If FSO.FileExists(PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then 'Blokki löytyi
                 sql = "SELECT * FROM " & BlockTaulukko & " WHERE FileID='" & Kuvat.Fields("FileID").Value & "' AND Block='" & DbBlokit.Fields("Block").Value & "'  AND Blocknumber='" & DbBlokit.Fields("Blocknumber").Value & "' ORDER BY AttrTag;"
                 Set Tiedot = DB.OpenRecordset(sql)
                 Paikka = CInt(DbBlokit.Fields("Blocknumber").Value)
-                If Translate.Value = True Then 'Tehd��n eri kieliset kuvat
-                    BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & "_" & TLang.Value & ".dwg" 'Lis�t��n blokin nimeen kielen tunnus, esim. _RU
-                    If Dir(BNimi, vbDirectory) = vbNullString Then 'Tarkistetaan l�ytyyk� kyseist� blokkia
-                        BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg" 'Jos blokkia ei l�ydy, k�ytet��n alkuper�ist� nime�
+                If Translate.Value = True Then 'Tehdään eri kieliset kuvat
+                    BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & "_" & TLang.Value & ".dwg" 'Lisätään blokin nimeen kielen tunnus, esim. _RU
+                    If Dir(BNimi, vbDirectory) = vbNullString Then 'Tarkistetaan löytyykö kyseistä blokkia
+                        BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg" 'Jos blokkia ei löydy, käytetään alkuperäistä nimeä
                     End If
                 Else
-                    BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg" 'Lis�tt�v�n blokin nimi
+                    BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg" 'Lisättävän blokin nimi
                 End If
                 'Insertoidaan blokki (Paikka, Blokin nimi, ScaleX, ScaleY, ScaleZ, Rotation)
                 Set Blokki = oDoc.ModelSpace.InsertBlock(Paikat(Paikka).Pisteet, BNimi, 1, 1, 1, 0)
                 'Muutetaan blokin attribuutit
                 Attribuutit = Blokki.GetAttributes 'Haetaan attribuutit
                 
-                For i = 0 To UBound(Attribuutit) 'K�yd��n l�pi kaikki attribuutit
-                  Tiedot.FindFirst "AttrTag = '" & Attribuutit(i).TagString & "'" 'Etsit��n tietokannasta attribuutin tagi
+                For i = 0 To UBound(Attribuutit) 'Käydään läpi kaikki attribuutit
+                  Tiedot.FindFirst "AttrTag = '" & Attribuutit(i).TagString & "'" 'Etsitään tietokannasta attribuutin tagi
                   
-                  If Tiedot.NoMatch = False Then 'Jos l�ytyi, niin p�ivitet��n tieto blokkiin
+                  If Tiedot.NoMatch = False Then 'Jos löytyi, niin päivitetään tieto blokkiin
                     
                     If IsNull(Tiedot.Fields("Teksti").Value) = False Then
                                                                
@@ -578,13 +578,13 @@ Else
                     End If
                   
                   Else
-                    'LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei l�ytynyt arvoa tietokannasta"
+                    'LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei löytynyt arvoa tietokannasta"
                   End If
                 
                 Next i
               
               Else
-                LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei l�ytynyt"
+                LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
               End If
               
               DbBlokit.MoveNext
@@ -603,11 +603,11 @@ Else
         oAcad.Application.ZoomExtents
         oAcad.Application.ActiveDocument.PurgeAll
 
-        oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois p��lt�
+        oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois päältä
         oDoc.SaveAs KuvaNimi 'Talletetaan kuva
         oDoc.Close
-      Else 'Tiedostoa ei l�ytynyt
-        LisaaLokiin "Virhe: M��ritelty� tiedostoa ei l�ytynyt (" & Tiedosto & ")"
+      Else 'Tiedostoa ei löytynyt
+        LisaaLokiin "Virhe: Määriteltyä tiedostoa ei löytynyt (" & Tiedosto & ")"
       End If
       Kuvat.MoveNext
     Loop
@@ -650,7 +650,7 @@ Dim E_Blocknumber As String
 Set DB = CurrentDb
 Set Tiedot = DB.OpenRecordset("SELECT * FROM Kuviin1_Ref_PAIVITA")
 
-'P�ivitetaan ensin tuleeviin attribuutteihin mist� sivulta tagi tulee
+'Päivitetään ensin tuleeviin attribuutteihin mistä sivulta tagi tulee
 Do While Not Tiedot.EOF
   sSQL = "UPDATE Kuviin1 SET Kuviin1.Teksti = '" & Tiedot("UusiTeksti") & "' "
   sSQL = sSQL & "WHERE (((FileID)='" & Tiedot("FileID") & "') "
@@ -660,11 +660,11 @@ Do While Not Tiedot.EOF
   DB.Execute sSQL
   Tiedot.MoveNext
 Loop
-'Lis�t��n sitten l�hteviin attribuutteihin, mihin piiriin ja minne sivulle tieto meneesivulle
+'Lisätään sitten lähteväin attribuutteihin, mihin piiriin ja minne sivulle tieto meneesivulle
 Tiedot.Close
 Set Tiedot = DB.OpenRecordset("SELECT * FROM Kuviin1_Ref_LISAA")
 
-'P�ivitetaan ensin tuleeviin attribuutteihin mist� sivulta tagi tulee
+'Päivitetään ensin tuleeviin attribuutteihin mistä sivulta tagi tulee
 Do While Not Tiedot.EOF
  If E_FileId = Tiedot("FileId") And E_Block = Tiedot("Block") And E_Blocknumber = Tiedot("Blocknumber") Then
    RNro = RNro + 1
@@ -715,7 +715,7 @@ Dim Paikkablokki As String
 Paikkablokki = TPaikkaBlokki.Value
 'PaikkaBlokki = "POINTBAR"
 
-FilterType(0) = 2             'Entityn nimi filtterin�
+FilterType(0) = 2             'Entityn nimi filtterinä
 FilterData(0) = Paikkablokki  'Blokin nimi
 Set Joukko = oDoc.ActiveSelectionSet
 Joukko.Clear
@@ -724,25 +724,25 @@ Debug.Print "  Found " & Joukko.Count & " position blocks"
 If Joukko.Count > 0 Then Set Blokki = Joukko(0)
       
   If Not Blokki Is Nothing Then
-    If Blokki.HasAttributes Then 'Tarkistetaan viel� ett� blokilla on attribuutteja
+    If Blokki.HasAttributes Then 'Tarkistetaan vielä että blokilla on attribuutteja
       Attribuutit = Blokki.GetAttributes 'Otetaan attribuutit muuttujaan
-      For i = 0 To UBound(Attribuutit) 'K�yd��n l�pi attribuutit
-        Numero = CInt(Attribuutit(i).TextString) 'Oletetaan ett� attribuutin teksti on numero ja muunnetaan se numeroksi
+      For i = 0 To UBound(Attribuutit) 'Käydään läpi attribuutit
+        Numero = CInt(Attribuutit(i).TextString) 'Oletetaan että attribuutin teksti on numero ja muunnetaan se numeroksi
         If UBound(Paikat) < Numero Then
-          ReDim Preserve Paikat(1 To Numero)     'Varmistetaan ett� Paikat Arrayssa on tilaa t�m�n paikan tiedolle
+          ReDim Preserve Paikat(1 To Numero)     'Varmistetaan että Paikat Arrayssa on tilaa tämän paikan tiedolle
         End If
         iPaikka = Attribuutit(i).InsertionPoint  'Poimitaan attribuutista paikkatieto
-        Paikat(Numero).Pisteet(0) = iPaikka(0)   'X:  Laitetaan paikan kordinaatit Paikat Arrayhyn kohtaan jonka attribuutin numero m��ritteli
+        Paikat(Numero).Pisteet(0) = iPaikka(0)   'X:  Laitetaan paikan kordinaatit Paikat Arrayhyn kohtaan jonka attribuutin numero määritteli
         Paikat(Numero).Pisteet(1) = iPaikka(1)   'Y
         Paikat(Numero).Pisteet(2) = iPaikka(2)   'Z
       Next i
       Debug.Print "  Extracted " & UBound(Paikat) & " insertion points"
     Else
-      LisaaLokiin "Virhe: Insertointipaikat sis�lt�v�st� blokista ei l�ytynyt attribuutteja (Kuva:" & Kuva & ")"
+      LisaaLokiin "Virhe: Insertointipaikat sisältävästä blokista ei löytynyt attribuutteja (Kuva:" & Kuva & ")"
       Virhe = True
     End If
   Else
-    LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei l�ytynyt insertointipaikkoja sis�lt�v�� blokkia (" & Paikkablokki & ")"
+    LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei löytynyt insertointipaikkoja sisältävää blokkia (" & Paikkablokki & ")"
     Virhe = True
   End If
   Set Blokki = Nothing
@@ -776,7 +776,7 @@ Private Function VaihdaOtsikkotiedot(Taulu As Recordset, TallennusNimi As String
     Titleblokki = TTitleBlokki.Value
     'TitleBlokki = "TITLE"
 
-    FilterType(0) = 2             'Entityn nimi filtterin�
+    FilterType(0) = 2             'Entityn nimi filtterinä
     FilterData(0) = Titleblokki  'Blokin nimi
     Set Joukko = oDoc.ActiveSelectionSet
     Joukko.Clear
@@ -786,11 +786,11 @@ Private Function VaihdaOtsikkotiedot(Taulu As Recordset, TallennusNimi As String
       For b = 0 To Joukko.Count - 1
         Set Blokki = Joukko(b)
         If Not Blokki Is Nothing Then
-          If Blokki.HasAttributes Then 'Tarkistetaan viel� ett� blokilla on attribuutteja
+          If Blokki.HasAttributes Then 'Tarkistetaan vielä että blokilla on attribuutteja
             
             Attribuutit = Blokki.GetAttributes 'Otetaan attribuutit muuttujaan
             
-            For i = 0 To UBound(Attribuutit) 'K�yd��n l�pi attribuutit
+            For i = 0 To UBound(Attribuutit) 'Käydään läpi attribuutit
               tagi = Attribuutit(i).TagString
               tagiValue = Attribuutit(i).TextString
               Loytyi = False
@@ -828,15 +828,15 @@ Private Function VaihdaOtsikkotiedot(Taulu As Recordset, TallennusNimi As String
               
               Next j
               If Loytyi = False Then
-                LisaaLokiin "- Taulukosta ei l�ytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
+                LisaaLokiin "- Taulukosta ei löytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
               End If
             Next i
           Else
-            LisaaLokiin "Virhe: Otsikkoblokista ei l�ytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
+            LisaaLokiin "Virhe: Otsikkoblokista ei löytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
             Virhe = True
           End If
-        Else 'Selection set ei sis�lt�nyt blokkia
-          LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & "ei l�ytynyt otsikkotietoja sis�lt�v�� blokkia (" & Titleblokki & ")"
+        Else 'Selection set ei sisältänyt blokkia
+          LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & "ei löytynyt otsikkotietoja sisältävää blokkia (" & Titleblokki & ")"
           Virhe = True
         End If
       Next b
@@ -884,7 +884,7 @@ Dim Hakemisto As String
   If Hakemisto <> "" Then KuvaHakem.Value = Hakemisto
 End Sub
 Private Function PoimiHakemisto(AHakem As String) As String
-'T�m� valitsee tiedoston hakemistosta
+'Tämä valitsee tiedoston hakemistosta
     Dim OpenFile As OPENFILENAME
     Dim lReturn As Long
     Dim Filtteri As String
@@ -892,7 +892,7 @@ Private Function PoimiHakemisto(AHakem As String) As String
     Dim Otsikko As String
     
     Filtteri = "AutoCAD Drawing (*.dwg)" & Chr(0) & "*.DWG" & Chr(0)
-    Otsikko = "Valitse AutoCAD piirustus saadaksesi yl�s hakemiston"
+    Otsikko = "Valitse AutoCAD piirustus saadaksesi ylös hakemiston"
     With OpenFile
       .lStructSize = Len(OpenFile)
       .hwndOwner = Me.Hwnd
@@ -908,16 +908,16 @@ Private Function PoimiHakemisto(AHakem As String) As String
       .flags = 0
     End With
     lReturn = GetOpenFileName(OpenFile)
-    If lReturn = 0 Then 'Painettiin Cancel painiketta. Palautetaan alkuper�inen hakemisto
+    If lReturn = 0 Then 'Painettiin Cancel painiketta. Palautetaan alkuperäinen hakemisto
        PoimiHakemisto = AHakem
-    Else 'Otetaan yl�s Tiedostonimi ja Hakemisto
+    Else 'Otetaan ylös Tiedostonimi ja Hakemisto
        TNimi = Mid$(OpenFile.lpstrFileTitle, 1, InStr(OpenFile.lpstrFileTitle, Chr(0)) - 1)
        PoimiHakemisto = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1 - Len(TNimi))
     End If
 End Function
 
 Private Sub TeeEtusivu_Click()
-'T�m� avaa kuvan insertoi kuvaan blokin/blokit, vaihtaa attribuuttien tiedot ja tallentaa kuvan
+'Tämä avaa kuvan insertoi kuvaan blokin/blokit, vaihtaa attribuuttien tiedot ja tallentaa kuvan
 Dim DB As Object ' DAO.Database
 Dim Kuvat As Object ' DAO.Recordset
 Dim DbBlokit As Object ' DAO.Recordset
@@ -958,14 +958,14 @@ OtsTaulukko = TFrontOtsTaulukko.Value
 
 If IsNull(KuvaHakem.Value) Then
   KuvaHakem.Value = PohjaHakem.Value
-  LisaaLokiin "-Kuva hakemistoa ei oltu m��ritelty, talletetaan oletuksena pohjahakemistoon.."
+  LisaaLokiin "-Kuva hakemistoa ei oltu määritelty, talletetaan oletuksena pohjahakemistoon.."
 End If
-If FSO.FolderExists(PohjaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytet��n
-  LisaaLokiin "Virhe: Hakemistoa ei l�ytynyt (" & KuvaHakem.Value & ")"
-  MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei l�ytynyt!" & vbCrLf & "Valitse hakemisto ja yrit� uudelleen.", vbCritical, "Tee kuvat"
-ElseIf FSO.FolderExists(KuvaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytet��n
-  LisaaLokiin "Virhe: Hakemistoa ei l�ytynyt (" & KuvaHakem.Value & ")"
-  MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei l�ytynyt!" & vbCrLf & "Valitse hakemisto ja yrit� uudelleen.", vbCritical, "Tee kuvat"
+If FSO.FolderExists(PohjaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytetään
+  LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & KuvaHakem.Value & ")"
+  MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei löytynyt!" & vbCrLf & "Valitse hakemisto ja yritä uudelleen.", vbCritical, "Tee kuvat"
+ElseIf FSO.FolderExists(KuvaHakem.Value) = False Then 'Hakemisto ei ollut laillinen annetaan virheilmoitus ja keskeytetään
+  LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & KuvaHakem.Value & ")"
+  MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei löytynyt!" & vbCrLf & "Valitse hakemisto ja yritä uudelleen.", vbCritical, "Tee kuvat"
 Else
   If Right$(PohjaHakem.Value, 1) <> "\" Then PohjaHakem.Value = PohjaHakem.Value & "\"
   If Right$(KuvaHakem.Value, 1) <> "\" Then KuvaHakem.Value = KuvaHakem.Value & "\"
@@ -973,17 +973,17 @@ Else
 Set oAcad = CreateObject("AutoCAD.Application")
 
 Tiedosto = PohjaHakem.Value & FrontBase.Value
-If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan ett� tiedostonimen p��te on .dwg
+If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan että tiedostonimen pääte on .dwg
     Tiedosto = Tiedosto & ".dwg"
 End If
     
-If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
+If FSO.FileExists(Tiedosto) Then 'Tiedosto löytyi voidaan avata se AutoCADissä
     Set oDoc = oAcad.Documents.Open(Tiedosto) 'Avataan uusi dokumentti
-    oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois p��lt�
+    oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois päältä
 
    
    
-   'Suoritetaan kysely kannan kyselyst� firstfunc
+   'Suoritetaan kysely kannan kyselystä firstfunc
     sql = "SELECT looppisymb, FREV, LoopNo FROM firstfunc;" ' ORDER BY LoopNo;"
     Set DbBlokit = DB.OpenRecordset(sql)
     
@@ -991,7 +991,7 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
     m = 0
     n = 0
      
-'K�yd��n edell�mainitussa kyselyss� olevat rivit l�pi
+'Käydään edellämainitussa kyselyssä olevat rivit läpi
     Set Kuvat = DB.OpenRecordset("SELECT * FROM " & OtsTaulukko & " WHERE DocumentID=" & RefDocumenID.Value)
 
     Do While Not DbBlokit.EOF
@@ -999,24 +999,24 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
         FirstLoopNo = DbBlokit.Fields("LoopNo").Value
     End If
 
-        If FSO.FileExists(PohjaHakem.Value & "LoopDet.dwg") Then 'Blokki l�ytyi
+        If FSO.FileExists(PohjaHakem.Value & "LoopDet.dwg") Then 'Blokki löytyi
             
 'Insertoitava blokki
             BNimi = PohjaHakem.Value & "LoopDet.dwg"
             
-            If (k Mod Rows.Value) = 0 Then ' jos k on jaollinen 40:ll�, vaihdetaan saraketta ja alustetaan k
+            If (k Mod Rows.Value) = 0 Then ' jos k on jaollinen 40:llä, vaihdetaan saraketta ja alustetaan k
                 m = m + 1
                 k = 1
             End If
             
-'JOS tulee rivim��r� t�yteen, niin vaihdetaan saraketta
+'JOS tulee rivimäärä täyteen, niin vaihdetaan saraketta
             
-            If (k Mod Rows.Value) = 0 Or k = 1 Then ' jos k on jaollinen annetulla rivim��r�ll�, vaihdetaan saraketta ja alustetaan k
+            If (k Mod Rows.Value) = 0 Or k = 1 Then ' jos k on jaollinen annetulla rivimäärällä, vaihdetaan saraketta ja alustetaan k
             
-'JOS sarakem��r� tulee t�yteen, tallennetaan nykyinen kuva ja avataan uusi k�sittely� varten
+'JOS sarakemäärä tulee täyteen, tallennetaan nykyinen kuva ja avataan uusi käsittelyä varten
 
 'Tiedosto = PohjaHakem.Value & FrontBase.Value
-                If LCase$(Right$(Kuvat.Fields("DWG_No"), 4)) = ".dwg" Then 'Poistetaan tiedostonimen p��te .dwg
+                If LCase$(Right$(Kuvat.Fields("DWG_No"), 4)) = ".dwg" Then 'Poistetaan tiedostonimen pääte .dwg
                     TallennusNimi = Left$(Kuvat.Fields("DWG_No"), Len(Kuvat.Fields("DWG_No")) - 4)
                 '    Tiedosto = Tiedosto & ".dwg"
                 Else
@@ -1100,9 +1100,9 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
 
 'Insertoidaan Sarakkeille otsikot
             
-                ReDim Preserve Paikat(1 To k) 'Varmistetaan ett� Paikat Arrayssa on tilaa t�m�n paikan tiedolle
-                Paikat(k).Pisteet(0) = XCoord.Value + m * 60 '60 on sarakkeen leveys, muuta my�s alla olevaan vastaavaan kohtaan
-                Paikat(k).Pisteet(1) = YCoord.Value - k * 5 '5 = ns. riviv�li, muuta my�s alla olevaan vastaavaan kohtaan
+                ReDim Preserve Paikat(1 To k) 'Varmistetaan että Paikat Arrayssa on tilaa tämän paikan tiedolle
+                Paikat(k).Pisteet(0) = XCoord.Value + m * 60 '60 on sarakkeen leveys, muuta myös alla olevaan vastaavaan kohtaan
+                Paikat(k).Pisteet(1) = YCoord.Value - k * 5 '5 = ns. riviväli, muuta myös alla olevaan vastaavaan kohtaan
                 Paikat(k).Pisteet(2) = 0 'Z
                  
                 Set Blokki = oDoc.ModelSpace.InsertBlock(Paikat(k).Pisteet, BNimi, 1, 1, 1, 0)
@@ -1113,9 +1113,9 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
             End If
 
 'Insertoidaan rivitietoja.
-            ReDim Preserve Paikat(1 To k) 'Varmistetaan ett� Paikat Arrayssa on tilaa t�m�n paikan tiedolle
+            ReDim Preserve Paikat(1 To k) 'Varmistetaan että Paikat Arrayssa on tilaa tämän paikan tiedolle
             Paikat(k).Pisteet(0) = XCoord.Value + m * 60 '60 on sarakkeen leveys
-            Paikat(k).Pisteet(1) = (YCoord.Value - 5) - k * 5 '5 = ns. riviv�li
+            Paikat(k).Pisteet(1) = (YCoord.Value - 5) - k * 5 '5 = ns. riviväli
             Paikat(k).Pisteet(2) = 0 'Z
              
             Set Blokki = oDoc.ModelSpace.InsertBlock(Paikat(k).Pisteet, BNimi, 1, 1, 1, 0)
@@ -1126,7 +1126,7 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
             Attribuutit(1).TextString = DbBlokit.Fields("FREV").Value
          
         Else
-            LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei l�ytynyt"
+            LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
         End If
         
         k = k + 1
@@ -1136,7 +1136,7 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
 
 'End If
 
-'Tallennetaan olemassa oleva kuva, eik� jatketa
+'Tallennetaan olemassa oleva kuva, eikä jatketa
         
  '---       If n = 0 Then
  '           Tallennusnimi = Tallennusnimi & "_VI"
@@ -1162,7 +1162,7 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
      '   End If
 
 '        Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko & " WHERE DocumentID=" & RefDocumenID.Value)
-   '    If VaihdaOtsikkotiedot(Kuvat, Tallennusnimi, FirstLoopNo, CurrPage) Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa menn� eteenp�in
+   '    If VaihdaOtsikkotiedot(Kuvat, Tallennusnimi, FirstLoopNo, CurrPage) Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa mennä eteenpäin
    '         Valitallennus = TallennaUusiKuva(Tallennusnimi, True, oAcad)
    '     End If
 
@@ -1187,17 +1187,17 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
    '    End If
 
 
-    Else 'Tiedostoa ei l�ytynyt
-        LisaaLokiin "Virhe: M��ritelty� tiedostoa ei l�ytynyt (" & Tiedosto & ")"
+    Else 'Tiedostoa ei löytynyt
+        LisaaLokiin "Virhe: Määriteltyä tiedostoa ei löytynyt (" & Tiedosto & ")"
     End If
 
 End If
  
-     If VaihdaOtsikkotiedot(Kuvat, TallennusNimi & ".dwg", NextPage, CurrPage) Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa menn� eteenp�in
+     If VaihdaOtsikkotiedot(Kuvat, TallennusNimi & ".dwg", NextPage, CurrPage) Then 'Jos Otsikkotiedot saatiin vaihdettua OK niin kannattaa mennä eteenpäin
         Valitallennus = TallennaUusiKuva(TallennusNimi, True, oAcad)
     End If
 
- '  oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois p��lt�
+ '  oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois päältä
 '        oDoc.SaveAs KuvaNimi 'Talletetaan kuva
  '       oDoc.Close
 
@@ -1231,7 +1231,7 @@ Dim Tiedosto As String
           FSO.DeleteFile KuvaNimi
         End If
         
-        oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois p��lt�
+        oDoc.SetVariable "OSMODE", OSMODE 'Palautetaan OSNAP tila siihen joka se oli ennen sen poistamista pois päältä
         oDoc.SaveAs KuvaNimi 'Talletetaan kuva
         oDoc.Close
         'End If
@@ -1239,14 +1239,14 @@ Dim Tiedosto As String
 If Loppu = False Then
         
     Tiedosto = PohjaHakem.Value & FrontBase.Value
-    If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan ett� tiedostonimen p��te on .dwg
+    If LCase$(Right$(Tiedosto, 4)) <> ".dwg" Then 'Varmistetaan että tiedostonimen pääte on .dwg
         Tiedosto = Tiedosto & ".dwg"
     End If
     
-    If FSO.FileExists(Tiedosto) Then 'Tiedosto l�ytyi voidaan avata se AutoCADiss�
+    If FSO.FileExists(Tiedosto) Then 'Tiedosto löytyi voidaan avata se AutoCADissä
 Set oDoc = Nothing
         Set oDoc = oAcad.Documents.Open(Tiedosto)   'Avataan uusi dokumentti
-        oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois p��lt�
+        oDoc.SetVariable "OSMODE", 0 'Asetetaan OSNAP tila pois päältä
     End If
 End If
 

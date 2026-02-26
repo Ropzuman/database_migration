@@ -121,7 +121,7 @@ On Error GoTo ErrorHandler
 
   Debug.Print "LueAttribuutit: Starting"
   AppActivate oACAD.Caption
-  'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
+  'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   oDOC.Utility.GetEntity Valinta, Point, "Choose Device..."
   Debug.Print "  Entity selected"
   
@@ -320,11 +320,11 @@ Set oDOC = oACAD.Documents.Open(BasePath & IndexBase & ".dwg")
 aX = 30        'Aloituspiste Xl
 
 aY = 275       'Aloituspiste Y
-PosSivu = 40   'Position ja sivun v�linen et�isyys x akselilla
-Seuraava = 90  'Seuraavan positiosarakkeen et�isyys edellisest�
-MinY = 40      'Mini Y koordinaatti johon asti tektej� tehd��n
-MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehd��n ennen sivunvaihtoa
-RiviVali = 5   'Tekstien riviv�li
+PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
+MinY = 40      'Mini Y koordinaatti johon asti tekstejä tehdään
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviväli
 TextSize = 2.5 'Tekstien koko
 
 
@@ -341,7 +341,7 @@ End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lis�t��n ensin otsikot
+        'Lisätään ensin otsikot
         oDOC.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDOC.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
@@ -437,11 +437,11 @@ Dim iPoint(2) As Double
 Dim BName As String
 Dim Piste As String
 Dim PointBlock As AcadBlockReference
-On Error GoTo Virhe 'T�ytyy olla, jos GetPoint ei toimikaan
+On Error GoTo Virhe 'Täytyy olla, jos GetPoint ei toimikaan
   
   AppActivate oACAD.Caption
-  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
-  'K�sket��n klikata jotain pistett�
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
+  'Käsketään klikata jotain pistettä
 Virhe:
 
   gPoint = oDOC.Utility.GetPoint(, "Set start point")
@@ -452,7 +452,7 @@ Virhe:
 '---------------------------------------------------------
   Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
   BName = BlockPath & "POINT.DWG"
-  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   Set PointBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
   With PointBlock
@@ -488,7 +488,7 @@ Dim i As Integer
   On Error Resume Next
   
   AppActivate oACAD.Caption
-'  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett� ollaan poistuttu komennosta
+'  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   
   
 '  For i = 0 To oDOC.Layers.Count - 1
@@ -586,7 +586,7 @@ End Sub
 
 Private Sub Form_Load()
 
-'Yhdistet��n ensin AutoCADiin
+'Yhdistetään ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
   Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
