@@ -75,13 +75,13 @@ Dim teksti As String
     ' Find the start of the last line
     Do
       i = i + 1
-    Loop Until InStr(Right(teksti, i), vbCrLf) = 1 Or i >= Pituus
-    teksti = Mid(teksti, Pituus - i + 3)  ' Extract last line
+    Loop Until InStr(Right$(teksti, i), vbCrLf) = 1 Or i >= Pituus
+    teksti = Mid$(teksti, Pituus - i + 3)  ' Extract last line
   End If
   
   ' Extract date portion (between space and first slash)
-  teksti = Mid(teksti, InStr(teksti, " ") + 1)
-  HaeViimPaiva = Left(teksti, InStr(teksti, "/") - 1)
+  teksti = Mid$(teksti, InStr(teksti, " ") + 1)
+  HaeViimPaiva = Left$(teksti, InStr(teksti, "/") - 1)
   
 Exit Function
 
@@ -150,7 +150,7 @@ If Not (OptTaulu.EOF And OptTaulu.BOF) Then
         OptTaulu.MoveNext
     Loop Until OptTaulu.EOF
     ' Remove trailing " +"
-    teksti = Left(teksti, Len(teksti) - 2)
+    teksti = Left$(teksti, Len(teksti) - 2)
 End If
 
 Optiot = teksti
@@ -211,7 +211,7 @@ If Not (ElemTaulu.EOF And ElemTaulu.BOF) Then
         ElemTaulu.MoveNext
     Loop Until ElemTaulu.EOF
     ' Remove trailing " and "
-    Teksti1 = Left(Teksti1, Len(Teksti1) - 5)
+    Teksti1 = Left$(Teksti1, Len(Teksti1) - 5)
 End If
 
 Positiot = Teksti1

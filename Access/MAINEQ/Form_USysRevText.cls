@@ -9,7 +9,7 @@ Private Sub Form_Resize()
     Lista.SetFocus
     Lista.ListIndex = 0
     If InStr(Revisioteksti, vbCrLf) Then
-      NaytaRev Left(Revisioteksti, InStr(Revisioteksti, vbCrLf) - 1), 0
+      NaytaRev Left$(Revisioteksti, InStr(Revisioteksti, vbCrLf) - 1), 0
     Else
       NaytaRev CStr(Revisioteksti), 0
     End If
@@ -71,7 +71,7 @@ Dim UusiRev As String
   Loppu = Lista.RowSource
   If MRevRev = "" Then
     If Loppu <> "" Then
-        MRevRev = Left(Lista.RowSource, InStr(Lista.RowSource, " ") - 1)
+        MRevRev = Left$(Lista.RowSource, InStr(Lista.RowSource, " ") - 1)
         MRevRev = Chr(Asc(MRevRev) + 1)
     Else
       MRevRev = "0"
@@ -104,34 +104,34 @@ Next i
 'Revisio
 Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
-Rev.Value = Left(Tieto, Osoitin - 1)
-Tieto = Mid(Tieto, Osoitin + 1)
+Rev.Value = Left$(Tieto, Osoitin - 1)
+Tieto = Mid$(Tieto, Osoitin + 1)
 'Päivämäärä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-DateFld.Value = Left(Tieto, Osoitin - 1)
-Tieto = Mid(Tieto, Osoitin + 1)
+DateFld.Value = Left$(Tieto, Osoitin - 1)
+Tieto = Mid$(Tieto, Osoitin + 1)
 'Tekijä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Drawn.Value = Left(Tieto, Osoitin - 1)
-Tieto = Mid(Tieto, Osoitin + 1)
+Drawn.Value = Left$(Tieto, Osoitin - 1)
+Tieto = Mid$(Tieto, Osoitin + 1)
 'Tarkastaja
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Checked.Value = Left(Tieto, Osoitin - 1)
-Tieto = Mid(Tieto, Osoitin + 1)
+Checked.Value = Left$(Tieto, Osoitin - 1)
+Tieto = Mid$(Tieto, Osoitin + 1)
 'Hyväksyjä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Approved.Value = Left(Tieto, Osoitin - 1)
+Approved.Value = Left$(Tieto, Osoitin - 1)
 'Tieto = Mid(Tieto, Osoitin + 1)
 'Kohde
 'Osoitin = InStr(Tieto, "/")
 'If Osoitin = 0 Then Exit Sub
 'Kohde.VALUE = Left(Tieto, Osoitin - 1)
 'Selitys
-Description.Value = Mid(Tieto, Osoitin + 1)
+Description.Value = Mid$(Tieto, Osoitin + 1)
 End Sub
 Private Sub Tyhjenna()
   Rev.Value = ""

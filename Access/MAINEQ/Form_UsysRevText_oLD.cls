@@ -5,7 +5,7 @@ Dim Eka As Boolean
 Private Sub AddNew_Click()
 Dim Viimeisin As String
     If Len(Rev.Value) <> 0 Then
-      Viimeisin = Left(Rev.Value, 1)
+      Viimeisin = Left$(Rev.Value, 1)
       If Viimeisin = "0" Then
         Rev.Value = "a"
       Else
@@ -35,16 +35,16 @@ Eka = False
 '  TRevDesc = ""
   
     If Len(TRevHist) <> 0 Then
-      Rev.Value = LCase(Left(TRevHist, 1))
-      Revisio = Mid(TRevHist, 3)
+      Rev.Value = LCase$(Left$(TRevHist, 1))
+      Revisio = Mid$(TRevHist, 3)
       Osoitin = InStr(Revisio, "/")
       If Osoitin <> 0 Then
-        DateFld.Value = Mid(Revisio, 1, Osoitin - 1)
-        Revisio = Mid(Revisio, Osoitin + 1)
+        DateFld.Value = Mid$(Revisio, 1, Osoitin - 1)
+        Revisio = Mid$(Revisio, Osoitin + 1)
         Osoitin = InStr(Revisio, "/")
         If Osoitin <> 0 Then
-          Drawn.Value = Mid(Revisio, 1, Osoitin - 1)
-          Revisio = Mid(Revisio, Osoitin + 1)
+          Drawn.Value = Mid$(Revisio, 1, Osoitin - 1)
+          Revisio = Mid$(Revisio, Osoitin + 1)
           Osoitin = InStr(Revisio, "/")
           If Osoitin <> 0 Then
             Checked.Value = Mid(Revisio, 1, Osoitin - 1)

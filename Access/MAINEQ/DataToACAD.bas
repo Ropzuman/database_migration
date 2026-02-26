@@ -76,10 +76,10 @@ Dim ast As Integer
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
     ' No asterisk, take first 8 characters
-    get_filename = UCase(Mid(taulnimi, 1, 8))
+    get_filename = UCase$(Mid$(taulnimi, 1, 8))
 Else
     ' Asterisk found, take first 8 characters before it
-    get_filename = UCase(Mid(Mid(taulnimi, 1, ast - 1), 1, 8))
+    get_filename = UCase$(Mid$(Mid$(taulnimi, 1, ast - 1), 1, 8))
 End If
 
 Exit Function
@@ -307,7 +307,7 @@ If aster <> 0 Then
             ' Write non-null field values to LISP file
             For ii = 0 To tble.Fields.Count - 1
                 If Not IsNull(tble.Fields(ii).Value) Then
-                    Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(ii).Name);
+                    Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
                     Print #filenum, L & " " & L & inch(tble.Fields(ii).Value) & L & " )"
                 End If
             Next
@@ -340,7 +340,7 @@ Else
     ' Write non-null field values to LISP file (with cross-reference lookup)
     For ii = 0 To tble.Fields.Count - 1
         If Not IsNull(tble.Fields(ii).Value) Then
-            Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(ii).Name);
+            Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
             Print #filenum, L & " " & L & inch(CrsRefLink(tanimi, tble.Fields(ii).Value)) & L & " )"
         End If
     Next
@@ -420,7 +420,7 @@ If aster <> 0 Then
               
                 For iii = 0 To tble.Fields.Count - 1
                     If Not IsNull(tble.Fields(iii).Value) Then
-                        Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(iii).Name);
+                        Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(iii).Name);
                         Print #filenum, L & " " & L & inch(tble.Fields(iii).Value) & L & " )"
                     End If
                 Next
@@ -438,7 +438,7 @@ Else
   If Not tble.EOF Then tble.MoveFirst
 
   filenum = FreeFile
-  Open Hakem & Mid(tble.Name, 1, 8) & ".txt" For Append As filenum
+  Open Hakem & Mid$(tble.Name, 1, 8) & ".txt" For Append As filenum
   Do Until tble.EOF
     If tble.Fields(0).Value = suoda Then
         preref = tble.Fields(Looppid).Value & "." & get_filename(tblnimipre)
@@ -462,7 +462,7 @@ Else
       
         For ii = 0 To tble.Fields.Count - 1
             If Not IsNull(tble.Fields(ii).Value) Then
-                Print #filenum, "( " & L & UCase(preref) & "." & UCase(tble.Fields(ii).Name);
+                Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
                 Print #filenum, L & " " & L & inch(tble.Fields(ii).Value) & L & " )"
             End If
         Next
@@ -521,9 +521,9 @@ L = Chr(34)
  
  For i = 0 To DB.TableDefs.Count - 1
   Set Taulukko = DB.TableDefs(i)
-  If Left(Taulukko.Name, 6) = "devTbl" Then 'valitaan taulukot
-   If Right(Taulukko.Name, 6) <> "Common" Then
-    If Right(Taulukko.Name, 12) <> "Positioner01" Then
+  If Left$(Taulukko.Name, 6) = "devTbl" Then 'valitaan taulukot
+   If Right$(Taulukko.Name, 6) <> "Common" Then
+    If Right$(Taulukko.Name, 12) <> "Positioner01" Then
      Set Taul = DB.OpenRecordset(DB.TableDefs(i).Name)
  
         If Not Taul.EOF Then Taul.MoveFirst
@@ -539,8 +539,8 @@ L = Chr(34)
 
                 tble.MoveFirst
                  Do Until tble.EOF
-                  If Left(Taul.Fields(2).Value, 2) = "ZS" Then Exit Do
-                  If Left(Taul.Fields(2).Value, 2) = "EV" Then Exit Do
+                  If Left$(Taul.Fields(2).Value, 2) = "ZS" Then Exit Do
+                  If Left$(Taul.Fields(2).Value, 2) = "EV" Then Exit Do
                   If tble!AreaCode.Value = kentta1 And tble!LoopNo.Value = kentta2 Then
                   Print #1, tble!LoopFID.Value;
                   Exit Do

@@ -53,7 +53,7 @@ Dim Revi As String
   ID.RowSource = ATaulu.Value
   Rev.RowSource = ATaulu.Value
 For i = 0 To Rev.ListCount - 1
-  If Left(LCase(Rev.ItemData(i)), 3) = "rev" Then
+  If Left$(LCase$(Rev.ItemData(i)), 3) = "rev" Then
     Rev.Value = Rev.ItemData(i)
     Exit For
   End If
@@ -68,7 +68,7 @@ Next i
 If ATaulu <> "" And Rev <> "" Then
   Set Taul = CurrentDb.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")  ' Updated 2025-11-11: CurrentDB -> CurrentDb
   If Not Taul.EOF Then
-    Revi = Left(Taul.Fields(0), InStr(Taul.Fields(0), " ") - 1)
+    Revi = Left$(Taul.Fields(0), InStr(Taul.Fields(0), " ") - 1)
     If Len(Revi) > 1 Then
       Revi = CStr(VAL(Revi) + 1)
       If Len(Revi) < 2 Then

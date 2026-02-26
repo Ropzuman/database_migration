@@ -154,7 +154,7 @@ Private Sub LisaaTeksti(ByVal Paikka As Integer, Sarake As Integer, teksti As St
   oDoc.ModelSpace.AddText teksti, iPoint, 2
 End Sub
 Private Function AnnaSarake(Kirjain As String) As Integer
-Select Case UCase(Kirjain)
+Select Case UCase$(Kirjain)
   Case "0"
     AnnaSarake = 1
   Case "A"
