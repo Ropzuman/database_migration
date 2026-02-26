@@ -36,13 +36,13 @@ Private Sub Form_Load()
     
     Osoitin = InStr(Tiedostot, vbCrLf)
     If Osoitin > 0 Then
-      Rivit = Left(Tiedostot, Osoitin - 1)
-      Tiedostot = Mid(Tiedostot, Osoitin + 2)
+      Rivit = Left$(Tiedostot, Osoitin - 1)
+      Tiedostot = Mid$(Tiedostot, Osoitin + 2)
       Do
         Osoitin = InStr(Tiedostot, vbCrLf)
         If Osoitin = 0 Then Exit Do
-        Rivit = Rivit & ";" & Left(Tiedostot, Osoitin - 1)
-        Tiedostot = Mid(Tiedostot, Osoitin + 2)
+        Rivit = Rivit & ";" & Left$(Tiedostot, Osoitin - 1)
+        Tiedostot = Mid$(Tiedostot, Osoitin + 2)
       Loop
       Tied.RowSource = Rivit
     End If

@@ -84,7 +84,7 @@ Dim i As Long
 Lahde = Source
 Tmp = ""
     For i = 1 To Len(Source)
-      Merkki = Mid(Lahde, i, 1)
+      Merkki = Mid$(Lahde, i, 1)
       Select Case Merkki
         Case "/", "\", "?", "*", ":", ",", ";", "."
           Merkki = "-"
@@ -122,19 +122,19 @@ Dim i As Long
     If InStr(Revisio, vbCrLf) Then
       Do
         i = i + 1
-      Loop Until InStr(Right(Revisio, i), vbCrLf) = 1 Or i = Len(Revisio)
-      Revisio = Mid(Revisio, Len(Revisio) - i + 3)
+      Loop Until InStr(Right$(Revisio, i), vbCrLf) = 1 Or i = Len(Revisio)
+      Revisio = Mid$(Revisio, Len(Revisio) - i + 3)
     End If
-    Revisio = Mid(Revisio, InStr(Revisio, "/") + 1)
-    HaeTekija = Left(Revisio, InStr(Revisio, "/") - 1)
+    Revisio = Mid$(Revisio, InStr(Revisio, "/") + 1)
+    HaeTekija = Left$(Revisio, InStr(Revisio, "/") - 1)
   End If
 End Function
 Function HaeRevisioija(Revisio As String) As String
 Dim Teksti As String
   Teksti = Revisio
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
-    Teksti = Mid(Teksti, InStr(Teksti, "/") + 1)
-    HaeRevisioija = Left(Teksti, InStr(Teksti, "/") - 1)
+    Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
+    HaeRevisioija = Left$(Teksti, InStr(Teksti, "/") - 1)
   Else 'Since the input has only one revision, a reviser is not needed
     HaeRevisioija = ""
   End If
@@ -145,10 +145,10 @@ Dim Tekija As String
 Dim Pvm As String
   Teksti = Revisio
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
-    Pvm = Mid(Teksti, InStr(Teksti, " ") + 1)
-    Pvm = Left(Pvm, InStr(Pvm, "/") - 1)
-    Teksti = Mid(Teksti, InStr(Teksti, "/") + 1)
-    Tekija = Left(Teksti, InStr(Teksti, "/") - 1)
+    Pvm = Mid$(Teksti, InStr(Teksti, " ") + 1)
+    Pvm = Left$(Pvm, InStr(Pvm, "/") - 1)
+    Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
+    Tekija = Left$(Teksti, InStr(Teksti, "/") - 1)
     HaeRevisioijaPvm = Tekija & ": " & Pvm
   Else 'Since the input has only one revision, a reviser is not needed
     HaeRevisioijaPvm = ""
@@ -156,7 +156,7 @@ Dim Pvm As String
 End Function
 Public Function EkaRevRivi(Revisio As String) As String
   If InStr(Revisio, vbCrLf) Then
-    EkaRevRivi = Left(Revisio, InStr(Revisio, vbCrLf) - 1)
+    EkaRevRivi = Left$(Revisio, InStr(Revisio, vbCrLf) - 1)
   Else
     EkaRevRivi = Revisio
   End If
@@ -170,7 +170,7 @@ Public Function HaeRevisio(Revisio As Variant) As String
   If IsNull(Revisio) Then
     HaeRevisio = ""
   Else
-    HaeRevisio = Left(Revisio, InStr(Revisio, " ") - 1)
+    HaeRevisio = Left$(Revisio, InStr(Revisio, " ") - 1)
   End If
 End Function
 
@@ -189,15 +189,15 @@ Dim Teksti As String
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
     Do
       i = i + 1
-    Loop Until InStr(Right(Teksti, i), vbCrLf) = 1 Or i = Len(Teksti)
-    Teksti = Mid(Teksti, Len(Teksti) - i + 3)
+    Loop Until InStr(Right$(Teksti, i), vbCrLf) = 1 Or i = Len(Teksti)
+    Teksti = Mid$(Teksti, Len(Teksti) - i + 3)
   End If
-  Teksti = Mid(Teksti, InStr(Teksti, " ") + 1)
-  HaeViimPaiva = Left(Teksti, InStr(Teksti, "/") - 1)
+  Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
+  HaeViimPaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
 End Function
 Function HaePaiva(Revisio As String) As String
 Dim Teksti As String
   Teksti = Revisio
-  Teksti = Mid(Teksti, InStr(Teksti, " ") + 1)
-  HaePaiva = Left(Teksti, InStr(Teksti, "/") - 1)
+  Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
+  HaePaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
 End Function

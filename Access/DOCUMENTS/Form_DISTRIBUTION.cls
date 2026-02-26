@@ -134,7 +134,7 @@ Private Sub ExcelRep(Ehto As String)
     
     Set DB = CurrentDb
     Polku = DB.Name
-    Polku = Left(Polku, Len(Polku) - Len(Dir(Polku)))
+    Polku = Left$(Polku, Len(Polku) - Len(Dir(Polku)))
     
     Set xlApp = CreateObject("Excel.Application")
     SysCmd acSysCmdSetStatus, "Starting Excel..."

@@ -112,10 +112,10 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
  If IsMissing(StartPath) Or StartPath = "" Then
   CDialogPath = "K:\PROJECTS"
  Else
-  If Right(StartPath, 2) = ":\" Then
+  If Right$(StartPath, 2) = ":\" Then
    CDialogPath = StartPath
-  ElseIf Right(StartPath, 1) = "\" Then
-   CDialogPath = Left(StartPath, Len(StartPath) - 1)
+  ElseIf Right$(StartPath, 1) = "\" Then
+   CDialogPath = Left$(StartPath, Len(StartPath) - 1)
   Else
    CDialogPath = StartPath
   End If
@@ -135,13 +135,13 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
     If (lpIDList) Then
         ThePath = Space(MAX_PATH)
         SHGetPathFromIDList lpIDList, ThePath
-        ThePath = Left(ThePath, InStr(ThePath, vbNullChar) - 1)
+        ThePath = Left$(ThePath, InStr(ThePath, vbNullChar) - 1)
     Else
       ThePath = ""
     End If
     CoTaskMemFree lpIDList
     If ThePath <> "" Then
-      If Right(ThePath, 1) <> "\" Then ThePath = ThePath & "\"
+      If Right$(ThePath, 1) <> "\" Then ThePath = ThePath & "\"
     End If
     ValitseHakem = ThePath
 End Function

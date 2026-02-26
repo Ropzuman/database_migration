@@ -70,7 +70,7 @@ On Error GoTo Err_WhosOn
 
 ' Iterate thru dbCurrent.LDB file for login names.
 
-   sPath = Left(sPath, InStr(1, sPath, ".")) + "laccdb"
+   sPath = Left$(sPath, InStr(1, sPath, ".")) + "laccdb"
 
 ' Test for valid file, else Error
 
