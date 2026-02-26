@@ -1,25 +1,27 @@
 '''
-' Module2.vba - Metadata, info, and linking logic for Kytkentälista Excel macro system
-' Handles document property extraction, comment-based linking, and error reporting.
-' Notes:
-' - HaeDocTiedot reads DB2 headers case-insensitively and trims whitespace.
-' - WorkPath is recognized via multiple synonyms (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
-'   and normalized to use backslashes with a guaranteed trailing backslash.
-' - File is taken from DB2 (file/filename/file_name) and used as the default Save As name by GenPrintout.
+' Module2.vba - Metadata-, info- ja linkityslogiikka Kytkentälista Excel-makrojärjestelmälle
+' Käsittelee dokumentin ominaisuuksien poiminnan, kommenttipohjaisen linkityksen ja virheraportoinnin.
+' Huomiot:
+' - HaeDocTiedot lukee DB2-otsikot case-insensitively ja trimm aa whitespacet.
+' - WorkPath tunnistetaan useiden synonyymienhyvällä (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
+'   ja normalisoidaan backslasheilla ja varmistetaan loppuun tulevaksi backslash.
+' - File otetaan DB2:sta (file/filename/file_name) ja käytetään oletuksena Save As -nimeen GenPrintoutissa.
 '''
 
-' Safety limit for loop iterations to prevent infinite loops
+' Suojaus silmukoiden iteraatioille estääkseen ik uiset silmukat
 Private Const MAX_EXCEL_COLUMNS As Long = 16384
 
 Sub HaeDocTiedot()
 '''
-' HaeDocTiedot: Extracts document properties from DB2 sheet and stores them in global variables.
-' Used for populating headers, footers, and info fields in the printout.
-' Optimized: Removed Select/Activate, uses direct worksheet references.
+' HaeDocTiedot: Poimii dokumentin ominaisuudet DB2-sheetistä ja tallentaa ne globaaleihin muuttujiin.
+' Käytetään otsikoiden, alatunnisteiden ja info-kenttien täyttöön tulosteessa.
+' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
 '''
 Dim i As Long
 Dim Arvo As String
 Dim wsDB2 As Worksheet
+
+  Debug.Print Format(Now, "hh:mm:ss") & " [HaeDocTiedot] Poimitaan dokumentin metadata DB2:sta"
 
   ' Initialize all document info variables
   DIRev = ""
@@ -53,7 +55,7 @@ Dim wsDB2 As Worksheet
   
   i = 1
   Do
-    ' Normalize header: lowercase and trim to tolerate extra spaces
+    ' Normalisoidaan otsikko: pienet kirjaimet ja trimmaus extra-spacet pois
     Arvo = LCase(Trim(wsDB2.Cells(1, i).Value & ""))
     Select Case Arvo
       Case "rev"
@@ -92,7 +94,7 @@ Dim wsDB2 As Worksheet
         Dim p As String
         p = CStr(wsDB2.Cells(2, i).Value)
         If Len(p) > 0 Then
-          ' Normalize separators and ensure trailing slash
+          ' Normalisoidaan erottajat ja varmistetaan loppuun tulevaksi slash
           p = Replace(p, "/", "\\")
           DIPath = p & IIf(Right$(p, 1) = "\\", "", "\\")
         End If
@@ -115,20 +117,22 @@ Dim wsDB2 As Worksheet
       Case Else
     End Select
     i = i + 1
-    If i > MAX_EXCEL_COLUMNS Then Exit Do ' Safety check
+    If i > MAX_EXCEL_COLUMNS Then Exit Do ' Turvatarkistus
   Loop
   
-  ' DEBUG: Report what was loaded
-  Debug.Print "HaeDocTiedot completed. Loaded " & (i - 1) & " columns from DB2"
+  ' DEBUG: Raportoidaan mitä ladattiin
+  Debug.Print "  Ladattu " & (i - 1) & " saraketta DB2:sta"
   Debug.Print "  DIProject: '" & DIProject & "'"
   Debug.Print "  DIManager: '" & DIManager & "'"
   Debug.Print "  DIDocNo: '" & DIDocNo & "'"
   Debug.Print "  DIProjNo: '" & DIProjNo & "'"
+  Debug.Print "  DIPath: '" & DIPath & "'"
+  Debug.Print "  DIFile: '" & DIFile & "'"
 End Sub
 Sub VaihdaInfo(Optional SheetName As String = "Info")
 '''
-' VaihdaInfo: Updates the specified sheet's comment-annotated cells with document property values.
-' Handles Info and Revisions sheets. Uses fast mode for performance.
+' VaihdaInfo: Päivittää määritellyn sheetin kommenttimerkatut solut dokumentin ominaisuuksilla.
+' Käsittelee Info- ja Revisions-sheetit. Käyttää fast mode -tilaa suorituskyvyn parantamiseksi.
 '''
 Dim i As Long
 Dim Row As Long
@@ -139,22 +143,24 @@ Dim processedRevId As Boolean, processedRevDate As Boolean
 Dim processedDesigner As Boolean, processedChecker As Boolean
 Dim processedApprover As Boolean, processedDesc As Boolean
 
+  Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Käsitellään sheet: " & SheetName
+
   On Error Resume Next
   Set ws = Sheets(SheetName)
   On Error GoTo 0
   
   If ws Is Nothing Then
-    Debug.Print "VaihdaInfo: Sheet '" & SheetName & "' not found!"
+    Debug.Print "  VAROITUS: Sheet '" & SheetName & "' puuttuu!"
     Exit Sub
   End If
   
-  ' DEBUG: Report sheet info
-  Debug.Print "VaihdaInfo: Processing sheet '" & SheetName & "' with " & ws.Comments.Count & " comments"
+  ' DEBUG: Raportoidaan sheetin tiedot
+  Debug.Print "  Sheetissä '" & SheetName & "' on " & ws.Comments.Count & " kommenttia"
   If ws.Comments.Count = 0 Then
-    Debug.Print "  WARNING: No comments found in sheet - Info will remain empty!"
+    Debug.Print "  VAROITUS: Ei kommentteja - Info jää tyhjäksi!"
   End If
   
-  ' Initialize flags for one-time processing of Revisions sheet arrays
+  ' Alustetaan liput yksikertaisesti käsiteltäviksi Revisions-sheet-taulukoiksi
   processedRevId = False
   processedRevDate = False
   processedDesigner = False
@@ -163,8 +169,8 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   processedDesc = False
   
   With ws
-    For i = 1 To .Comments.Count 'Going through all comments
-        Select Case LCase(.Comments(i).Text) ' Convert comment text to lowercase
+    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+        Select Case LCase(.Comments(i).Text) ' Muutetaan kommenttiteksti pieniksi kirjaimiksi
         Case "unit"
           .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
         Case "project"
@@ -203,7 +209,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
           If SheetName <> "Info" Then
             If Not processedRevId Then
               On Error Resume Next
-              ' Only process if DIRevArr has data
+              ' Käsitellään vain jos DIRevArr:ssa on dataa
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
                 Row = .Comments(i).Parent.Row
                 Column = .Comments(i).Parent.Column
@@ -318,13 +324,15 @@ Dim processedApprover As Boolean, processedDesc As Boolean
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
 '''
-' EtsiOts: Searches for a header (Otsikko) in DB1 and annotates TEMPLATE with a comment if found.
-' If not found, logs the missing header in ERRORS sheet. Used for template validation.
-' Optimized: Removed all Select/Activate, uses direct worksheet references.
+' EtsiOts: Etsii otsikkoa (Otsikko) DB1:stä ja merkitsee TEMPLATEn kommentilla jos löytyi.
+' Jos ei löydy, lokitetaan puuttuva otsikko ERRORS-sheettiin. Käytetään templaten validointiin.
+' Optimoitu: Poistettu kaikki Select/Activate, käytetään suoria worksheetviittauksia.
 '''
 Dim i As Long
 Dim j As Long
 Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
+
+   Debug.Print Format(Now, "hh:mm:ss") & " [EtsiOts] Etsitään otsikkoa: '" & Otsikko & "'"
 
    On Error Resume Next
    Set wsDB1 = Sheets("DB1")
@@ -339,12 +347,14 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    
    i = 1
    Do
-     If i > MAX_EXCEL_COLUMNS Then ' Safety check
+     If i > MAX_EXCEL_COLUMNS Then ' Turvatarkistus
        EtsiOts = False
+       Debug.Print "  [EtsiOts VAROITUS] Ei löytynyt ennen MAX_EXCEL_COLUMNS"
        Exit Do
      End If
      If LCase(wsDB1.Cells(1, i).Value) = LCase(Otsikko) Then
-       ' Found header - add comment to TEMPLATE
+       ' Löytyi otsikko - lisää kommentti TEMPLATEen
+       Debug.Print "  Löytyi sarakkeesta " & i
        With wsTemplate.Cells(Rivi, Sarake)
          .AddComment
          .Comment.Text Text:=LRivi & ":" & i
@@ -353,11 +363,12 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
        EtsiOts = True
        Exit Do
      ElseIf wsDB1.Cells(1, i).Value = "" Then
-       ' Not found - log to ERRORS sheet
+       ' Ei löytynyt - lokitetaan ERRORS-sheettiin
+       Debug.Print "  [EtsiOts ERROR] Ei löytynyt - lisätään ERRORS-sheettiin"
        If wsErrors.Cells(1, 1).Value = "" Then
-         wsErrors.Cells(1, 1).Value = "Following headlines were declared in TEMPLATE, but not found from DB sheet:"
-         wsErrors.Cells(2, 1).Value = "HeadLine"
-         wsErrors.Cells(2, 2).Value = "Location in TEMPLATE"
+         wsErrors.Cells(1, 1).Value = "Seuraavat otsikot oli määritelty TEMPLATEssa, mutta ei löytynyt DB-sheetistä:"
+         wsErrors.Cells(2, 1).Value = "Otsikko"
+         wsErrors.Cells(2, 2).Value = "Sijainti TEMPLATEssa"
          wsErrors.Cells(1, 1).Font.Bold = True
          wsErrors.Cells(2, 1).Font.Bold = True
          wsErrors.Cells(2, 2).Font.Bold = True
@@ -372,7 +383,7 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
            Exit Do
          End If
          j = j + 1
-         ' Safety check: prevent infinite loop
+         ' Turvatarkistus: estä ik uinen silmukka
          If j > 10000 Then Exit Do
        Loop
        EtsiOts = False
@@ -383,10 +394,10 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
 End Function
 Sub VaihdaLinkit(TargetSheet As Worksheet, Alku As Long, Loppu As Long, Kerta As Long)
 '''
-' VaihdaLinkit: For each comment in the specified range, updates the corresponding cell in LINKING with a formula
-' and value, and applies formatting if needed. Used for main linking logic in printout.
-' Only processes comments within the Alku:Loppu row range to avoid overwriting previously populated blocks.
-' OPTIMIZED: Uses Comments collection instead of cell-by-cell iteration (30-50% faster).
+' VaihdaLinkit: Jokaiselle kommentille määritellyllä alueella päivitetään vastaava solu LINKINGissä kaavalla
+' ja arvolla, ja sovelletaan muotoilua tarvittaessa. Käytetään tulosteen päälinkityslogiikkaan.
+' Käsittelee vain kommentit Alku:Loppu -rivialueelta välttäen aiemmin täytettyjen lohkojen ylikirjoittamista.
+' OPTIMOITU: Käyttää Comments-kokoelmaa solulta-solulle-iteraation sijaan (30-50% nopeampi).
 '''
 Dim TRow As Long, CRow As Long
 Dim TCol As Long
@@ -401,14 +412,14 @@ Dim parentRow As Long
   Set commentsToDelete = New Collection
   
   With TargetSheet
-    ' OPTIMIZATION: Iterate Comments collection instead of all cells
-    ' This skips empty cells and is much faster for sparse comment patterns
+    ' OPTIMOINTI: Iteroidaan Comments-kokoelmaa kaikkien solujen sijaan
+    ' Tämä ohittaa tyhjät solut ja on paljon nopeampi harvoille kommenttijakaumille
     For Each cmt In .Comments
       parentRow = cmt.Parent.Row
       
-      ' Only process comments within the specified row range
+      ' Käsitellään vain kommentit määritellyllä rivialueella
       If parentRow >= Alku And parentRow <= Loppu Then
-        ' Found a comment in range - process it
+        ' Löyttyi kommentti alueella - käsitellään se
         Teksti = cmt.Text
         Osoite = cmt.Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
         TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
@@ -429,12 +440,12 @@ Dim parentRow As Long
         Else
           cmt.Parent.Value = Teksti
         End If
-        ' Mark comment for deletion (can't delete while iterating collection)
+        ' Merkitään kommentti poistettavaksi (ei voi poistaa iteraation aikana)
         commentsToDelete.Add cmt
       End If
     Next cmt
     
-    ' Delete processed comments after iteration completes
+    ' Poistetaan käsitellyt kommentit iteraation valmistuttua
     For i = 1 To commentsToDelete.Count
       commentsToDelete(i).Delete
     Next i
@@ -444,8 +455,8 @@ Dim parentRow As Long
 End Sub
 Sub PopulateRevisionsSimple()
 '''
-' PopulateRevisionsSimple: Lightweight function to populate Revisions sheet without comment processing.
-' Finds the first cell with revision data markers and writes DIRevArr data directly.
+' PopulateRevisionsSimple: Kevyt funktio Revisions-sheetin täyttöön ilman kommenttikäsittelyä.
+' Etsii ensimmäisen solun revisiodata-merkillä ja kirjoittaa DIRevArr-datan suoraan.
 '''
 Dim ws As Worksheet
 Dim r As Long, startRow As Long
@@ -453,23 +464,34 @@ Dim revIdCol As Long, revDateCol As Long, designerCol As Long
 Dim checkerCol As Long, approverCol As Long, descCol As Long
 Dim i As Long
 
+  Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Täytetään Revisions-sheet"
+
   On Error Resume Next
   Set ws = Sheets("Revisions")
-  If ws Is Nothing Then Exit Sub
+  If ws Is Nothing Then
+    Debug.Print "  VAROITUS: Revisions-sheet puuttuu - ohitetaan"
+    Exit Sub
+  End If
   
-  ' Check if DIRevArr is valid array with data
-  If Not IsArray(DIRevArr) Then Exit Sub
+  ' Tarkistetaan onko DIRevArr validi taulukko datalla
+  If Not IsArray(DIRevArr) Then
+    Debug.Print "  VAROITUS: DIRevArr ei ole taulukko - ohitetaan"
+    Exit Sub
+  End If
   On Error Resume Next
   Dim arrSize As Long
   arrSize = UBound(DIRevArr) - LBound(DIRevArr) + 1
   If Err.Number <> 0 Or arrSize <= 0 Then
+    Debug.Print "  VAROITUS: DIRevArr tyhjä - ohitetaan"
     On Error GoTo 0
     Exit Sub
   End If
   On Error GoTo 0
   
-  ' Find columns by searching for comment markers in first 20 rows
-  ' This is a simple heuristic - adjust if template structure differs
+  Debug.Print "  DIRevArr-koko: " & arrSize
+  
+  ' Etsitään sarakkeet hakemalla kommenttimerkit ensimmäisestä 20 rivistä
+  ' Tämä on yksinkertainen heuristiikka - säädä jos templaten rakenne eroaa
   startRow = 0
   For r = 1 To 20
     For i = 1 To 10 ' Check first 10 columns
@@ -492,10 +514,15 @@ NextCell:
     Next i
   Next r
   
-  ' If no columns found, exit
-  If startRow = 0 Then Exit Sub
+  ' Jos sarakkeita ei löytynyt, poistu
+  If startRow = 0 Then
+    Debug.Print "  VAROITUS: Ei löytynyt revisiomarkkereita - ohitetaan"
+    Exit Sub
+  End If
   
-  ' Write revision data directly
+  Debug.Print "  Revisiotiedot alkavat riviltä " & startRow
+  
+  ' Kirjoitetaan revisiodata suoraan
   On Error Resume Next
   r = startRow
   Dim revParts() As String
@@ -536,30 +563,38 @@ NextCell:
   Next i
   On Error GoTo 0
   
+  Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Valmis - kirjoitettiin " & (r - startRow) & " revisioriviä"
+  
 End Sub
 Sub TeeLinkingKommentit()
 '''
-' TeeLinkingKommentit: Adds comments to all formula cells in the LINKING sheet for traceability.
-' Optimized: Removed Select/Activate, uses direct worksheet references.
+' TeeLinkingKommentit: Lisää kommentit kaikille kaavayksikkösoluille LINKING-sheetissä jäljitet tävyyttä varten.
+' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
 '''
 Dim Solu As Range
 Dim wsLinking As Worksheet
 Dim formulaCells As Range
 
-  ' Check if LINKING sheet exists
+  Debug.Print Format(Now, "hh:mm:ss") & " [TeeLinkingKommentit] Lisätään kommentit LINKING-sheettiin"
+  
+  ' Tarkistetaan onko LINKING-sheet olemassa
   On Error Resume Next
   Set wsLinking = Sheets("LINKING")
   On Error GoTo 0
   
-  If wsLinking Is Nothing Then Exit Sub
+  If wsLinking Is Nothing Then
+    Debug.Print "  VAROITUS: LINKING-sheet puuttuu - ohitetaan kommentit"
+    Exit Sub
+  End If
   
-  ' Find all formula cells
+  ' Etsitään kaikki kaavasolut
   On Error Resume Next
   Set formulaCells = wsLinking.Cells.SpecialCells(xlCellTypeFormulas)
   On Error GoTo 0
   
   If Not formulaCells Is Nothing Then
-    Application.StatusBar = "Setting up comments in LINKING sheet (" & formulaCells.Cells.Count & ")"
+    Application.StatusBar = "Asetetaan kommentit LINKING-sheettiin (" & formulaCells.Cells.Count & ")"
+    Debug.Print "  Käsitellään " & formulaCells.Cells.Count & " kaavasolua"
     For Each Solu In formulaCells.Cells
       On Error Resume Next
       Solu.AddComment CStr(Solu.Value)
@@ -568,4 +603,5 @@ Dim formulaCells As Range
   End If
   
   Application.DisplayCommentIndicator = xlCommentIndicatorOnly
+  Debug.Print Format(Now, "hh:mm:ss") & " [TeeLinkingKommentit] Valmis"
 End Sub
