@@ -130,11 +130,11 @@ On Error GoTo ErrorHandler
   
   ' Import device records from devTbl* tables
   For i = 0 To LahdeDB.TableDefs.Count - 1
-    Taulukko = LCase(LahdeDB.TableDefs(i).Name)
+    Taulukko = LCase$(LahdeDB.TableDefs(i).Name)
     Set KohdeTaulu = CurrentDb.OpenRecordset("devTable")
     
     ' Check if table is a device table (devTbl* or devTable, excluding devTblCommon)
-    If (Left(Taulukko, 6) = "devtbl" And Left(Taulukko, 12) <> "devtblcommon") Or (LCase(Taulukko) = "devtable") Then
+    If (Left$(Taulukko, 6) = "devtbl" And Left$(Taulukko, 12) <> "devtblcommon") Or (LCase$(Taulukko) = "devtable") Then
       SysCmd acSysCmdSetStatus, "Updating table: " & LahdeDB.TableDefs(i).Name  ' Show progress
       Set LahdeTaulu = LahdeDB.OpenRecordset(Taulukko)
       
@@ -155,7 +155,7 @@ On Error GoTo ErrorHandler
               End If
             Next a
             ' Set TableName field for device records (except devTable which already has it)
-            If LCase(Taulukko) <> "devtable" Then
+            If LCase$(Taulukko) <> "devtable" Then
               KohdeTaulu.Fields("TABLEName").Value = LahdeDB.TableDefs(i).Name
             End If
             KohdeTaulu.Update
@@ -248,8 +248,8 @@ On Error GoTo ErrorHandler
     
     ' Extract directory path (remove filename)
     For i = 1 To Len(AHakem)
-      If Mid(AHakem, Len(AHakem) - i, 1) = "\" Then
-        AHakem = Left(AHakem, Len(AHakem) - i)
+      If Mid$(AHakem, Len(AHakem) - i, 1) = "\" Then
+        AHakem = Left$(AHakem, Len(AHakem) - i)
         Exit For
       End If
     Next i
@@ -276,7 +276,7 @@ On Error GoTo ErrorHandler
     lReturn = GetOpenFileName(OpenFile)
     If lReturn <> 0 Then
       ' Extract selected filename (remove null terminator)
-      Kanta.Value = Mid(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
+      Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
       
       ' Open source database connection
       Set LahdeDB = OpenDatabase(Kanta.Value)

@@ -107,7 +107,7 @@ On Error GoTo ErrorHandler
     If Osoitin = 0 Then
         PilkkuPiste = Luku  ' No comma found, return as-is
     Else
-        PilkkuPiste = Left(Luku, Osoitin - 1) & "." & Mid(Luku, Osoitin + 1)
+        PilkkuPiste = Left$(Luku, Osoitin - 1) & "." & Mid$(Luku, Osoitin + 1)
     End If
     Exit Function
 
@@ -148,8 +148,8 @@ On Error GoTo ErrorHandler
     Os = InStr(UdNote, ":")
     If Os > 0 Then
         ' Extract date portion between : and |
-        Paiva = Mid(UdNote, Os + 1)
-        Paiva = Left(Paiva, InStr(Paiva, "|") - 1)
+        Paiva = Mid$(UdNote, Os + 1)
+        Paiva = Left$(Paiva, InStr(Paiva, "|") - 1)
         VP = DateValue(Paiva)
         Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   'Format: M/D/YYYY (e.g., 2/1/2007)
         

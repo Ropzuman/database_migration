@@ -67,7 +67,7 @@ On Error GoTo ErrorHandler
     Path = Hakem.Value
     
     ' Ensure path ends with backslash
-    If Right(Path, 1) <> "\" Then
+    If Right$(Path, 1) <> "\" Then
         Path = Path & "\"
     End If
     
@@ -99,7 +99,7 @@ On Error GoTo ErrorHandler
                 ' Convert decimal comma to period (Finnish → international format)
                 Osoitin = InStr(Arvo, ",")
                 If Osoitin <> 0 Then
-                    Arvo = Left(Arvo, Osoitin - 1) & "." & Mid(Arvo, Osoitin + 1)
+                    Arvo = Left$(Arvo, Osoitin - 1) & "." & Mid$(Arvo, Osoitin + 1)
                 End If
             End If
             

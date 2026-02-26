@@ -55,7 +55,7 @@ On Error GoTo ErrorHandler
     Dim Taulu As String  ' Current table name being processed
 
     ' Get current database directory path
-    Polku = Left(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
+    Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
     
     ' Query for all linked tables (excluding MotorData)
     Set Taul = CurrentDb.OpenRecordset("SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects WHERE (([Database] Is Not Null) AND ([Name] Not Like 'MotorData'))")
@@ -66,15 +66,15 @@ On Error GoTo ErrorHandler
         If Taul.Fields("Name") <> Taulu Then
             ' Extract directory and filename from current link path
             For i = Len(Taul.Fields("Database")) To 1 Step -1
-                If Mid(Taul.Fields("Database"), i, 1) = "\" Then
-                    Polku2 = LCase(Left(Taul.Fields("Database"), i))  ' Directory path
-                    Nimi = Mid(Taul.Fields("Database"), i + 1)  ' Filename
+                If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
+               Polku2 = LCase$(Left$(Taul.Fields("Database"), i))  ' Directory path
+                    Nimi = Mid$(Taul.Fields("Database"), i + 1)  ' Filename
                     Exit For
                 End If
             Next i
             
             ' Check if link path differs from current database path
-            If Polku2 <> LCase(Polku) Then
+            If Polku2 <> LCase$(Polku) Then
                 Taulu = Taul.Fields("Name")
                 
                 ' Drop existing linked table
