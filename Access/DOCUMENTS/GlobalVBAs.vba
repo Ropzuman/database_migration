@@ -113,8 +113,13 @@ Function HaeTekija(Revisio As Variant) As String
 ' @param Revisio: Revision string with format "Rev Date/Author/Checker/..." separated by vbCrLf
 ' @return Author name from the first revision, or empty string if Null
 '''
+On Error GoTo ErrorHandler
 Dim i As Long
+  
+  Debug.Print "HaeTekija: Parsing author from revision string"
+  
   If IsNull(Revisio) Then
+    Debug.Print "  Revisio is Null, returning empty string"
     HaeTekija = ""
   Else
     i = 2
@@ -127,22 +132,47 @@ Dim i As Long
     End If
     Revisio = Mid$(Revisio, InStr(Revisio, "/") + 1)
     HaeTekija = Left$(Revisio, InStr(Revisio, "/") - 1)
+    Debug.Print "  Found author: " & HaeTekija
   End If
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaeTekija: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & CStr(Revisio)
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaeTekija = ""
 End Function
 Function HaeRevisioija(Revisio As String) As String
+On Error GoTo ErrorHandler
 Dim Teksti As String
+  
+  Debug.Print "HaeRevisioija: Parsing reviser from revision string"
+  
   Teksti = Revisio
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
     Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
     HaeRevisioija = Left$(Teksti, InStr(Teksti, "/") - 1)
+    Debug.Print "  Found reviser: " & HaeRevisioija
   Else 'Since the input has only one revision, a reviser is not needed
+    Debug.Print "  No multi-line revision, returning empty string"
     HaeRevisioija = ""
   End If
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaeRevisioija: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & Revisio
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaeRevisioija = ""
 End Function
 Function HaeRevisioijaPvm(Revisio As String) As String
+On Error GoTo ErrorHandler
 Dim Teksti As String
 Dim Tekija As String
 Dim Pvm As String
+  
+  Debug.Print "HaeRevisioijaPvm: Parsing reviser and date from revision string"
+  
   Teksti = Revisio
   If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
     Pvm = Mid$(Teksti, InStr(Teksti, " ") + 1)
@@ -150,16 +180,38 @@ Dim Pvm As String
     Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
     Tekija = Left$(Teksti, InStr(Teksti, "/") - 1)
     HaeRevisioijaPvm = Tekija & ": " & Pvm
+    Debug.Print "  Found: " & HaeRevisioijaPvm
   Else 'Since the input has only one revision, a reviser is not needed
+    Debug.Print "  No multi-line revision, returning empty string"
     HaeRevisioijaPvm = ""
   End If
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaeRevisioijaPvm: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & Revisio
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaeRevisioijaPvm = ""
 End Function
 Public Function EkaRevRivi(Revisio As String) As String
+On Error GoTo ErrorHandler
+  
+  Debug.Print "EkaRevRivi: Extracting first revision line"
+  
   If InStr(Revisio, vbCrLf) Then
     EkaRevRivi = Left$(Revisio, InStr(Revisio, vbCrLf) - 1)
   Else
     EkaRevRivi = Revisio
   End If
+  
+  Debug.Print "  Result: " & EkaRevRivi
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in EkaRevRivi: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & Revisio
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  EkaRevRivi = ""
 End Function
 Public Function HaeRevisio(Revisio As Variant) As String
 '''
@@ -167,11 +219,24 @@ Public Function HaeRevisio(Revisio As Variant) As String
 ' @param Revisio: Revision string with format "Rev Date/Author/..."
 ' @return Revision mark before the first space, or empty string if Null
 '''
+On Error GoTo ErrorHandler
+  
+  Debug.Print "HaeRevisio: Extracting revision mark"
+  
   If IsNull(Revisio) Then
+    Debug.Print "  Revisio is Null, returning empty string"
     HaeRevisio = ""
   Else
     HaeRevisio = Left$(Revisio, InStr(Revisio, " ") - 1)
+    Debug.Print "  Found mark: " & HaeRevisio
   End If
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaeRevisio: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & CStr(Revisio)
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaeRevisio = ""
 End Function
 
 Function HaeViimPaiva(Revisio As String) As String
@@ -181,8 +246,12 @@ Function HaeViimPaiva(Revisio As String) As String
 ' @param Revisio: Revision string with format "Rev Date/Author/..." separated by vbCrLf
 ' @return Date string from the first revision
 '''
+On Error GoTo ErrorHandler
 Dim i As Long
 Dim Teksti As String
+  
+  Debug.Print "HaeViimPaiva: Extracting first revision date"
+  
   Teksti = Revisio
   i = 2
   'Look for the first revision (parse from end to find oldest entry)
@@ -194,10 +263,32 @@ Dim Teksti As String
   End If
   Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
   HaeViimPaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
+  
+  Debug.Print "  Found date: " & HaeViimPaiva
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaeViimPaiva: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & Revisio
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaeViimPaiva = ""
 End Function
 Function HaePaiva(Revisio As String) As String
+On Error GoTo ErrorHandler
 Dim Teksti As String
+  
+  Debug.Print "HaePaiva: Extracting latest revision date"
+  
   Teksti = Revisio
   Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
   HaePaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
+  
+  Debug.Print "  Found date: " & HaePaiva
+  Exit Function
+
+ErrorHandler:
+  Debug.Print "*** ERROR in HaePaiva: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Revisio parameter: " & Revisio
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  HaePaiva = ""
 End Function

@@ -90,16 +90,25 @@ On Error GoTo ErrorHandler
     Dim i As Integer, j As Integer, a As Integer  ' Loop counters
     Dim Taulukko As String  ' Current table name being processed
     
+    Debug.Print "========================================"
+    Debug.Print "HaeLoopit: Starting loop copy operation"
+    Debug.Print "========================================"
+    
     ReDim Kopioitavat(0)  ' Initialize array
     
     ' Validate source database is selected
     If LahdeDB Is Nothing Then
+        Debug.Print "ERROR: No source database selected"
         MsgBox "Select database first!", vbCritical, "Get Loops"
         Exit Sub
     End If
+    
+    Debug.Print "Source DB: " & LahdeDB.Name
   
   'Kopioidaan ensin Loopit Loops taulukkoon - First copy Loops to LOOPS table
   TTiedot.Value = ""  ' Clear status messages
+  
+  Debug.Print "Copying selected loops to LOOPS table..."
   
   ' Iterate through selected loops in subform
   With Loopit.Form.RecordsetClone
@@ -109,6 +118,7 @@ On Error GoTo ErrorHandler
       Set KohdeTaulu = CurrentDb.OpenRecordset("SELECT * FROM LOOPS WHERE Areacode='" & .Fields("AreaCode").Value & "' AND LoopNo='" & .Fields("LoopNo").Value & "'")
       If KohdeTaulu.RecordCount = 0 Then
         ' New loop - add to import list and copy record
+        Debug.Print "  Adding loop: " & .Fields("AreaCode").Value & "-" & .Fields("LoopNo").Value
         ReDim Preserve Kopioitavat(UBound(Kopioitavat) + 1)
         Kopioitavat(UBound(Kopioitavat)) = .Fields("AreaCode").Value & "-" & .Fields("LoopNo").Value
         KohdeTaulu.AddNew
@@ -129,12 +139,14 @@ On Error GoTo ErrorHandler
   End With
   
   ' Import device records from devTbl* tables
+  Debug.Print "Importing device records from devTbl* tables..."
   For i = 0 To LahdeDB.TableDefs.Count - 1
     Taulukko = LCase$(LahdeDB.TableDefs(i).Name)
     Set KohdeTaulu = CurrentDb.OpenRecordset("devTable")
     
     ' Check if table is a device table (devTbl* or devTable, excluding devTblCommon)
     If (Left$(Taulukko, 6) = "devtbl" And Left$(Taulukko, 12) <> "devtblcommon") Or (LCase$(Taulukko) = "devtable") Then
+      Debug.Print "  Processing table: " & LahdeDB.TableDefs(i).Name
       SysCmd acSysCmdSetStatus, "Updating table: " & LahdeDB.TableDefs(i).Name  ' Show progress
       Set LahdeTaulu = LahdeDB.OpenRecordset(Taulukko)
       
@@ -169,8 +181,15 @@ On Error GoTo ErrorHandler
   
   ' Display duplicate loop report
   If OliJo <> "" Then
+    Debug.Print "Duplicate loops found (already in database):"
+    Debug.Print OliJo
     TTiedot.Value = TTiedot.Value & "Following Loops were already in current database:" & vbCrLf & OliJo
   End If
+  
+  Debug.Print "HaeLoopit: COMPLETED successfully"
+  Debug.Print "  Total loops copied: " & (UBound(Kopioitavat))
+  Debug.Print "========================================"
+  
   TTiedot.Value = TTiedot.Value & "Ready!"
   SysCmd acSysCmdClearStatus
   MsgBox "Ready!", vbInformation, "Get Loops"
@@ -187,6 +206,9 @@ On Error GoTo ErrorHandler
   Exit Sub
 
 ErrorHandler:
+  Debug.Print "*** ERROR in HaeLoopit: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+  Debug.Print "========================================"
   SysCmd acSysCmdClearStatus
   MsgBox "Error during loop import: " & Err.Description, vbCritical, "Get Loops"
   On Error Resume Next
@@ -238,6 +260,8 @@ On Error GoTo ErrorHandler
     Dim i As Integer  ' Loop counter
     Dim Linkki As DAO.TableDef  ' Temporary linked table definition
     
+    Debug.Print "ValitseKanta: Opening database selection dialog"
+    
     
     ' Determine initial directory from previously selected database or current database
     If InStr(Nz(Kanta.Value), "\") Then
@@ -278,8 +302,12 @@ On Error GoTo ErrorHandler
       ' Extract selected filename (remove null terminator)
       Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
       
+      Debug.Print "  Selected database: " & Kanta.Value
+      
       ' Open source database connection
       Set LahdeDB = OpenDatabase(Kanta.Value)
+      
+      Debug.Print "  Database opened successfully"
       
       ' Clean up any existing LOOPLINK table
       On Error Resume Next
@@ -301,6 +329,8 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
+    Debug.Print "*** ERROR in ValitseKanta: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error selecting database: " & Err.Description, vbCritical, "Choose Database"
     On Error Resume Next
     Set Linkki = Nothing
