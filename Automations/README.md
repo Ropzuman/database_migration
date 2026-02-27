@@ -1,6 +1,6 @@
 # VBA AUTOMATION SCRIPTS - KÄYTTÖOHJE
 
-**Versio:** 2.0 (64-bit)  
+**Versio:** 2.1 (64-bit)  
 **Päivitetty:** 27.2.2026  
 **Ympäristö:** Microsoft Office 365 (64-bit)
 
@@ -83,8 +83,10 @@ Avaa PowerShell ja aja:
    ```
 
 5. **Vastaa kysymyksiin:**
-   - **Access file path:** Polku .accdb-tiedostoon (esim. `L:\PROJDATA\MAINEQ.accdb`)
-   - **Component files folder:** Hakemisto, jossa .bas/.cls-tiedostot (esim. `c:\database_migration\Access\MAINEQ\`)
+   - **VAIHE 1 - Component files folder:** Hakemisto, jossa .bas/.cls-tiedostot (esim. `c:\database_migration\Access\MAINEQ\`)
+   - **VAIHE 2 - Access file path:** Polku .accdb-tiedostoon (esim. `L:\PROJDATA\MAINEQ.accdb`)
+   
+   **HUOM:** Skripti skannaa automaattisesti kaikki .bas ja .cls -tiedostot lähdehakemistosta - ei tarvitse määritellä moduulilistaa!
 
 ### Excel-työkirjojen päivitys
 
@@ -109,8 +111,10 @@ Avaa PowerShell ja aja:
    ```
 
 5. **Vastaa kysymyksiin:**
-   - **Excel files folder:** Hakemisto, jossa .xlsm-tiedostot
-   - **Module files folder:** Hakemisto, jossa .bas-tiedostot
+   - **VAIHE 1 - Module files folder:** Hakemisto, jossa .bas-tiedostot
+   - **VAIHE 2 - Excel files folder:** Hakemisto, jossa .xlsm-tiedostot
+   
+   **HUOM:** Skripti skannaa automaattisesti kaikki .bas-tiedostot lähdehakemistosta - ei tarvitse määritellä moduulilistaa!
 
 ---
 
@@ -120,55 +124,74 @@ Jos käytät skriptejä toistuvasti samoilla poluilla, voit asettaa oletusarvot:
 
 ### Access_automaatio.ps1
 
-Avaa tiedosto ja muokkaa rivejä 42-43:
+Avaa tiedosto ja muokkaa rivejä 43-44:
 
 ```powershell
-$DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb'
 $DefaultComponentPath = 'c:\database_migration\Access\MAINEQ\'
+$DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb'
 ```
 
 ### Excel_automaatio.ps1
 
-Avaa tiedosto ja muokkaa rivejä 56-57:
+Avaa tiedosto ja muokkaa rivejä 46-47:
 
 ```powershell
-$DefaultExcelFilesPath = 'c:\projektit\tools\'
 $DefaultModulePath = 'c:\database_migration\Excel\Moduulit\'
+$DefaultExcelFilesPath = 'c:\projektit\tools\'
 ```
 
 Kun oletusarvot on asetettu, voit vain painaa `Enter` kysymysten kohdalla.
 
 ---
 
-## 📋 KOMPONENTTIEN MÄÄRITTELY
+## 📋 AUTOMAATTINEN MODUULIHAKU (UUSI!)
 
-### Access: Mitä moduuleja päivitetään?
+### Moduulit skannataan automaattisesti
 
-Avaa `Access_automaatio.ps1` ja muokkaa riviä 66-73:
+**Skriptit eivät enää vaadi kiinteäkoodattuja moduulilistoja!** 
 
+Molemmat skriptit **skannaavat automaattisesti** kaikki .bas ja .cls -tiedostot lähdehakemistosta:
+
+#### Access_automaatio.ps1
 ```powershell
-$componentNames = @(
-    "Module1",
-    "General",
-    "For ACAD Utility",
-    "USysCheck",
-    "Form_DBUsers", 
-    "Form_Linkkien vaihto",
-    "Form_Tee Kuvat"
-)
+# Skannaa kaikki .bas ja .cls -tiedostot:
+$componentFiles = Get-ChildItem -Path $componentPath -Filter "*.bas", "*.cls"
+$componentNames = $componentFiles | ForEach-Object { $_.BaseName }
 ```
 
-- ✅ Lisää tai poista moduulien nimiä listalta
-- ⚠️ **TÄRKEÄÄ:** Älä lisää tiedostopäätteitä (.bas/.cls)
+Tulostaa esim:
+```
+09:15:35 [OK] Löytyi 7 komponenttia:
+  - Module1
+  - General
+  - For ACAD Utility
+  - USysCheck
+  - Form_DBUsers
+  - Form_Linkkien vaihto
+  - Form_Tee Kuvat
+```
+
+#### Excel_automaatio.ps1
+```powershell
+# Skannaa kaikki .bas -tiedostot:
+$moduleFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"
+$moduleNames = $moduleFiles | ForEach-Object { $_.BaseName }
+```
+
+Tulostaa esim:
+```
+14:22:15 [OK] Löytyi 3 moduulia:
+  - Module1
+  - Module2
+  - Module3
+```
+
+### Edut:
+
+- ✅ **Ei manuaalista konfigurointia** - lisää vain .bas/.cls-tiedosto kansioon
+- ✅ **Ei virheitä kirjoitusvirheiden vuoksi** - tiedostonimet määrittävät moduulit
+- ✅ **Helpompi ylläpito** - sama skripti toimii kaikille projekteille
 - ⚠️ Lomakkeet (`Form_*`) päivitetään vain, jos ne ovat jo olemassa kannassa
-
-### Excel: Mitä moduuleja päivitetään?
-
-Avaa `Excel_automaatio.ps1` ja muokkaa riviä 79:
-
-```powershell
-$moduleNames = @("Module1", "Module2", "Module3")
-```
 
 ---
 
@@ -308,7 +331,7 @@ Lisää polku Access-tiedostoon (.accdb) (paina Enter käyttääksesi oletusta):
 **Syy:** Yritetään päivittää lomaketta, jota ei ole kannassa  
 **Ratkaisu:**
 
-- Poista lomake `$componentNames`-listalta (Access_automaatio.ps1, rivi 66-73)
+- Poista lomakkeen .cls-tiedosto komponenttihakemistosta
 - TAI luo lomake ensin manuaalisesti Accessissa
 
 ### 5. "Tiedostoa ei voitu avata 3 yrityksen jälkeen"
@@ -382,6 +405,13 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 
 ## 🔄 VERSIOHISTORIA
 
+### Versio 2.1 (27.2.2026) - Automation & UX Improvements
+
+- ✅ **Automaattinen moduulihaku** - Ei enää kiinteäkoodattuja listoja
+- ✅ **Yhtenäinen käyttöliittymä** - Molemmat skriptit kysyvät: 1) Moduulit, 2) Kohteet
+- ✅ **Dynaaminen skannaus** - .bas/.cls-tiedostot haetaan automaattisesti
+- ✅ **Parempi käyttökokemus** - Värikoodatut vaiheet ja selkeät tulosteviestit
+
 ### Versio 2.0 (27.2.2026) - 64-bit Migration
 
 - ✅ Täydellinen refaktorointi 64-bit Office 365:lle
@@ -412,5 +442,5 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 ---
 
 **Päivitetty:** 27.2.2026  
-**Versio:** 2.0  
+**Versio:** 2.1  
 **Status:** ✅ PRODUCTION READY

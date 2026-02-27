@@ -43,39 +43,51 @@ try {
     $excel.DisplayAlerts = $false
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Excel-objekti luotu." -ForegroundColor Green
 
-    # --- 2. Polkujen kysely ---
+    # --- 2. Polkujen kysely (UUSI JÄRJESTYS: Ensin moduulit, sitten kohteet) ---
     # --- Polut ja asetukset (Päivitä oletusarvot tähän halutessasi. Varsinkin uusien moduulien sijainti yleensä kiinteä.) ---
-    $DefaultExcelFilesPath = ''
     $DefaultModulePath = ''
+    $DefaultExcelFilesPath = ''
 
-    Write-Host "Excel files folder: $DefaultExcelFilesPath" -ForegroundColor Cyan
-    $inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputExcel)) { $excelFilesPath = $DefaultExcelFilesPath } else { $excelFilesPath = $inputExcel }
-
+    Write-Host "`nVAIHE 1: Moduulien lähde" -ForegroundColor Magenta
     Write-Host "Module files folder: $DefaultModulePath" -ForegroundColor Cyan
-    $inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (paina Enter käyttääksesi oletusta)'
+    $inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (.bas) (paina Enter käyttääksesi oletusta)'
     if ([string]::IsNullOrWhiteSpace($inputModule)) { $modulePath = $DefaultModulePath } else { $modulePath = $inputModule }
 
-    # Validate paths
-    if (-not (Test-Path $excelFilesPath -PathType Container)) {
-        Write-Error "Excel files folder does not exist: $excelFilesPath"
-        throw "Invalid Excel files path"
-    }
     if (-not (Test-Path $modulePath -PathType Container)) {
         Write-Error "Module files folder does not exist: $modulePath"
         throw "Invalid module path"
     }
 
-    # Moduulien nimet.
-    # Määrittele kaikki ne moduulit, jotka poistetaan ja tuodaan uudelleen.
-    # Älä sisällytä tiedostopäätetä (.bas) nimiin.
-    $moduleNames = @("Module1", "Module2", "Module3") 
+    Write-Host "`nVAIHE 2: Päivitettävät Excel-tiedostot" -ForegroundColor Magenta
+    Write-Host "Excel files folder: $DefaultExcelFilesPath" -ForegroundColor Cyan
+    $inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (.xlsm) (paina Enter käyttääksesi oletusta)'
+    if ([string]::IsNullOrWhiteSpace($inputExcel)) { $excelFilesPath = $DefaultExcelFilesPath } else { $excelFilesPath = $inputExcel }
+
+    if (-not (Test-Path $excelFilesPath -PathType Container)) {
+        Write-Error "Excel files folder does not exist: $excelFilesPath"
+        throw "Invalid Excel files path"
+    }
+
+    # --- 3. Skannaa moduulit automaattisesti ---
+    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [MODUULIT] Skannataan .bas-tiedostot kansiosta: $modulePath" -ForegroundColor Cyan
+    $basFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"
+    
+    if ($basFiles.Count -eq 0) {
+        Write-Error "Ei löytynyt yhtään .bas-tiedostoa kansiosta: $modulePath"
+        throw "No module files found"
+    }
+    
+    # Poimii tiedostonimet ilman .bas-päätettä
+    $moduleNames = $basFiles | ForEach-Object { $_.BaseName }
+    
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($moduleNames.Count) moduulia:" -ForegroundColor Green
+    $moduleNames | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray } 
 
     # Retry-asetukset OneDrive-lukkojen kiertämiseksi
     $maxRetries = 3
     $retryDelaySeconds = 1
 
-    # --- 3. Käsittele kaikki .xlsm tiedostot ---
+    # --- 4. Käsittele kaikki .xlsm tiedostot ---
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [TYÖKIRJAT] Haetaan .xlsm-tiedostot kohteesta: $excelFilesPath" -ForegroundColor Cyan
     $xlsmFiles = Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm"
     $totalFiles = $xlsmFiles.Count

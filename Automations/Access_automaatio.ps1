@@ -39,40 +39,46 @@ try {
     $access.Visible = $false
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Access-objekti luotu." -ForegroundColor Green
 
-    # --- 2. Polkujen kysely ---
-    $DefaultAccessFilePath = ''
+    # --- 2. Polkujen kysely (UUSI JÄRJESTYS: Ensin komponentit, sitten kohteet) ---
     $DefaultComponentPath = ''
+    $DefaultAccessFilePath = ''
 
+    Write-Host "`nVAIHE 1: Komponenttien lähde" -ForegroundColor Magenta
+    Write-Host "Component files folder: $DefaultComponentPath" -ForegroundColor Cyan
+    $inputComponent = Read-Host -Prompt 'Lisää polku komponenttitiedostoille (.bas/.cls) (paina Enter käyttääksesi oletusta)'
+    if ([string]::IsNullOrWhiteSpace($inputComponent)) { $componentPath = $DefaultComponentPath } else { $componentPath = $inputComponent }
+
+    Write-Host "`nVAIHE 2: Päivitettävä Access-tiedosto" -ForegroundColor Magenta
     Write-Host "Access file path: $DefaultAccessFilePath" -ForegroundColor Cyan
     $inputAccess = Read-Host -Prompt 'Lisää polku Access-tiedostoon (.accdb) (paina Enter käyttääksesi oletusta)'
     if ([string]::IsNullOrWhiteSpace($inputAccess)) { $databasePath = $DefaultAccessFilePath } else { $databasePath = $inputAccess }
 
-    Write-Host "Component files folder: $DefaultComponentPath" -ForegroundColor Cyan
-    $inputComponent = Read-Host -Prompt 'Lisää polku komponenttitiedostoille (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputComponent)) { $componentPath = $DefaultComponentPath } else { $componentPath = $inputComponent }
-
     # Polkujen tarkistus
-    if (-not (Test-Path $databasePath -PathType Leaf)) {
-        Write-Host "Access-tiedostoa ei löydy tai polku on hakemisto: $databasePath"
-        exit 1
-    }
     if (-not (Test-Path $componentPath -PathType Container)) {
         Write-Host "Component files folder does not exist: $componentPath"
         exit 1
     }
+    if (-not (Test-Path $databasePath -PathType Leaf)) {
+        Write-Host "Access-tiedostoa ei löydy tai polku on hakemisto: $databasePath"
+        exit 1
+    }
 
-    # --- 3. Komponenttien määrittely ---
-    # Määrittele kaikki ne moduulien ja luokkamoduulien nimet, jotka poistetaan ja tuodaan.
-    # Älä käytä tiedostopäätteitä (.bas/.cls) nimissä.
-    $componentNames = @(
-        "Module1",
-        "General",
-        "For ACAD Utility",
-        "USysCheck",
-        "Form_DBUsers", 
-        "Form_Linkkien vaihto",
-        "Form_Tee Kuvat"
-    ) 
+    # --- 3. Skannaa komponentit automaattisesti ---
+    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [KOMPONENTIT] Skannataan .bas ja .cls -tiedostot kansiosta: $componentPath" -ForegroundColor Cyan
+    $basFiles = Get-ChildItem -Path $componentPath -Filter "*.bas"
+    $clsFiles = Get-ChildItem -Path $componentPath -Filter "*.cls"
+    $allComponentFiles = $basFiles + $clsFiles
+    
+    if ($allComponentFiles.Count -eq 0) {
+        Write-Error "Ei löytynyt yhtään .bas tai .cls -tiedostoa kansiosta: $componentPath"
+        throw "No component files found"
+    }
+    
+    # Poimii tiedostonimet ilman päätettä
+    $componentNames = $allComponentFiles | ForEach-Object { $_.BaseName }
+    
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($componentNames.Count) komponenttia:" -ForegroundColor Green
+    $componentNames | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray } 
 
     # Retry-asetukset
     $maxRetries = 3
