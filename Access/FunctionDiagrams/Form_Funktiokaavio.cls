@@ -87,7 +87,7 @@ End Sub
 Private Sub Command50_Click()
 On Error GoTo ErrorHandler
 Debug.Print "Command50_Click: Starting control update operation"
-Dim qry As Recordset
+Dim qry As DAO.Recordset
 Dim sql As String
 Dim DB As Object ' Database
 Set DB = CurrentDb
@@ -120,8 +120,10 @@ End Sub
 
 
 Private Sub Command83_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.On Error GoTo ErrorHandler
-Debug.Print "Command83_Click: Starting recipe update operation"Dim DB As Database
+'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+On Error GoTo ErrorHandler
+Debug.Print "Command83_Click: Starting recipe update operation"
+Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Debug.Print "  RecipeID: " & RECIPES.Form.ID
@@ -177,7 +179,7 @@ Private Sub Command98_Click()
 'Luodaan indeksisivut
 On Error GoTo ErrorHandler
 Debug.Print "Command98_Click: Starting index page creation (AutoCAD)"
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
 Dim Piste(2) As Double
@@ -285,9 +287,9 @@ End Sub
 Private Sub Komento46_Click()
 On Error GoTo ErrorHandler
 Debug.Print "Komento46_Click: Starting interlocking page update"
-Dim DB As Database
-Dim Taul As Recordset
-Dim Intpage As Recordset
+Dim DB As DAO.Database
+Dim Taul As DAO.Recordset
+Dim Intpage As DAO.Recordset
 Dim EdLoop As String
 Dim PIIR As String
 Dim PIIRI As String
@@ -474,9 +476,9 @@ Private Sub Komento67_Click()
 'Luodaan valituista blokeista resepti
 On Error GoTo ErrorHandler
 Debug.Print "Komento67_Click: Starting recipe creation from blocks"
-Dim DB As Database
+Dim DB As DAO.Database
 Dim RID As Long
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim sSQL As String
 If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
   Debug.Print "  ERROR: Process or Code missing"
@@ -499,7 +501,9 @@ Taul.Fields("CODE") = RCode.Value
 Taul.Fields("INFO") = RInfo.Value
 'Otetaan ylös luodun reseptin ID
 RID = Taul.Fields("ID")
-Taul.UpdateDebug.Print "  New RecipeID: " & RID'Kirjoitetana reseptin ID piirille (Loops tai drives)
+Taul.Update
+Debug.Print "  New RecipeID: " & RID
+'Kirjoitetana reseptin ID piirille (Loops tai drives)
 Me.RecipeID = RID
 'Luodaan tiedoista rivit RECIPE_TMP taulukkoon
 sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description2, BlockPlace, [Note], Sivu, Sivuja )"
@@ -524,8 +528,10 @@ End Sub
 
 
 Private Sub Komento80_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.On Error GoTo ErrorHandler
-Debug.Print "Komento80_Click: Starting recipe update to all circuits"Dim DB As Database
+'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+On Error GoTo ErrorHandler
+Debug.Print "Komento80_Click: Starting recipe update to all circuits"
+Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
@@ -555,7 +561,7 @@ Private Sub CommandJANI_Click()
 'Luodaan indeksisivut
 On Error GoTo ErrorHandler
 Debug.Print "CommandJANI_Click: Starting index page generation (Intpage)"
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
 Dim Piste(2) As Double

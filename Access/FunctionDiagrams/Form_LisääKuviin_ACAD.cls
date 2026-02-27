@@ -756,7 +756,7 @@ ErrorHandler:
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     HaeIPoints = False
 End Function
-Private Function VaihdaOtsikkotiedot(Taulu As Recordset, TallennusNimi As String, NextPage As String, CurrPage As String) As Boolean
+Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset, TallennusNimi As String, NextPage As String, CurrPage As String) As Boolean
     On Error GoTo ErrorHandler
     Debug.Print "VaihdaOtsikkotiedot: Updating title block attributes"
     Dim Attribuutit As Variant

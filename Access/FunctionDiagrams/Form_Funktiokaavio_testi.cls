@@ -70,7 +70,7 @@ Me!FReV = urev
 End Sub
 
 Private Sub Command50_Click()
-Dim qry As Recordset
+Dim qry As DAO.Recordset
 Dim sql As String
 Dim DB As Object ' Database
 Set DB = CurrentDb
@@ -94,7 +94,7 @@ End Sub
 
 Private Sub Command83_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
-Dim DB As Database
+Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
@@ -126,7 +126,7 @@ End Sub
 
 Private Sub Command98_Click()
 'Luodaan indeksisivut
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
 Dim Piste(2) As Double
@@ -219,9 +219,9 @@ End Sub
 
 
 Private Sub Komento46_Click()
-Dim DB As Database
-Dim Taul As Recordset
-Dim Intpage As Recordset
+Dim DB As DAO.Database
+Dim Taul As DAO.Recordset
+Dim Intpage As DAO.Recordset
 Dim EdLoop As String
 Dim PIIR As String
 Dim PIIRI As String
@@ -368,9 +368,9 @@ End Sub
 
 Private Sub Komento67_Click()
 'Luodaan valituista blokeista resepti
-Dim DB As Database
+Dim DB As DAO.Database
 Dim RID As Long
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim sSQL As String
 If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
   MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
@@ -409,7 +409,7 @@ End Sub
 
 Private Sub Komento80_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
-Dim DB As Database
+Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
@@ -427,7 +427,7 @@ End Sub
 Private Sub Tiedot_Click()
 'Private Sub Command152_Click()
 'Luodaan indeksisivut
-Dim Taul As Recordset
+Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
 Dim Piste(2) As Double
