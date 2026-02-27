@@ -697,8 +697,9 @@ Public Sub VieDATA()
 ' 19.1.2004 - VG
 ' 29.1.2004 - VG -> Attribuuttien nimien ottaminen huomioon
 ' 26.10.2025 - 64-bit compatibility, added error handling
+' 27.2.2026 - CRITICAL FIX: TAG-pohjainen attribuuttien päivitys (korjaa blokkien tyhjentymisbugi)
 
-    Dim i As Long, j As Long ' Changed from Integer to Long
+    Dim i As Long, j As Long, k As Long ' Changed from Integer to Long
     Dim oEntity As Object
     Dim oBlock As Object ' AcadBlockReference - Changed from AcadBlockReference
     Dim BlockArray As Variant
@@ -707,8 +708,20 @@ Public Sub VieDATA()
     Dim oText As Object ' AcadText - Changed from AcadText
     Dim oMText As Object ' AcadMText - Changed from AcadMText
     Dim Docmode As Boolean
+    Dim StepMsg As String
+    Dim TagName As String
+    Dim ColIdx As Long
+    Dim NewValue As String
+    Dim OldValue As String
+    Dim UpdateCount As Long
+    Dim SkippedCount As Long
+    Dim EmptyCount As Long
     
-    ' (no debug tracing in export routine)
+    StepMsg = "VieDATA: Initialization"
+    Trace StepMsg
+    UpdateCount = 0
+    SkippedCount = 0
+    EmptyCount = 0
     
     Ver = acNative ' Ver = 60
   
@@ -725,6 +738,9 @@ Public Sub VieDATA()
     ' Ensure data sheet is selected
     DATA.Select
 
+    StepMsg = "Connect to AutoCAD"
+    Trace StepMsg
+    
     ' Connect to running AutoCAD instance
     On Error Resume Next
     Set oACAD = GetObject(, "AutoCAD.Application")
@@ -757,24 +773,98 @@ Public Sub VieDATA()
                 
                 If oEntity.EntityName = "AcDbBlockReference" Then ' Block
                     Set oBlock = oEntity
+                    StepMsg = "Update block attributes: row=" & i
+                    Trace StepMsg
+                    
                     If oBlock.HasAttributes Then
                         BlockArray = oBlock.GetAttributes
+                        Trace "Block has " & (UBound(BlockArray) + 1) & " attributes"
+                        
+                        ' TAG-BASED UPDATE LOGIC (symmetrical with TuoDATA)
+                        ' Loop through each attribute in the block
                         For j = 0 To UBound(BlockArray)
-                            BlockArray(j).TextString = Cells(i, 8 + j).Text
+                            On Error Resume Next
+                            TagName = UCase(BlockArray(j).TagString)
+                            OldValue = BlockArray(j).TextString
+                            If Err.Number <> 0 Then
+                                Trace "ERROR: Cannot read attribute " & j & ": " & Err.Description
+                                Err.Clear
+                                GoTo NextAttribute
+                            End If
+                            On Error GoTo ErrHandler
+                            
+                            ' Find matching column in Excel header (row 1)
+                            ColIdx = 0
+                            For k = 8 To 256 ' Start from column H (first attribute column)
+                                If UCase(Cells(1, k).Value) = TagName Then
+                                    ColIdx = k
+                                    Exit For
+                                End If
+                                ' Stop if we hit empty headers
+                                If Cells(1, k).Value = "" Then Exit For
+                            Next k
+                            
+                            If ColIdx > 0 Then
+                                ' Column found - check if Excel value is non-empty
+                                NewValue = CStr(Cells(i, ColIdx).Text)
+                                
+                                If Len(NewValue) > 0 Then
+                                    ' Update attribute only if Excel has a value
+                                    BlockArray(j).TextString = NewValue
+                                    UpdateCount = UpdateCount + 1
+                                    Trace "  [" & TagName & "] '" & OldValue & "' -> '" & NewValue & "'"
+                                Else
+                                    ' Excel cell is empty - preserve existing AutoCAD value
+                                    EmptyCount = EmptyCount + 1
+                                    Trace "  [" & TagName & "] SKIPPED (Excel empty, preserving '" & OldValue & "')"
+                                End If
+                            Else
+                                ' No matching column found in Excel
+                                SkippedCount = SkippedCount + 1
+                                Trace "  [" & TagName & "] SKIPPED (no Excel column)"
+                            End If
+NextAttribute:
                         Next j
+                    Else
+                        Trace "Block has no attributes"
                     End If
                 Else
+                    ' Text or MText entity
+                    StepMsg = "Update text entity: row=" & i
+                    Trace StepMsg
+                    
                     If oEntity.EntityName = "AcDbText" Then
                         Set oText = oEntity
-                        oText.TextString = Cells(i, 8).Value
+                        NewValue = CStr(Cells(i, 8).Value)
+                        If Len(NewValue) > 0 Then
+                            OldValue = oText.TextString
+                            oText.TextString = NewValue
+                            UpdateCount = UpdateCount + 1
+                            Trace "  [TEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                        Else
+                            EmptyCount = EmptyCount + 1
+                            Trace "  [TEXT] SKIPPED (Excel empty)"
+                        End If
                     Else
                         Set oMText = oEntity
-                        oMText.TextString = Cells(i, 8).Value
+                        NewValue = CStr(Cells(i, 8).Value)
+                        If Len(NewValue) > 0 Then
+                            OldValue = oMText.TextString
+                            oMText.TextString = NewValue
+                            UpdateCount = UpdateCount + 1
+                            Trace "  [MTEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                        Else
+                            EmptyCount = EmptyCount + 1
+                            Trace "  [MTEXT] SKIPPED (Excel empty)"
+                        End If
                     End If
                 End If
             End If
         End If
     Loop
+    
+    ' Export summary
+    Trace "VieDATA completed: Updated=" & UpdateCount & ", Skipped(no column)=" & SkippedCount & ", Preserved(empty)=" & EmptyCount
   
 Cleanup:
     On Error Resume Next
@@ -794,7 +884,9 @@ Cleanup:
     Exit Sub
     
 ErrHandler:
-    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Vie DATA"
+    Trace "ERROR in VieDATA: " & Err.Description & " @ " & StepMsg
+    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description & vbCrLf & _
+          "Vaihe: " & StepMsg, vbCritical, "Vie DATA"
     Resume Cleanup
 End Sub
 
