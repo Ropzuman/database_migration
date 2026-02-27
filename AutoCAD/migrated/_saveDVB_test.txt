@@ -1,0 +1,2 @@
+AutoCAD versio: 23.0s (LMS Tech)
+SaveDVB virhe 438: Object doesn't support this property or method

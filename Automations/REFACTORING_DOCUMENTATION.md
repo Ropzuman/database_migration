@@ -1,7 +1,7 @@
 # VBA AUTOMATION SCRIPTS - REFACTORING DOCUMENTATION
 
 **Päivitetty:** 27.2.2026  
-**Versio:** 2.0 (64-bit Migration)  
+**Versio:** 3.0 (AutoCAD DVB 64-bit Migration)  
 **Tekijä:** Legacy VBA Migration Agent
 
 ---
@@ -611,3 +611,207 @@ Jos skandinaaviset merkit ™ (ä, ö, å) näkyvät väärin:
 
 **Päivitetty:** 27.2.2026  
 **Status:** ✅ PRODUCTION READY
+
+---
+
+## 🔧 AUTOCAD DVB 64-BIT MIGRAATIO (27.2.2026)
+
+### Tausta
+
+AutoCAD-makrot (44 kpl `.dvb`-tiedostoa) sisälsivät 32-bittistä VBA-koodia joka ei toimi 64-bittisessä AutoCAD 2019 -ympäristössä. Ongelmat löydettiin automaattisella skannerilla ja korjattiin kaikkiin 16 ongelmatiedostoon (112 komponenttia).
+
+---
+
+### Ympäristö
+
+| Komponentti | Tiedot |
+|---|---|
+| AutoCAD | 2019 (23.0s LMS Tech), 64-bit |
+| COM ProgID | `AutoCAD.Application.23` |
+| PowerShell | Windows PowerShell 5.1 (ei PS7/pwsh) |
+| DVB-projekteja | 43 kpl (2 tyhjää) |
+| Exportoituja komponentteja | 112 (.bas + .cls + .frm) |
+
+> **Kriittinen rajoite:** `Marshal.GetActiveObject()` ei ole käytettävissä PowerShell 7:ssä — kaikki AutoCAD COM -skriptit pitää ajaa `powershell.exe` (WinPS 5.1) kautta. PS5.1 vaatii lisäksi UTF-8 BOM -enkoodauksen suomalaisten merkkien (ääkköset) oikeaan näyttämiseen.
+
+---
+
+### 64-bitti-ongelmat ja korjaukset
+
+#### Ongelmatyyppi 1: `Declare` ilman `PtrSafe`
+
+**Oireilu:** AutoCAD VBA käynnistyessä kaatuu virhekoodilla 48 tai "Bad DLL calling convention"
+
+```vba
+' ENNEN (kaatuu 64-bitissä):
+Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    (pOpenfilename As OPENFILENAME) As Long
+
+' JÄLKEEN (toimii 64-bitissä):
+Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    (pOpenfilename As OPENFILENAME) As Long
+```
+
+**Löydettiin:** 58 esiintymää 16 tiedostossa
+
+#### Ongelmatyyppi 2: Handle-muuttujat `As Long`
+
+**Oireilu:** Muistikorruptio 64-bittisessä ympäristössä — osoittimet katkeavat 32-bittiseen
+
+```vba
+' ENNEN (muistikorruptio 64-bitissä):
+Public Type OPENFILENAME
+    hwndOwner As Long     ' 32-bit osoitin - katkeaa 64-bitissä!
+    hInstance As Long
+End Type
+
+Declare Function FindWindow ... As Long  ' Haussa palauttama arvo katkeaa
+
+' JÄLKEEN (toimii 64-bitissä):
+Public Type OPENFILENAME
+    hwndOwner As LongPtr  ' 64-bit osoitin - oikea koko kaikilla alustoilla
+    hInstance As LongPtr
+End Type
+
+Declare PtrSafe Function FindWindow ... As LongPtr
+```
+
+**Löydettiin:** 20 esiintymää
+
+#### Ongelmatyyppi 3: `BrowseInfo`-tyyppirakenne (MultiPlot-perhe)
+
+Kansioselausdialogi (`SHBrowseForFolder`) käyttää `BrowseInfo`-tyyppistä rakennetta jossa useita handle- ja osoitinmuuttujia:
+
+```vba
+' ENNEN:
+Private Type BrowseInfo
+    hOwner      As Long   ' ikkunakahva
+    pIDLRoot    As Long   ' PIDL-osoitin
+    pszDisplayName As Long
+    lpszTitle   As Long
+    ulFlags     As Long
+    lpfn        As Long   ' callback-osoitin
+    lParam      As Long   ' callback-data
+    iImage      As Long
+End Type
+
+Private Declare Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" _
+    (ByVal pidList As Long, ByVal lpBuffer As String) As Long
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" _
+    (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As Long)
+
+' JÄLKEEN:
+Private Type BrowseInfo
+    hOwner      As LongPtr
+    pIDLRoot    As LongPtr
+    pszDisplayName As LongPtr
+    lpszTitle   As LongPtr
+    ulFlags     As Long       ' lippubitti - EI osoitin, pysyy Long
+    lpfn        As LongPtr
+    lParam      As LongPtr
+    iImage      As Long       ' kokonaisluku - EI osoitin, pysyy Long
+End Type
+
+Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
+Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" _
+    (ByVal pidList As LongPtr, ByVal lpBuffer As String) As Long
+Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" _
+    (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
+Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
+```
+
+---
+
+### Korjatut tiedostot
+
+#### Ryhmä A — Yksinkertainen kaava (12 tiedostoa)
+
+Sisältää: `GetOpenFileName`, `FindWindow`, `OPENFILENAME`-tyyppi
+
+| Tiedosto | Korjatut ongelmat |
+|---|---|
+| `Arkistotulostus\General.bas` | PtrSafe (3), LongPtr OPENFILENAME (2), FindWindow return |
+| `KuvienSelaus\General.bas` | PtrSafe (3), LongPtr OPENFILENAME (2), FindWindow return |
+| `KuvienSelaus\Formi.frm` | PtrSafe (2), LongPtr BrowseInfo (5), WHandle + item muuttujat |
+| `Interlocking\Start.bas` | PtrSafe (3), LongPtr OPENFILENAME (2), FindWindow return |
+| `Interlocking_RtoL\Start.bas` | sama |
+| `Interlocking_SF\Start.bas` | sama |
+| `Interlocking_SFold\Start.bas` | sama |
+| `MetsoIlock\Start.bas` | sama |
+| `MotTAGIns\Aloitus.bas` | sama |
+| `MotTAGIns2\Aloitus.bas` | sama |
+| `Pos\Start.bas` | sama |
+| `Positions\Start.bas` | sama |
+| `Positions2\Start.bas` | sama |
+
+#### Ryhmä B — Laaja kaava (4 tiedostoa, MultiPlot-perhe)
+
+Sisältää kaiken yllä + `SHBrowseForFolder`, `BrowseInfo`-tyyppi, `SendMessage`, `CoTaskMemFree`, `ValitseHakem`- ja `BrowseCallbackProc`-funktiot
+
+| Tiedosto | Huomio |
+|---|---|
+| `MultiPlot\General.bas` | 190 riviä, sisältää myös `FSO`-objektin |
+| `MultiPlot_OLD\General.bas` | 124 riviä, kovakoodattu polku `K:\PROJECTS` |
+| `MultiPlot_OLD2\General.bas` | 124 riviä, kovakoodattu polku `P:\PROJEKTI` |
+| `MultiPlot_TW\General.bas` | 124 riviä, kovakoodattu polku `P:\PROJEKTI` |
+
+---
+
+### Skannerit
+
+#### `_scan_64bit.ps1`
+
+Skannaa `.bas` ja `.cls` tiedostot kolmesta kategoriasta:
+
+```powershell
+# 1. Declare ilman PtrSafe
+if ($line -match 'Declare\s+(Function|Sub)' -and $line -notmatch 'PtrSafe')
+
+# 2. Long-tyyppiset handle-muuttujat (ei LongPtr)
+if ($line -match '\bAs\s+Long\b' -and $line -notmatch '\bAs\s+LongPtr\b' `
+    -and $line -match '\b(hWnd|hDC|hWin|hwnd|pidList|pvoid|lParam|wParam)\b')
+
+# 3. Jet-ajuri (Access-yhteydessä)
+if ($line -match 'Jet\.OLEDB|Microsoft\.Jet')
+```
+
+#### `_scan_frm.ps1`
+
+Sama logiikka `.frm`-lomakkeille erikseen (alkuperäinen skanneri jätti nämä käsittelemättä).
+
+**Skannauksen lopputulos: 0 ongelmaa kaikissa 112 komponentissa.**
+
+---
+
+### Import-skripti: `AutoCAD_DVB_Import_Run.ps1`
+
+Skripti suorittaa seuraavan ketjun jokaiselle projektille:
+
+```
+LoadDVB(alkuperäinen.dvb)
+  → poista vanhat komponentit (paitsi ThisDrawing)
+  → tuo korjatut .bas/.cls/.frm tiedostot
+  → luo väliaikainen helper-moduuli ACADProjectiin
+  → RunMacro("HelperModuuli.DoSave")
+    → Application.SaveDVB("migrated/projekti.dvb")  ← ajetaan AutoCADin sisällä
+  → poista helper-moduuli
+UnloadDVB(alkuperäinen.dvb)
+```
+
+**Tekninen syy RunMacro-rakenteelle:** `Application.SaveDVB` on AutoCAD VBA -ympäristön sisäinen metodi joka ei näy COM-automaatiorajapinnan kautta (`IDispatch`). Sen kutsuminen onnistuu vain ajamalla koodi AutoCADin VBA-moottorin sisällä `RunMacro`-kutsulla.
+
+> **Varoitus:** ACADProjectin globaalin projektin pitää olla "puhdas" (vain `ThisDrawing`-komponentti) ennen skriptin ajoa. Jos edellinen ajo jäi kesken, sinne voi jäädä ylimääräisiä moduuleja jotka estävät `RunMacro`-kutsun. Tarkista AutoCAD VBE-editorista ennen ajoa.
+
+---
+
+### Tunnetut rajoitteet
+
+| Rajoite | Kuvaus |
+|---|---|
+| PowerShell 7 ei toimi | `Marshal.GetActiveObject()` puuttuu — käytä `powershell.exe` |
+| UTF-8 BOM pakollinen | PS5.1 tulkitsee ääkkömset väärin ilman BOM-tavuja |
+| SaveDVB ei näy COM:ssa | Vaatii RunMacro-kiertotien (ks. yllä) |
+| ACADProject pitää olla puhdas | Ylimääräiset moduulit estävät RunMacro-kutsun |
+| `.frx`-binääritiedostot | Lomakkeisiin liittyvät `.frx`-tiedostot kopioidaan mukana automaattisesti importin yhteydessä |

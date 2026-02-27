@@ -1,14 +1,14 @@
 # VBA AUTOMATION SCRIPTS - KÄYTTÖOHJE
 
-**Versio:** 2.1 (64-bit)  
+**Versio:** 2.3 (64-bit AutoCAD Migration)  
 **Päivitetty:** 27.2.2026  
-**Ympäristö:** Microsoft Office 365 (64-bit)
+**Ympäristö:** Microsoft Office 365 (64-bit) + AutoCAD 2019 (64-bit)
 
 ---
 
 ## 📖 YLEISKATSAUS
 
-Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-tietokantoihin ja Excel-työkirjoihin. Skriptit on optimoitu **64-bittiselle Office 365** -ympäristölle.
+Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-tietokantoihin, Excel-työkirjoihin ja AutoCAD DVB-projektien purkamisen. Skriptit on optimoitu **64-bittiselle Office 365** -ympäristölle ja **AutoCAD 2019** -integrointiin.
 
 ### Mitä skriptit tekevät?
 
@@ -27,6 +27,21 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
 - Poistaa automaattisesti tiedostojen header-metatiedot
 - Tallentaa työkirjat väliaikaisesti ja korvaa alkuperäiset
 
+#### **AutoCAD_DVB_Import_Run.ps1** ⭐ UUSI
+
+- Importoi korjatut VBA-tiedostot takaisin AutoCAD DVB-projekteihin
+- Käy läpi kaikki `exported/<projektinimi>/` -kansiot automaattisesti
+- Korvaa komponentit korjatuilla .bas/.cls/.frm-tiedostoilla
+- Tallentaa korjatut projektit kansioon `AutoCAD/migrated/`
+- Käyttää AutoCAD COM + RunMacro + SaveDVB -ketjua
+
+#### **_scan_64bit.ps1** + **_scan_frm.ps1**
+
+- Skannaavat kaikki exportoidut VBA-tiedostot 64-bitti-ongelmien varalta
+- Tunnistavat: `Declare` ilman `PtrSafe`, `As Long` handle-muuttujissa
+- `_scan_64bit.ps1` käsittelee .bas ja .cls tiedostot
+- `_scan_frm.ps1` käsittelee .frm lomake-tiedostot
+
 ---
 
 ## ⚙️ JÄRJESTELMÄVAATIMUKSET
@@ -38,12 +53,19 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
 - ✅ **Microsoft Office 365** (64-bit)
   - Access (Access_automaatio.ps1)
   - Excel (Excel_automaatio.ps1)
+- ✅ **AutoCAD 2019** (64-bit) tai uudempi (AutoCAD_DVB_Export.ps1)
 
 ### Tarkista Office-versio
 
 1. Avaa Word/Excel/Access
 2. Tiedosto → Tili → Tietoja Wordista/Excelistä
 3. Ylhäällä pitää näkyä **"Microsoft Office 365 (64-bit)"**
+
+### Tarkista AutoCAD-versio
+
+1. Avaa AutoCAD
+2. Kirjoita komentoriviin: `ABOUT`
+3. Tarkista: **"AutoCAD 2019"** tai uudempi + **"64-bit"**
 
 ### Tarkista PowerShell-versio
 
@@ -85,7 +107,7 @@ Avaa PowerShell ja aja:
 5. **Vastaa kysymyksiin:**
    - **VAIHE 1 - Component files folder:** Hakemisto, jossa .bas/.cls-tiedostot (esim. `c:\database_migration\Access\MAINEQ\`)
    - **VAIHE 2 - Access file path:** Polku .accdb-tiedostoon (esim. `L:\PROJDATA\MAINEQ.accdb`)
-   
+
    **HUOM:** Skripti skannaa automaattisesti kaikki .bas ja .cls -tiedostot lähdehakemistosta - ei tarvitse määritellä moduulilistaa!
 
 ### Excel-työkirjojen päivitys
@@ -113,8 +135,48 @@ Avaa PowerShell ja aja:
 5. **Vastaa kysymyksiin:**
    - **VAIHE 1 - Module files folder:** Hakemisto, jossa .bas-tiedostot
    - **VAIHE 2 - Excel files folder:** Hakemisto, jossa .xlsm-tiedostot
-   
+
    **HUOM:** Skripti skannaa automaattisesti kaikki .bas-tiedostot lähdehakemistosta - ei tarvitse määritellä moduulilistaa!
+
+### AutoCAD DVB-projektien 64-bitti-migraatio
+
+#### Vaihe 1: Exportointi (kertaluonteinen — jo tehty)
+
+VBA-koodi on jo exportoitu kansioon `AutoCAD/exported/` (43 projektia, 112 komponenttia).  
+Export tehtiin manuaalisesti AutoCADin COM-rajapinnan kautta 27.2.2026.
+
+#### Vaihe 2: Skannaus ja korjaus
+
+1. **Aja 64-bitti-skanneri:**
+
+   ```powershell
+   powershell.exe -ExecutionPolicy Bypass -File ./_scan_64bit.ps1
+   powershell.exe -ExecutionPolicy Bypass -File ./_scan_frm.ps1
+   ```
+
+   Tulostaa kaikki `DECLARE_NO_PTRSAFE` ja `LONG_HANDLE` -ongelmat tiedostoittain.
+
+2. **Korjaa löydetyt ongelmat** manuaalisesti tai editorilla `AutoCAD/exported/`-kansiossa.
+
+#### Vaihe 3: Import takaisin DVB-tiedostoihin
+
+1. **Varmista AutoCAD on käynnissä** (AutoCAD 2019+)
+
+2. **Siirry Automations-hakemistoon**
+
+   ```powershell
+   cd c:\database_migration\Automations
+   ```
+
+3. **Aja import-skripti WinPS 5.1:llä** (ei pwsh/PS7)
+
+   ```powershell
+   powershell.exe -ExecutionPolicy Bypass -File AutoCAD_DVB_Import_Run.ps1
+   ```
+
+   **HUOM:** Skripti käyttää `powershell.exe` (Windows PowerShell 5.1) — ei toimi `pwsh`:lla (PS7), koska `Marshal.GetActiveObject()` puuttuu PS7:sta.
+
+4. **Korjatut DVB-tiedostot** tallennetaan kansioon `AutoCAD/migrated/`.
 
 ---
 
@@ -140,7 +202,15 @@ $DefaultModulePath = 'c:\database_migration\Excel\Moduulit\'
 $DefaultExcelFilesPath = 'c:\projektit\tools\'
 ```
 
-Kun oletusarvot on asetettu, voit vain painaa `Enter` kysymysten kohdalla.
+### AutoCAD_DVB_Import_Run.ps1
+
+Avaa tiedosto ja muokkaa riviä 5:
+
+```powershell
+$dvbSource  = 'C:\database_migration\AutoCAD'       # Alkuperäiset DVB-tiedostot
+$exportRoot = 'C:\database_migration\AutoCAD\exported'  # Korjatut VBA-lähdekoodit
+$migrRoot   = 'C:\database_migration\AutoCAD\migrated'  # Import-tulos
+```
 
 ---
 
@@ -148,11 +218,12 @@ Kun oletusarvot on asetettu, voit vain painaa `Enter` kysymysten kohdalla.
 
 ### Moduulit skannataan automaattisesti
 
-**Skriptit eivät enää vaadi kiinteäkoodattuja moduulilistoja!** 
+**Skriptit eivät enää vaadi kiinteäkoodattuja moduulilistoja!**
 
 Molemmat skriptit **skannaavat automaattisesti** kaikki .bas ja .cls -tiedostot lähdehakemistosta:
 
 #### Access_automaatio.ps1
+
 ```powershell
 # Skannaa kaikki .bas ja .cls -tiedostot:
 $componentFiles = Get-ChildItem -Path $componentPath -Filter "*.bas", "*.cls"
@@ -160,6 +231,7 @@ $componentNames = $componentFiles | ForEach-Object { $_.BaseName }
 ```
 
 Tulostaa esim:
+
 ```
 09:15:35 [OK] Löytyi 7 komponenttia:
   - Module1
@@ -172,6 +244,7 @@ Tulostaa esim:
 ```
 
 #### Excel_automaatio.ps1
+
 ```powershell
 # Skannaa kaikki .bas -tiedostot:
 $moduleFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"
@@ -179,6 +252,7 @@ $moduleNames = $moduleFiles | ForEach-Object { $_.BaseName }
 ```
 
 Tulostaa esim:
+
 ```
 14:22:15 [OK] Löytyi 3 moduulia:
   - Module1
@@ -186,7 +260,7 @@ Tulostaa esim:
   - Module3
 ```
 
-### Edut:
+### Edut
 
 - ✅ **Ei manuaalista konfigurointia** - lisää vain .bas/.cls-tiedosto kansioon
 - ✅ **Ei virheitä kirjoitusvirheiden vuoksi** - tiedostonimet määrittävät moduulit
@@ -367,12 +441,31 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 Automations/
 ├── Access_automaatio.ps1          # Access-tietokantojen päivitys
 ├── Excel_automaatio.ps1           # Excel-työkirjojen päivitys
+├── AutoCAD_DVB_Import_Run.ps1     # AutoCAD DVB-projektien import (64-bit korjattu)
+├── _scan_64bit.ps1                # 64-bitti-skanneri (.bas/.cls)
+├── _scan_frm.ps1                  # 64-bitti-skanneri (.frm-lomakkeet)
+├── _fix_encoding.ps1              # UTF-8 BOM -lisäys PS5.1-yhteensopivuuteen
 ├── README.md                      # Tämä ohje
 ├── REFACTORING_DOCUMENTATION.md  # Tekninen dokumentaatio
 └── access_vba_exports/            # VBA-moduulien varmistuskopiot
     ├── MAINEQ_OLD/
     ├── PIPE_OLD/
     └── ...
+```
+
+```
+AutoCAD/
+├── *.dvb                          # Alkuperäiset binaariset DVB-projektit
+├── exported/                      # Exportatut VBA-tiedostot (64-bit korjattu)
+│   ├── Arkistotulostus/
+│   │   ├── General.bas            # PtrSafe + LongPtr korjattu
+│   │   └── Formi.frm
+│   ├── MultiPlot/
+│   │   └── General.bas            # PtrSafe + LongPtr + BrowseInfo korjattu
+│   ├── ...                        # 43 projektia yhteensä
+│   └── _64BIT_ANALYSIS.txt        # Skannausraportti
+└── migrated/                      # Import-skriptin tulostama kansio
+    └── *.dvb                      # 64-bit korjatut DVB-tiedostot
 ```
 
 ---
@@ -404,6 +497,24 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 ---
 
 ## 🔄 VERSIOHISTORIA
+
+### Versio 2.3 (27.2.2026) - AutoCAD DVB 64-bit Migration
+
+- ✅ **AutoCAD_DVB_Import_Run.ps1** - DVB-projektien import korjatuista .bas/.cls/.frm-tiedostoista
+- ✅ **_scan_64bit.ps1** - Automaattinen 64-bitti-skanneri .bas/.cls-tiedostoille
+- ✅ **_scan_frm.ps1** - Automaattinen 64-bitti-skanneri .frm-lomakkeille
+- ✅ **64-bitti-korjaukset** - 78 ongelmaa korjattu 16 tiedostossa + 2 .frm-tiedostossa
+- ✅ **PtrSafe-muunnos** - Kaikki Declare-lauseet päivitetty `PtrSafe`-avainsanalla
+- ✅ **LongPtr-muunnos** - Handle-muuttujat muutettu `As LongPtr` -tyypeiksi
+- ✅ **BrowseInfo-tyyppirakenne** - `SHBrowseForFolder`-kutsuihin liittyvät tyypit korjattu
+- ✅ **RunMacro+SaveDVB** - Import käyttää RunMacro-tekniikkaa DVB-tallennukseen
+- 🗑️ **Poistettu:** AutoCAD_DVB_Export.ps1, AutoCAD_DVB_Test.ps1 ja muut tilapäisskriptit
+
+### Versio 2.2 (27.2.2026) - AutoCAD DVB Export
+
+- ✅ Exportoitu 43/43 DVB-projektia (112 komponenttia) kansioon `AutoCAD/exported/`
+- ✅ AutoCAD COM-integraatio (`GetActiveObject` + VBE-rajapinta)
+- ✅ PowerShell 5.1 / UTF-8 BOM -yhteensopivuuskorjaukset
 
 ### Versio 2.1 (27.2.2026) - Automation & UX Improvements
 
@@ -442,5 +553,5 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 ---
 
 **Päivitetty:** 27.2.2026  
-**Versio:** 2.1  
-**Status:** ✅ PRODUCTION READY
+**Versio:** 2.3  
+**Status:** ✅ PRODUCTION READY (AutoCAD DVB 64-bit migraatio valmis)
