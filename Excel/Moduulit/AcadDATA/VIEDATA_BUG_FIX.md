@@ -33,6 +33,7 @@ End If
 ```
 
 **Ongelmat:**
+
 - **Ei TAG-matchingia:** Koodi oletti, että attribuutit ovat samassa järjestyksessä kuin Excel-sarakkeet
 - **Index-pohjainen logiikka:** `8 + j` oletti, että sarake H on ensimmäinen attribuutti, sarake I toinen jne.
 - **Tyhjennys:** Jos `Cells(i, 8 + j).Text` oli tyhjä, attribuutti tyhjennettiin
@@ -95,10 +96,12 @@ End If
 ### 1. TAG-pohjainen Matching
 
 **Ennen:**
+
 - Attribuutit päivitettiin index-järjestyksessä (`8 + j`)
 - Ei tarkistettu `TagString`-arvoa
 
 **Jälkeen:**
+
 - Jokaisen attribuutin `TagString` luetaan
 - Haetaan vastaava sarake riviltä 1 (header row)
 - Päivitys tapahtuu vain jos TAG-nimi löytyy
@@ -106,9 +109,11 @@ End If
 ### 2. Tyhjien Arvojen Suojaus
 
 **Ennen:**
+
 - Jos Excel-solu oli tyhjä, attribuutti tyhjennettiin: `BlockArray(j).TextString = ""`
 
 **Jälkeen:**
+
 - Tarkistetaan `Len(NewValue) > 0`
 - Jos Excel-solu on tyhjä, **säilytetään** AutoCAD:ssa oleva arvo
 - Logitetaan suojatut arvot: `"SKIPPED (Excel empty, preserving 'XXX')"`
@@ -116,6 +121,7 @@ End If
 ### 3. Debug.Print-seuranta
 
 **Lisätty:**
+
 - `Trace`-kutsut jokaiseen vaiheeseen
 - `StepMsg`-muuttuja virhetilanteita varten
 - Laskurit: `UpdateCount`, `SkippedCount`, `EmptyCount`
@@ -137,6 +143,7 @@ End If
 ### 4. Virheenkäsittelyn Parannus
 
 **Lisätty:**
+
 - `StepMsg` virheilmoitukseen: `"Vaihe: Update block attributes: row=5"`
 - Trace-kutsut virhetilanteisiin
 - `On Error Resume Next` attribuutin luvussa (suojaa proxy-objekteilta)
@@ -144,6 +151,7 @@ End If
 ### 5. Tekstientiteettien Suojaus
 
 **Sama logiikka sovellettu myös TEXT/MTEXT-entiteetteihin:**
+
 - Päivitetään vain jos Excel-arvo ei ole tyhjä
 - Logitetaan muutokset: `"[TEXT] 'old' -> 'new'"`
 
@@ -248,7 +256,7 @@ End If
 buf(rowUsed, colIdx) = BlockArray(jj).TextString
 ```
 
-### VieDATA (Vienti) - NYT SYMMETRINEN!
+### VieDATA (Vienti) - NYT SYMMETRINEN
 
 ```vba
 ' 1. Lue attribuutin TagString
@@ -308,12 +316,13 @@ Const DEBUG_TRACE As Boolean = True  ' Loggaus päälle
 ### Muutokset Suorituskykyyn
 
 - **TuoDATA:** Ei muutoksia (oli jo optimoitu bulk write -puskurilla)
-- **VieDATA:** 
+- **VieDATA:**
   - **+Haku-looppi:** Jokaisen attribuutin kohdalla etsitään sarake (O(n) per attribuutti)
   - **Vaikutus:** Minimaalinen, koska header-haku on nopea (max 256 saraketta)
   - **Esimerkki:** 100 blokkia × 5 attribuuttia = 500 hakua ≈ 0.5 sekuntia
 
 **Suorituskykyvertailu (estimaatti):**
+
 - **Ennen:** ~2 sekuntia per 100 blokkia (virheellinen data)
 - **Jälkeen:** ~2.5 sekuntia per 100 blokkia (korrekti data)
 - **Trade-off:** +25% aikaa, mutta 100% data-integriteetti

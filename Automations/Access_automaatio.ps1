@@ -162,7 +162,8 @@ try {
                     if ($name -like "Form_*") {
                         $isFormComponent = $true
                         $componentType = 100  # vbext_ct_MSForm (lomakkeet)
-                    } else {
+                    }
+                    else {
                         $componentType = 2  # vbext_ct_ClassModule
                     }
                 }

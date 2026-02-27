@@ -9,6 +9,7 @@
 ## 1. ONGELMAN KUVAUS
 
 ### 1.1 Alkuperäinen Virhe
+
 ```
 [HaeData] Haetaan DB1 dataa...
   DB1 rivejä: 2
@@ -17,6 +18,7 @@
 ```
 
 **Oireet:**
+
 - DB1-sheet täyttyi vain header-rivillä (sarakkeiden nimet)
 - Datarivi (rivi 2+) pysyi täysin tyhjänä kaikissa 54 sarakkeessa
 - DB2-sheet toimi normaalisti (ADODB)
@@ -25,10 +27,12 @@
 ### 1.2 Juurisyy
 
 **QueryTable-ongelma (32-bit legacy):**
+
 - Alkuperäinen koodi käytti `QueryTable.Refresh` joka toimi 32-bitissä
 - 64-bit Office 365:ssa QueryTable ei luotettavasti palauttanut dataa
 
 **ADODB + Access-tallennetut kyselyt = Yhteensopimuusongelma:**
+
 ```vba
 ' Main-sheet C8: "ManValveListToExcel" (tallennetun kyselyn nimi)
 Set rs = conn.Execute("SELECT * FROM ManValveListToExcel")
@@ -36,12 +40,14 @@ Set rs = conn.Execute("SELECT * FROM ManValveListToExcel")
 ```
 
 **Access-kyselyn SQL (JET-syntaksi):**
+
 ```sql
 WHERE MANUALVALVES.Area LIKE "VER*"    -- Kaksoislainausmerkit + * wildcard
   AND MANUALVALVES.Deleted = No        -- Boolean-literaali "No"
 ```
 
 **OLEDB odottaa ANSI SQL:**
+
 ```sql
 WHERE MANUALVALVES.Area LIKE 'VER%'    -- Yksinkertaiset lainausmerkit + %
   AND MANUALVALVES.Deleted = 0         -- Numeerinen Boolean
@@ -56,6 +62,7 @@ WHERE MANUALVALVES.Area LIKE 'VER%'    -- Yksinkertaiset lainausmerkit + %
 ### 2.1 Miksi DAO?
 
 **DAO 12.0 (ACE) ominaisuudet:**
+
 - ✅ **Access-natiivi** - Suunniteltu Jet/ACE-tietokannoille
 - ✅ **Tallennetut kyselyt** - Lukee QueryDefs-objekteina suoraan nimellä
 - ✅ **JET SQL -tuki** - Ymmärtää `Like "VER*"`, `Deleted=No`, `IIf()`, `[hakasulkeet]`
@@ -65,6 +72,7 @@ WHERE MANUALVALVES.Area LIKE 'VER%'    -- Yksinkertaiset lainausmerkit + %
 ### 2.2 Hybridilähestymistapa
 
 **DB1: DAO (tallennetut Access-kyselyt)**
+
 ```vba
 Set dbDAO = CreateObject("DAO.DBEngine.120").OpenDatabase(Kanta)
 Set rsDAO = dbDAO.OpenRecordset("ManValveListToExcel")  ' Kyselyn NIMI
@@ -72,6 +80,7 @@ Set rsDAO = dbDAO.OpenRecordset("ManValveListToExcel")  ' Kyselyn NIMI
 ```
 
 **DB2: ADODB (SQL-kyselyt)**
+
 ```vba
 Set conn = CreateObject("ADODB.Connection")
 Set rs = conn.Execute("SELECT * FROM _qryForExcel WHERE ...")  ' SQL-lause
@@ -84,7 +93,8 @@ Set rs = conn.Execute("SELECT * FROM _qryForExcel WHERE ...")  ' SQL-lause
 
 ### 3.1 Module1.bas - HaeData() Refaktorointi
 
-#### Ennen (ADODB kahdelle sheetille):
+#### Ennen (ADODB kahdelle sheetille)
+
 ```vba
 Sub HaeData()
   ' ...
@@ -99,7 +109,8 @@ Sub HaeData()
 End Sub
 ```
 
-#### Jälkeen (DAO DB1:lle, ADODB DB2:lle):
+#### Jälkeen (DAO DB1:lle, ADODB DB2:lle)
+
 ```vba
 Sub HaeData()
   ' === DB1: DAO (tallennetut kyselyt) ===
@@ -129,9 +140,10 @@ Sub HaeData()
 End Sub
 ```
 
-#### Muutokset yksityiskohtaisesti:
+#### Muutokset yksityiskohtaisesti
 
 1. **Muuttujamäärittelyt:**
+
    ```vba
    ' DAO-muuttujat DB1:lle
    Dim dbDAO As Object      ' DAO.Database
@@ -145,6 +157,7 @@ End Sub
    ```
 
 2. **DAO.DBEngine provider-fallback (120 → 36):**
+
    ```vba
    Set dbDAO = CreateObject("DAO.DBEngine.120").OpenDatabase(Kanta)
    If Err.Number <> 0 Then
@@ -154,6 +167,7 @@ End Sub
    ```
 
 3. **Rivi-rivi kopioiminen (DAO-recordset):**
+
    ```vba
    ' DAO ei tue .CopyFromRecordset samalla tavalla kuin ADODB
    rowNum = 2
@@ -170,6 +184,7 @@ End Sub
    ```
 
 4. **Diagnostiikka parannettu:**
+
    ```vba
    Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB1: DAO (tallennetut kyselyt) ==="
    Debug.Print "    Kysely/SQL: " & sSQL(1)
@@ -178,6 +193,7 @@ End Sub
    ```
 
 5. **Cleanup-parannus error handlerissa:**
+
    ```vba
    ErrorHandler:
      On Error Resume Next
@@ -191,6 +207,7 @@ End Sub
 ### 3.2 Module1.bas - Checkout() Footer-merkit valinnaisiksi
 
 **Ennen:**
+
 ```vba
 Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_START")
 If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_START not found"
@@ -198,6 +215,7 @@ If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_START
 ```
 
 **Jälkeen:**
+
 ```vba
 PFStart = 0
 PFEnd = 0
@@ -224,6 +242,7 @@ End If
 ### 3.3 Module2.bas - Käyttäjän korjaus
 
 Käyttäjä korjasi syntaksivirheen Module2.bas:ssä (typo rivissä 5-6):
+
 ```vba
 ' Ennen: "trimm aa whitespacet" ja "synonyymienhyvällä"
 ' Jälkeen: "trimmaa whitespacet" ja "synonyymien avulla"
@@ -236,6 +255,7 @@ Käyttäjä korjasi syntaksivirheen Module2.bas:ssä (typo rivissä 5-6):
 ### 4.1 Testitapaus: VER-P-1005 Manuaaliventtiililuettelo
 
 **Immediate Window -loki (onnistunut):**
+
 ```
 12:55:52 [HaeData] === DB1: DAO (tallennetut kyselyt) ===
   DAO Database avattu
@@ -275,11 +295,13 @@ DB2 rivejä: 2
 ### 5.1 DAO 12.0 (ACE) Tarkistus
 
 **DAO.DBEngine.120 64-bit:**
+
 - ✅ Part of Microsoft Access Database Engine 2016 Redistributable (64-bit)
 - ✅ Asennettu Office 365:n mukana
 - ✅ Fallback DAO.DBEngine.36 (vanha 32/64-bit versio)
 
 **Ei PtrSafe-vaatimuksia:**
+
 - DAO-objektit luodaan `CreateObject()` late bindingillä
 - Ei Win32 API -kutsuja
 - Ei `Declare` -lauseita
@@ -309,9 +331,11 @@ DB2 rivejä: 2
 ### 6.2 Vaikutus käyttäjään
 
 **Ennen:**
+
 1. C8-solussa: `ManValveListToExcel` → DB1 tyhjä → Tuloste tyhjä ❌
 
 **Nyt:**
+
 1. C8-solussa: `ManValveListToExcel` → DB1 täyttyy → Tuloste OK ✅
 2. Footer-merkit voivat puuttua templatesta (ei kaadu) ✅
 3. Verbose debug-lokit helpottavat vianmääritystä ✅
@@ -323,6 +347,7 @@ DB2 rivejä: 2
 ### 7.1 Suositellut parannukset (ei kriittisiä)
 
 1. **DAO-optimointi:** Harkitse `GetRows()` -metodia rivi-rivi -kopioimisen sijaan
+
    ```vba
    Dim dataArray As Variant
    dataArray = rsDAO.GetRows(rsDAO.RecordCount)
@@ -330,6 +355,7 @@ DB2 rivejä: 2
    ```
 
 2. **Provider-automaatti:** Tunnista automaattisesti DAO vs. ADODB kyselyn nimen perusteella
+
    ```vba
    If InStr(sSQL(1), "SELECT") = 0 Then
      ' Tallennetun kyselyn nimi → Käytä DAO

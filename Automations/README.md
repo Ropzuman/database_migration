@@ -1,4 +1,5 @@
 # VBA AUTOMATION SCRIPTS - KÄYTTÖOHJE
+
 **Versio:** 2.0 (64-bit)  
 **Päivitetty:** 27.2.2026  
 **Ympäristö:** Microsoft Office 365 (64-bit)
@@ -12,6 +13,7 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
 ### Mitä skriptit tekevät?
 
 #### **Access_automaatio.ps1**
+
 - Avaa Access-tietokannan (.accdb)
 - Päivittää VBA-moduulit (.bas) ja luokkamoduulit (.cls)
 - Päivittää lomakkeiden (Form_*) VBA-koodin
@@ -19,6 +21,7 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
 - Tallentaa ja sulkee tietokannan turvallisesti
 
 #### **Excel_automaatio.ps1**
+
 - Käy läpi kaikki .xlsm-työkirjat hakemistossa
 - Päivittää VBA-moduulit (.bas)
 - Poistaa automaattisesti tiedostojen header-metatiedot
@@ -29,6 +32,7 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
 ## ⚙️ JÄRJESTELMÄVAATIMUKSET
 
 ### Pakollinen
+
 - ✅ **Windows 10/11** (64-bit)
 - ✅ **PowerShell 5.1+** (64-bit)
 - ✅ **Microsoft Office 365** (64-bit)
@@ -36,15 +40,19 @@ Nämä PowerShell-skriptit automatisoivat VBA-moduulien päivittämisen Access-t
   - Excel (Excel_automaatio.ps1)
 
 ### Tarkista Office-versio
+
 1. Avaa Word/Excel/Access
 2. Tiedosto → Tili → Tietoja Wordista/Excelistä
 3. Ylhäällä pitää näkyä **"Microsoft Office 365 (64-bit)"**
 
 ### Tarkista PowerShell-versio
+
 Avaa PowerShell ja aja:
+
 ```powershell
 [System.IntPtr]::Size
 ```
+
 - Pitää palauttaa **8** (= 64-bit)
 - Jos palauttaa **4** (= 32-bit), käynnistä **"Windows PowerShell"** (ei x86-versiota!)
 
@@ -55,19 +63,21 @@ Avaa PowerShell ja aja:
 ### Access-tietokannan päivitys
 
 1. **Avaa PowerShell Administratorina**
-   - Paina `Win + X` → "Windows PowerShell (järjestelmänvalvoja)"
-   
+
 2. **Siirry Automations-hakemistoon**
+
    ```powershell
    cd c:\database_migration\Automations
    ```
 
 3. **Salli skriptin suoritus** (tarvitsee tehdä vain kerran)
+
    ```powershell
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    ```
 
 4. **Aja skripti**
+
    ```powershell
    .\Access_automaatio.ps1
    ```
@@ -81,16 +91,19 @@ Avaa PowerShell ja aja:
 1. **Avaa PowerShell Administratorina**
 
 2. **Siirry Automations-hakemistoon**
+
    ```powershell
    cd c:\database_migration\Automations
    ```
 
 3. **Salli skriptin suoritus**
+
    ```powershell
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    ```
 
 4. **Aja skripti**
+
    ```powershell
    .\Excel_automaatio.ps1
    ```
@@ -106,14 +119,18 @@ Avaa PowerShell ja aja:
 Jos käytät skriptejä toistuvasti samoilla poluilla, voit asettaa oletusarvot:
 
 ### Access_automaatio.ps1
+
 Avaa tiedosto ja muokkaa rivejä 42-43:
+
 ```powershell
 $DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb'
 $DefaultComponentPath = 'c:\database_migration\Access\MAINEQ\'
 ```
 
 ### Excel_automaatio.ps1
+
 Avaa tiedosto ja muokkaa rivejä 56-57:
+
 ```powershell
 $DefaultExcelFilesPath = 'c:\projektit\tools\'
 $DefaultModulePath = 'c:\database_migration\Excel\Moduulit\'
@@ -128,6 +145,7 @@ Kun oletusarvot on asetettu, voit vain painaa `Enter` kysymysten kohdalla.
 ### Access: Mitä moduuleja päivitetään?
 
 Avaa `Access_automaatio.ps1` ja muokkaa riviä 66-73:
+
 ```powershell
 $componentNames = @(
     "Module1",
@@ -139,6 +157,7 @@ $componentNames = @(
     "Form_Tee Kuvat"
 )
 ```
+
 - ✅ Lisää tai poista moduulien nimiä listalta
 - ⚠️ **TÄRKEÄÄ:** Älä lisää tiedostopäätteitä (.bas/.cls)
 - ⚠️ Lomakkeet (`Form_*`) päivitetään vain, jos ne ovat jo olemassa kannassa
@@ -146,6 +165,7 @@ $componentNames = @(
 ### Excel: Mitä moduuleja päivitetään?
 
 Avaa `Excel_automaatio.ps1` ja muokkaa riviä 79:
+
 ```powershell
 $moduleNames = @("Module1", "Module2", "Module3")
 ```
@@ -157,6 +177,7 @@ $moduleNames = @("Module1", "Module2", "Module3")
 Skriptit tarvitsevat pääsyn VBA-projekteihin. Jos saat virheen **"VBA Project is null"**, tee seuraavat asetukset:
 
 ### Access
+
 1. Avaa Access
 2. Tiedosto → Asetukset → Luottamuskeskus → Luottamuskeskuksen asetukset
 3. **Makrojen asetukset:**
@@ -167,6 +188,7 @@ Skriptit tarvitsevat pääsyn VBA-projekteihin. Jos saat virheen **"VBA Project 
    - ✅ Valitse: "Tämän sijainnin alihakemistot ovat myös luotettuja"
 
 ### Excel
+
 1. Avaa Excel
 2. Tiedosto → Asetukset → Luottamuskeskus → Luottamuskeskuksen asetukset
 3. **Makrojen asetukset:**
@@ -175,6 +197,7 @@ Skriptit tarvitsevat pääsyn VBA-projekteihin. Jos saat virheen **"VBA Project 
    - Lisää työkirjojen ja moduulien polut
 
 ### Windows: Poista tiedoston esto (jos verkosta ladattu)
+
 1. Etsi .accdb/.xlsm-tiedosto
 2. Napsauta hiiren kakkospainikkeella → Ominaisuudet
 3. Jos näet alhaalla **"Turvallisuus: Tämä tiedosto on peräisin toisesta tietokoneesta..."**
@@ -258,44 +281,57 @@ Lisää polku Access-tiedostoon (.accdb) (paina Enter käyttääksesi oletusta):
 ## ⚠️ YLEISIMMÄT VIRHEET
 
 ### 1. "Tämä skripti on suoritettava 64-bittisessä PowerShellissä"
+
 **Syy:** Avattiin PowerShell (x86) vahingossa  
 **Ratkaisu:**
+
 - Sulje nykyinen PowerShell
 - Avaa: `Windows PowerShell` (ilman x86-merkintää)
 - Tarkista: `[System.IntPtr]::Size` pitää palauttaa **8**
 
 ### 2. "VBA Project is null. Check Trust Center settings."
+
 **Syy:** VBA-projektin objektimalliin ei ole pääsyä  
 **Ratkaisu:** Katso kohta **"Turvallisuusasetukset"** yllä
 
 ### 3. "Access-tiedostoa ei löydy tai polku on hakemisto"
+
 **Syy:** Väärä polku tai kirjoitusvirhe  
 **Ratkaisu:**
+
 - Tarkista polku (käytä Tab-key automaattitäydennykseen)
 - Windows Explorerissa: Shift + Oikea nappi → "Kopioi polku nimellä"
 - Liitä polku PowerShelliin (oikea nappi)
 
 ### 4. "Lomake X ei ole olemassa kannassa. Lomakkeita ei voi luoda automaattisesti."
+
 **Syy:** Yritetään päivittää lomaketta, jota ei ole kannassa  
 **Ratkaisu:**
+
 - Poista lomake `$componentNames`-listalta (Access_automaatio.ps1, rivi 66-73)
 - TAI luo lomake ensin manuaalisesti Accessissa
 
 ### 5. "Tiedostoa ei voitu avata 3 yrityksen jälkeen"
+
 **Syy:** Tiedosto on lukittu (toinen käyttäjä, OneDrive-synkronointi)  
 **Ratkaisu:**
+
 - Sulje Access/Excel
 - Tarkista Task Managerista, onko vanhoja Access.exe/Excel.exe-prosesseja (lopeta ne)
 - Jos OneDrive: Odota synkronoinnin valmistumista
 - Yritä uudelleen
 
 ### 6. "Script execution is disabled"
+
 **Syy:** PowerShellin ExecutionPolicy on rajoitettu  
 **Ratkaisu:**
+
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
+
 - Tai avaa PowerShell Administratorina ja aja:
+
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
@@ -321,19 +357,24 @@ Automations/
 ## 📞 TUKI JA VIANMÄÄRITYS
 
 ### Debug-moodi
+
 Jos skripti kaatuu, tarkista:
+
 1. **Aikaleima** viimeisestä onnistuneesta vaiheesta
 2. **Virheviesti** (punainen teksti)
 3. **Virhetyyppi** (jos tulostuu)
 4. **Stack Trace** (jos tulostuu)
 
 ### Lokitiedostot
+
 Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen tiedostoon:
+
 ```powershell
 .\Access_automaatio.ps1 *> loki.txt
 ```
 
 ### Lisätietoja
+
 - Tekninen dokumentaatio: `REFACTORING_DOCUMENTATION.md`
 - Projektiloki: `c:\database_migration\Logs\AUTOMATIONS_LOG.md`
 
@@ -342,6 +383,7 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 ## 🔄 VERSIOHISTORIA
 
 ### Versio 2.0 (27.2.2026) - 64-bit Migration
+
 - ✅ Täydellinen refaktorointi 64-bit Office 365:lle
 - ✅ Korjattu kriittinen VBA Project -bugi (Access)
 - ✅ Lisätty finally-lohko (ei zombie-prosesseja)
@@ -351,6 +393,7 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 - ✅ FileFormat-korjaus (Excel SaveAs)
 
 ### Versio 1.x (2025) - Legacy
+
 - ⚠️ Suunniteltu 32-bitille
 - ❌ Access-skripti ei toiminut (VBA Project -bugi)
 - ❌ Zombie-prosessiongelmia
@@ -371,4 +414,3 @@ Skriptit eivät luo automaattisia lokitiedostoja, mutta voit ohjata tulosteen ti
 **Päivitetty:** 27.2.2026  
 **Versio:** 2.0  
 **Status:** ✅ PRODUCTION READY
-

@@ -1,4 +1,5 @@
 # VBA AUTOMATION SCRIPTS - REFACTORING DOCUMENTATION
+
 **Päivitetty:** 27.2.2026  
 **Versio:** 2.0 (64-bit Migration)  
 **Tekijä:** Legacy VBA Migration Agent
@@ -14,11 +15,13 @@ Tämä dokumentti kuvaa Access- ja Excel-automaatioskriptien täydellisen refakt
 ## 🎯 TAVOITTEET
 
 ### Alkuperäinen ongelma
+
 - **Access_automaatio.ps1**: Ei ole koskaan toiminut (kriittinen VBA Project -viittausbugi)
 - **Excel_automaatio.ps1**: Jättää zombie-prosesseja, ei 64-bit tarkistusta
 - **Molemmat**: Epäluotettava header-parsaus, heikko virheenkäsittely
 
 ### Refaktoroinnin tavoitteet
+
 1. ✅ Korjata kaikki kriittiset bugit
 2. ✅ Optimoida 64-bittiselle Office 365:lle (ei taaksepäin yhteensopivuutta)
 3. ✅ Parantaa debuggattavuutta (timestamp-logging)
@@ -32,25 +35,31 @@ Tämä dokumentti kuvaa Access- ja Excel-automaatioskriptien täydellisen refakt
 ### Access_automaatio.ps1
 
 #### **BUG #1: VBA Project -viittaus (FATAL)**
+
 **Oireilu:**
+
 - Skripti kaatuu aina VBA-projektiin käsiksi päästessä
 - Virhe: "Object doesn't support this property or method"
 - **Tämä on pääsyy miksi skripti ei ole koskaan toiminut**
 
 **Syy:**
+
 ```powershell
 # VANHA (BUGINEN):
 $vbaProject = $database.Application.VBE.ActiveVBProject
 ```
+
 - `$database = $access.CurrentDb()` palauttaa **DAO.Database** -objektin
 - DAO.Database.Application palauttaa Access.Application-olion, MUTTA...
 - Ketjutus `$database.Application.VBE` on tarpeeton ja aiheuttaa COM-virheen
 
 **Korjaus:**
+
 ```powershell
 # UUSI (TOIMIVA):
 $vbaProject = $access.VBE.ActiveVBProject
 ```
+
 - Suora viittaus `$access` (Access.Application) -objektista
 - VBE (Visual Basic Editor) on suoraan Application-objektin ominaisuus
 
@@ -59,12 +68,15 @@ $vbaProject = $access.VBE.ActiveVBProject
 ---
 
 #### **BUG #2: Lomakkeiden käsittely**
+
 **Oireilu:**
+
 - Skripti yrittää luoda lomakkeita (`Form_*`) VBComponents.Add()-komennolla
 - VBComponents.Add() voi luoda vain moduuleja (1) ja luokkamoduuleja (2)
 - Lomakkeet ovat tyyppiä vbext_ct_MSForm (100), eikä niitä voi luoda koodista
 
 **Syy:**
+
 ```powershell
 # VANHA:
 if (Test-Path $clsPath) {
@@ -73,6 +85,7 @@ if (Test-Path $clsPath) {
 ```
 
 **Korjaus:**
+
 ```powershell
 # UUSI:
 if (Test-Path $clsPath) {
@@ -97,12 +110,15 @@ if ($isFormComponent -and (komponenttia ei löydy)) {
 ---
 
 #### **BUG #3: Header-parsaus**
+
 **Oireilu:**
+
 - `Option Explicit` -rivit poistetaan vahingossa
 - Tyhjien rivien jälkeinen koodi katkeaa
 - Tulos: Korruptoitunut VBA-koodi
 
 **Syy:**
+
 ```powershell
 # VANHA:
 for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -115,6 +131,7 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
 ```
 
 **Korjaus:**
+
 ```powershell
 # UUSI:
 $inHeader = $true
@@ -145,12 +162,15 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
 ---
 
 #### **BUG #4: COM-objektien vuodot**
+
 **Oireilu:**
+
 - Access-prosessit jäävät roikkumaan taustalle ("zombie-prosessit")
 - Useita Accessi.exe-prosesseja Task Managerissa
 - Resurssivuodot pitkäaikaisessa käytössä
 
 **Syy:**
+
 ```powershell
 # VANHA:
 finally {
@@ -159,10 +179,12 @@ finally {
     [System.Runtime.Interopservices.Marshal]::ReleaseComObject($access)
 }
 ```
+
 - `$database` (DAO.Database) jää vapauttamatta
 - `$vbaProject` (VBProject) jää vapauttamatta
 
 **Korjaus:**
+
 ```powershell
 # UUSI:
 finally {
@@ -192,11 +214,14 @@ finally {
 ### Excel_automaatio.ps1
 
 #### **BUG #5: 64-bit tarkistus puuttuu**
+
 **Oireilu:**
+
 - Skripti voi vahingossa ajautua 32-bittisessä PowerShellissä
 - COM-kutsut epäonnistuvat 64-bit Exceliin
 
 **Korjaus:**
+
 ```powershell
 # LISÄTTY:
 if ([System.IntPtr]::Size -ne 8) {
@@ -210,12 +235,15 @@ if ([System.IntPtr]::Size -ne 8) {
 ---
 
 #### **BUG #6: Ei Finally-lohkoa**
+
 **Oireilu:**
+
 - Excel-prosessit jäävät roikkumaan virhetilanteissa
 - Excel.Application-objekti luodaan ennen try-blokkia
 - Virhe ennen ForEach-silmukkaa = zombie Excel
 
 **Syy:**
+
 ```powershell
 # VANHA:
 $excel = New-Object -ComObject Excel.Application  # ⚠️ Ennen try-blokkia!
@@ -227,6 +255,7 @@ $excel.Quit()  # ⚠️ Ei suoriteta virhetilanteessa
 ```
 
 **Korjaus:**
+
 ```powershell
 # UUSI:
 $excel = $null  # Alustus
@@ -249,18 +278,22 @@ finally {
 ---
 
 #### **BUG #7: SaveAs FileFormat puuttuu**
+
 **Oireilu:**
+
 - Tallennusformaatti riippuu Office-versiosta
 - Eri koneilla eri tulokset
 - Joskus .xlsm tallennetaan .xlsx-formaattina (makrot katoavat!)
 
 **Syy:**
+
 ```powershell
 # VANHA:
 $workbook.SaveAs($tempWorkbookPath)  # ⚠️ Ei FileFormat-parametria
 ```
 
 **Korjaus:**
+
 ```powershell
 # UUSI:
 $xlOpenXMLWorkbookMacroEnabled = 52
@@ -274,13 +307,16 @@ $workbook.SaveAs($tempWorkbookPath, $xlOpenXMLWorkbookMacroEnabled)
 ## 🎨 RAKENTEELLISET PARANNUKSET
 
 ### 1. Timestamp-Logging
+
 **Ennen:**
+
 ```powershell
 Write-Host "Tietokanta avattu onnistuneesti."
 Write-Host "Moduuli päivitetty."
 ```
 
 **Nyt:**
+
 ```powershell
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [AVAUS] Avataan tietokanta..."
 Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu onnistuneesti."
@@ -289,6 +325,7 @@ Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: Module1 (45 → 
 ```
 
 **Hyödyt:**
+
 - Suorituksen seuranta reaaliajassa
 - Debuggaus: näkee missä vaiheessa skripti kaatui
 - Aikaleimoja voi verrata virhelokeihin
@@ -296,12 +333,15 @@ Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: Module1 (45 → 
 ---
 
 ### 2. Parannettu virheenkäsittely
+
 **Lisätty:**
+
 - Virhetyyppien tulostus: `$($_.Exception.GetType().FullName)`
 - Stack trace: `$($_.ScriptStackTrace)`
 - Kontekstuaalinen logging (esim. `[TALLENNUS]`, `[MODUULIT]`)
 
 **Esimerkki:**
+
 ```powershell
 catch {
     Write-Error "$(Get-Date -Format 'HH:mm:ss') ✗ VIRHE: $($_.Exception.Message)"
@@ -313,15 +353,20 @@ catch {
 ---
 
 ### 3. Validointi ja tarkistukset
+
 **Lisätty:**
+
 - Tyhjen moduulien tunnistus:
+
   ```powershell
   if ([string]::IsNullOrWhiteSpace($cleanCode)) {
       Write-Host "⚠ VAROITUS: Tiedosto on tyhjä. Ohitetaan."
       continue
   }
   ```
+
 - Rivimäärien seuranta:
+
   ```powershell
   Write-Host "✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)"
   ```
@@ -391,6 +436,7 @@ FINALLY-LOHKO (UUSI!)
 ### Testatut skenaariot
 
 #### Access_automaatio.ps1
+
 - ✅ Standardi-moduulit (.bas)
 - ✅ Luokkamoduulit (.cls)
 - ✅ Lomakkeet (Form_*.cls) - UUSI!
@@ -400,6 +446,7 @@ FINALLY-LOHKO (UUSI!)
 - ✅ COM-objektien vapautus (ei zombieita)
 
 #### Excel_automaatio.ps1
+
 - ✅ Yksittäinen .xlsm
 - ✅ Usea .xlsm samassa kansiossa
 - ✅ Lukitut tiedostot (retry-logiikka)
@@ -426,6 +473,7 @@ FINALLY-LOHKO (UUSI!)
 ## 🔒 TURVALLISUUS
 
 ### Trust Center -asetukset
+
 Molemmat skriptit vaativat:
 
 1. **VBA Project Object Model -pääsy:**
@@ -445,8 +493,10 @@ Molemmat skriptit vaativat:
 
 ### Kun lisäät uusia moduuleja
 
-#### Access:
+#### Access
+
 Päivitä komponenttiluettelo (rivi 70):
+
 ```powershell
 $componentNames = @(
     "Module1",
@@ -456,8 +506,10 @@ $componentNames = @(
 )
 ```
 
-#### Excel:
+#### Excel
+
 Päivitä moduuliluettelo (rivi 89):
+
 ```powershell
 $moduleNames = @(
     "Module1",
@@ -467,12 +519,15 @@ $moduleNames = @(
 ```
 
 ### Encoding-ongelmat
+
 Skriptit käyttävät `UTF8` ilman BOM:ia:
+
 ```powershell
 Get-Content -Path $fullModulePath -Raw -Encoding UTF8
 ```
 
 Jos skandinaaviset merkit ™ (ä, ö, å) näkyvät väärin:
+
 1. Tarkista VBA-tiedoston encoding (pitää olla UTF-8)
 2. Avaa VBA-editorissa ja tallenna uudelleen
 
@@ -522,11 +577,13 @@ Jos skandinaaviset merkit ™ (ä, ö, å) näkyvät väärin:
 ## 📚 VIITTEET
 
 ### Dokumentaatio
+
 - [Microsoft.ACE.OLEDB Provider](https://docs.microsoft.com/en-us/office/client-developer/access/desktop-database-reference/)
 - [Excel VBProject Object Model](https://docs.microsoft.com/en-us/office/vba/api/excel.vbproject)
 - [PowerShell COM Interaction Best Practices](https://docs.microsoft.com/en-us/powershell/scripting/samples/managing-com-objects)
 
 ### Liittyvät lokit
+
 - `Logs/ACCESS_AUTOMATION_TRUST_FIX.md`
 - `Logs/AUTOMATIONS_LOG.md`
 
@@ -535,6 +592,7 @@ Jos skandinaaviset merkit ™ (ä, ö, å) näkyvät väärin:
 ## ✅ YHTEENVETO
 
 ### Ennen refaktorointia
+
 - ❌ Access-skripti ei toiminut (kriittinen bugi)
 - ❌ Zombie-prosessit molemmissa
 - ❌ Heikko virheenkäsittely
@@ -542,6 +600,7 @@ Jos skandinaaviset merkit ™ (ä, ö, å) näkyvät väärin:
 - ❌ Epäluotettava header-parsaus
 
 ### Refaktoroinnin jälkeen
+
 - ✅ Molemmat skriptit toimivat luotettavasti
 - ✅ Ei zombie-prosesseja
 - ✅ Kattava virheenkäsittely + logging
