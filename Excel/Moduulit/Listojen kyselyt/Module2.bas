@@ -200,7 +200,8 @@ Dim processedApprover As Boolean, processedDesc As Boolean
           .Comments(i).Parent.Value = DIDocName1
         Case "docname2"
           .Comments(i).Parent.Value = DIDocName2
-        Case "docname3"          .Comments(i).Parent.Value = DIDocName3
+        Case "docname3"          
+          .Comments(i).Parent.Value = DIDocName3
         Case "metsodocno"
           .Comments(i).Parent.Value = DIMetsoDocNo
         Case "rev"

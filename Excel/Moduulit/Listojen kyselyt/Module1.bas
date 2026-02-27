@@ -86,9 +86,13 @@ Private Sub EndFastMode()
 End Sub
 
 '''
-' HaeData: Hakee datan Access-tietokannasta OLE DB:llä käyttäen faceplatessa määriteltyjä SQL-kyselyitä.
+' HaeData: Hakee datan Access-tietokannasta käyttäen tallennettuja kyselyitä tai SQL-lauseita.
 ' Täyttää DB1 (pääasiallinen body-data) ja DB2 (dokumentin metadata) -sheetit.
-' QueryTable elinkaari: Luo → Päivitä → Poista (ei jätä pysyviä yhteyksiä taustalle).
+' 
+' DB1: Käyttää DAO:ta (Data Access Objects) joka tukee natiivisti Access-tallennettuja kyselyitä
+'      ja JET SQL -syntaksia (Like "pattern", Deleted=No, IIf, jne.)
+' DB2: Käyttää ADODB:ta yhteensopivuuden vuoksi
+' 
 ' Diagnostiikka: Rivimäärät näytetään StatusBarissa ja Immediate Windowissa jokaisen kyselyn jälkeen.
 '''
 Sub HaeData()
@@ -96,11 +100,21 @@ Dim Kanta As String
 Dim sSQL(1 To 2) As String
 Dim Valinta As Long
 Dim i As Long
-Dim TAULUKKO As QueryTable
-Dim Yhteys As String
 Dim ws As Worksheet
 Dim rc As Long
 Dim Provider As String
+Dim emptyCount As Long, colCount As Long, k As Long
+
+' DAO-muuttujat DB1:lle (tallennetut kyselyt)
+Dim dbDAO As Object      ' DAO.Database
+Dim rsDAO As Object      ' DAO.Recordset
+Dim fldDAO As Object     ' DAO.Field
+Dim colData As Long
+
+' ADODB-muuttujat DB2:lle (SQL-kyselyt)
+Dim conn As Object       ' ADODB.Connection
+Dim rs As Object         ' ADODB.Recordset
+Dim fld As Object        ' ADODB.Field
 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Aloitetaan datan haku"
   
@@ -131,65 +145,215 @@ Dim Provider As String
     Exit Sub
   End If
   
+  Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB1: DAO (tallennetut kyselyt) ==="
+  
+  ' Avataan DAO-tietokanta DB1:lle
+  On Error Resume Next
+  Set dbDAO = CreateObject("DAO.DBEngine.120").OpenDatabase(Kanta)
+  If Err.Number <> 0 Then
+    Err.Clear
+    ' Kokeillaan vanhempaa versiota
+    Set dbDAO = CreateObject("DAO.DBEngine.36").OpenDatabase(Kanta)
+  End If
+  On Error GoTo ErrorHandler
+  
+  If dbDAO Is Nothing Then
+    MsgBox "Could not open database with DAO!" & vbCrLf & _
+           "Ensure Microsoft Access Database Engine is installed.", vbCritical, "DAO Error"
+    EndFastMode
+    Exit Sub
+  End If
+  
+  Debug.Print "  DAO Database avattu"
+  
+  ' DB1: Käytetään DAO:ta (tukee tallennettuja kyselyitä ja JET SQL:ää)
+  Set ws = ThisWorkbook.Sheets("DB1")
+  ws.Cells.Clear
+  
+  If sSQL(1) <> "" Then
+    Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB1 dataa..."
+    Debug.Print "    Kysely/SQL: " & sSQL(1)
+    
+    ' DAO.OpenRecordset voi ottaa joko tallenetun kyselyn nimen tai SQL-lauseen
+    Set rsDAO = dbDAO.OpenRecordset(sSQL(1))
+    
+    Debug.Print "    DAO Recordset avattu - Fields: " & rsDAO.Fields.Count & ", EOF: " & rsDAO.EOF & ", BOF: " & rsDAO.BOF
+    
+    If Not rsDAO.EOF Then
+      ' Kirjoitetaan sarakkeiden nimet (header)
+      colData = 1
+      For Each fldDAO In rsDAO.Fields
+        ws.Cells(1, colData).Value = fldDAO.Name
+        colData = colData + 1
+      Next fldDAO
+      
+      ' Kopioidaan data rivi riviltä (DAO ei tue CopyFromRecordset samalla tavalla)
+      Dim rowNum As Long
+      rowNum = 2
+      rsDAO.MoveFirst
+      Do While Not rsDAO.EOF
+        colData = 1
+        For Each fldDAO In rsDAO.Fields
+          ws.Cells(rowNum, colData).Value = fldDAO.Value
+          colData = colData + 1
+        Next fldDAO
+        rowNum = rowNum + 1
+        rsDAO.MoveNext
+      Loop
+      
+      Debug.Print "    DAO data kopioitu: " & (rowNum - 2) & " riviä, " & rsDAO.Fields.Count & " saraketta"
+    Else
+      Debug.Print "    VAROITUS: Kysely ei palauttanut rivejä (EOF=True)"
+      ' Kirjoitetaan silti header
+      colData = 1
+      For Each fldDAO In rsDAO.Fields
+        ws.Cells(1, colData).Value = fldDAO.Name
+        colData = colData + 1
+      Next fldDAO
+    End If
+    
+    rsDAO.Close
+    Set rsDAO = Nothing
+    
+    ' Raportoidaan rivimäärä
+    rc = 0
+    On Error Resume Next
+    rc = ws.UsedRange.Rows.Count
+    On Error GoTo 0
+    Application.StatusBar = "DB1 rows: " & rc
+    Debug.Print "  DB1 rivejä: " & rc
+    
+    ' Debug: Näytä ensimmäiset 2 riviä
+    If rc > 0 Then
+      Debug.Print "    A1 (header): '" & ws.Cells(1, 1).Value & "'"
+      If rc > 1 Then
+        Debug.Print "    A2 (data):   '" & ws.Cells(2, 1).Value & "'"
+        
+        ' Tarkista onko datarivi tyhjä
+        emptyCount = 0
+        colCount = 0
+        On Error Resume Next
+        colCount = ws.UsedRange.Columns.Count
+        On Error GoTo 0
+        
+        If colCount > 0 Then
+          For k = 1 To colCount
+            If ws.Cells(2, k).Value = "" Or IsEmpty(ws.Cells(2, k).Value) Then
+              emptyCount = emptyCount + 1
+            End If
+          Next k
+          
+          If emptyCount = colCount Then
+            Debug.Print "    [VAROITUS] DB1:n datarivi on täysin tyhjä (" & colCount & " saraketta)"
+          Else
+            Debug.Print "    DB1 datarivi OK: " & (colCount - emptyCount) & "/" & colCount & " saraketta sisältää dataa"
+          End If
+        End If
+      End If
+    End If
+  End If
+  
+  ' Suljetaan DAO-tietokanta
+  dbDAO.Close
+  Set dbDAO = Nothing
+  
+  Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB2: ADODB (SQL-kyselyt) ==="
+  
+  ' DB2: Käytetään ADODB:ta (toimii hyvin SQL-kyselyiden kanssa)
   ' OLE DB yhteys ACE provider-fallbackilla (16.0 → 15.0 → 12.0)
   On Error Resume Next
   Provider = "Microsoft.ACE.OLEDB.16.0"
-  Yhteys = "OLEDB;Provider=" & Provider & ";Data Source=" & Kanta
   
-  ' Testataan yhteyttä - jos epäonnistuu, kokeillaan vanhempaa provideria
-  Dim testConn As Object
-  Set testConn = CreateObject("ADODB.Connection")
-  testConn.Open Yhteys
+  Set conn = CreateObject("ADODB.Connection")
+  conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
+  conn.Open
+  
   If Err.Number <> 0 Then
     Err.Clear
     Provider = "Microsoft.ACE.OLEDB.15.0"
-    Yhteys = "OLEDB;Provider=" & Provider & ";Data Source=" & Kanta
-    testConn.Open Yhteys
+    conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
+    conn.Open
     If Err.Number <> 0 Then
       Err.Clear
       Provider = "Microsoft.ACE.OLEDB.12.0"
-      Yhteys = "OLEDB;Provider=" & Provider & ";Data Source=" & Kanta
-      testConn.Open Yhteys
+      conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
+      conn.Open
     End If
   End If
-  testConn.Close
-  Set testConn = Nothing
   On Error GoTo ErrorHandler
   
-  Debug.Print "  OLE DB Provider: " & Provider
+  Debug.Print "  ADODB Provider: " & Provider
+  Debug.Print "  ADODB Connection avattu"
   
-  For i = 1 To 2
-    Set ws = ThisWorkbook.Sheets("DB" & i)
-    ws.Cells.Clear
+  Set ws = ThisWorkbook.Sheets("DB2")
+  ws.Cells.Clear
+  
+  If sSQL(2) <> "" Then
+    Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB2 dataa..."
+    Debug.Print "    SQL: " & sSQL(2)
     
-    If sSQL(i) <> "" Then
-      Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB" & i & " dataa..."
-      ' Luodaan QueryTable, päivitetään, sitten poistetaan (ei pysyviä yhteyksiä)
-      Set TAULUKKO = ws.QueryTables.Add(Connection:=Yhteys, Destination:=ws.Range("A1"))
-      With TAULUKKO
-        .CommandText = sSQL(i)
-        .CommandType = xlCmdSql
-        .FieldNames = True
-        .RefreshStyle = xlInsertDeleteCells
-        .RowNumbers = False
-        .FillAdjacentFormulas = False
-        .HasAutoFormat = True
-        .SaveData = True
-        .BackgroundQuery = False
-        .Refresh
-        .Delete
-      End With
-      Set TAULUKKO = Nothing
-      
-      ' Raportoidaan rivimäärä diagnostiikkaa varten
-      rc = 0
-      On Error Resume Next
-      rc = ws.UsedRange.Rows.Count
-      On Error GoTo 0
-      Application.StatusBar = "DB" & i & " rows: " & rc
-      Debug.Print "  DB" & i & " rivejä: " & rc
+    ' Käytetään ADODB.Recordset
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    ' Yritetään avata adOpenDynamic-tilassa
+    On Error Resume Next
+    rs.Open sSQL(2), conn, 2, 1 ' adOpenDynamic, adLockReadOnly
+    If Err.Number <> 0 Then
+      Debug.Print "    Virhe adOpenDynamic: " & Err.Description & " - yritetään adOpenStatic"
+      Err.Clear
+      rs.Open sSQL(2), conn, 3, 1 ' adOpenStatic, adLockReadOnly
     End If
-  Next i
+    On Error GoTo ErrorHandler
+    
+    Debug.Print "    Recordset avattu - Fields: " & rs.Fields.Count & ", EOF: " & rs.EOF
+    
+    If Not rs.EOF Then
+      ' Kirjoitetaan sarakkeiden nimet (header)
+      colData = 1
+      For Each fld In rs.Fields
+        ws.Cells(1, colData).Value = fld.Name
+        colData = colData + 1
+      Next fld
+      
+      ' Kopioidaan kaikki data kerralla
+      ws.Range("A2").CopyFromRecordset rs
+      Debug.Print "    Recordset kopioitu onnistuneesti"
+    Else
+      Debug.Print "    VAROITUS: SQL-kysely ei palauttanut rivejä (EOF=True)"
+      ' Kirjoitetaan silti header
+      colData = 1
+      For Each fld In rs.Fields
+        ws.Cells(1, colData).Value = fld.Name
+        colData = colData + 1
+      Next fld
+    End If
+    
+    rs.Close
+    Set rs = Nothing
+    
+    rc = 0
+    On Error Resume Next
+    rc = ws.UsedRange.Rows.Count
+    On Error GoTo 0
+    Application.StatusBar = "DB2 rows: " & rc
+    Debug.Print "  DB2 rivejä: " & rc
+    
+    If rc > 0 Then
+      Debug.Print "    A1 (header): '" & ws.Cells(1, 1).Value & "'"
+      If rc > 1 Then
+        Debug.Print "    A2 (data):   '" & ws.Cells(2, 1).Value & "'"
+      End If
+    End If
+  End If
+  
+  ' Suljetaan ADODB-yhteys
+  On Error Resume Next
+  If Not conn Is Nothing Then
+    conn.Close
+    Set conn = Nothing
+  End If
+  On Error GoTo 0
+  
   EndFastMode
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Valmis!"
   MsgBox "Data brought successfully!", vbOKOnly, "Ready"
@@ -197,12 +361,19 @@ Dim Provider As String
   Exit Sub
   
 ErrorHandler:
+  ' Cleanup
+  On Error Resume Next
+  If Not rsDAO Is Nothing Then rsDAO.Close: Set rsDAO = Nothing
+  If Not dbDAO Is Nothing Then dbDAO.Close: Set dbDAO = Nothing
+  If Not rs Is Nothing Then rs.Close: Set rs = Nothing
+  If Not conn Is Nothing Then conn.Close: Set conn = Nothing
+  On Error GoTo 0
+  
   EndFastMode
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData ERROR] " & Err.Number & ": " & Err.Description
-  MsgBox "OLE DB Error: " & Err.Description & vbCrLf & vbCrLf & _
+  MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
          "Database: " & Kanta & vbCrLf & _
-         "Provider: " & Provider & vbCrLf & _
-         "SQL Query " & i & ": " & sSQL(i), vbCritical, "Database Connection Error"
+         "Provider: " & Provider, vbCritical, "Database Connection Error"
   Err.Clear
   Sheets("Main").Select
 End Sub
@@ -622,15 +793,26 @@ Dim wsErrors As Worksheet
     If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&END not found"
     Sarakkeita = foundCell.Column
     
+    ' Footer-merkit ovat valinnaisia (riippuu AddFooter-checkboxista)
+    PFStart = 0
+    PFEnd = 0
     Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_START")
-    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_START not found"
-    PFStart = foundCell.Row + 1
-    
-    Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_END")
-    If foundCell Is Nothing Then Err.Raise vbObjectError + 1, , "&&PAGE_FOOTER_END not found"
-    PFEnd = foundCell.Row - 1
+    If Not foundCell Is Nothing Then
+      PFStart = foundCell.Row + 1
+      Set foundCell = .Cells.Find(What:="&&PAGE_FOOTER_END")
+      If Not foundCell Is Nothing Then
+        PFEnd = foundCell.Row - 1
+      Else
+        Debug.Print "  VAROITUS: &&PAGE_FOOTER_START löytyi mutta &&PAGE_FOOTER_END puuttuu"
+      End If
+    End If
   End With
-  Debug.Print "  Template-merkit löydetty: PH=" & PHStart & ":" & PHEnd & ", Doc=" & DocStart & ":" & DocEnd & ", PF=" & PFStart & ":" & PFEnd & ", Cols=" & Sarakkeita
+  
+  If PFStart > 0 Then
+    Debug.Print "  Template-merkit löydetty: PH=" & PHStart & ":" & PHEnd & ", Doc=" & DocStart & ":" & DocEnd & ", PF=" & PFStart & ":" & PFEnd & ", Cols=" & Sarakkeita
+  Else
+    Debug.Print "  Template-merkit löydetty: PH=" & PHStart & ":" & PHEnd & ", Doc=" & DocStart & ":" & DocEnd & ", PF=EI KÄYTÖSSÄ, Cols=" & Sarakkeita
+  End If
   
   ' Haetaan dokumentin tiedot DB2-sheetiltä
   HaeDocTiedot
