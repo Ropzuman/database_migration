@@ -189,8 +189,8 @@ Jos käytät skriptejä toistuvasti samoilla poluilla, voit asettaa oletusarvot:
 Avaa tiedosto ja muokkaa rivejä 43-44:
 
 ```powershell
-$DefaultComponentPath = 'c:\database_migration\Access\MAINEQ\'
-$DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb'
+$DefaultComponentPath = 'c:\database_migration\Access\MAINEQ\' # Päivitettyjen komponenttian polku
+$DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb' # Access-tiedoston polku
 ```
 
 ### Excel_automaatio.ps1
@@ -198,8 +198,8 @@ $DefaultAccessFilePath = 'L:\PROJDATA\MAINEQ.accdb'
 Avaa tiedosto ja muokkaa rivejä 46-47:
 
 ```powershell
-$DefaultModulePath = 'c:\database_migration\Excel\Moduulit\'
-$DefaultExcelFilesPath = 'c:\projektit\tools\'
+$DefaultModulePath = 'c:\database_migration\Excel\Moduulit\' # Päivitettyjen moduulien polku
+$DefaultExcelFilesPath = 'c:\projektit\tools\' # Excel-työkirjojen polku
 ```
 
 ### AutoCAD_DVB_Import_Run.ps1
