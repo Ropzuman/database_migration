@@ -263,16 +263,17 @@ try {
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KOMPONENTIT] Kaikki komponentit käsitelty."
             
             # 5.3 Tallenna ja sulje
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    [TALLENNUS] Tallennetaan muutokset..."
-            $acCmdSaveDatabase = 19
-            $access.DoCmd.RunCommand($acCmdSaveDatabase) 
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta tallennettiin."
+            # HUOM: CloseCurrentDatabase() tallentaa automaattisesti VBA-projektin.
+            # RunCommand($acCmdSaveDatabase) aiheuttaa COM-virheen jos VBA:ssa syntax-virheitä!
+            Write-Host "$(Get-Date -Format 'HH:mm:ss')    [TALLENNUS] Suljetaan ja tallennetaan tietokanta..."
 
             # Laita varoitukset takaisin päälle
             $access.DoCmd.SetWarnings($true)
             
+            # CloseCurrentDatabase tallentaa VBA-projektin automaattisesti
             $access.CloseCurrentDatabase()
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tiedosto $databasePath päivitetty onnistuneesti!" -ForegroundColor Green
+            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ HUOM: Tarkista VBA syntax-virheet manuaalisesti (Debug → Compile VBA Project)" -ForegroundColor Yellow
 
         }
         catch {

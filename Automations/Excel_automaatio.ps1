@@ -101,10 +101,6 @@ try {
         $workbookPath = $_.FullName
         Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [TYÖKIRJA $currentFileIndex/$totalFiles] KÄSITELLÄÄN: $workbookPath" -ForegroundColor Yellow
 
-        $currentFileIndex++
-        $workbookPath = $_.FullName
-        Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [TYÖKIRJA $currentFileIndex/$totalFiles] KÄSITELLÄÄN: $workbookPath" -ForegroundColor Yellow
-
         $retryCount = 0
         $isOpened = $false
         $workbook = $null
