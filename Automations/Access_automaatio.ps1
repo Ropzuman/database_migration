@@ -104,10 +104,20 @@ try {
     do {
         try {
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan tietokanta..."
-            $access.OpenCurrentDatabase($databasePath) 
+            
+            # KRIITTINEN: Aseta AutomationSecurity ENNEN avausta (estää makrojen automaattisen suorituksen)
+            # Visible = $false on jo asetettu rivillä 39 (Access-objektin luonnin yhteydessä)
+            $access.AutomationSecurity = 1  # msoAutomationSecurityLow
+            
+            # OpenCurrentDatabase(FilePath, [Exclusive], [Password])
+            $access.OpenCurrentDatabase($databasePath, $false, "")
             $database = $access.CurrentDb()
             $isOpened = $true
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu onnistuneesti."
+            
+            # KRIITTINEN: OpenCurrentDatabase() resetoi Visible-arvon, asetetaan uudelleen
+            $access.Visible = $false
+            
+            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu onnistuneesti (Startup ohitettu)."
         }
         catch {
             $retryCount++
@@ -130,9 +140,8 @@ try {
             $access.DoCmd.SetWarnings($false)
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Access-varoitukset poistettu käytöstä."
 
-            # KRIITTINEN KORJAUS: VBA-projektiin pääsy suoraan $access-objektista
-            # Vanha (buginen): $database.Application.VBE.ActiveVBProject
-            # Uusi (toimiva): $access.VBE.ActiveVBProject
+            # KRIITTINEN: VBA-projektiin pääsy suoraan $access-objektista
+            # ($database.Application.VBE.ActiveVBProject ei toimi)
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [VBE] Haetaan VBA-projekti..."
             $vbaProject = $access.VBE.ActiveVBProject
 
@@ -214,7 +223,8 @@ try {
                     }
 
                     # Ota vain VBA-koodi (ilman header-rivejä)
-                    $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
+                    # KRIITTINEN: ÄLÄ käytä Trim() - se poistaa trailing newlinen ja aiheuttaa syntax-virheen!
+                    $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n")
                     
                     if ([string]::IsNullOrWhiteSpace($cleanCode)) {
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ⚠ VAROITUS: Tiedosto $name on tyhjä tai sisältää vain headerit. Ohitetaan." -ForegroundColor Yellow
@@ -241,13 +251,15 @@ try {
                         $component.Name = $name
                     }
 
-                    # Tyhjennä vanha koodi ja aseta uusi
+                    # Tyhjennä vanha koodi ja lisää uusi
                     $codeModule = $component.CodeModule
                     $oldLineCount = $codeModule.CountOfLines
                     
                     if ($oldLineCount -gt 0) {
                         $codeModule.DeleteLines(1, $oldLineCount)
                     }
+                    
+                    # Lisää uusi koodi yhtenä stringinä (AddFromString säilyttää line breaks oikein)
                     $codeModule.AddFromString($cleanCode)
                     
                     $newLineCount = $codeModule.CountOfLines
@@ -256,7 +268,8 @@ try {
                 }
                 catch {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Komponentin $name päivitys epäonnistui: $($_.Exception.Message)" -ForegroundColor Red
-                    Write-Host "$(Get-Date -Format 'HH:mm:ss')             Virhetyyppi: $($_.Exception.GetType().FullName)"
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')             Virhetyyppi: $($_.Exception.GetType().FullName)" -ForegroundColor Yellow
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')             Stack: $($_.ScriptStackTrace)" -ForegroundColor Yellow
                 }
             }
             
