@@ -31,6 +31,9 @@ Public DIDate As String
 Public DIRev As String
 Public DIRevArr() As String
 Public DIRevID As String
+
+' Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
+Private Const MAX_EXCEL_COLUMNS As Long = 16384
 Public DIRevDate As String
 Public DIStatus As String
 
@@ -647,6 +650,7 @@ Dim wsErrors As Worksheet
   Debug.Print "  Etsitään rivimerkit (££ ja £1/2/3)..."
   For i = DocStart To DocEnd
     For j = 1 To Sarakkeita
+      If j > MAX_EXCEL_COLUMNS Then Exit For ' Turvatarkistus
       Arvo = wsTemplate.Cells(i, j).Value
       If Len(Arvo) > 2 Then 'Solussa on dataa
         If Left(Arvo, 2) = "££" Then

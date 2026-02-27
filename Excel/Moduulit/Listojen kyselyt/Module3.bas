@@ -4,14 +4,32 @@
 '''
 Sub Linking()
     ' Vaihtaa LINKING-sheetin näkyvyyden työkirjassa.
+    ' 27.2.2026 - Lisätty monilinkki-varoitus
     On Error GoTo ErrorHandler
     
     Dim i As Long
     Dim linkedSheetFound As Boolean
+    Dim linkingCount As Long
     linkedSheetFound = False
+    linkingCount = 0
     
     Debug.Print Format(Now, "hh:mm:ss") & " [Linking] Vaihdetaan LINKING-sheetin näkyvyyttä"
     
+    ' Lasketaan ensin montako LINKING-sheetiä on
+    For i = 1 To Sheets.Count
+        If LCase(Sheets(i).Name) = "linking" Then
+            linkingCount = linkingCount + 1
+        End If
+    Next i
+    
+    ' Varoitetaan jos useampi
+    If linkingCount > 1 Then
+        Debug.Print "  VAROITUS: Löytyi " & linkingCount & " LINKING-sheetiä - käsitellään vain ensimmäinen"
+        MsgBox "Työkirjassa on " & linkingCount & " LINKING-sheetiä. Käsitellään vain ensimmäinen." & vbCrLf & _
+               "Poista ylimääräiset sheetit manuaalisesti.", vbExclamation, "Useita LINKING-sheetejä"
+    End If
+    
+    ' Vaihdetaan ensimmäisen näkyvyyttä
     For i = 1 To Sheets.Count
         If LCase(Sheets(i).Name) = "linking" Then
             linkedSheetFound = True

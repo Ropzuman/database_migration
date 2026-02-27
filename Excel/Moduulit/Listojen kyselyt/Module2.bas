@@ -6,16 +6,18 @@
 ' - WorkPath tunnistetaan useiden synonyymienhyvällä (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
 '   ja normalisoidaan backslasheilla ja varmistetaan loppuun tulevaksi backslash.
 ' - File otetaan DB2:sta (file/filename/file_name) ja käytetään oletuksena Save As -nimeen GenPrintoutissa.
+' 27.2.2026 - Poistettu duplikaattifunktiot (ne ovat Module1.bas:ssä)
 '''
 
-' Suojaus silmukoiden iteraatioille estääkseen ik uiset silmukat
+' Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
 Private Const MAX_EXCEL_COLUMNS As Long = 16384
 
 Sub HaeDocTiedot()
 '''
 ' HaeDocTiedot: Poimii dokumentin ominaisuudet DB2-sheetistä ja tallentaa ne globaaleihin muuttujiin.
-' Käytetään otsikoiden, alatunnisteiden ja info-kenttien täyttöön tulosteessa.
+' Käytetään otsikoiden,alatunnisteiden ja info-kenttien täyttöön tulosteessa.
 ' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
+' 27.2.2026 - Poistettu duplicate case "status"
 '''
 Dim i As Long
 Dim Arvo As String
@@ -100,8 +102,6 @@ Dim wsDB2 As Worksheet
         End If
       Case "manager"
         DIManager = wsDB2.Cells(2, i).Value
-      Case "status"
-        DIStatus = wsDB2.Cells(2, i).Value
       Case "mill"
         DIMill = wsDB2.Cells(2, i).Value
       Case "departname"
@@ -133,6 +133,7 @@ Sub VaihdaInfo(Optional SheetName As String = "Info")
 '''
 ' VaihdaInfo: Päivittää määritellyn sheetin kommenttimerkatut solut dokumentin ominaisuuksilla.
 ' Käsittelee Info- ja Revisions-sheetit. Käyttää fast mode -tilaa suorituskyvyn parantamiseksi.
+' 27.2.2026 - Lisätty virheenkäsittely
 '''
 Dim i As Long
 Dim Row As Long
@@ -145,9 +146,9 @@ Dim processedApprover As Boolean, processedDesc As Boolean
 
   Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Käsitellään sheet: " & SheetName
 
-  On Error Resume Next
+  On Error GoTo ErrHandler
+  
   Set ws = Sheets(SheetName)
-  On Error GoTo 0
   
   If ws Is Nothing Then
     Debug.Print "  VAROITUS: Sheet '" & SheetName & "' puuttuu!"
@@ -199,8 +200,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
           .Comments(i).Parent.Value = DIDocName1
         Case "docname2"
           .Comments(i).Parent.Value = DIDocName2
-        Case "docname3"
-          .Comments(i).Parent.Value = DIDocName3
+        Case "docname3"          .Comments(i).Parent.Value = DIDocName3
         Case "metsodocno"
           .Comments(i).Parent.Value = DIMetsoDocNo
         Case "rev"
@@ -220,7 +220,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                  End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedRevId = True
             End If
           Else
@@ -240,7 +240,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                   End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedRevDate = True
             End If
           Else
@@ -260,7 +260,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                   End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedDesigner = True
             End If
           End If
@@ -278,7 +278,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                   End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedChecker = True
             End If
           End If
@@ -296,7 +296,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                   End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedApprover = True
             End If
           End If
@@ -314,13 +314,23 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                   End If
                 Next r
               End If
-              On Error GoTo 0
+              On Error GoTo ErrHandler
               processedDesc = True
             End If
           End If
         End Select
       Next i
   End With
+  
+  Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Valmis"
+  Exit Sub
+  
+ErrHandler:
+  Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo ERROR] " & Err.Number & ": " & Err.Description
+  MsgBox "Virhe Info-sheetin päivityksessä:" & vbCrLf & Err.Description & vbCrLf & vbCrLf & _
+         "Sheet: " & SheetName, vbCritical, "VaihdaInfo Error"
+  Err.Clear
+  On Error GoTo 0
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
 '''
@@ -383,7 +393,7 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
            Exit Do
          End If
          j = j + 1
-         ' Turvatarkistus: estä ik uinen silmukka
+         ' Turvatarkistus: estä ikuinen silmukka
          If j > 10000 Then Exit Do
        Loop
        EtsiOts = False
@@ -457,17 +467,25 @@ Sub PopulateRevisionsSimple()
 '''
 ' PopulateRevisionsSimple: Kevyt funktio Revisions-sheetin täyttöön ilman kommenttikäsittelyä.
 ' Etsii ensimmäisen solun revisiodata-merkillä ja kirjoittaa DIRevArr-datan suoraan.
+' 27.2.2026 - Rajoitettu On Error Resume Next -käyttö
 '''
 Dim ws As Worksheet
 Dim r As Long, startRow As Long
 Dim revIdCol As Long, revDateCol As Long, designerCol As Long
 Dim checkerCol As Long, approverCol As Long, descCol As Long
 Dim i As Long
+Dim arrSize As Long
+Dim spacePos As Long, slashPos As Long
+Dim revParts() As String
+Dim revText As String
+Dim slashParts() As String
 
   Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Täytetään Revisions-sheet"
 
   On Error Resume Next
   Set ws = Sheets("Revisions")
+  On Error GoTo 0
+  
   If ws Is Nothing Then
     Debug.Print "  VAROITUS: Revisions-sheet puuttuu - ohitetaan"
     Exit Sub
@@ -478,24 +496,27 @@ Dim i As Long
     Debug.Print "  VAROITUS: DIRevArr ei ole taulukko - ohitetaan"
     Exit Sub
   End If
+  
   On Error Resume Next
-  Dim arrSize As Long
   arrSize = UBound(DIRevArr) - LBound(DIRevArr) + 1
+  On Error GoTo 0
+  
   If Err.Number <> 0 Or arrSize <= 0 Then
     Debug.Print "  VAROITUS: DIRevArr tyhjä - ohitetaan"
-    On Error GoTo 0
     Exit Sub
   End If
-  On Error GoTo 0
   
   Debug.Print "  DIRevArr-koko: " & arrSize
   
   ' Etsitään sarakkeet hakemalla kommenttimerkit ensimmäisestä 20 rivistä
-  ' Tämä on yksinkertainen heuristiikka - säädä jos templaten rakenne eroaa
+  ' Tämä on yksinkertainen heuristiikka -  säädä jos templaten rakenne eroaa
   startRow = 0
   For r = 1 To 20
     For i = 1 To 10 ' Check first 10 columns
+      On Error Resume Next
       If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
+      On Error GoTo 0
+      
       Select Case LCase(ws.Cells(r, i).Comment.Text)
         Case "revid"
           revIdCol = i: If startRow = 0 Then startRow = r
@@ -522,26 +543,23 @@ NextCell:
   
   Debug.Print "  Revisiotiedot alkavat riviltä " & startRow
   
-  ' Kirjoitetaan revisiodata suoraan
-  On Error Resume Next
+  ' Kirjoitetaan revisiodata suoraan - rajattu On Error Resume Next vain parsing-osaan
   r = startRow
-  Dim revParts() As String
-  Dim revText As String
-  Dim slashParts() As String
   
   For i = UBound(DIRevArr) To LBound(DIRevArr) Step -1
     If DIRevArr(i) <> "" Then
       revText = DIRevArr(i)
       
       ' Parse revid (first part before space)
+      On Error Resume Next
       If revIdCol > 0 And InStr(revText, " ") > 0 Then
         revParts = Split(revText, " ")
         If UBound(revParts) >= 0 Then ws.Cells(r, revIdCol).Value = revParts(0)
       End If
+      On Error GoTo 0
       
       ' Parse revdate (between space and /)
       If revDateCol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
-        Dim spacePos As Long, slashPos As Long
         spacePos = InStr(revText, " ")
         slashPos = InStr(revText, "/")
         If slashPos > spacePos Then
@@ -550,6 +568,7 @@ NextCell:
       End If
       
       ' Parse designer, checker, approver, desc (slash-delimited parts)
+      On Error Resume Next
       If InStr(revText, "/") > 0 Then
         slashParts = Split(revText, "/")
         If designerCol > 0 And UBound(slashParts) >= 1 Then ws.Cells(r, designerCol).Value = slashParts(1)
@@ -557,18 +576,18 @@ NextCell:
         If approverCol > 0 And UBound(slashParts) >= 3 Then ws.Cells(r, approverCol).Value = slashParts(3)
         If descCol > 0 And UBound(slashParts) >= 4 Then ws.Cells(r, descCol).Value = slashParts(4)
       End If
+      On Error GoTo 0
       
       r = r + 1
     End If
   Next i
-  On Error GoTo 0
   
   Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Valmis - kirjoitettiin " & (r - startRow) & " revisioriviä"
   
 End Sub
 Sub TeeLinkingKommentit()
 '''
-' TeeLinkingKommentit: Lisää kommentit kaikille kaavayksikkösoluille LINKING-sheetissä jäljitet tävyyttä varten.
+' TeeLinkingKommentit: Lisää kommentit kaikille kaavayksikkösoluille LINKING-sheetissä jäljitettävyyttä varten.
 ' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
 '''
 Dim Solu As Range
@@ -595,7 +614,7 @@ Dim formulaCells As Range
   If Not formulaCells Is Nothing Then
     Application.StatusBar = "Asetetaan kommentit LINKING-sheettiin (" & formulaCells.Cells.Count & ")"
     Debug.Print "  Käsitellään " & formulaCells.Cells.Count & " kaavasolua"
-    For Each Solu In formulaCells.Cells
+    For Each Solu in formulaCells.Cells
       On Error Resume Next
       Solu.AddComment CStr(Solu.Value)
       On Error GoTo 0
