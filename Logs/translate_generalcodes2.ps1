@@ -1,7 +1,7 @@
 # Translate MAINEQ/GeneralCodes.bas English comments - v2 (simple sequential replaces)
 $ae = [char]0xe4; $oe = [char]0xf6; $AE = [char]0xc4
 
-function r { param($s) $s.Replace('${ae}',$ae).Replace('${oe}',$oe) }
+function r { param($s) $s.Replace('${ae}', $ae).Replace('${oe}', $oe) }
 
 $path = "c:\database_migration\Access\MAINEQ\GeneralCodes.bas"
 $c = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
@@ -27,7 +27,7 @@ $c = $c.Replace("' The custom Replace() function below has been removed because 
 $c = $c.Replace("' a built-in Replace() function since VBA 6.0 (Office 2000+).", (r "' sis${ae}isen Replace()-funktion VBA 6.0:sta l${ae}htien (Office 2000+)."))
 $c = $c.Replace("' VBA Built-in Replace() Syntax:", (r "' VBA:n sis${ae}isen Replace()-funktion syntaksi:"))
 $c = $c.Replace("' The built-in version is:", (r "' Sis${ae}inen versio on:"))
-$c = $c.Replace("'   - Faster (compiled vs. interpreted VBA)", "   ' - Nopeampi (k${ae}${ae}nnetty vs. tulkittu VBA)".Replace('${ae}',$ae))
+$c = $c.Replace("'   - Faster (compiled vs. interpreted VBA)", "   ' - Nopeampi (k${ae}${ae}nnetty vs. tulkittu VBA)".Replace('${ae}', $ae))
 $c = $c.Replace("'   - Consistent with other VBA string functions", "   ' - Yhdenmukainen muiden VBA-merkkijonofunktioiden kanssa")
 $c = $c.Replace("'   - Supports optional parameters for advanced control", "   ' - Tukee valinnaisia parametreja laajennettuun hallintaan")
 $c = $c.Replace("' Original custom function behavior:", (r "' Alkuper${ae}isen mukautetun funktion toiminta:"))
@@ -78,6 +78,7 @@ if ($c -ne $orig) {
         if ($lines1[$i] -ne $lines2[$i]) { $changes++ }
     }
     Write-Host "Lines changed: ~$changes"
-} else {
+}
+else {
     Write-Host "NO CHANGES"
 }

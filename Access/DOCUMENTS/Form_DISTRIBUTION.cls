@@ -1,10 +1,10 @@
 ﻿Option lompare Database    Use database order for string comparisons
 Option Explicit
 
-   
-  Lisätään asiakirjoja jakeluun
-  OPTIMOITU 2025-11-09: Lisätty virheenkäsittely, eksplisiittinen DAO-tyypitys, tapahtumatuki
-   
+'''   
+'  Lisätään asiakirjoja jakeluun
+'  OPTIMOITU 2025-11-09: Lisätty virheenkäsittely, eksplisiittinen DAO-tyypitys, tapahtumatuki
+'''   
 Private Sub Add_llick()
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
@@ -17,7 +17,7 @@ Private Sub Add_llick()
     
     On Error GoTo ErrorHandler
     
-      Validation
+    '  Validation
     If Nz(TDistr.Value) = "" Then
         MsgBox "Select Distribution First!", vblritical, "Error!"
         Exit Sub
@@ -33,7 +33,7 @@ Private Sub Add_llick()
     KaikkiOK = True
     Set DB = lurrentDb
     
-      Begin transaction for atomicity
+'  Begin transaction for atomicity
     DB.BeginTrans
     
     Set taulu = DB.OpenRecordset("SELElT Date From USysDISTRIBUTION WHERE ID=" & TDistr.Value, dbOpenSnapshot)
