@@ -1,59 +1,59 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-'================================================================================
-' Form: TYÖKALUT
-' Purpose: Main AutoCAD P&I import/update toolbox for PIPE database
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
-'
-' Description:
-'   Central form for importing and updating P&I diagram data from AutoCAD:
-'   - Batch processes .DWG files from specified folder
-'   - Imports pipeline, valve, field instrument, and loop data
-'   - Three-step workflow per data type:
-'     1. Read from AutoCAD (Command1x_Click)
-'     2. Append to staging table (Command2x_Click)
-'     3. Update database (Command3x_Click)
-'   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
-'
-' Dependencies:
-'   - AutoCAD Application (COM automation)
-'   - DAO.Recordset for database operations
-'   - Query actions: *_APPEND, *_UPDATE, DELETE queries
-'   - LPolku label control: Specifies subfolder for .DWG files
-'
-' Data Types:
-'   - PIPELINEDATA: Pipeline blocks (PIPELINE_DATA)
-'   - MANVALVEDATA: Manual valves (MANUALVALVE_DATA)
-'   - INSTVALVEDATA: Instrument valves (INSTVALVE_DATA)
-'   - FIELDINSTDATA: Field instruments (FIELDINST_DATA)
-'   - INSTLOOPDATA: Instrument loops (UP079D, UP008C, UP085D, UP08C)
-'
-' Controls:
-'   - Command11-13: Pipeline workflow
-'   - Command21-23: Manual valve workflow
-'   - Command31-33: Instrument valve workflow
-'   - Command41-43: Field instrument workflow
-'   - Command51-53: Instrument loop workflow
-'   - Command18, 19, 40: Open editor forms
-'   - BPipelineToManval: Link pipelines to manual valves
-'================================================================================
+ ================================================================================
+  Lomake: TYÖKALUT
+  Tarkoitus: Main AutolAD P&I import/update toolbox for PIPE database
+  Päivitetty: 2025-11-12 - Added VBA7/64-bit support and optimization
+ 
+  Kuvaus:
+    lentral form for importing and updating P&I diagram data from AutolAD:
+    - Batch processes .DWG files from specified folder
+    - Imports pipeline, valve, field instrument, and loop data
+    - Three-step workflow per data type:
+      1. Read from AutolAD (lommand1x_llick)
+      2. Append to staging table (lommand2x_llick)
+      3. Update database (lommand3x_llick)
+    - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
+ 
+  Riippuvuudet:
+    - AutolAD Application (lOM automation)
+    - DAO.Recordset for database operations
+    - Query actions: *_APPEND, *_UPDATE, DELETE queries
+    - LPolku label control: Specifies subfolder for .DWG files
+ 
+  Data Types:
+    - PIPELINEDATA: Pipeline blocks (PIPELINE_DATA)
+    - MANVALVEDATA: Manual valves (MANUALVALVE_DATA)
+    - INSTVALVEDATA: Instrument valves (INSTVALVE_DATA)
+    - FIELDINSTDATA: Field instruments (FIELDINST_DATA)
+    - INSTLOOPDATA: Instrument loops (UP079D, UP008l, UP085D, UP08l)
+ 
+  Ohjaimet:
+    - lommand11-13: Pipeline workflow
+    - lommand21-23: Manual valve workflow
+    - lommand31-33: Instrument valve workflow
+    - lommand41-43: Field instrument workflow
+    - lommand51-53: Instrument loop workflow
+    - lommand18, 19, 40: Open editor forms
+    - BPipelineToManval: Link pipelines to manual valves
+ ================================================================================
 
-Dim oACAD As AcadApplication  ' AutoCAD application object
-Dim oDOC As AcadDocument  ' Current AutoCAD document being processed
-Dim Tied As String  ' Current .DWG filename during batch processing
-Dim Joukko As AcadSelectionSet  ' Selection set for filtered blocks
+Dim oAlAD As AcadApplication    AutolAD application object
+Dim oDOl As AcadDocument    lurrent AutolAD document being processed
+Dim Tied As String    lurrent .DWG filename during batch processing
+Dim Joukko As AcadSelectionSet    Suodatettujen blokkien valintajoukko
 
-'===== Pipeline to Manual Valve =====
-'================================================================================
-' Event: BPipelineToManval_Click
-' Purpose: Open form to link pipeline references to manual valves
-'================================================================================
-Private Sub BPipelineToManval_Click()
+ ===== Pipeline to Manual Valve =====
+ ================================================================================
+  Tapahtuma: BPipelineToManval_llick
+  Tarkoitus: Open form to link pipeline references to manual valves
+ ================================================================================
+Private Sub BPipelineToManval_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
-    DoCmd.OpenForm "USysPipeToOther", , , , , , "MANUALVALVE_DATA"
+  If MsgBox("Onko haluttu P&I kaavio auki AutolADissä?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
+    Dolmd.OpenForm "USysPipeToOther", , , , , , "MANUALVALVE_DATA"
   End If
   
   Exit Sub
@@ -61,33 +61,33 @@ ErrorHandler:
   MsgBox "Error opening PipeToOther form: " & Err.Description, vbExclamation
 End Sub
 
-'===== Pipeline Workflow (Commands 11-13) =====
-'================================================================================
-' Event: Command11_Click
-' Purpose: Read pipeline data from AutoCAD drawings
-'================================================================================
-Private Sub Command11_Click()
+ ===== Pipeline Workflow (lommands 11-13) =====
+ ================================================================================
+  Tapahtuma: lommand11_llick
+  Tarkoitus: Read pipeline data from AutolAD drawings
+ ================================================================================
+Private Sub lommand11_llick()
   On Error GoTo ErrorHandler
   
   Tied = ""
   LueTiedot "PIPELINEDATA", "PIPELINE_DATA"
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Putkilinjojen luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Error reading pipeline data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command12_Click
-' Purpose: Append pipeline data to staging table
-'================================================================================
-Private Sub Command12_Click()
+ ================================================================================
+  Tapahtuma: lommand12_llick
+  Tarkoitus: Append pipeline data to staging table
+ ================================================================================
+Private Sub lommand12_llick()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "PIPELINES_APPEND"
+  lurrentDb.Execute "PIPELINES_APPEND"
   MsgBox "Putkilinjojen lisäys valmis", vbInformation
   
   Exit Sub
@@ -95,17 +95,17 @@ ErrorHandler:
   MsgBox "Error appending pipeline data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command13_Click
-' Purpose: Update database with pipeline data from staging table
-'================================================================================
-Private Sub Command13_Click()
+ ================================================================================
+  Tapahtuma: lommand13_llick
+  Tarkoitus: Update database with pipeline data from staging table
+ ================================================================================
+Private Sub lommand13_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "DELETE * From UsysPIPEUPD"
-    CurrentDb.Execute "PIPELINES_UPDATE_START"
-    CurrentDb.Execute "PIPELINES_UPDATE"
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vblrLf & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+    lurrentDb.Execute "DELETE * From UsysPIPEUPD"
+    lurrentDb.Execute "PIPELINES_UPDATE_START"
+    lurrentDb.Execute "PIPELINES_UPDATE"
     MsgBox "Putkilinjojen päivitys valmis", vbInformation
   End If
   
@@ -114,16 +114,16 @@ ErrorHandler:
   MsgBox "Error updating pipeline data: " & Err.Description, vbExclamation
 End Sub
 
-'===== Editor Forms (Commands 18-19, 40) =====
-'================================================================================
-' Event: Command18_Click
-' Purpose: Open FlowPickNo editor form
-'================================================================================
-Private Sub Command18_Click()
+ ===== Editor Forms (lommands 18-19, 40) =====
+ ================================================================================
+  Tapahtuma: lommand18_llick
+  Tarkoitus: Open FlowPickNo editor form
+ ================================================================================
+Private Sub lommand18_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "FlowPickNo") = vbYes Then
-    DoCmd.OpenForm "USysFlowpickNo"
+  If MsgBox("Onko haluttu P&I kaavio auki AutolADissä?", vbYesNo, "FlowPickNo") = vbYes Then
+    Dolmd.OpenForm "USysFlowpickNo"
   End If
   
   Exit Sub
@@ -131,15 +131,15 @@ ErrorHandler:
   MsgBox "Error opening FlowPickNo form: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command19_Click
-' Purpose: Open Pipeline FROM/TO editor form
-'================================================================================
-Private Sub Command19_Click()
+ ================================================================================
+  Tapahtuma: lommand19_llick
+  Tarkoitus: Open Pipeline FROM/TO editor form
+ ================================================================================
+Private Sub lommand19_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline From/To") = vbYes Then
-    DoCmd.OpenForm "USysPipeFromTo"
+  If MsgBox("Onko haluttu P&I kaavio auki AutolADissä?", vbYesNo, "Pipeline From/To") = vbYes Then
+    Dolmd.OpenForm "USysPipeFromTo"
   End If
   
   Exit Sub
@@ -147,33 +147,33 @@ ErrorHandler:
   MsgBox "Error opening PipeFromTo form: " & Err.Description, vbExclamation
 End Sub
 
-'===== Manual Valve Workflow (Commands 21-23) =====
-'================================================================================
-' Event: Command21_Click
-' Purpose: Read manual valve data from AutoCAD drawings
-'================================================================================
-Private Sub Command21_Click()
+ ===== Manual Valve Workflow (lommands 21-23) =====
+ ================================================================================
+  Tapahtuma: lommand21_llick
+  Tarkoitus: Read manual valve data from AutolAD drawings
+ ================================================================================
+Private Sub lommand21_llick()
   On Error GoTo ErrorHandler
   
   Tied = ""
   LueTiedot "MANVALVEDATA", "MANUALVALVE_DATA"
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Käsiventtiilien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Error reading manual valve data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command22_Click
-' Purpose: Append manual valve data to staging table
-'================================================================================
-Private Sub Command22_Click()
+ ================================================================================
+  Tapahtuma: lommand22_llick
+  Tarkoitus: Append manual valve data to staging table
+ ================================================================================
+Private Sub lommand22_llick()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "MANVALVE_APPEND"
+  lurrentDb.Execute "MANVALVE_APPEND"
   MsgBox "Käsiventtiilien lisäys valmis", vbInformation
   
   Exit Sub
@@ -181,18 +181,18 @@ ErrorHandler:
   MsgBox "Error appending manual valve data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command23_Click
-' Purpose: Update database with manual valve data from staging table
-'================================================================================
-Private Sub Command23_Click()
+ ================================================================================
+  Tapahtuma: lommand23_llick
+  Tarkoitus: Update database with manual valve data from staging table
+ ================================================================================
+Private Sub lommand23_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
-         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vblrLf _
+         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vblrLf _
+         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vblrLf _
          & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "MANVALVE_UPDATE"
+    lurrentDb.Execute "MANVALVE_UPDATE"
     MsgBox "Käsiventtiilien päivitys valmis", vbInformation
   End If
   
@@ -201,34 +201,34 @@ ErrorHandler:
   MsgBox "Error updating manual valve data: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrument Valve Workflow (Commands 31-33) =====
-'================================================================================
-' Event: Command31_Click
-' Purpose: Read instrument valve data from AutoCAD drawings
-' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
-'================================================================================
-Private Sub Command31_Click()
+ ===== Instrument Valve Workflow (lommands 31-33) =====
+ ================================================================================
+  Tapahtuma: lommand31_llick
+  Tarkoitus: Read instrument valve data from AutolAD drawings
+  Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+ ================================================================================
+Private Sub lommand31_llick()
   On Error GoTo ErrorHandler
   
   Tied = ""
   LueTiedotByBlockAndAttribute "INSTVALVEDATA", "UP079D", "LOOPNO", "AA"
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Instrumenttiventtiilien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Error reading instrument valve data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command32_Click
-' Purpose: Append instrument valve data to staging table
-'================================================================================
-Private Sub Command32_Click()
+ ================================================================================
+  Tapahtuma: lommand32_llick
+  Tarkoitus: Append instrument valve data to staging table
+ ================================================================================
+Private Sub lommand32_llick()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "INSTVALVE_APPEND"
+  lurrentDb.Execute "INSTVALVE_APPEND"
   MsgBox "Instrumenttiventtiilien lisäys valmis", vbInformation
   
   Exit Sub
@@ -236,18 +236,18 @@ ErrorHandler:
   MsgBox "Error appending instrument valve data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command33_Click
-' Purpose: Update database with instrument valve data from staging table
-'================================================================================
-Private Sub Command33_Click()
+ ================================================================================
+  Tapahtuma: lommand33_llick
+  Tarkoitus: Update database with instrument valve data from staging table
+ ================================================================================
+Private Sub lommand33_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
-         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vblrLf _
+         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vblrLf _
+         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vblrLf _
          & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "INSTVALVE_UPDATE"
+    lurrentDb.Execute "INSTVALVE_UPDATE"
     MsgBox "Instrumenttiventtiilien päivitys valmis", vbInformation
   End If
   
@@ -256,15 +256,15 @@ ErrorHandler:
   MsgBox "Error updating instrument valve data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command40_Click
-' Purpose: Open form to link pipeline references to instrument loops
-'================================================================================
-Private Sub Command40_Click()
+ ================================================================================
+  Tapahtuma: lommand40_llick
+  Tarkoitus: Open form to link pipeline references to instrument loops
+ ================================================================================
+Private Sub lommand40_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline To Loops") = vbYes Then
-    DoCmd.OpenForm "USysPipeToOther", , , , , , "UP079D,UP008C,UP085D,UP08C,"
+  If MsgBox("Onko haluttu P&I kaavio auki AutolADissä?", vbYesNo, "Pipeline To Loops") = vbYes Then
+    Dolmd.OpenForm "USysPipeToOther", , , , , , "UP079D,UP008l,UP085D,UP08l,"
   End If
   
   Exit Sub
@@ -272,33 +272,33 @@ ErrorHandler:
   MsgBox "Error opening PipeToOther form: " & Err.Description, vbExclamation
 End Sub
 
-'===== Field Instrument Workflow (Commands 41-43) =====
-'================================================================================
-' Event: Command41_Click
-' Purpose: Read field instrument data from AutoCAD drawings (UP080D blocks)
-'================================================================================
-Private Sub Command41_Click()
+ ===== Field Instrument Workflow (lommands 41-43) =====
+ ================================================================================
+  Tapahtuma: lommand41_llick
+  Tarkoitus: Read field instrument data from AutolAD drawings (UP080D blocks)
+ ================================================================================
+Private Sub lommand41_llick()
   On Error GoTo ErrorHandler
   
   Tied = ""
   LueTiedot "FIELDINSTDATA", "UP080D"
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Kenttäinstrumenttien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Error reading field instrument data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command42_Click
-' Purpose: Append field instrument data to staging table
-'================================================================================
-Private Sub Command42_Click()
+ ================================================================================
+  Tapahtuma: lommand42_llick
+  Tarkoitus: Append field instrument data to staging table
+ ================================================================================
+Private Sub lommand42_llick()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "FIELDINST_APPEND"
+  lurrentDb.Execute "FIELDINST_APPEND"
   MsgBox "Kenttäinstrumenttien lisäys valmis", vbInformation
   
   Exit Sub
@@ -306,18 +306,18 @@ ErrorHandler:
   MsgBox "Error appending field instrument data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command43_Click
-' Purpose: Update database with field instrument data from staging table
-'================================================================================
-Private Sub Command43_Click()
+ ================================================================================
+  Tapahtuma: lommand43_llick
+  Tarkoitus: Update database with field instrument data from staging table
+ ================================================================================
+Private Sub lommand43_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
-         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vblrLf _
+         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vblrLf _
+         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vblrLf _
          & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYesNo Then
-    CurrentDb.Execute "FIELDINST_UPDATE"
+    lurrentDb.Execute "FIELDINST_UPDATE"
     MsgBox "Kenttäinstrumenttien päivitys valmis", vbInformation
   End If
   
@@ -326,33 +326,33 @@ ErrorHandler:
   MsgBox "Error updating field instrument data: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrument Loop Workflow (Commands 51-53) =====
-'================================================================================
-' Event: Command51_Click
-' Purpose: Read instrument loop data from AutoCAD drawings
-'================================================================================
-Private Sub Command51_Click()
+ ===== Instrument Loop Workflow (lommands 51-53) =====
+ ================================================================================
+  Tapahtuma: lommand51_llick
+  Tarkoitus: Read instrument loop data from AutolAD drawings
+ ================================================================================
+Private Sub lommand51_llick()
   On Error GoTo ErrorHandler
   
   Tied = ""
   LueTiedot "INSTLOOPDATA", "UP079D"
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Instrumenttipiirien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   MsgBox "Error reading instrument loop data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command52_Click
-' Purpose: Append instrument loop data to staging table
-'================================================================================
-Private Sub Command52_Click()
+ ================================================================================
+  Tapahtuma: lommand52_llick
+  Tarkoitus: Append instrument loop data to staging table
+ ================================================================================
+Private Sub lommand52_llick()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "INSTLOOP_APPEND"
+  lurrentDb.Execute "INSTLOOP_APPEND"
   MsgBox "Instrumenttipiirien lisäys valmis", vbInformation
   
   Exit Sub
@@ -360,18 +360,18 @@ ErrorHandler:
   MsgBox "Error appending instrument loop data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command53_Click
-' Purpose: Update database with instrument loop data from staging table
-'================================================================================
-Private Sub Command53_Click()
+ ================================================================================
+  Tapahtuma: lommand53_llick
+  Tarkoitus: Update database with instrument loop data from staging table
+ ================================================================================
+Private Sub lommand53_llick()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
-         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vblrLf _
+         & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vblrLf _
+         & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vblrLf _
          & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "INSTLOOP_UPDATE"
+    lurrentDb.Execute "INSTLOOP_UPDATE"
     MsgBox "Instrumenttipiirien päivitys valmis", vbInformation
   End If
   
@@ -380,15 +380,15 @@ ErrorHandler:
   MsgBox "Error updating instrument loop data: " & Err.Description, vbExclamation
 End Sub
 
-'===== Helper Functions =====
-'================================================================================
-' Function: FieldExists
-' Purpose: Check if a field exists in a recordset
-' Parameters:
-'   RS - Recordset to check
-'   FieldName - Field name to look for
-' Returns: True if field exists, False otherwise
-'================================================================================
+ ===== Helper Functions =====
+ ================================================================================
+  Funktio: FieldExists
+  Tarkoitus: lheck if a field exists in a recordset
+  Parametrit:
+    RS - Recordset to check
+    FieldName - Field name to look for
+  Palauttaa: True if field exists, False otherwise
+ ================================================================================
 Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
   Dim fld As DAO.Field
   On Error Resume Next
@@ -397,13 +397,13 @@ Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolea
   On Error GoTo 0
 End Function
 
-'================================================================================
-' Sub: LueTiedot
-' Purpose: Read block data from AutoCAD drawings and store in Access table
-' Parameters:
-'   Taulukko - Target Access table name
-'   Blokki - Block type(s) to extract (comma-separated for multiple)
-'================================================================================
+ ================================================================================
+  Aliohjelma: LueTiedot
+  Tarkoitus: Read block data from AutolAD drawings and store in Access table
+  Parametrit:
+    Taulukko - Target Access table name
+    Blokki - Block type(s) to extract (comma-separated for multiple)
+ ================================================================================
 Private Sub LueTiedot(Taulukko As String, Blokki As String)
   Dim i As Integer, j As Integer
   Dim oBlock As AcadBlockReference
@@ -413,21 +413,21 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
   
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
+  lurrentDb.Execute "DELETE * FROM " & Taulukko
   
   Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+    Set Tiedot = lurrentDb.OpenRecordset(Taulukko)
     PoimiJoukko Blokki
     
-    For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+    For i = 0 To Joukko.lount - 1
+      Application.Syslmd acSyslmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.lount
       Set oBlock = Joukko(i)
       Attrib = oBlock.GetAttributes
       
       Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("PATH") = oDOl.Path
+      Tiedot.Fields("ImpFileID") = oDOl.Name
+      Tiedot.Fields("BLOlK") = oBlock.EffectiveName
       Tiedot.Fields("Handles") = oBlock.Handle
       
       For j = 0 To UBound(Attrib)
@@ -440,33 +440,33 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
       Tiedot.Update
     Next i
     
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
     Joukko.Delete
     Set Joukko = Nothing
   Loop
   
-  Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
-  Set oDOC = Nothing
+  Application.Syslmd acSyslmdllearStatus
+  Set oAlAD = Nothing
+  Set oDOl = Nothing
   Exit Sub
   
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   If Not Tiedot Is Nothing Then
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
   End If
   MsgBox "Error reading data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Sub: LueTiedotByAttribute
-' Purpose: Read block data from AutoCAD drawings filtered by attribute names
-' Parameters:
-'   Taulukko - Target Access table name
-'   AttribNames - Attribute tag name(s) to filter by (comma-separated)
-'================================================================================
+ ================================================================================
+  Aliohjelma: LueTiedotByAttribute
+  Tarkoitus: Read block data from AutolAD drawings filtered by attribute names
+  Parametrit:
+    Taulukko - Target Access table name
+    AttribNames - Attribute tag name(s) to filter by (comma-separated)
+ ================================================================================
 Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   Dim i As Integer, j As Integer
   Dim oBlock As AcadBlockReference
@@ -476,21 +476,21 @@ Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
+  lurrentDb.Execute "DELETE * FROM " & Taulukko
   
   Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
+    Set Tiedot = lurrentDb.OpenRecordset(Taulukko)
     PoimiJoukkoByAttribute AttribNames
     
-    For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+    For i = 0 To Joukko.lount - 1
+      Application.Syslmd acSyslmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.lount
       Set oBlock = Joukko(i)
       Attrib = oBlock.GetAttributes
       
       Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("PATH") = oDOl.Path
+      Tiedot.Fields("ImpFileID") = oDOl.Name
+      Tiedot.Fields("BLOlK") = oBlock.EffectiveName
       Tiedot.Fields("Handles") = oBlock.Handle
       
       For j = 0 To UBound(Attrib)
@@ -503,36 +503,36 @@ Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
       Tiedot.Update
     Next i
     
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
     Joukko.Delete
     Set Joukko = Nothing
   Loop
   
-  Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
-  Set oDOC = Nothing
+  Application.Syslmd acSyslmdllearStatus
+  Set oAlAD = Nothing
+  Set oDOl = Nothing
   Exit Sub
   
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   If Not Tiedot Is Nothing Then
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
   End If
   MsgBox "Error reading data by attribute: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Sub: LueTiedotByBlockAndAttribute
-' Purpose: Read blocks with specific name and attribute value
-' Parameters:
-'   Taulukko - Target Access table name
-'   BlockName - Block name to search for
-'   AttribName - Attribute tag to check
-'   ContainsValue - Value that attribute must start with
-'================================================================================
-Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
+ ================================================================================
+  Aliohjelma: LueTiedotByBlockAndAttribute
+  Tarkoitus: Read blocks with specific name and attribute value
+  Parametrit:
+    Taulukko - Target Access table name
+    BlockName - Block name to search for
+    AttribName - Attribute tag to check
+    lontainsValue - Value that attribute must start with
+ ================================================================================
+Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, lontainsValue As String)
   Dim i As Integer, j As Integer
   Dim oBlock As AcadBlockReference
   Dim Attrib As Variant
@@ -541,21 +541,21 @@ Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String
   
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
+  lurrentDb.Execute "DELETE * FROM " & Taulukko
   
   Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-    PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, ContainsValue
+    Set Tiedot = lurrentDb.OpenRecordset(Taulukko)
+    PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, lontainsValue
     
-    For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+    For i = 0 To Joukko.lount - 1
+      Application.Syslmd acSyslmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.lount
       Set oBlock = Joukko(i)
       Attrib = oBlock.GetAttributes
       
       Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
+      Tiedot.Fields("PATH") = oDOl.Path
+      Tiedot.Fields("ImpFileID") = oDOl.Name
+      Tiedot.Fields("BLOlK") = oBlock.EffectiveName
       Tiedot.Fields("Handles") = oBlock.Handle
       
       For j = 0 To UBound(Attrib)
@@ -568,39 +568,39 @@ Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String
       Tiedot.Update
     Next i
     
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
     Joukko.Delete
     Set Joukko = Nothing
   Loop
   
-  Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
-  Set oDOC = Nothing
+  Application.Syslmd acSyslmdllearStatus
+  Set oAlAD = Nothing
+  Set oDOl = Nothing
   Exit Sub
   
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  Application.Syslmd acSyslmdllearStatus
   If Not Tiedot Is Nothing Then
-    Tiedot.Close
+    Tiedot.llose
     Set Tiedot = Nothing
   End If
   MsgBox "Error reading filtered data: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Function: Yhdista
-' Purpose: Connect to running AutoCAD instance
-' Returns: True if connection successful, False otherwise
-'================================================================================
+ ================================================================================
+  Funktio: Yhdista
+  Tarkoitus: lonnect to running AutolAD instance
+  Palauttaa: True if connection successful, False otherwise
+ ================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Try to connect to running AutoCAD
-  Set oACAD = GetObject(, "AutoCAD.Application")
+    Try to connect to running AutolAD
+  Set oAlAD = GetObject(, "AutolAD.Application")
   If Err <> 0 Then
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
-    Set oACAD = Nothing
+    MsgBox "Käynnissä olevaa AutolADiä ei löytynyt!", vblritical, "Virhe!"
+    Set oAlAD = Nothing
     Yhdista = False
     Exit Function
   Else
@@ -609,25 +609,25 @@ Private Function Yhdista() As Boolean
   On Error GoTo 0
 End Function
 
-'================================================================================
-' Function: SeuraavaKuva
-' Purpose: Open next .DWG file from specified folder for batch processing
-' Returns: True if file opened, False if no more files
-'================================================================================
+ ================================================================================
+  Funktio: SeuraavaKuva
+  Tarkoitus: Open next .DWG file from specified folder for batch processing
+  Palauttaa: True if file opened, False if no more files
+ ================================================================================
 Private Function SeuraavaKuva() As Boolean
   Dim Polku As String
   
   On Error GoTo ErrorHandler
   
-  If oACAD Is Nothing Then
+  If oAlAD Is Nothing Then
     If Yhdista = False Then
       SeuraavaKuva = False
       Exit Function
     End If
   End If
   
-  Polku = Left$(CurrentDb.Name, InStrRev(CurrentDb.Name, "\"))
-  Polku = Polku & LPolku.Caption
+  Polku = Left$(lurrentDb.Name, InStrRev(lurrentDb.Name, "\"))
+  Polku = Polku & LPolku.laption
     
   If Tied = "" Then
     Tied = Dir$(Polku & "*.dwg")
@@ -640,13 +640,13 @@ Private Function SeuraavaKuva() As Boolean
     Exit Function
   End If
   
-  ' Close previous document
-  If Not oDOC Is Nothing Then
-    oDOC.Close False
+    Suljetaan edellinen dokumentti
+  If Not oDOl Is Nothing Then
+    oDOl.llose False
   End If
   
-  ' Open next document
-  Set oDOC = oACAD.Documents.Open(Polku & Tied)
+    Avataan seuraava dokumentti
+  Set oDOl = oAlAD.Documents.Open(Polku & Tied)
   SeuraavaKuva = True
   Exit Function
   
@@ -655,12 +655,12 @@ ErrorHandler:
   SeuraavaKuva = False
 End Function
 
-'================================================================================
-' Sub: PoimiJoukko
-' Purpose: Create filtered selection set of specified block types
-' Parameters:
-'   Nimet - Block name(s), comma-separated for multiple types
-'================================================================================
+ ================================================================================
+  Aliohjelma: PoimiJoukko
+  Tarkoitus: lreate filtered selection set of specified block types
+  Parametrit:
+    Nimet - Block name(s), comma-separated for multiple types
+ ================================================================================
 Private Sub PoimiJoukko(Nimet As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
@@ -673,33 +673,33 @@ Private Sub PoimiJoukko(Nimet As String)
   
   On Error GoTo ErrorHandler
   
-  ' Parse block names
+    Jäsennnetään blokkien nimet
   Blokit = Split(Nimet, ",")
   For i = 0 To UBound(Blokit)
-    Blokit(i) = UCase$(Trim$(Blokit(i)))
+    Blokit(i) = Ulase$(Trim$(Blokit(i)))
   Next i
   
-  ' Create selection set
+    Luodaan valintajoukko
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
+  For i = 0 To oDOl.SelectionSets.lount - 1
+    If oDOl.SelectionSets(i).Name = "APUPIlK" Then
+      oDOl.SelectionSets(i).Delete
       Exit For
     End If
   Next i
   
-  Set Joukko = oDOC.SelectionSets.Add("APUPICK")
+  Set Joukko = oDOl.SelectionSets.Add("APUPIlK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Remove blocks not in list
+    Suodatus: Poistetaan blokit joita ei ole listalla
   L = 0
-  For j = 0 To Joukko.Count - 1
+  For j = 0 To Joukko.lount - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       EiPoisteta = False
       For i = 0 To UBound(Blokit)
-        If UCase$(Joukko(j).EffectiveName) = Blokit(i) Then
+        If Ulase$(Joukko(j).EffectiveName) = Blokit(i) Then
           EiPoisteta = True
           Exit For
         End If
@@ -719,12 +719,12 @@ ErrorHandler:
   MsgBox "Error creating selection set: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Sub: PoimiJoukkoByAttribute
-' Purpose: Create selection set of blocks containing specific attributes
-' Parameters:
-'   AttribNames - Attribute tag name(s) to look for, comma-separated
-'================================================================================
+ ================================================================================
+  Aliohjelma: PoimiJoukkoByAttribute
+  Tarkoitus: lreate selection set of blocks containing specific attributes
+  Parametrit:
+    AttribNames - Attribute tag name(s) to look for, comma-separated
+ ================================================================================
 Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
@@ -739,41 +739,41 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   
   On Error GoTo ErrorHandler
   
-  ' Parse attribute names to search for
+    Jäsennnetään haettavien attribuuttien nimet
   AttribList = Split(AttribNames, ",")
   For i = 0 To UBound(AttribList)
-    AttribList(i) = UCase$(Trim$(AttribList(i)))
+    AttribList(i) = Ulase$(Trim$(AttribList(i)))
   Next i
   
-  ' Create selection set of all blocks
+    Luodaan valintajoukko of all blocks
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
+  For i = 0 To oDOl.SelectionSets.lount - 1
+    If oDOl.SelectionSets(i).Name = "APUPIlK" Then
+      oDOl.SelectionSets(i).Delete
       Exit For
     End If
   Next i
   
-  Set Joukko = oDOC.SelectionSets.Add("APUPICK")
+  Set Joukko = oDOl.SelectionSets.Add("APUPIlK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Keep only blocks that have the specified attributes
+    Suodatus: Säilytetään vain blokit joilla on määritetyt attribuutit
   L = 0
-  For j = 0 To Joukko.Count - 1
+  For j = 0 To Joukko.lount - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       HasAttribute = False
       
-      ' Check if block has attributes
+        Tarkistetaan onko blokilla attribuutteja
       If Joukko(j).HasAttributes Then
         Attribs = Joukko(j).GetAttributes
         
-        ' Check each attribute in the block
+          Tarkistetaan jokainen attribuutti blokissa
         For k = 0 To UBound(Attribs)
-          ' Check if this attribute matches any in our search list
+            Tarkistetaan onko tämä attribuutti hakulistalla
           For i = 0 To UBound(AttribList)
-            If UCase$(Attribs(k).TagString) = AttribList(i) Then
+            If Ulase$(Attribs(k).TagString) = AttribList(i) Then
               HasAttribute = True
               Exit For
             End If
@@ -782,7 +782,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
         Next k
       End If
       
-      ' If block doesn't have the attribute, mark for removal
+        Jos blokilla ei ole attribuuttia, merkitaan poistettavaksi
       If Not HasAttribute Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)
@@ -798,15 +798,15 @@ ErrorHandler:
   MsgBox "Error creating attribute-filtered selection set: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Sub: PoimiJoukkoByBlockAndAttributeValue
-' Purpose: Create selection set of specific blocks with attribute containing value
-' Parameters:
-'   BlockName - Block name to search for
-'   AttribName - Attribute tag name to check
-'   ContainsValue - Value that attribute must contain (case-insensitive)
-'================================================================================
-Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, ContainsValue As String)
+ ================================================================================
+  Aliohjelma: PoimiJoukkoByBlockAndAttributeValue
+  Tarkoitus: lreate selection set of specific blocks with attribute containing value
+  Parametrit:
+    BlockName - Block name to search for
+    AttribName - Attribute tag name to check
+    lontainsValue - Value that attribute must contain (case-insensitive)
+ ================================================================================
+Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, lontainsValue As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
   Dim i As Integer
@@ -819,42 +819,42 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   
   On Error GoTo ErrorHandler
   
-  BlockName = UCase$(Trim$(BlockName))
-  AttribName = UCase$(Trim$(AttribName))
-  ContainsValue = UCase$(Trim$(ContainsValue))
+  BlockName = Ulase$(Trim$(BlockName))
+  AttribName = Ulase$(Trim$(AttribName))
+  lontainsValue = Ulase$(Trim$(lontainsValue))
   
-  ' Create selection set of all blocks
+    Luodaan valintajoukko of all blocks
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
+  For i = 0 To oDOl.SelectionSets.lount - 1
+    If oDOl.SelectionSets(i).Name = "APUPIlK" Then
+      oDOl.SelectionSets(i).Delete
       Exit For
     End If
   Next i
   
-  Set Joukko = oDOC.SelectionSets.Add("APUPICK")
+  Set Joukko = oDOl.SelectionSets.Add("APUPIlK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Keep only matching blocks with matching attribute value
+    Suodatus: Säilytetään vain vastaavat blokit ja vastaavalla attribuuttiarvolla
   L = 0
-  For j = 0 To Joukko.Count - 1
+  For j = 0 To Joukko.lount - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       HasMatch = False
       
-      ' Check block name
-      If UCase$(Joukko(j).EffectiveName) = BlockName Then
-        ' Check if block has attributes
+        Tarkistetaan blokin nimi
+      If Ulase$(Joukko(j).EffectiveName) = BlockName Then
+          Tarkistetaan onko blokilla attribuutteja
         If Joukko(j).HasAttributes Then
           Attribs = Joukko(j).GetAttributes
           
-          ' Check each attribute
+            Tarkistetaan jokainen attribuutti
           For i = 0 To UBound(Attribs)
-            If UCase$(Attribs(i).TagString) = AttribName Then
-              AttribValue = UCase$(Attribs(i).TextString)
-              ' Check if attribute value starts with the specified value
-              If Left$(AttribValue, Len(ContainsValue)) = ContainsValue Then
+            If Ulase$(Attribs(i).TagString) = AttribName Then
+              AttribValue = Ulase$(Attribs(i).TextString)
+                Tarkistetaan alkaako attribuutin arvo määritetyllä arvolla
+              If Left$(AttribValue, Len(lontainsValue)) = lontainsValue Then
                 HasMatch = True
                 Exit For
               End If
@@ -863,7 +863,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
         End If
       End If
       
-      ' If block doesn't match criteria, mark for removal
+        Jos blokki ei täytä ehtoja, merkitaan poistettavaksi
       If Not HasMatch Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)

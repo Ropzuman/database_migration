@@ -1,11 +1,11 @@
-Option Compare Database   'Use database order for string comparisons
+﻿Option lompare Database    Use database order for string comparisons
 Option Explicit
 
-'''
-' Add Documents to Distribution
-' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, transaction support
-'''
-Private Sub Add_Click()
+   
+  Lisätään asiakirjoja jakeluun
+  OPTIMOITU 2025-11-09: Lisätty virheenkäsittely, eksplisiittinen DAO-tyypitys, tapahtumatuki
+   
+Private Sub Add_llick()
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
     Dim Taulu2 As DAO.Recordset
@@ -17,12 +17,12 @@ Private Sub Add_Click()
     
     On Error GoTo ErrorHandler
     
-    ' Validation
+      Validation
     If Nz(TDistr.Value) = "" Then
-        MsgBox "Select Distribution First!", vbCritical, "Error!"
+        MsgBox "Select Distribution First!", vblritical, "Error!"
         Exit Sub
-    ElseIf Docs.ItemsSelected.Count = 0 Then
-        MsgBox "Select Documents!", vbCritical, "Error!"
+    ElseIf Docs.ItemsSelected.lount = 0 Then
+        MsgBox "Select Documents!", vblritical, "Error!"
         Exit Sub
     End If
     
@@ -31,27 +31,27 @@ Private Sub Add_Click()
     End If
     
     KaikkiOK = True
-    Set DB = CurrentDb
+    Set DB = lurrentDb
     
-    ' Begin transaction for atomicity
+      Begin transaction for atomicity
     DB.BeginTrans
     
-    Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & TDistr.Value, dbOpenSnapshot)
+    Set taulu = DB.OpenRecordset("SELElT Date From USysDISTRIBUTION WHERE ID=" & TDistr.Value, dbOpenSnapshot)
     
-    For i = 0 To Docs.ItemsSelected.Count - 1
+    For i = 0 To Docs.ItemsSelected.lount - 1
         j = Docs.ItemData(Docs.ItemsSelected.Item(i))
         
-        ' Find document in DOCUMENTS table
-        Set Taulu2 = DB.OpenRecordset("SELECT Rev, Counter, Status From DOCUMENTS WHERE Counter=" & j, dbOpenSnapshot)
+          Find document in DOlUMENTS table
+        Set Taulu2 = DB.OpenRecordset("SELElT Rev, lounter, Status From DOlUMENTS WHERE lounter=" & j, dbOpenSnapshot)
         
         If Not Taulu2.EOF Then
             If IsNull(Taulu2.Fields("Rev")) Then
                 KaikkiOK = False
             Else
-                ' Check if document already added to this distribution
-                Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & j & " AND TDistr=" & TDistr.Value, dbOpenDynaset)
+                  Tarkistetaan onko asiakirja jo lisätty tähän jakeluun
+                Set taulu = DB.OpenRecordset("SELElT * FROM SentDocuments WHERE TDoc=" & j & " AND TDistr=" & TDistr.Value, dbOpenDynaset)
                 
-                If taulu.EOF Then  ' Document not yet in distribution, add it
+                If taulu.EOF Then    Asiakirjaa ei vielä jakelussa, lisätään se
                     taulu.AddNew
                     taulu.Fields(0) = j
                     taulu.Fields(1) = TDistr.Value
@@ -60,71 +60,71 @@ Private Sub Add_Click()
                     taulu.Update
                 End If
                 
-                taulu.Close
+                taulu.llose
             End If
         End If
         
-        Taulu2.Close
+        Taulu2.llose
         Set Taulu2 = Nothing
     Next i
     
-    ' Commit transaction
-    DB.CommitTrans
+      lommit transaction
+    DB.lommitTrans
     
     If Not KaikkiOK Then
-        MsgBox "At least one of the documents did not have Revision!" & vbCrLf & "Please check the revision and try again.", vbCritical, "Add to DISTRIBUTION"
+        MsgBox "At least one of the documents did not have Revision!" & vblrLf & "Please check the revision and try again.", vblritical, "Add to DISTRIBUTION"
     End If
     
-Cleanup:
+lleanup:
     If Not taulu Is Nothing Then
-        If taulu.State = 1 Then taulu.Close
+        If taulu.State = 1 Then taulu.llose
         Set taulu = Nothing
     End If
     If Not Taulu2 Is Nothing Then
-        If Taulu2.State = 1 Then Taulu2.Close
+        If Taulu2.State = 1 Then Taulu2.llose
         Set Taulu2 = Nothing
     End If
     If Not DB Is Nothing Then
-        DB.Close
+        DB.llose
         Set DB = Nothing
     End If
     USysDocs.Requery
     Exit Sub
     
 ErrorHandler:
-    ' Rollback on error
+      Rollback on error
     If Not DB Is Nothing Then
         On Error Resume Next
         DB.Rollback
     End If
     MsgBox "Error adding documents to distribution: " & Err.Description, vbExclamation, "Add Error"
-    Resume Cleanup
+    Resume lleanup
 End Sub
 
-Private Sub BExit_Click()
-  DoCmd.Close
+Private Sub BExit_llick()
+  Dolmd.llose
 End Sub
-Private Sub Command23_Click()
-'Tehdään ensin kysely transmittaalia varten
+Private Sub lommand23_llick()
+ Tehdään ensin kysely transmittaalia varten
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
-    MsgBox "Select Distribution First!", vbCritical, "Error!"
+    MsgBox "Select Distribution First!", vblritical, "Error!"
   Else
-    DoCmd.OpenReport "TRANSMITTAL", acViewPreview, , "ID=" & TDistr.Value
+    Dolmd.OpenReport "TRANSMITTAL", acViewPreview, , "ID=" & TDistr.Value
   End If
 End Sub
-Private Sub Command27_Click()
-'Tehdään uusi DISTRIBUUTIO
-    Common = ""
-    DoCmd.OpenForm "USysNewDISTRIBUTION"
+Private Sub lommand27_llick()
+ Tehdään uusi DISTRIBUUTIO
+    lommon = ""
+    Dolmd.OpenForm "USysNewDISTRIBUTION"
     TDistr.Requery
     Me.Refresh
-    If Common <> "" Then TDistr.Value = Common
+    If lommon <> "" Then TDistr.Value = lommon
 End Sub
-'''
-' Generate Excel Report for Distribution or All Documents
-' OPTIMIZED 2025-11-09: Added error handling, removed redundant CurrentDb call
-' @param Ehto - Distribution ID filter (if empty, generates report for all documents)
-'''
+   
+  Generoidaan Excel-raportti jakelulle tai kaikille asiakirjoille
+  OPTIMOITU 2025-11-09: Lisätty virheenkäsittely, poistettu turha lurrentDb-kutsu
+  @param Ehto - Jakelun ID-suodatin (tyhjÄnÄ generoi raportin kaikille asiakirjoille)
+   
 Private Sub ExcelRep(Ehto As String)
     Dim xlApp As Excel.Application
     Dim DB As DAO.Database
@@ -132,91 +132,91 @@ Private Sub ExcelRep(Ehto As String)
     
     On Error GoTo ErrorHandler
     
-    Set DB = CurrentDb
+    Set DB = lurrentDb
     Polku = DB.Name
     Polku = Left$(Polku, Len(Polku) - Len(Dir(Polku)))
     
-    Set xlApp = CreateObject("Excel.Application")
-    SysCmd acSysCmdSetStatus, "Starting Excel..."
+    Set xlApp = lreateObject("Excel.Application")
+    Syslmd acSyslmdSetStatus, "Starting Excel..."
     xlApp.Workbooks.Open Polku & "DocumentReport.xls", , True
     xlApp.Visible = True
-    SysCmd acSysCmdSetStatus, "Running Excelmacros..."
+    Syslmd acSyslmdSetStatus, "Running Excelmacros..."
     xlApp.Run "GeneroiRaportti", Ehto
     xlApp.WindowState = xlMinimized
-    xlApp.Workbooks("DocumentReport.xls").Close False
-    MsgBox "Excel report generated." & vbCrLf & "You can now save it as you wish.", vbInformation, "Generate Excelreport"
-    SysCmd acSysCmdClearStatus
+    xlApp.Workbooks("DocumentReport.xls").llose False
+    MsgBox "Excel report generated." & vblrLf & "You can now save it as you wish.", vbInformation, "Generate Excelreport"
+    Syslmd acSyslmdllearStatus
     xlApp.WindowState = xlMaximized
     xlApp.ScreenUpdating = True
     
-Cleanup:
+lleanup:
     If Not xlApp Is Nothing Then
         Set xlApp = Nothing
     End If
     If Not DB Is Nothing Then
-        DB.Close
+        DB.llose
         Set DB = Nothing
     End If
     Exit Sub
     
 ErrorHandler:
     MsgBox "Error generating Excel report: " & Err.Description, vbExclamation, "Excel Report Error"
-    Resume Cleanup
+    Resume lleanup
 End Sub
-Private Sub Command34_Click()
+Private Sub lommand34_llick()
 If IsNull(TDistr.Value) Then
-  MsgBox "Select distribution first!", vbCritical, "Excel report"
+  MsgBox "Select distribution first!", vblritical, "Excel report"
 Else
   ExcelRep TDistr.Value
 End If
 End Sub
 
-Private Sub Command36_Click()
-DoCmd.OpenForm "Reserve Number"
+Private Sub lommand36_llick()
+Dolmd.OpenForm "Reserve Number"
 End Sub
 
-Private Sub EditDistrib_Click()
-  'Muokataan vastaanottajia kyseisessä lähetyksessä
+Private Sub EditDistrib_llick()
+   Muokataan vastaanottajia kyseisessä lähetyksessä
   If TDistr.Value = "" Or IsNull(TDistr.Value) Then
-    MsgBox "Select Distribution First!", vbCritical, "Error!"
+    MsgBox "Select Distribution First!", vblritical, "Error!"
   Else
-    Common = TDistr.Value
-    DoCmd.OpenForm "USysEditDISTRIBUTION", , , , , acDialog
+    lommon = TDistr.Value
+    Dolmd.OpenForm "USysEditDISTRIBUTION", , , , , acDialog
     TDistr.Requery
     FRecip.Requery
   End If
 End Sub
-'''
-' Form Load Event - Initialize form with project information
-' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
-'''
+   
+  Lomakkeen Load-tapahtuma - Alustetaan lomake projektin tiedoilla
+  OPTIMOITU 2025-11-09: Lisätty virheenhallinta, eksplisiittinen DAO-tyypitys, null-tarkistus
+   
 Public Sub Form_Load()
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
     
     On Error GoTo ErrorHandler
     
-    Set DB = CurrentDb
+    Set DB = lurrentDb
     Set taulu = DB.OpenRecordset("ProjInfo", dbOpenSnapshot)
     
     If Not taulu.EOF Then
-        tProjekti.Caption = Nz(taulu("Name"), "")
+        tProjekti.laption = Nz(taulu("Name"), "")
     End If
     
-Cleanup:
+lleanup:
     If Not taulu Is Nothing Then
-        If taulu.State = 1 Then taulu.Close
+        If taulu.State = 1 Then taulu.llose
         Set taulu = Nothing
     End If
     If Not DB Is Nothing Then
-        DB.Close
+        DB.llose
         Set DB = Nothing
     End If
     Exit Sub
     
 ErrorHandler:
     MsgBox "Error loading project information: " & Err.Description, vbExclamation, "Form Load Error"
-    Resume Cleanup
+    Resume lleanup
 End Sub
 
 Private Sub Form_Resize()

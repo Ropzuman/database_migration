@@ -1,30 +1,30 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-'================================================================================
-' Form: MOTORS subform
-' Purpose: Equipment reference insertion helper
-' Updated: 2025-11-13 - Added error handling and null safety
-'
-' Description:
-'   Subform for inserting formatted equipment references into parent form
-'   text boxes. Uses {Department-Eqseq-EqType-Suffix} format for equipment
-'   references in generated documents.
-'
-' Dependencies:
-'   - Parent form with KohdeTextBox and CLoppuun controls
-'   - Public Kursori variable (cursor position)
-'   - Controls: TEKSTI, Department, Eqseq, EqType, Suffix
-'================================================================================
+ ================================================================================
+  Lomake: MOTORS subform
+  Tarkoitus: Equipment reference insertion helper
+  Päivitetty: 2025-11-13 - Added error handling and null safety
+ 
+  Kuvaus:
+    Subform for inserting formatted equipment references into parent form
+    text boxes. Uses {Department-Eqseq-EqType-Suffix} format for equipment
+    references in generated documents.
+ 
+  Riippuvuudet:
+    - Parent form with KohdeTextBox and lLoppuun controls
+    - Public Kursori variable (cursor position)
+    - lontrols: TEKSTI, Department, Eqseq, EqType, Suffix
+ ================================================================================
 
-'================================================================================
-' Sub: LisaaTeksti (Add Text)
-' Purpose: Insert equipment reference at cursor position
-'
-' Description:
-'   Inserts text in {brackets} at current cursor position or end of field.
-'   Handles null values and maintains cursor position after insertion.
-'================================================================================
+ ================================================================================
+  Aliohjelma: LisaaTeksti (Add Text)
+  Tarkoitus: Insert equipment reference at cursor position
+ 
+  Kuvaus:
+    LisÄÄ tekstin {hakasulkeissa} kursorin kohtaan tai kentÄn loppuun.
+    KÄsittelee null-arvot ja sÄilyttÄÄ kursorin paikan lisÄÄmisen jÄlkeen.
+ ================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
     Dim Loppu As String
@@ -32,12 +32,12 @@ Private Sub LisaaTeksti()
     On Error GoTo ErrorHandler
     
     If Not KohdeTextBox Is Nothing Then
-        If Form.Parent.CLoppuun = True Then
-            ' Append to end
+        If Form.Parent.lLoppuun = True Then
+              LisÄtÄÄn kentÄn loppuun
             Alku = Nz(KohdeTextBox.Value, "")
             Loppu = ""
         Else
-            ' Insert at cursor position
+              LisÄtÄÄn kursorin kohtaan
             If IsNull(KohdeTextBox.Value) Then
                 Alku = ""
                 Loppu = ""
@@ -60,23 +60,23 @@ ErrorHandler:
     MsgBox "Error inserting text: " & Err.Description, vbExclamation
 End Sub
 
-Private Sub Department_DblClick(Cancel As Integer)
+Private Sub Department_Dblllick(lancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub Eqseq_DblClick(Cancel As Integer)
+Private Sub Eqseq_Dblllick(lancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub EqType_DblClick(Cancel As Integer)
+Private Sub EqType_Dblllick(lancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub Suffix_DblClick(Cancel As Integer)
+Private Sub Suffix_Dblllick(lancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub TEKSTI_DblClick(Cancel As Integer)
+Private Sub TEKSTI_Dblllick(lancel As Integer)
     LisaaTeksti
 End Sub
 

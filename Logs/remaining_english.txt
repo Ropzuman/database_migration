@@ -1,0 +1,167 @@
+﻿C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:L126: ' @param Ehto - Distribution ID filter (if empty, generates report for all documents)
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L111: ' Extracts the original author name from a multi-line revision string.
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L112: ' Parses backward to find the first (oldest) revision entry.
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L218: ' Extracts the revision mark (e.g., "A", "B", "0") from revision string.
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L244: ' Extracts the date from the first (oldest) revision entry.
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L245: ' Parses backward through multi-line revision string to find original date.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:L71: '   Drops existing table if present, creates new linked table definition
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L11: '   Generates both Word (.docx) and HTML documents from database templates.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L12: '   Handles loops (PIIRIT) and equipment (MOOTTORIT) descriptions.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L16: '   2. Form reads data from TIEDOT_PIIRIT or TIEDOT_MOOTTORIT tables
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L18: '      - {LOOPTAG} inserts hyperlinked loop references
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L22: '   4. For Word: Opens template, replaces bookmarks, saves as new document
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L23: '   5. For HTML: Generates HTML file with CSS styling and hyperlinks
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L25: ' Template Bookmarks (Word):
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L36: '   - Queries: LUOPIIRIT (creates new loop descriptions)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L219: '   Creates HTML file with loop/motor function description, including:
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L345: '   Converts text field content to HTML format:
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L447: '   Searches for {POS Description} patterns and converts to hyperlinks
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L484: '   Reads configuration from SETTINGS table including template paths,
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L517: ' Tarkoitus: Fill Word template bookmarks with loop/equipment data
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L520: '   Replaces Word template bookmarks with data from current record.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L521: '   Handles headers (_REV, _STAT, _AUTH, etc.) and content fields
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L522: '   (_LTAG, _DESCR, _FUNCT, etc.). Generates alarm lists and equipment lists.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L733: '   Replaces bookmark text in document. Handles long text (>255 chars) separately
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L793: '   Replaces bookmark text and converts vbCrLf to Word paragraphs.
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:L25: '   Inserts text in {brackets} at current cursor position or end of field.
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:L26: '   Handles null values and maintains cursor position after insertion.
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:L36: ' Append to end
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:L40: ' Insert at cursor position
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:L24: '   Inserts text in {brackets} at current cursor position or end of field.
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:L25: '   Handles null values and maintains cursor position after insertion.
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:L35: ' Append to end
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:L39: ' Insert at cursor position
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L10: '   Provides utility functions for equipment revision editing, table display,
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L31: '   Checks if active table is an equipment table, opens corresponding record
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L74: '   Translates mode codes:
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L76: '   Other codes pass through unchanged. Returns "-" for Null input.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L10: '   Processes text containing equipment references in braces {xx-xx-xx description}
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L11: '   and translates them to actual equipment names from MAINEQ or Loops tables.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L12: '   Validates references and marks deleted or missing items with error tags.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L33: '   Parses text for {POS description} patterns where:
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L60: ' No references to translate
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L65: ' Initialize output with text before first reference
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L12: '   - Displays available loops from source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L15: '   - Handles duplicate loop prevention
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L16: '   - Provides detailed status feedback
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L68: '   3. Iterate through all devTbl* tables in source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L78: '   - Prevents duplicate loops (checks LOOPS table first)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L81: '   - Provides detailed status messages in TTiedot textbox
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L113: ' Iterate through selected loops in subform
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L153: ' Iterate through all records in source device table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L227: '   - Form_Unload event will handle cleanup
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L248: '   - Creates temporary linked table for loop browsing
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L350: '   - Provides responsive UI for better loop viewing
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:L12: '   - Extracts database filename from current link path
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:L14: '   - Prevents links to wrong directory after database moves
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:L42: '   - Prevents duplicate relinking of same table
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L12: '   - Converts decimal commas to periods (Finnish → international format)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L14: '   - Opens output folder in Windows Explorer after export
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L15: '   - Handles null values appropriately
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L36: '   4. Iterate through all records:
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L40: '      - Handle null values as empty strings
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L51: '   - Handles Finnish decimal format (comma) conversion
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L52: '   - Opens output folder for user convenience
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L93: ' Handle null values
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L140: ' Tarkoitus: Initialize form with default values
+C:\database_migration\Access\instru3\general.bas:L9: '   Provides utility functions for:
+C:\database_migration\Access\instru3\general.bas:L82: ' Tarkoitus: Converts decimal comma to decimal point (Finnish to international format)
+C:\database_migration\Access\instru3\general.bas:L91: '   - Returns empty string if input is null or empty
+C:\database_migration\Access\instru3\general.bas:L99: ' Handle null/empty input
+C:\database_migration\Access\instru3\general.bas:L120: ' Tarkoitus: Extracts revision number from user notes based on date
+C:\database_migration\Access\instru3\general.bas:L129: '   - Parses date from UdNote string (format: "something:MM/DD/YYYY|something")
+C:\database_migration\Access\instru3\general.bas:L131: '   - Returns first revision where BeforeDate > parsed date
+C:\database_migration\Access\instru3\general.bas:L141: ' Handle null input
+C:\database_migration\Access\instru3\general.bas:L180: ' Tarkoitus: Checks if a loop exists in the system
+C:\database_migration\Access\instru3\general.bas:L190: '   - Queries qrysolvalve for matching AreaCode and LoopNo
+C:\database_migration\Access\instru3\general.bas:L191: '   - Returns simple existence flag (not boolean for backward compatibility)
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:L54: ' Reads the .LACCDB lock file to determine who's currently logged on
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:L94: ' Extract machine name (null-terminated)
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:L102: ' Extract user name (null-terminated)
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:L32: ' Initialize log textbox
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:L246: ' Execute multiple queries from TKyselyt field
+C:\database_migration\Access\LoopCircuit\General.bas:L95: ' Log error or handle silently
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L70: ' Huomiot: Handles legacy naming convention with asterisk markers
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L153: '   1. Reads configuration from common table
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L154: '   2. Resets/initializes output .txt files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L155: '   3. Generates non-loop-based lists
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L156: '   4. Generates loop-based lists (if applicable)
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L157: '   5. Closes all files properly
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L193: '--- Reset/Initialize all output .txt files with opening parenthesis ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L197: ' Initialize non-loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L203: ' Initialize loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L298: ' Tarkoitus: Generate LISP lists from tables/queries that don't require loop ID filtering
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L302: ' Huomiot: Handles both single tables and wildcard table groups (e.g., "CIRCUIT*")
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L325: '--- Handle wildcard table names (e.g., "CIRCUIT*") ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L330: ' Loop through all tables matching the prefix
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L362: '--- Handle single table/query names ---
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:L89: ' Compares two tables and marks changed records with revision information
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:L116: ' Compare values between the two tables (Nz handles nulls)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L103: '   - More robust (handles edge cases better)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L116: ' If any code calls this function, it will now use the VBA built-in automatically.
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L322: ' Handle null input
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L11: '   - Displays machine name and username for each connection
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L97: '   3. Open lock file in binary mode
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L106: '   - Opens file with shared read access
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L107: '   - Handles missing file gracefully
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L145: ' Extract machine name (null-terminated)
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L153: ' Extract user name (null-terminated)
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L11: '   - Displays list of pipeline segments from PIPELINEDATA
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L13: '   - Opens selected drawing and zooms to pipeline block
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L14: '   - Auto-opens if only 2 segments (one is header row)
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L47: ' Tarkoitus: Initialize form and populate pipeline segment list
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L12: '   - Extracts database filename from current link path
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L14: '   - Prevents links to wrong directory after database moves
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L41: '   - Prevents duplicate relinking of same table
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L57: ' Initialize counter
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L11: '   - Batch processes .DWG files from specified folder
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L17: '   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L208: ' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L11: '   - Connects to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L53: ' Tarkoitus: Initialize form - connect to AutoCAD and create flow block selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L62: '   - Closes form if AutoCAD not running
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L63: '   - Closes form if no flow blocks found
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L98: ' Initialize with first block
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L120: '   - Iterates through all blocks automatically
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L121: '   - Sets EiLinjaa flag if pipeline not found for any block
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L215: '   - Returns concatenated string (e.g., "AREA01L001")
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L216: '   - Handles both DEP and DEPA attribute tags
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L339: '   - Searches for PIPEREF, PIPELINENO, or PIPE_LINE attribute
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L400: '   - Sets module-level oACAD and oDOC variables
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L427: '   - Searches for PIPELINE, BAHPIPEL, ARAPIPEL blocks
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L429: '   - Deletes temporary selection set after use
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L430: '   - Sets EiLinjaa=True if no pipeline found
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L493: '   - Uses Nz to handle null values
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:L11: '   - Connects to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:L12: '   - Filters and displays only pipeline blocks (PIPELINE, PIPELINE_DATA, METSO_PIPE)
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:L316: ' Tarkoitus: Initialize form, connect to AutoCAD, filter pipeline blocks
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:L11: '   - Connects to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:L275: ' Tarkoitus: Initialize form, connect to AutoCAD, filter equipment blocks
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L11: '   - Reads valve records from MANUALVALVES table
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L12: '   - Opens each .DWG file containing valves
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L14: '   - Preserves attributes, layer, rotation (handles mirroring)
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L15: '   - Updates database with new Handle and block name
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L137: ' Handle rotation (account for mirroring)
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L165: ' Update database with new handle and block name
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L56: '   2. Iterate through all records
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L61: '   - Improves database normalization
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L62: '   - Prevents empty strings in database
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L338: '   1. Iterate through all TableDefs in database
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L345: '   - Populates KaikkiTaulukot combo box RowSource
+C:\database_migration\Access\PIPE\Koodit.bas:L10: '   Provides essential functionality for the PIPE database:
+C:\database_migration\Access\PIPE\Koodit.bas:L116: '   Handle - AutoCAD block handle (hex string)
+C:\database_migration\Access\PIPE\Koodit.bas:L128: '   - Handles missing drawings gracefully
+C:\database_migration\Access\PIPE\Koodit.bas:L142: ' Normalize drawing name for consistent comparison
+C:\database_migration\Access\PIPE\Koodit.bas:L320: '   POIMI("AREA-123-VALVE", 2) returns "123"
+C:\database_migration\Access\PIPE\Koodit.bas:L324: '   - Returns Null for null or empty input
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L173: ' Initialize headers if clearing worksheet
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L196: ' Set appropriate formats per column
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L252: ' Initialize tag-to-column cache
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L397: ' Fallback: If specific names were requested and the selection is empty, re-select by type only
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L475: ' Normalize checks for both interface TypeName and AcDb* values
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L516: ' Late binding: InsertionPoint returns a Variant array (x,y,z). Retrieve then index.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L526: ' Fallback: attempt property access directly
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L567: ' Handle text entities only when requested
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L635: ' After flushing rows, coerce coordinate columns to numbers (handles any text leftovers)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L784: ' Loop through each attribute in the block
+C:\database_migration\Excel\Moduulit\Listojen kyselyt\Module2.bas:L28: ' Initialize all document info variables

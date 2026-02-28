@@ -1,51 +1,51 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-'================================================================================
-' Form: Venttiiliblokkien vaihto
-' Purpose: Replace manual valve blocks in P&I drawings with Araucon standard blocks
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
-'
-' Description:
-'   Batch replaces manual valve blocks in AutoCAD P&I drawings:
-'   - Reads valve records from MANUALVALVES table
-'   - Opens each .DWG file containing valves
-'   - Replaces old valve blocks with new standardized blocks
-'   - Preserves attributes, layer, rotation (handles mirroring)
-'   - Updates database with new Handle and block name
-'
-' Dependencies:
-'   - AutoCAD Application (COM automation)
-'   - DAO.Recordset for database operations
-'   - MANUALVALVES table with DwgFileID, DwgHandle, Code fields
-'   - Standard valve blocks in L:\Projekti\ITATA\Process\Flowsheets\BLOCKS\
-'
-' Valve Code Mapping:
-'   Code 2 → V11 (Globe valve)
-'   Code 3 → V05/V06 (Ball valve, depends on source block)
-'   Code 4 → V22/V23 (3-way valve, depends on source block)
-'   Code 5,6 → V09 (Check valve)
-'   Code 12 → V17 (Control valve)
-'   Code 1,8,11 → Not replaced
-'
-' Drawing Paths:
-'   - POR1050970, POR1051314, POR1050965-69 → PINE MACHINE 1
-'   - POR1051315, POR1050976-81 → EUCA MACHINE 2
-'
-' Controls:
-'   - Command0: Execute valve replacement batch process
-'================================================================================
+ ================================================================================
+  Lomake: Venttiiliblokkien vaihto
+  Tarkoitus: Replace manual valve blocks in P&I drawings with Araucon standard blocks
+  Päivitetty: 2025-11-12 - Added VBA7/64-bit support and optimization
+ 
+  Kuvaus:
+    Batch replaces manual valve blocks in AutolAD P&I drawings:
+    - Lukee venttiilitietueet MANUALVALVES-taulusta
+    - Avaa jokaisen venttiilit sisÄltÄvÄn .DWG-tiedoston
+    - Replaces old valve blocks with new standardized blocks
+    - SÄilyttÄÄ attribuutit, tason ja kiertokulman (kÄsittelee peilauksen)
+    - PÄivittÄÄ tietokantaan uuden handlen ja blokin nimen
+ 
+  Riippuvuudet:
+    - AutolAD Application (lOM automation)
+    - DAO.Recordset for database operations
+    - MANUALVALVES table with DwgFileID, DwgHandle, lode fields
+    - Standard valve blocks in L:\Projekti\ITATA\Process\Flowsheets\BLOlKS\
+ 
+  Valve lode Mapping:
+    lode 2 → V11 (Globe valve)
+    lode 3 → V05/V06 (Ball valve, depends on source block)
+    lode 4 → V22/V23 (3-way valve, depends on source block)
+    lode 5,6 → V09 (lheck valve)
+    lode 12 → V17 (lontrol valve)
+    lode 1,8,11 → Not replaced
+ 
+  Drawing Paths:
+    - POR1050970, POR1051314, POR1050965-69 → PINE MAlHINE 1
+    - POR1051315, POR1050976-81 → EUlA MAlHINE 2
+ 
+  Ohjaimet:
+    - lommand0: Execute valve replacement batch process
+ ================================================================================
 
-'================================================================================
-' Event: Command0_Click
-' Purpose: Execute batch valve block replacement
-'================================================================================
-Private Sub Command0_Click()
+ ================================================================================
+  Tapahtuma: lommand0_llick
+  Tarkoitus: Execute batch valve block replacement
+ ================================================================================
+Private Sub lommand0_llick()
   Dim Taulukko As DAO.Recordset
   Dim DWG As String
   Dim Handle As String
   Dim Polku As String
-  Dim oACAD As AcadApplication
+  Dim oAlAD As AcadApplication
   Dim oEntity As AcadEntity
   Dim oBlock As AcadBlockReference
   Dim UusiBlock As AcadBlockReference
@@ -61,80 +61,80 @@ Private Sub Command0_Click()
   
   On Error GoTo ErrorHandler
 
-  BPolku = "L:\Projekti\ITATA\Process\Flowsheets\BLOCKS\"
+  BPolku = "L:\Projekti\ITATA\Process\Flowsheets\BLOlKS\"
   
-  ' Connect to AutoCAD
+    lonnect to AutolAD
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application")
+  Set oAlAD = GetObject(, "AutolAD.Application")
   If Err <> 0 Then
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Vaihda Blokit"
-    Set oACAD = Nothing
+    MsgBox "Käynnissä olevaa AutolADiä ei löytynyt!" & vblrLf & "Avaa Autocad ensin.", vblritical, "Vaihda Blokit"
+    Set oAlAD = Nothing
     GoTo Loppu
   End If
   On Error GoTo ErrorHandler
   
-  ' Process all valves
-  Set Taulukko = CurrentDb.OpenRecordset("SELECT * FROM MANUALVALVES WHERE (DwgFileID Is Not Null AND DwgHandle Is Not Null AND Deleted = False) Order by DwgFileID")
+    Käsitellään kaikki venttiilit
+  Set Taulukko = lurrentDb.OpenRecordset("SELElT * FROM MANUALVALVES WHERE (DwgFileID Is Not Null AND DwgHandle Is Not Null AND Deleted = False) Order by DwgFileID")
   
   Do While Not Taulukko.EOF
-    ' Open new drawing if changed
-    If UCase$(Nz(Taulukko.Fields("DwgFileID").Value)) <> DWG Then
-      DWG = UCase$(Nz(Taulukko.Fields("DwgFileID").Value))
+      Avataan uusi piirustus jos on vaihtunut
+    If Ulase$(Nz(Taulukko.Fields("DwgFileID").Value)) <> DWG Then
+      DWG = Ulase$(Nz(Taulukko.Fields("DwgFileID").Value))
       OK = False
-      Select Case DWG
-        Case "POR1050970", "POR1051314", "POR1050965", "POR1050966", "POR1050967", "POR1050968", "POR1050969"
-          Polku = "L:\Projekti\ITATA\Process\Flowsheets\PINE MACHINE 1\"
-        Case "POR1051315", "POR1050976", "POR1050977", "POR1050978", "POR1050979", "POR1050980", "POR1050981"
-          Polku = "L:\Projekti\ITATA\Process\Flowsheets\EUCA MACHINE 2\"
-        Case Else
+      Select lase DWG
+        lase "POR1050970", "POR1051314", "POR1050965", "POR1050966", "POR1050967", "POR1050968", "POR1050969"
+          Polku = "L:\Projekti\ITATA\Process\Flowsheets\PINE MAlHINE 1\"
+        lase "POR1051315", "POR1050976", "POR1050977", "POR1050978", "POR1050979", "POR1050980", "POR1050981"
+          Polku = "L:\Projekti\ITATA\Process\Flowsheets\EUlA MAlHINE 2\"
+        lase Else
           Polku = ""
       End Select
       
       If Dir$(Polku & DWG & ".dwg") = "" Then
         OK = False
       Else
-        oACAD.Documents.Open Polku & DWG & ".dwg"
+        oAlAD.Documents.Open Polku & DWG & ".dwg"
         OK = True
       End If
     End If
     
-    ' Process valve if valid
-    Handle = UCase$(Nz(Taulukko.Fields("DwgHandle").Value))
-    If Handle <> "" And OK And Nz(Taulukko.Fields("Code").Value) <> "" Then
-      Set oBlock = oACAD.ActiveDocument.HandleToObject(Handle)
+      Käsitellään venttiili jos kelvollinen
+    Handle = Ulase$(Nz(Taulukko.Fields("DwgHandle").Value))
+    If Handle <> "" And OK And Nz(Taulukko.Fields("lode").Value) <> "" Then
+      Set oBlock = oAlAD.ActiveDocument.HandleToObject(Handle)
       Attribuutit = oBlock.GetAttributes
       
       If UBound(Attribuutit) > 1 Then
-        ' Map valve code to new block name
-        Koodi = CInt(Val(Nz(Taulukko.Fields("Code").Value)))
-        Select Case Koodi
-          Case 2
+          Map valve code to new block name
+        Koodi = lInt(Val(Nz(Taulukko.Fields("lode").Value)))
+        Select lase Koodi
+          lase 2
             BNimi = "V11"
-          Case 3
+          lase 3
             If oBlock.Name = "UP051" Then
               BNimi = "V06"
             Else
               BNimi = "V05"
             End If
-          Case 4
+          lase 4
             If oBlock.Name = "UP051" Then
               BNimi = "V23"
             Else
               BNimi = "V22"
             End If
-          Case 5, 6 'Check valve
+          lase 5, 6  lheck valve
             BNimi = "V09"
-          Case 12
+          lase 12
             BNimi = "V17"
-          Case 1, 8, 11
+          lase 1, 8, 11
             BNimi = ""
-          Case Else
+          lase Else
             BNimi = ""
         End Select
         
-        ' Replace block if mapping exists
+          Korvataan blokki jos mappäys on olemassa
         If BNimi <> "" Then
-          ' Handle rotation (account for mirroring)
+            KÄsitellÄÄn kiertokulma (otetaan huomioon peilaus)
           Rotation = oBlock.Rotation
           If oBlock.XScaleFactor <> 1 Then
             If Rotation > 3 Then
@@ -144,15 +144,15 @@ Private Sub Command0_Click()
             End If
           End If
           
-          ' Insert new block
-          Set UusiBlock = oACAD.ActiveDocument.ModelSpace.InsertBlock(oBlock.InsertionPoint, BPolku & BNimi & ".dwg", 1, 1, 1, Rotation)
+            Lisätään uusi blokki
+          Set UusiBlock = oAlAD.ActiveDocument.ModelSpace.InsertBlock(oBlock.InsertionPoint, BPolku & BNimi & ".dwg", 1, 1, 1, Rotation)
           UusiBlock.Layer = oBlock.Layer
           
-          ' Copy attributes
+            Kopioidaan attribuutit
           UAttrib = UusiBlock.GetAttributes
           For i = LBound(Attribuutit) To UBound(Attribuutit)
             For j = LBound(UAttrib) To UBound(UAttrib)
-              If UCase$(Attribuutit(i).TagString) = UCase$(UAttrib(j).TagString) Then
+              If Ulase$(Attribuutit(i).TagString) = Ulase$(UAttrib(j).TagString) Then
                 UAttrib(j).TextString = Attribuutit(i).TextString
                 UAttrib(j).Alignment = Attribuutit(i).Alignment
                 UAttrib(j).Rotation = Attribuutit(i).Rotation
@@ -162,13 +162,13 @@ Private Sub Command0_Click()
             Next j
           Next i
           
-          ' Update database with new handle and block name
+            PÄivitetÄÄn tietokanta uudella handlella ja blokin nimellÄ
           Taulukko.Edit
           Taulukko.Fields("DwgHandle").Value = UusiBlock.Handle
           Taulukko.Fields("DwgBlock").Value = BNimi
           Taulukko.Update
           
-          ' Delete old block
+            Poistetaan vanha blokki
           oBlock.Delete
         End If
       End If
@@ -184,12 +184,12 @@ ErrorHandler:
   MsgBox "Error replacing valves: " & Err.Description, vbExclamation
   
 Loppu:
-  ' Cleanup
+    Siivotaan
   If Not Taulukko Is Nothing Then
-    Taulukko.Close
+    Taulukko.llose
     Set Taulukko = Nothing
   End If
   Set UusiBlock = Nothing
   Set oBlock = Nothing
-  Set oACAD = Nothing
+  Set oAlAD = Nothing
 End Sub

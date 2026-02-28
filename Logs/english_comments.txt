@@ -1,0 +1,132 @@
+﻿C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:L71:' Iterate thru dbCurrent.LDB file for login names.
+C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:L51:' Check if document already added to this distribution
+C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:L190:' Form Load Event - Initialize form with project information
+C:\database_migration\Access\DOCUMENTS\Form_DOCUMENTS.cls:L89:' Form Load Event - Initialize form with project information
+C:\database_migration\Access\DOCUMENTS\Form_USysNewDistribution.cls:L8:' Form Load Event - Initialize distribution form
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L78:'* This function replaces all unsuitable characters in the given string    *
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L100:' HaeTekija: Returns the creator (i.e., the very first author)
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L101:' HaeRevisioija: Returns the latest author (if there is only one line of data, both the creator and reviser are the same)
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L102:' HaeRevisio: Returns the notation of the latest revision
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L103:' HaeViimPaiva: Returns the date of the latest noted revision
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:L104:' HaePaiva: Returns the date of the first revision
+C:\database_migration\Access\FunctionDiagrams\Form_DBUsers.cls:L67:' Iterate thru dbCurrent.LDB file for login names.
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:L506:'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:L393:'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\Function_descriptions_html\Form_DBUsers.cls:L31:' Purpose: Initialize form with current user list
+C:\database_migration\Access\Function_descriptions_html\Form_DBUsers.cls:L43:' Purpose: Close the form
+C:\database_migration\Access\Function_descriptions_html\Form_DBUsers.cls:L72:'   Opens the .LACCDB lock file and reads all 64-byte user records.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:L105:' Purpose: Initialize form with default database paths and log user
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L6:' Purpose: Generate Word and HTML function descriptions for loops and equipment
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L12:'   Handles loops (PIIRIT) and equipment (MOOTTORIT) descriptions.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:L22:'   4. For Word: Opens template, replaces bookmarks, saves as new document
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:L5:' Form: PIIRIT subform (Loops subform)
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L31:'   Checks if active table is an equipment table, opens corresponding record
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:L76:'   Other codes pass through unchanged. Returns "-" for Null input.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L11:'   and translates them to actual equipment names from MAINEQ or Loops tables.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L22:'   Output: "10-TIC-001 Actual Loop Description" (from Loops table)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L36:'   - Otherwise: Looks up in Loops table (process loops)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L65:' Initialize output with text before first reference
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:L84:' Process loop from Loops table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L12:'   - Displays available loops from source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L13:'   - Imports selected loops to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L19:'   - LOOPS table (target for loop import)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L63:' Purpose: Import selected loops and associated device data from source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L67:'   2. Copy loop records from LOOPLINK to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L68:'   3. Iterate through all devTbl* tables in source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L75:'   - Imports to LOOPS and devTable tables
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L78:'   - Prevents duplicate loops (checks LOOPS table first)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L108:'Kopioidaan ensin Loopit Loops taulukkoon - First copy Loops to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L113:' Iterate through selected loops in subform
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L117:' Check if loop already exists in target database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L147:' Check if table is a device table (devTbl* or devTable, excluding devTblCommon)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L153:' Iterate through all records in source device table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L155:' Check if this record belongs to one of the imported loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L223:' Purpose: Close the form
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L242:'   6. Create new linked table LOOPLINK pointing to Loops table in source DB
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L318:' Create linked table to Loops table in source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:L325:' Display available loops in subform
+C:\database_migration\Access\instru3\Form_DBUsers.cls:L67:' Iterate thru dbCurrent.LDB file for login names.
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:L76:' Check if link path differs from current database path
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L14:'   - Opens output folder in Windows Explorer after export
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L36:'   4. Iterate through all records:
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L52:'   - Opens output folder for user convenience
+C:\database_migration\Access\instru3\Form_SizingOut.cls:L140:' Purpose: Initialize form with default values
+C:\database_migration\Access\instru3\general.bas:L91:'   - Returns empty string if input is null or empty
+C:\database_migration\Access\instru3\general.bas:L131:'   - Returns first revision where BeforeDate > parsed date
+C:\database_migration\Access\instru3\general.bas:L180:' Purpose: Checks if a loop exists in the system
+C:\database_migration\Access\instru3\general.bas:L191:'   - Returns simple existence flag (not boolean for backward compatibility)
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:L78:' Try legacy .ldb extension for older Access versions
+C:\database_migration\Access\LoopCircuit\Form_Linkkien vaihto.cls:L70:' Note: Do NOT close db if it's CurrentDb - it's the currently open database
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:L32:' Initialize log textbox
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:L473:'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L11:'                       Fixed DBEngine pattern, replaced deprecated constants
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L70:' Notes: Handles legacy naming convention with asterisk markers
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L154:'   2. Resets/initializes output .txt files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L157:'   5. Closes all files properly
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L193:'--- Reset/Initialize all output .txt files with opening parenthesis ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L197:' Initialize non-loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L203:' Initialize loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L330:' Loop through all tables matching the prefix
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:L543:' Note: These paths are specific to the "AGROPM10" project structure.
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:L64:' Removed dbCurrent.Close - CurrentDb returns a new instance each time,
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:L65:' closing it causes Error 0 crash. Object auto-closes when out of scope.
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:L70:' Iterate thru dbCurrent.LDB file for login names.
+C:\database_migration\Access\MAINEQ\Form_GeneroiMoottorikuvat.cls:L13:' Note: These paths are specific to the Santa Fe 220018 project.
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L26:' Purpose: Check if a form is currently open in Form or Datasheet view
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L38:' Check if form is open (not closed)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L40:' Check if form is not in design view
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L94:' NOTE: Custom Replace() function REMOVED 2025-11-11
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:L116:' If any code calls this function, it will now use the VBA built-in automatically.
+C:\database_migration\Access\MAINEQ\Report_MOOTTORIT.cls:L13:' Note: These paths are specific to the Santa Fe 220018 project.
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L32:' Purpose: Send network message to selected user (legacy feature)
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L35:'   - Uses legacy "net send" command (may not work on modern Windows)
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:L106:'   - Opens file with shared read access
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L13:'   - Opens selected drawing and zooms to pipeline block
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L14:'   - Auto-opens if only 2 segments (one is header row)
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:L47:' Purpose: Initialize form and populate pipeline segment list
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L57:' Initialize counter
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:L87:' Check if link path differs from current database path
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L17:'   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L30:'   - INSTLOOPDATA: Instrument loops (UP079D, UP008C, UP085D, UP08C)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L208:' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L386:' Purpose: Check if a field exists in a recordset
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L768:' Check if block has attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L774:' Check if this attribute matches any in our search list
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L848:' Check if block has attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:L856:' Check if attribute value starts with the specified value
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L53:' Purpose: Initialize form - connect to AutoCAD and create flow block selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L62:'   - Closes form if AutoCAD not running
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L63:'   - Closes form if no flow blocks found
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L98:' Initialize with first block
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L120:'   - Iterates through all blocks automatically
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L121:'   - Sets EiLinjaa flag if pipeline not found for any block
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L215:'   - Returns concatenated string (e.g., "AREA01L001")
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L248:'   3. Check if pipeline reference is empty
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L400:'   - Sets module-level oACAD and oDOC variables
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:L430:'   - Sets EiLinjaa=True if no pipeline found
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:L70:' Purpose: Close the form
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:L316:' Purpose: Initialize form, connect to AutoCAD, filter pipeline blocks
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:L41:' Purpose: Close the form
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:L275:' Purpose: Initialize form, connect to AutoCAD, filter equipment blocks
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:L12:'   - Opens each .DWG file containing valves
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L56:'   2. Iterate through all records
+C:\database_migration\Access\PIPE\Form_zFunc.cls:L338:'   1. Iterate through all TableDefs in database
+C:\database_migration\Access\PIPE\Koodit.bas:L121:'   2. Check if drawing already open, otherwise open it
+C:\database_migration\Access\PIPE\Koodit.bas:L154:' Check if drawing already open (use cached lowercase name)
+C:\database_migration\Access\PIPE\Koodit.bas:L216:' Purpose: Get Windows network username (DEPRECATED - Not currently used)
+C:\database_migration\Access\PIPE\Koodit.bas:L320:'   POIMI("AREA-123-VALVE", 2) returns "123"
+C:\database_migration\Access\PIPE\Koodit.bas:L324:'   - Returns Null for null or empty input
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:L55:' Check if correct document is open
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L19:' NOTE: acSelectionSetAll must be 5
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L30:'' Note: Window state, active space and zoom constants are defined where used (e.g., DATA.bas)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L45:' Note: Arrays are 0-based and sized exactly to avoid repeated ReDim Preserve.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L94:' NOTE: RemoveItems expects a Variant array of objects; using Variant avoids type mismatch
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L173:' Initialize headers if clearing worksheet
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L252:' Initialize tag-to-column cache
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L475:' Normalize checks for both interface TypeName and AcDb* values
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L516:' Late binding: InsertionPoint returns a Variant array (x,y,z). Retrieve then index.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L784:' Loop through each attribute in the block
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L808:' Column found - check if Excel value is non-empty
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L994:'' Check if desired document is already active
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:L1013:'' Check if desired drawing is open in AutoCAD
+C:\database_migration\Excel\Moduulit\Listojen kyselyt\Module2.bas:L28:' Initialize all document info variables

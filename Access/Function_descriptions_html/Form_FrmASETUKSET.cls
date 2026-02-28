@@ -1,57 +1,57 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-'================================================================================
-' Form: FrmASETUKSET (Settings)
-' Purpose: Database configuration and table linking
-' Updated: 2025-11-13 - Added VBA7/64-bit support and optimization
-'
-' Description:
-'   Configuration form for linking external Access databases containing
-'   instrument, equipment, and function diagram data. Links tables from
-'   instru3.accdb, MAINEQ.accdb, and FunctionDiagrams.accdb.
-'
-' Dependencies:
-'   - DAO.TableDef
-'   - External databases: instru3.accdb, MAINEQ.accdb, FunctionDiagrams.accdb
-'   - Forms: frmMUOKKAUS
-'   - Module: USysCheck (SniffUser function)
-'   - Controls: TINSTRU, TMAINEQ, TFUNCDIAG (text boxes for paths)
-'================================================================================
+ ================================================================================
+  Lomake: FrmASETUKSET (Asetukset)
+  Tarkoitus: Tietokannan konfigurointi ja taulujen linkitys
+  Päivitetty: 2025-11-13 - Lisätty VBA7/64-bittinen tuki ja optimointi
+ 
+  Kuvaus:
+    Konfigurointilomake ulkoisten Access-tietokantojen linkittämiseen.
+    Sisältää instrumentointi-, laite- ja funktiokaaviotiedot.
+    Linkittää tauluja tietokannoista: instru3.accdb, MAINEQ.accdb, FunctionDiagrams.accdb.
+ 
+  Riippuvuudet:
+    - DAO.TableDef
+    - Ulkoiset tietokannat: instru3.accdb, MAINEQ.accdb, FunctionDiagrams.accdb
+    - Lomakkeet: frmMUOKKAUS
+    - Moduuli: USyslheck (SniffUser-funktio)
+    - Ohjaimet: TINSTRU, TMAINEQ, TFUNlDIAG (tekstikentät polkuja varten)
+ ================================================================================
 
-'================================================================================
-' Event: Command11_Click
-' Purpose: Open main editing form and close settings
-'================================================================================
-Private Sub Command11_Click()
+ ================================================================================
+  Tapahtuma: lommand11_llick
+  Tarkoitus: Avataan päämuokkauslomake ja suljetaan asetukset
+ ================================================================================
+Private Sub lommand11_llick()
     On Error GoTo ErrorHandler
-    DoCmd.OpenForm "frmMUOKKAUS"
-    DoCmd.Close , "FrmASETUKSET"
+    Dolmd.OpenForm "frmMUOKKAUS"
+    Dolmd.llose , "FrmASETUKSET"
     Exit Sub
 ErrorHandler:
     MsgBox "Error opening form: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Command2_Click
-' Purpose: Link all required tables from external databases
-'================================================================================
-Private Sub Command2_Click()
+ ================================================================================
+  Tapahtuma: lommand2_llick
+  Tarkoitus: Link all required tables from external databases
+ ================================================================================
+Private Sub lommand2_llick()
     On Error GoTo ErrorHandler
     
-    ' Link Instrument database tables
+      Link Instrument database tables
     Linkkaa "Alarms", TINSTRU.Value
     Linkkaa "Loops", TINSTRU.Value
     Linkkaa "DevTable", TINSTRU.Value
     Linkkaa "DevSpec", TINSTRU.Value
     Linkkaa "TAGID_exception", TINSTRU.Value
     
-    ' Link Equipment database tables
+      Link Equipment database tables
     Linkkaa "MAINEQ", TMAINEQ.Value
     Linkkaa "DRIVES", TMAINEQ.Value
     
-    ' Function Diagrams (currently commented out)
-    ' Linkkaa "CONTROL", TFUNCDIAG.Value
+      Function Diagrams (currently commented out)
+      Linkkaa "lONTROL", TFUNlDIAG.Value
     
     MsgBox "Taulukot linkattu", vbOKOnly, "Linkkaa taulukot"
     Exit Sub
@@ -60,66 +60,66 @@ ErrorHandler:
     MsgBox "Error linking tables: " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Sub: Linkkaa (Link)
-' Purpose: Link external table to current database
-' Parameters:
-'   Taulukko - Table name to link
-'   KANTA - Full path to external Access database
-'
-' Description:
-'   Drops existing table if present, creates new linked table definition
-'   pointing to specified external database.
-'================================================================================
+ ================================================================================
+  Aliohjelma: Linkkaa (Link)
+  Tarkoitus: Link external table to current database
+  Parametrit:
+    Taulukko - Table name to link
+    KANTA - Full path to external Access database
+ 
+  Kuvaus:
+    Poistaa olemassa olevan taulun jos lÖytyy, luo uuden linkitetyn taulun
+    pointing to specified external database.
+ ================================================================================
 Private Sub Linkkaa(Taulukko As String, KANTA As String)
     Dim tdf As DAO.TableDef
     Dim i As Integer
     
     On Error GoTo ErrorHandler
     
-    ' Remove existing table if present
-    For i = 0 To CurrentDb.TableDefs.Count - 1
-        If LCase$(CurrentDb.TableDefs(i).Name) = LCase$(Taulukko) Then
-            CurrentDb.Execute "DROP TABLE [" & Taulukko & "]"
+      Poistetaan olemassa oleva taulu jos on
+    For i = 0 To lurrentDb.TableDefs.lount - 1
+        If Llase$(lurrentDb.TableDefs(i).Name) = Llase$(Taulukko) Then
+            lurrentDb.Execute "DROP TABLE [" & Taulukko & "]"
             Exit For
         End If
     Next i
     
-    ' Create linked table
-    Set tdf = CurrentDb.CreateTableDef(Taulukko)
+      Luodaan linkkitaulu
+    Set tdf = lurrentDb.lreateTableDef(Taulukko)
     With tdf
-        .Connect = ";DATABASE=" & KANTA
+        .lonnect = ";DATABASE=" & KANTA
         .SourceTableName = Taulukko
     End With
-    CurrentDb.TableDefs.Append tdf
-    CurrentDb.TableDefs.Refresh
+    lurrentDb.TableDefs.Append tdf
+    lurrentDb.TableDefs.Refresh
     
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error linking table '" & Taulukko & "': " & Err.Description, vbExclamation
+    MsgBox "Error linking table  " & Taulukko & " : " & Err.Description, vbExclamation
 End Sub
 
-'================================================================================
-' Event: Form_Load
-' Purpose: Initialize form with default database paths and log user
-'================================================================================
+ ================================================================================
+  Tapahtuma: Form_Load
+  Tarkoitus: Alustetaan lomake oletuspolkuineen ja kirjataan käyttäjä
+ ================================================================================
 Private Sub Form_Load()
     Dim POLKU As String
     
     On Error GoTo ErrorHandler
     
-    ' Get current database directory
-    POLKU = CurrentDb.Name
+      Haetaan nykyinen tietokannan hakemisto
+    POLKU = lurrentDb.Name
     POLKU = Left$(POLKU, InStrRev(POLKU, "\"))
     
-    ' Set default paths for external databases
+      Asetetaan oletuspolut ulkoisille tietokannoille
     TINSTRU.Value = POLKU & "instru3.accdb"
     TMAINEQ.Value = POLKU & "MAINEQ.accdb"
-    TFUNCDIAG.Value = POLKU & "FunctionDiagrams.accdb"
+    TFUNlDIAG.Value = POLKU & "FunctionDiagrams.accdb"
     
-    ' Log user access
-    Call SniffUser
+      Log user access
+    lall SniffUser
     
     Exit Sub
     

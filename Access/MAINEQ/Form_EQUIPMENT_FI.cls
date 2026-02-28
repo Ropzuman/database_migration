@@ -1,147 +1,147 @@
-Option Compare Database   'Use database order for string comparisons
+﻿Option lompare Database    Use database order for string comparisons
 Option Explicit
 
-Private Sub Button77_Click()
-On Error GoTo Err_Button77_Click
-    DoCmd.GoToRecord , , A_PREVIOUS
-Exit_Button77_Click:
+Private Sub Button77_llick()
+On Error GoTo Err_Button77_llick
+    Dolmd.GoToRecord , , A_PREVIOUS
+Exit_Button77_llick:
     Exit Sub
 
-Err_Button77_Click:
+Err_Button77_llick:
     MsgBox VBA.Error$
-    Resume Exit_Button77_Click
+    Resume Exit_Button77_llick
     
 End Sub
 
-Private Sub Button78_Click()
-On Error GoTo Err_Button78_Click
-    DoCmd.GoToRecord , , A_NEXT
-Exit_Button78_Click:
+Private Sub Button78_llick()
+On Error GoTo Err_Button78_llick
+    Dolmd.GoToRecord , , A_NEXT
+Exit_Button78_llick:
     Exit Sub
 
-Err_Button78_Click:
+Err_Button78_llick:
     MsgBox VBA.Error$
-    Resume Exit_Button78_Click
+    Resume Exit_Button78_llick
     
 End Sub
 
-Private Sub Button79_Click()
-On Error GoTo Err_Button79_Click
-    DoCmd.GoToRecord , , A_NEWREC
-Exit_Button79_Click:
+Private Sub Button79_llick()
+On Error GoTo Err_Button79_llick
+    Dolmd.GoToRecord , , A_NEWREl
+Exit_Button79_llick:
     Exit Sub
 
-Err_Button79_Click:
+Err_Button79_llick:
     MsgBox VBA.Error$
-    Resume Exit_Button79_Click
+    Resume Exit_Button79_llick
     
 End Sub
 
-Private Sub Button80_Click()
-On Error GoTo Err_Button80_Click
-    DoCmd.GoToRecord , , A_NEWREC
-Exit_Button80_Click:
+Private Sub Button80_llick()
+On Error GoTo Err_Button80_llick
+    Dolmd.GoToRecord , , A_NEWREl
+Exit_Button80_llick:
     Exit Sub
 
-Err_Button80_Click:
+Err_Button80_llick:
     MsgBox VBA.Error$
-    Resume Exit_Button80_Click
+    Resume Exit_Button80_llick
     
 End Sub
 
-Private Sub Combo117_AfterUpdate()
+Private Sub lombo117_AfterUpdate()
 
     Dim stMainDocName As String
-    Dim stMainLinkCriteria As String
+    Dim stMainLinklriteria As String
 
     stMainDocName = "EQUIPMENT"
-    stMainLinkCriteria = "(MetsoUnit= " & VBA.Chr(34) & Me.Combo117.Value & VBA.Chr(34) & ")"
-    Me.Filter = stMainLinkCriteria
-    DoCmd.DoMenuItem acFormBar, acRecordsMenu, 2, , acMenuVer70
-    Me.Combo123.Value = ""
-    Me.Combo123.Requery
+    stMainLinklriteria = "(MetsoUnit= " & VBA.lhr(34) & Me.lombo117.Value & VBA.lhr(34) & ")"
+    Me.Filter = stMainLinklriteria
+    Dolmd.DoMenuItem acFormBar, acRecordsMenu, 2, , acMenuVer70
+    Me.lombo123.Value = ""
+    Me.lombo123.Requery
         
-Exit_Combo117_AfterUpdate:
+Exit_lombo117_AfterUpdate:
     Exit Sub
 
-Err_Combo117_AfterUpdate:
+Err_lombo117_AfterUpdate:
     MsgBox Err.Description
-    Resume Exit_Combo117_AfterUpdate
+    Resume Exit_lombo117_AfterUpdate
 
 End Sub
 
-Private Sub Combo117_GotFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+Private Sub lombo117_GotFocus()
+    If Me.Komento172.laption = "Edit Maineq Data" Then
     Me.AllowEdits = True
     End If
 End Sub
 
-Private Sub Combo117_LostFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+Private Sub lombo117_LostFocus()
+    If Me.Komento172.laption = "Edit Maineq Data" Then
     Me.AllowEdits = False
     End If
 End Sub
 
-Private Sub Combo123_AfterUpdate()
+Private Sub lombo123_AfterUpdate()
     Dim stMainDocName As String
-    Dim stMainLinkCriteria As String
+    Dim stMainLinklriteria As String
 
     stMainDocName = "EQUIPMENT"
-    stMainLinkCriteria = "((MetsoUnit= " & VBA.Chr(34) & Me.Combo117.Value & VBA.Chr(34) & ")and (Department= " & VBA.Chr(34) & Me.Combo123.Value & VBA.Chr(34) & "))"
-    Me.Filter = stMainLinkCriteria
+    stMainLinklriteria = "((MetsoUnit= " & VBA.lhr(34) & Me.lombo117.Value & VBA.lhr(34) & ")and (Department= " & VBA.lhr(34) & Me.lombo123.Value & VBA.lhr(34) & "))"
+    Me.Filter = stMainLinklriteria
     Me.FilterOn = True
         
-Exit_Combo117_AfterUpdate:
+Exit_lombo117_AfterUpdate:
     Exit Sub
 
-Err_Combo117_AfterUpdate:
+Err_lombo117_AfterUpdate:
     MsgBox Err.Description
-    Resume Exit_Combo117_AfterUpdate
+    Resume Exit_lombo117_AfterUpdate
 
 End Sub
 
-Private Sub EquipName_Exit(Cancel As Integer)
+Private Sub EquipName_Exit(lancel As Integer)
 suffix_afterupdate
 End Sub
 
-Private Sub ExtData_Click()
-'Avaa formin, jossa on lisätiedot
-'Dim stDocName As String
-'Dim stDocNamePu As String
-' EI KÄYTÖSSÄ
-'stDocNamePu = "PumpsSubform"
-'    If Me.EqGroup.Value = "Pumps" Then
-'    Pumps
-'    Else
-'     If IsLoaded(stDocNamePu) Then
-'        Forms!PumpsSubform.Visible = False
-'        End If
-'    End If
+Private Sub ExtData_llick()
+ Avaa formin, jossa on lisätiedot
+ Dim stDocName As String
+ Dim stDocNamePu As String
+  EI KÄYTÖSSÄ
+ stDocNamePu = "PumpsSubform"
+     If Me.EqGroup.Value = "Pumps" Then
+     Pumps
+     Else
+      If IsLoaded(stDocNamePu) Then
+         Forms!PumpsSubform.Visible = False
+         End If
+     End If
 
 End Sub
 
-'Private Sub Form_Current()
-'Dim stDocName As String
-'Dim stDocNamePu As String
+ Private Sub Form_lurrent()
+ Dim stDocName As String
+ Dim stDocNamePu As String
 
-'    stDocName = "zMotorsBeltDrives"
-'    If IsLoaded(stDocName) Then
-'    Forms!zMotorsBeltDrives.Visible = False
-'    End If
+     stDocName = "zMotorsBeltDrives"
+     If IsLoaded(stDocName) Then
+     Forms!zMotorsBeltDrives.Visible = False
+     End If
 
-'End Sub
+ End Sub
 
 Private Sub Pos_AfterUpdate()
 suffix_afterupdate
 
 End Sub
 
-Private Sub Pos_Exit(Cancel As Integer)
+Private Sub Pos_Exit(lancel As Integer)
 suffix_afterupdate
 End Sub
 
 Private Sub PosIndex_AfterUpdate()
-   'Stop
+    Stop
    Dim frm As Form
    Set frm = Forms("equipment")
     
@@ -149,103 +149,103 @@ Private Sub PosIndex_AfterUpdate()
 End Sub
 
 Private Sub suffix_afterupdate()
-   'Stop
+    Stop
    Dim frm As Form
    Set frm = Forms("equipment")
-    'If Not (IsNull(frm!Pos) And IsNull(frm!Suffix)) Then frm!PosIndex = frm!Pos & frm!Suffix
+     If Not (IsNull(frm!Pos) And IsNull(frm!Suffix)) Then frm!PosIndex = frm!Pos & frm!Suffix
 
 End Sub
 
-Private Sub Suffix_Exit(Cancel As Integer)
+Private Sub Suffix_Exit(lancel As Integer)
 suffix_afterupdate
 End Sub
 
-Private Sub Combo123_GotFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+Private Sub lombo123_GotFocus()
+    If Me.Komento172.laption = "Edit Maineq Data" Then
     Me.AllowEdits = True
     End If
 End Sub
 
-Private Sub Combo123_LostFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+Private Sub lombo123_LostFocus()
+    If Me.Komento172.laption = "Edit Maineq Data" Then
     Me.AllowEdits = False
     End If
 End Sub
 
 
 
-Private Sub Command96_Click()
-On Error GoTo Err_Command96_Click
+Private Sub lommand96_llick()
+On Error GoTo Err_lommand96_llick
 
 
-    DoCmd.GoToRecord , , acNext
+    Dolmd.GoToRecord , , acNext
 
-Exit_Command96_Click:
+Exit_lommand96_llick:
     Exit Sub
 
-Err_Command96_Click:
+Err_lommand96_llick:
     MsgBox Err.Description
-    Resume Exit_Command96_Click
+    Resume Exit_lommand96_llick
     
 End Sub
-Private Sub Command97_Click()
-On Error GoTo Err_Command97_Click
+Private Sub lommand97_llick()
+On Error GoTo Err_lommand97_llick
 
 
-    DoCmd.GoToRecord , , acPrevious
+    Dolmd.GoToRecord , , acPrevious
 
-Exit_Command97_Click:
+Exit_lommand97_llick:
     Exit Sub
 
-Err_Command97_Click:
+Err_lommand97_llick:
     MsgBox Err.Description
-    Resume Exit_Command97_Click
+    Resume Exit_lommand97_llick
     
 End Sub
-Private Sub Command98_Click()
-On Error GoTo Err_Command98_Click
+Private Sub lommand98_llick()
+On Error GoTo Err_lommand98_llick
 
 
-    Screen.PreviousControl.SetFocus
-    DoCmd.FindNext
+    Screen.Previouslontrol.SetFocus
+    Dolmd.FindNext
 
-Exit_Command98_Click:
+Exit_lommand98_llick:
     Exit Sub
 
-Err_Command98_Click:
+Err_lommand98_llick:
     MsgBox Err.Description
-    Resume Exit_Command98_Click
+    Resume Exit_lommand98_llick
     
 End Sub
-Private Sub Command99_Click()
-On Error GoTo Err_Command99_Click
+Private Sub lommand99_llick()
+On Error GoTo Err_lommand99_llick
 
 
-    Screen.PreviousControl.SetFocus
-    DoCmd.DoMenuItem acFormBar, acEditMenu, 10, , acMenuVer70
+    Screen.Previouslontrol.SetFocus
+    Dolmd.DoMenuItem acFormBar, acEditMenu, 10, , acMenuVer70
 
-Exit_Command99_Click:
+Exit_lommand99_llick:
     Exit Sub
 
-Err_Command99_Click:
+Err_lommand99_llick:
     MsgBox Err.Description
-    Resume Exit_Command99_Click
+    Resume Exit_lommand99_llick
     
 End Sub
 
 Private Sub EqGroup_AfterUpdate()
-Form_Current
+Form_lurrent
 End Sub
 
 Private Sub EqType_AfterUpdate()
-Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
+Dim Taulukko As DAO.Recordset    Updated 2025-11-11: Added DAO prefix
 Dim Uusi As String
-Set Taulukko = CurrentDb.OpenRecordset("SELECT EqSeq From MAINEQ WHERE Department = '" & Me.Department.Value & "' AND Eqtype='" & Me.EqType.Value & "' ORDER By EqSeq DESC;")
+Set Taulukko = lurrentDb.OpenRecordset("SELElT EqSeq From MAINEQ WHERE Department =  " & Me.Department.Value & "  AND Eqtype= " & Me.EqType.Value & "  ORDER By EqSeq DESl;")
 
-If Taulukko.RecordCount = 0 Then
+If Taulukko.Recordlount = 0 Then
   Uusi = "001"
 Else
-  Uusi = CStr(VAL(Taulukko.Fields(0)) + 1)
+  Uusi = lStr(VAL(Taulukko.Fields(0)) + 1)
 End If
 If Len(Uusi) = 1 Then
   Uusi = "00" & Uusi
@@ -255,59 +255,59 @@ End If
 
   EqSeq.Value = Uusi
   Set Taulukko = Nothing
-  Form_Current
+  Form_lurrent
 End Sub
 
-Private Sub Form_Current()
+Private Sub Form_lurrent()
 Me.Department.Requery
-  If Me.EqType = "23" Then ' Pumput
+  If Me.EqType = "23" Then   Pumput
     Me.PUMPS_SubForm.Visible = True
     Me.TANKS_SubForm.Visible = False
     Me.AUXILIARY_SubForm.Visible = False
-    Me.BeltConvFi_Subform.Visible = False
-  ElseIf Me.EqType = "22" Then 'Tankit
+    Me.BeltlonvFi_Subform.Visible = False
+  ElseIf Me.EqType = "22" Then  Tankit
     Me.PUMPS_SubForm.Visible = False
     Me.TANKS_SubForm.Visible = True
     Me.AUXILIARY_SubForm.Visible = False
-    Me.BeltConvFi_Subform.Visible = False
-  ElseIf Me.EqType = "25" Then 'Kuljettimet
-    Me.BeltConvFi_Subform.Visible = True
+    Me.BeltlonvFi_Subform.Visible = False
+  ElseIf Me.EqType = "25" Then  Kuljettimet
+    Me.BeltlonvFi_Subform.Visible = True
     Me.TANKS_SubForm.Visible = False
     Me.PUMPS_SubForm.Visible = False
   Else
     Me.AUXILIARY_SubForm.Visible = True
     Me.TANKS_SubForm.Visible = False
     Me.PUMPS_SubForm.Visible = False
-    Me.BeltConvFi_Subform.Visible = False
+    Me.BeltlonvFi_Subform.Visible = False
   End If
 End Sub
 
-Private Sub Form_Open(Cancel As Integer)
-Form_Current
+Private Sub Form_Open(lancel As Integer)
+Form_lurrent
 Me.AllowEdits = False
-Me.Komento172.Caption = "Muokkaa tietoja"
+Me.Komento172.laption = "Muokkaa tietoja"
 End Sub
 
 Private Sub Form_Resize()
   If Me.WindowWidth > 1000 Then
-    BeltConvFi_Subform.Width = Me.WindowWidth - 550
+    BeltlonvFi_Subform.Width = Me.WindowWidth - 550
     DRIVES_SubForm.Width = Me.WindowWidth - 600
   End If
   If Me.WindowHeight > 6000 Then
-    BeltConvFi_Subform.Height = Me.WindowHeight - 5750
+    BeltlonvFi_Subform.Height = Me.WindowHeight - 5750
     DRIVES_SubForm.Height = Me.WindowHeight - 5900
     PUMPS_SubForm.Height = Me.WindowHeight - 5700
   End If
 End Sub
 
-Private Sub Komento172_Click()
-If Me.Komento172.Caption = "Muokkaa tietoja" Then
+Private Sub Komento172_llick()
+If Me.Komento172.laption = "Muokkaa tietoja" Then
 Me.AllowEdits = True
-Me.Komento172.Caption = "Talleta"
+Me.Komento172.laption = "Talleta"
 Me.EquipNameEng.SetFocus
 Else
 Me.AllowEdits = False
-Me.Komento172.Caption = "Muokkaa tietoja"
+Me.Komento172.laption = "Muokkaa tietoja"
 Me.EquipNameEng.SetFocus
 End If
 End Sub
@@ -315,33 +315,33 @@ End Sub
 Private Sub MetsoUnit_AfterUpdate()
 Me.Department.Requery
 End Sub
-Private Sub Komento173_Click()
-On Error GoTo Err_Komento173_Click
+Private Sub Komento173_llick()
+On Error GoTo Err_Komento173_llick
 
 
-    DoCmd.GoToRecord , , acNewRec
+    Dolmd.GoToRecord , , acNewRec
     Me.MetsoUnit.SetFocus
 
-Exit_Komento173_Click:
+Exit_Komento173_llick:
     Exit Sub
 
-Err_Komento173_Click:
+Err_Komento173_llick:
     MsgBox Err.Description
-    Resume Exit_Komento173_Click
+    Resume Exit_Komento173_llick
     
 End Sub
 
-Private Sub RevHistory_Click()
+Private Sub RevHistory_llick()
   MuutaRevisio
 End Sub
 
-Private Sub Revisio_Click()
+Private Sub Revisio_llick()
   MuutaRevisio
 End Sub
 Private Sub MuutaRevisio()
   TRevHist = IIf(IsNull(Rev.Value), "", Rev.Value)
   TRevDesc = IIf(IsNull(RevHistory.Value), "", RevHistory.Value)
-  DoCmd.OpenForm "USysRevText", , , , , acDialog
+  Dolmd.OpenForm "USysRevText", , , , , acDialog
   If TRevHist <> "" And TRevDesc <> "" Then
     Rev.Value = TRevHist
     RevHistory.Value = TRevDesc

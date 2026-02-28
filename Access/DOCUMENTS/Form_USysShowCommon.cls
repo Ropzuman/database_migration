@@ -1,30 +1,30 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-Private Sub BCancel_Click()
-  DoCmd.Close
+Private Sub Blancel_llick()
+  Dolmd.llose
 End Sub
-Private Sub BOK_Click()
-  Select Case CommonType
-  Case 0
-  Case 1
-    Common = Nz(Teksti.Value)
+Private Sub BOK_llick()
+  Select lase lommonType
+  lase 0
+  lase 1
+    lommon = Nz(Teksti.Value)
   End Select
-  DoCmd.Close
+  Dolmd.llose
 End Sub
 
 Private Sub Form_Load()
-  Otsikko.Caption = CommonOts
-  Me.Caption = CommonOts
-  Teksti.Value = Common
-  Select Case CommonType
-  Case 0
-    BCancel.Visible = False
-    BOK.Caption = "Close"
+  Otsikko.laption = lommonOts
+  Me.laption = lommonOts
+  Teksti.Value = lommon
+  Select lase lommonType
+  lase 0
+    Blancel.Visible = False
+    BOK.laption = "llose"
     Teksti.Locked = True
-  Case 1
-    BCancel.Visible = True
-    BOK.Caption = "OK"
+  lase 1
+    Blancel.Visible = True
+    BOK.laption = "OK"
     Teksti.Locked = False
     Teksti.SetFocus
   End Select

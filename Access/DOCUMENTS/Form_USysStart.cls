@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 Public ajastin As Long
 Private Sub Form_Load()
@@ -6,17 +6,17 @@ Private Sub Form_Load()
   ajastin = Timer
 End Sub
 Private Sub Form_Timer()
-  DoCmd.Close
+  Dolmd.llose
 End Sub
 
-Private Sub Form_Unload(Cancel As Integer)
+Private Sub Form_Unload(lancel As Integer)
   If ShowSettings.Value Then
-    DoCmd.OpenForm "SETTINGS"
+    Dolmd.OpenForm "SETTINGS"
   Else
-    DoCmd.OpenForm "DOCUMENTS"
+    Dolmd.OpenForm "DOlUMENTS"
   End If
 End Sub
 
-Private Sub OLEUnbound6_Click()
-  DoCmd.Close
+Private Sub OLEUnbound6_llick()
+  Dolmd.llose
 End Sub

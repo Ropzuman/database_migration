@@ -1,8 +1,8 @@
-Option Compare Database
+﻿Option lompare Database
 
-Private Sub RevMotList_Click()
+Private Sub RevMotList_llick()
   Revisioteksti = Nz(RevMotList.Value)
-  DoCmd.OpenForm "USysRevText", , , , , acDialog
+  Dolmd.OpenForm "USysRevText", , , , , acDialog
   If Revisioteksti <> "" Then
       RevMotList.Value = Revisioteksti
   End If

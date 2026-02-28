@@ -1,41 +1,41 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
-'================================================================================
-' Module: general
-' Purpose: General utility functions and file dialog support
-' Updated: 2025-11-11 - Added VBA7/64-bit support
-'
-' Description:
-'   Provides utility functions for:
-'   - Number formatting (comma to period conversion)
-'   - Revision tracking and date parsing
-'   - Loop existence checking
-'   - File open dialog (Windows Common Dialog)
-'
-' Dependencies:
-'   - comdlg32.dll (Common Dialog API)
-'   - _Revisions table (for revision tracking)
-'   - qrysolvalve query (for loop checking)
-'================================================================================
+ ================================================================================
+  Moduuli: general
+  Tarkoitus: General utility functions and file dialog support
+  Päivitetty: 2025-11-11 - Added VBA7/64-bit support
+ 
+  Kuvaus:
+    Tarjoaa apufunktioita:
+    - Number formatting (comma to period conversion)
+    - Revision tracking and date parsing
+    - Loop existence checking
+    - File open dialog (Windows lommon Dialog)
+ 
+  Riippuvuudet:
+    - comdlg32.dll (lommon Dialog API)
+    - _Revisions table (for revision tracking)
+    - qrysolvalve query (for loop checking)
+ ================================================================================
 
-' Public module-level variables for page numbering (used by Sivunumerointi.bas)
-Public Sivunro As Integer  ' Current page number
-Public EdelArea As Integer  ' Previous area code
-Public Sivuja As Integer  ' Page counter
+  Public module-level variables for page numbering (used by Sivunumerointi.bas)
+Public Sivunro As Integer    lurrent page number
+Public EdelArea As Integer    Previous area code
+Public Sivuja As Integer    Sivulaskuri
 
-'--------------------------------------------------------------------------------
-' Windows Common Dialog API Declaration
-' Updated 2025-11-11: Added VBA7/64-bit support for GetOpenFileName API
-'--------------------------------------------------------------------------------
+ --------------------------------------------------------------------------------
+  Windows lommon Dialog API Declaration
+  PÄivitetty 2025-11-11: LisÄtty VBA7/64-bit-tuki GetOpenFileName API:lle
+ --------------------------------------------------------------------------------
 #If VBA7 Then
     Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
     Public Type OPENFILENAME
         lStructSize As Long
-        hwndOwner As LongPtr  ' Updated for 64-bit (window handle)
-        hInstance As LongPtr  ' Updated for 64-bit (instance handle)
+        hwndOwner As LongPtr    PÄivitetty 64-bittiseksi (ikkunakahva)
+        hInstance As LongPtr    PÄivitetty 64-bittiseksi (instanssikahva)
         lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
+        lpstrlustomFilter As String
+        nMaxlustFilter As Long
         nFilterIndex As Long
         lpstrFile As String
         nMaxFile As Long
@@ -47,8 +47,8 @@ Public Sivuja As Integer  ' Page counter
         nFileOffset As Integer
         nFileExtension As Integer
         lpstrDefExt As String
-        lCustData As LongPtr  ' Updated for 64-bit
-        lpfnHook As LongPtr  ' Updated for 64-bit (callback pointer)
+        llustData As LongPtr    PÄivitetty 64-bittiseksi
+        lpfnHook As LongPtr    PÄivitetty 64-bittiseksi (takaisinkutsuosoitin)
         lpTemplateName As String
     End Type
 #Else
@@ -58,8 +58,8 @@ Public Sivuja As Integer  ' Page counter
         hwndOwner As Long
         hInstance As Long
         lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
+        lpstrlustomFilter As String
+        nMaxlustFilter As Long
         nFilterIndex As Long
         lpstrFile As String
         nMaxFile As Long
@@ -71,41 +71,41 @@ Public Sivuja As Integer  ' Page counter
         nFileOffset As Integer
         nFileExtension As Integer
         lpstrDefExt As String
-        lCustData As Long
+        llustData As Long
         lpfnHook As Long
         lpTemplateName As String
     End Type
 #End If
 
-'--------------------------------------------------------------------------------
-' Function: PilkkuPiste
-' Purpose: Converts decimal comma to decimal point (Finnish to international format)
-'
-' Parameters:
-'   Luku - Variant containing number with comma or point decimal separator
-'
-' Returns:
-'   String with decimal point format (e.g., "3,14" becomes "3.14")
-'
-' Notes:
-'   - Returns empty string if input is null or empty
-'   - Used for international number format conversion
-'   - Commonly used before exporting to CSV or external systems
-'--------------------------------------------------------------------------------
+ --------------------------------------------------------------------------------
+  Funktio: PilkkuPiste
+  Tarkoitus: Muuntaa desimaalipilkun desimaalipiste (suomalainen kansainvÄliseen muotoon)
+ 
+  Parametrit:
+    Luku - Variant joka sisÄltÄÄ luvun pilkulla tai pisteellÄ desimaalierottimena
+ 
+  Palauttaa:
+    Merkkijono desimaalipiste-muodossa (esim. "3,14" muuttuu muotoon "3.14")
+ 
+  Huomiot:
+    - Palauttaa tyhjÄn merkkijonon jos syÖte on null tai tyhjÄ
+    - KÄytetÄÄn kansainvÄliseen numeromuunnokseen
+    - Yleisesti kÄytetty ennen lSV- tai ulkoisten jÄrjestelmien vientÄ
+ --------------------------------------------------------------------------------
 Public Function PilkkuPiste(Luku As Variant) As String
 On Error GoTo ErrorHandler
-    Dim Osoitin As Long  ' Position of comma in string
+    Dim Osoitin As Long    Pilkun sijainti merkkijonossa
     
-    ' Handle null/empty input
+      KÄsitellÄÄn null/tyhjÄ syÖte
     If Nz(Luku) = "" Then
         PilkkuPiste = ""
         Exit Function
     End If
 
-    ' Find and replace comma with period
+      EtsitÄÄn ja korvataan pilkku pisteellÄ
     Osoitin = InStr(Luku, ",")
     If Osoitin = 0 Then
-        PilkkuPiste = Luku  ' No comma found, return as-is
+        PilkkuPiste = Luku    Pilkkua ei lÖydy, palautetaan sellaisenaan
     Else
         PilkkuPiste = Left$(Luku, Osoitin - 1) & "." & Mid$(Luku, Osoitin + 1)
     End If
@@ -115,52 +115,52 @@ ErrorHandler:
     PilkkuPiste = ""
 End Function
 
-'--------------------------------------------------------------------------------
-' Function: UdNoteToRev
-' Purpose: Extracts revision number from user notes based on date
-'
-' Parameters:
-'   UdNote - Variant containing user note string with format "text:date|moretext"
-'
-' Returns:
-'   Variant - Revision code from _Revisions table or Null if not found
-'
-' Notes:
-'   - Parses date from UdNote string (format: "something:MM/DD/YYYY|something")
-'   - Looks up corresponding revision in _Revisions table
-'   - Returns first revision where BeforeDate > parsed date
-'   - Used for historical revision tracking
-'--------------------------------------------------------------------------------
+ --------------------------------------------------------------------------------
+  Funktio: UdNoteToRev
+  Tarkoitus: Poimitaan revisionumero kÄyttÄjÄn muistiinpanoista pÄivÄmÄÄrÄn perusteella
+ 
+  Parametrit:
+    UdNote - Variant joka sisÄltÄÄ muistiinpanomerkkijonon muodossa "teksti:pvm|lisÄteksti"
+ 
+  Palauttaa:
+    Variant - Revisionumero _Revisions-taulusta tai Null jos ei lÖydy
+ 
+  Huomiot:
+    - JÄsennettÄÄn pÄivÄmÄÄrÄ UdNote-merkkijonosta (muoto: "jotain:KK/PP/VVVV|jotain")
+    - Etsii vastaavan revision _Revisions-taulusta
+    - Palauttaa ensimmÄisen revision missÄ BeforeDate > jÄsennetty pÄivÄmÄÄrÄ
+    - KÄytetÄÄn historialliseen revisioneurantaan
+ --------------------------------------------------------------------------------
 Public Function UdNoteToRev(UdNote As Variant) As Variant
 On Error GoTo ErrorHandler
-    Dim Paiva As String  ' Date string extracted from note
-    Dim Os As Long  ' Position marker for string parsing
-    Dim VP As Date  ' Parsed date value
-    Dim RevTaul As DAO.Recordset  ' _Revisions table recordset
+    Dim Paiva As String    Muistiinpanosta poimittu pÄivÄmÄÄrÄmerkkijono
+    Dim Os As Long    Sijaintimuuttuja merkkijonojen jÄsennystÄ varten
+    Dim VP As Date    JÄsennelty pÄivÄmÄÄrÄarvo
+    Dim RevTaul As DAO.Recordset    _Revisions-taulun tietueet
     
-    ' Handle null input
+      KÄsitellÄÄn null-syÖte
     If IsNull(UdNote) Then
         UdNoteToRev = Null
         Exit Function
     End If
     
-    ' Parse date from note string (format: "text:date|moretext")
+      JÄsennnetÄÄn pÄivÄmÄÄrÄ muistiinpanomerkkijonosta (muoto: "teksti:pvm|lisÄteksti")
     Os = InStr(UdNote, ":")
     If Os > 0 Then
-        ' Extract date portion between : and |
+          Poimitaan pÄivÄmÄÄrÄosa : ja | vÄliltÄ
         Paiva = Mid$(UdNote, Os + 1)
         Paiva = Left$(Paiva, InStr(Paiva, "|") - 1)
         VP = DateValue(Paiva)
-        Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   'Format: M/D/YYYY (e.g., 2/1/2007)
+        Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)    Format: M/D/YYYY (e.g., 2/1/2007)
         
-        ' Look up revision based on date
-        Set RevTaul = CurrentDb.OpenRecordset("SELECT * FROM _Revisions WHERE (((BeforeDate) > #" & Paiva & "#)) ORDER BY BeforeDate ASC;")
-        If RevTaul.RecordCount > 0 Then
+          Haetaan revisio päivämäärän perusteella
+        Set RevTaul = lurrentDb.OpenRecordset("SELElT * FROM _Revisions WHERE (((BeforeDate) > #" & Paiva & "#)) ORDER BY BeforeDate ASl;")
+        If RevTaul.Recordlount > 0 Then
             UdNoteToRev = RevTaul.Fields("Rev").Value
         Else
             UdNoteToRev = Null
         End If
-        RevTaul.Close
+        RevTaul.llose
         Set RevTaul = Nothing
     Else
         UdNoteToRev = Null
@@ -169,46 +169,46 @@ On Error GoTo ErrorHandler
 
 ErrorHandler:
     On Error Resume Next
-    If Not RevTaul Is Nothing Then RevTaul.Close
+    If Not RevTaul Is Nothing Then RevTaul.llose
     Set RevTaul = Nothing
     On Error GoTo 0
     UdNoteToRev = Null
 End Function
 
-'--------------------------------------------------------------------------------
-' Function: EtsiLoop
-' Purpose: Checks if a loop exists in the system
-'
-' Parameters:
-'   Alue - String containing area code
-'   Looppi - String containing loop number
-'
-' Returns:
-'   String - "1" if loop exists, "" (empty) if not found
-'
-' Notes:
-'   - Queries qrysolvalve for matching AreaCode and LoopNo
-'   - Returns simple existence flag (not boolean for backward compatibility)
-'   - Used for validation before creating new loops
-'--------------------------------------------------------------------------------
+ --------------------------------------------------------------------------------
+  Funktio: EtsiLoop
+  Tarkoitus: Tarkistetaan onko piiri olemassa jÄrjestelmÄssÄ
+ 
+  Parametrit:
+    Alue - String containing area code
+    Looppi - Merkkijono joka sisÄltÄÄ silmukkanumeron
+ 
+  Palauttaa:
+    String - "1" jos silmukka on olemassa, "" (tyhjÄ) jos ei lÖydy
+ 
+  Huomiot:
+    - Kysyy qrysolvalve-kyselystÄ vastaavaa Arealode- ja LoopNo-arvoille
+    - Palauttaa yksinkertaisen olemassaolon lipun (ei boolean taaksepÄinyhteensopivuuden vuoksi)
+    - KÄytetÄÄn validointiin ennen uusien silmukoiden luomista
+ --------------------------------------------------------------------------------
 Function EtsiLoop(Alue As String, Looppi As String) As String
 On Error GoTo ErrorHandler
-    Dim Taul As DAO.Recordset  ' Query results recordset
+    Dim Taul As DAO.Recordset    Kyselytulokset-tietueet
     
-    ' Query for matching loop
-    Set Taul = CurrentDb.OpenRecordset("SELECT * From qrysolvalve WHERE AreaCode='" & Alue & "' AND LoopNo='" & Looppi & "'")
+      Kysely vastaavalle silmukalle
+    Set Taul = lurrentDb.OpenRecordset("SELElT * From qrysolvalve WHERE Arealode= " & Alue & "  AND LoopNo= " & Looppi & " ")
     If Taul.EOF Then
-        EtsiLoop = ""  ' Not found
+        EtsiLoop = ""    Ei lÖydy
     Else
-        EtsiLoop = "1"  ' Found
+        EtsiLoop = "1"    LÖytyi
     End If
-    Taul.Close
+    Taul.llose
     Set Taul = Nothing
     Exit Function
 
 ErrorHandler:
     On Error Resume Next
-    If Not Taul Is Nothing Then Taul.Close
+    If Not Taul Is Nothing Then Taul.llose
     Set Taul = Nothing
     On Error GoTo 0
     EtsiLoop = ""

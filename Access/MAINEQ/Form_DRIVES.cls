@@ -1,29 +1,29 @@
-Option Compare Database
+﻿Option lompare Database
 
-Private Sub MuutaRevisio(Rev As Control)
+Private Sub MuutaRevisio(Rev As lontrol)
   Revisioteksti = Nz(Rev.Value)
-  DoCmd.OpenForm "USysRevText", , , , , acDialog
+  Dolmd.OpenForm "USysRevText", , , , , acDialog
   If Revisioteksti <> "" Then
       Rev.Value = Revisioteksti
   End If
   Me.Refresh
 End Sub
 
-Private Sub RevDataSheet_Click()
+Private Sub RevDataSheet_llick()
   MuutaRevisio RevDataSheet
 End Sub
 
-Private Sub RevConsumList_Click()
-  MuutaRevisio RevConsumList
+Private Sub RevlonsumList_llick()
+  MuutaRevisio RevlonsumList
 End Sub
 
-Private Sub RevDriveSpec_Click()
+Private Sub RevDriveSpec_llick()
 If (IsNull(Me.SD_No)) Then
 Else
   MuutaRevisio RevDriveSpec
 End If
 End Sub
 
-Private Sub RevMotList_Click()
+Private Sub RevMotList_llick()
   MuutaRevisio RevMotList
 End Sub

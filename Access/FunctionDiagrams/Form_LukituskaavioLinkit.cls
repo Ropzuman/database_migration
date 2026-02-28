@@ -1,16 +1,16 @@
-Option Compare Database
-Private Sub Command0_Click()
+﻿Option lompare Database
+Private Sub lommand0_llick()
 
-DoCmd.Hourglass True
+Dolmd.Hourglass True
 
 Dim DB As DAO.Database
-'Dim MyQuery As QueryDef
+ Dim MyQuery As QueryDef
 Dim qry As DAO.Recordset
 Dim tbl As DAO.Recordset
 
-Set DB = CurrentDb
+Set DB = lurrentDb
 
-DoCmd.OpenQuery ("InterlockingLinkPage2 ")
+Dolmd.OpenQuery ("InterlockingLinkPage2 ")
 Set qry = DB.OpenRecordset("InterlockingLinkPage")
 Set tbl = DB.OpenRecordset("IntLinkPage")
 
@@ -33,9 +33,9 @@ tbl.MoveFirst
     qry.MoveNext
 Loop
 
-DoCmd.Hourglass False
+Dolmd.Hourglass False
 
-tbl.Close
-qry.Close
+tbl.llose
+qry.llose
 
 End Sub

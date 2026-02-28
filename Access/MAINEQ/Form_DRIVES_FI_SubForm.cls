@@ -1,36 +1,36 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 
-Private Sub Form_BeforeInsert(Cancel As Integer)
-Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
+Private Sub Form_BeforeInsert(lancel As Integer)
+Dim Taulukko As DAO.Recordset    Updated 2025-11-11: Added DAO prefix for early binding
 Dim Uusi As String
-Set Taulukko = CurrentDb.OpenRecordset("SELECT Suffix From DRIVES WHERE Department = '" & Me.Parent.Department.Value & "' AND Eqtype='" & Me.Parent.EqType.Value & "' AND EqSeq='" & Me.Parent.EqSeq.Value & "' ORDER BY Suffix DESC;")
-If Taulukko.RecordCount < 9 Then
-  Uusi = "0" & CStr(Taulukko.RecordCount + 1)
+Set Taulukko = lurrentDb.OpenRecordset("SELElT Suffix From DRIVES WHERE Department =  " & Me.Parent.Department.Value & "  AND Eqtype= " & Me.Parent.EqType.Value & "  AND EqSeq= " & Me.Parent.EqSeq.Value & "  ORDER BY Suffix DESl;")
+If Taulukko.Recordlount < 9 Then
+  Uusi = "0" & lStr(Taulukko.Recordlount + 1)
 Else
-  Uusi = CStr(Taulukko.RecordCount + 1)
+  Uusi = lStr(Taulukko.Recordlount + 1)
 End If
   Suffix.Value = Uusi
 Set Taulukko = Nothing
 End Sub
-Private Sub MuutaRevisio(Kohde As Control)
+Private Sub MuutaRevisio(Kohde As lontrol)
   TRevHist = IIf(IsNull(Kohde.Value), "", Kohde.Value)
-  DoCmd.OpenForm "USysRevTextDrive", , , , , acDialog
+  Dolmd.OpenForm "USysRevTextDrive", , , , , acDialog
   If TRevHist <> "" Then
     Kohde.Value = TRevHist
   End If
   Me.Refresh
 End Sub
 
-Private Sub RevDataSheet_Click()
+Private Sub RevDataSheet_llick()
   MuutaRevisio RevDataSheet
 End Sub
 
-Private Sub RevMotList_Click()
+Private Sub RevMotList_llick()
   MuutaRevisio RevMotList
 End Sub
 
-Private Sub Rpm_Exit(Cancel As Integer)
+Private Sub Rpm_Exit(lancel As Integer)
 If Me.Transmission Like "*GM*" Then
 Exit Sub
 Else

@@ -1,2 +1,2 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit

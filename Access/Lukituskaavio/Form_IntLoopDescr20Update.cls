@@ -1,12 +1,12 @@
-Option Compare Database
+﻿Option lompare Database
 
-Private Sub Command0_Click()
+Private Sub lommand0_llick()
 Dim DB As DAO.Database
 
-DoCmd.Hourglass True
+Dolmd.Hourglass True
 
-DoCmd.OpenQuery ("IntLoopDescr20Upd")
+Dolmd.OpenQuery ("IntLoopDescr20Upd")
 
-DoCmd.Hourglass False
+Dolmd.Hourglass False
 
 End Sub

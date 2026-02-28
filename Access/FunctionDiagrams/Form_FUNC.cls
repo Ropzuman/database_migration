@@ -1,5 +1,5 @@
-Option Compare Database
+﻿Option lompare Database
 
-Private Sub FBlock_DblClick(Cancel As Integer)
+Private Sub FBlock_Dblllick(lancel As Integer)
 
 End Sub

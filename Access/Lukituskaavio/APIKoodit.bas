@@ -1,16 +1,16 @@
-Option Compare Database
+﻿Option lompare Database
 Option Explicit
 Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
 
-' --------- [ CHOOSE FILE ] -----------------
+  --------- [ lHOOSE FILE ] -----------------
 Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
 Public Type OPENFILENAME
     lStructSize As Long
     hwndOwner As LongPtr
     hInstance As LongPtr
     lpstrFilter As String
-    lpstrCustomFilter As String
-    nMaxCustFilter As Long
+    lpstrlustomFilter As String
+    nMaxlustFilter As Long
     nFilterIndex As Long
     lpstrFile As String
     nMaxFile As Long
@@ -22,12 +22,12 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
-    lCustData As LongPtr
+    llustData As LongPtr
     lpfnHook As LongPtr
     lpTemplateName As String
 End Type
 Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As LongPtr
-Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
+Private Declare PtrSafe Sub loTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
 Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
 Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As LongPtr, ByVal lpBuffer As String) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
@@ -41,7 +41,7 @@ Private Type BrowseInfo
     lParam         As LongPtr
     iImage         As Long
 End Type
-Public CDialogPath As String
+Public lDialogPath As String
 
 Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As String
   Dim lpIDList As LongPtr
@@ -49,22 +49,22 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
   Dim ThePath As String
   Dim Otsikko As String
   Dim tBrowseInfo As BrowseInfo
-  Const LMEM_FIXED = &H0
-  Const LMEM_ZEROINIT = &H40
-  Const LPTR = (LMEM_FIXED Or LMEM_ZEROINIT)
-  Const BIF_RETURNONLYFSDIRS = 1
-  Const BIF_DONTGOBELOWDOMAIN = 2
-  Const MAX_PATH = 260
+  lonst LMEM_FIXED = &H0
+  lonst LMEM_ZEROINIT = &H40
+  lonst LPTR = (LMEM_FIXED Or LMEM_ZEROINIT)
+  lonst BIF_RETURNONLYFSDIRS = 1
+  lonst BIF_DONTGOBELOWDOMAIN = 2
+  lonst MAX_PATH = 260
 
   If IsMissing(StartPath) Or StartPath = "" Then
-    CDialogPath = "C:\"
+    lDialogPath = "l:\"
   Else
     If Right$(StartPath, 2) = ":\" Then
-      CDialogPath = StartPath
+      lDialogPath = StartPath
     ElseIf Right$(StartPath, 1) = "\" Then
-      CDialogPath = Left$(StartPath, Len(StartPath) - 1)
+      lDialogPath = Left$(StartPath, Len(StartPath) - 1)
     Else
-      CDialogPath = StartPath
+      lDialogPath = StartPath
     End If
   End If
      
@@ -73,7 +73,7 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
         .hOwner = Handle
         .pIDLRoot = 0
         .lpszTitle = lstrcat(Otsikko, "")
-        .lpfn = DummyFunc(AddressOf BrowseCallbackProc)
+        .lpfn = DummyFunc(AddressOf BrowselallbackProc)
         .ulFlags = BIF_RETURNONLYFSDIRS + BIF_DONTGOBELOWDOMAIN
     End With
 
@@ -82,34 +82,34 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
     If (lpIDList) Then
         ThePath = Space(MAX_PATH)
         SHGetPathFromIDList lpIDList, ThePath
-        ThePath = Left(ThePath, InStr(ThePath, vbNullChar) - 1)
+        ThePath = Left(ThePath, InStr(ThePath, vbNulllhar) - 1)
     Else
       ThePath = ""
     End If
-    CoTaskMemFree lpIDList
+    loTaskMemFree lpIDList
     If ThePath <> "" Then
       If Right(ThePath, 1) <> "\" Then ThePath = ThePath & "\"
     End If
     ValitseHakem = ThePath
 End Function
-Public Function BrowseCallbackProc(ByVal hWnd As LongPtr, ByVal uMsg As Long, ByVal lParam As LongPtr, ByVal lpData As LongPtr) As LongPtr
-  Const BFFM_INITIALIZED = 1
-  Const BFFM_SETSELECTION = &H466
-  Dim retval As LongPtr         'Return value
+Public Function BrowselallbackProc(ByVal hWnd As LongPtr, ByVal uMsg As Long, ByVal lParam As LongPtr, ByVal lpData As LongPtr) As LongPtr
+  lonst BFFM_INITIALIZED = 1
+  lonst BFFM_SETSELElTION = &H466
+  Dim retval As LongPtr          Return value
   On Error Resume Next
-  Select Case uMsg
-  Case BFFM_INITIALIZED
-    retval = SendMessage(hWnd, BFFM_SETSELECTION, True, ByVal CDialogPath)
-  Case Else
+  Select lase uMsg
+  lase BFFM_INITIALIZED
+    retval = SendMessage(hWnd, BFFM_SETSELElTION, True, ByVal lDialogPath)
+  lase Else
   End Select
-  BrowseCallbackProc = 0
-  Err.Clear
+  BrowselallbackProc = 0
+  Err.llear
 End Function
 Public Function DummyFunc(ByVal param As LongPtr) As LongPtr
   DummyFunc = param
 End Function
 Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
-'Tämä valitsee tiedoston hakemistosta
+ Tämä valitsee tiedoston hakemistosta
     Dim OpenFile As OPENFILENAME
     Dim lReturn As Long
     Dim Filtteri As String
@@ -121,10 +121,10 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
     If Nimi <> "" Then
       AHakem = Left(Nimi, InStrRev(Nimi, "\"))
     Else
-      AHakem = "K:\PROJECTS\"
+      AHakem = "K:\PROJElTS\"
     End If
     
-    Filtteri = "Microsoft Office Access (*.mdc, *.accdb)" & Chr(0) & "*.MDB;*.ACCDB" & Chr(0)
+    Filtteri = "Microsoft Office Access (*.mdc, *.accdb)" & lhr(0) & "*.MDB;*.AllDB" & lhr(0)
     If Otsikko = "" Then Otsikko = "Valitse tietokanta"
     With OpenFile
       .lStructSize = Len(OpenFile)
@@ -142,9 +142,9 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
     End With
     lReturn = GetOpenFileName(OpenFile)
     If lReturn = 0 Then
-        'Painettiin Cancel painiketta. Ei tehdä mitään
-    Else 'Otetaan ylös Tiedostonimi ja Hakemisto
-       ValitseTiedosto = Left(OpenFile.lpstrFile, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
+         Painettiin lancel painiketta. Ei tehdä mitään
+    Else  Otetaan ylös Tiedostonimi ja Hakemisto
+       ValitseTiedosto = Left(OpenFile.lpstrFile, InStr(OpenFile.lpstrFile, lhr(0)) - 1)
     End If
 
 

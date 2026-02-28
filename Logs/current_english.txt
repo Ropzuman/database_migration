@@ -1,0 +1,605 @@
+﻿C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:36: '   Purpose : Will read *.LDB file and read who's currently
+C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:44: '             Log-in names start at the 33rd byte and are
+C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:49: ' WhosOn - Read LDB file to show who's currently logged on
+C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:51: ' @return String - Semicolon-delimited list of "Machine -- User" entries
+C:\database_migration\Access\DOCUMENTS\Form_DBUsers.cls:65: ' Get Path of current database.  Should substitute this code
+C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:5: ' Add Documents to Distribution
+C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:124: ' Generate Excel Report for Distribution or All Documents
+C:\database_migration\Access\DOCUMENTS\Form_DISTRIBUTION.cls:190: ' Lomakkeen Load-tapahtuma - Alustetaan lomake projektin tiedoilla
+C:\database_migration\Access\DOCUMENTS\Form_DOCUMENTS.cls:89: ' Lomakkeen Load-tapahtuma - Alustetaan lomake projektin tiedoilla
+C:\database_migration\Access\DOCUMENTS\Form_USysAddToDistr.cls:5: ' Add Document to Distribution
+C:\database_migration\Access\DOCUMENTS\Form_USysDISTRIB.cls:9: 'Set DB = CurrentDb
+C:\database_migration\Access\DOCUMENTS\Form_USysDISTRIB.cls:10: 'Set Taulu = DB.OpenRecordset("DISTRIBUTION")
+C:\database_migration\Access\DOCUMENTS\Form_USysEditDistribution.cls:8: ' Form Load Event - Load distribution details from database
+C:\database_migration\Access\DOCUMENTS\Form_USysEditDistribution.cls:52: ' Lista Double Click - Add selected recipient to distribution
+C:\database_migration\Access\DOCUMENTS\Form_USysEditDistribution.cls:117: ' Vastaanottajat Double Click - Remove recipient from distribution
+C:\database_migration\Access\DOCUMENTS\Form_USysNewDistribution.cls:8: ' Lomakkeen Load-tapahtuma - Alustetaan jakelulomake
+C:\database_migration\Access\DOCUMENTS\Form_USysNewDistribution.cls:104: 'Set Taulu = DB.OpenRecordset(SQL)
+C:\database_migration\Access\DOCUMENTS\Form_USysNewRecipient.cls:7: ' Lista Double Click - Load selected recipient data into form fields
+C:\database_migration\Access\DOCUMENTS\Form_USysNewRecipient.cls:47: ' Save Recipient - Validate and save new recipient to database
+C:\database_migration\Access\DOCUMENTS\Form_USysOpenFile.cls:17: ' Form Load Event - Load document files from database
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:69: '* REMOVED: Custom Replace() function                                       *
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:72: '*         functionality. VBA built-in is faster (compiled C vs VBA loop). *
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:99: ' The following functions are given a revision notation as input and they return the desired part of the input.
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:114: ' @return TekijÄnimi ensimmÄisestÄ revisiosta tai tyhjÄ merkkijono jos Null
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:126: 'Look for the first revision (parse from end to find oldest entry)
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:220: ' @return Revisiomerkki ennen ensimmÄistÄ vÄlilyÖntiÄ tai tyhjÄ merkkijono jos Null
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:247: ' @return PÄivÄmÄÄrÄmerkkijono ensimmÄisestÄ revisiosta
+C:\database_migration\Access\DOCUMENTS\GlobalVBAs.vba:257: 'Look for the first revision (parse from end to find oldest entry)
+C:\database_migration\Access\FunctionDiagrams\Form_DBUsers.cls:36: '   Purpose : Will read *.LDB file and read who's currently
+C:\database_migration\Access\FunctionDiagrams\Form_DBUsers.cls:44: '             Log-in names start at the 33rd byte and are
+C:\database_migration\Access\FunctionDiagrams\Form_DBUsers.cls:60: ' Get Path of current database.  Should substitute this code
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:98: 'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:103: 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:106: 'Set qry = db.OpenRecordset(sql)
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:274: 'oDoc.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:372: 'Set DB = CurrentDb
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:377: 'Set qry = DB.OpenRecordset("Interlockinpage")
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:380: 'Set tbl = DB.OpenRecordset("Intpage")
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:398: 'Loop
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:402: 'Loop
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:407: 'tbl.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:408: 'qry.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio.cls:506: 'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:80: 'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:85: 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:88: 'Set qry = db.OpenRecordset(sql)
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:216: 'oDoc.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:294: 'Set DB = CurrentDb
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:299: 'Set qry = DB.OpenRecordset("Interlockinpage")
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:302: 'Set tbl = DB.OpenRecordset("Intpage")
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:320: 'Loop
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:324: 'Loop
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:329: 'tbl.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:330: 'qry.Close
+C:\database_migration\Access\FunctionDiagrams\Form_Funktiokaavio_testi.cls:393: 'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\FunctionDiagrams\Form_LisääKuviin_ACAD.cls:135: 'CurrentDb.Execute "DELETE * FROM Blokit"
+C:\database_migration\Access\FunctionDiagrams\Form_LisääKuviin_ACAD.cls:514: 'Set oAcad = Nothing
+C:\database_migration\Access\FunctionDiagrams\Form_LisääKuviin_ACAD.cls:1164: '        Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko & " WHERE DocumentID=" & RefDocumenID.Value)
+C:\database_migration\Access\FunctionDiagrams\Form_LisääKuviin_ACAD.cls:1202: '       oDoc.Close
+C:\database_migration\Access\FunctionDiagrams\Form_LisääKuviin_ACAD.cls:1259: 'Set TAULUKKO = ActiveSheet.QueryTables.Add(Connection:=Yhteys, Destination:=Range("A1"))
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:80: ' Remove existing table if present
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:88: ' Create linked table
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:116: ' Set default paths for external databases
+C:\database_migration\Access\Function_descriptions_html\Form_FrmASETUKSET.cls:121: ' Log user access
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:5: ' Lomake: FrmMUOKKAUS (Edit/Generate)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:6: ' Tarkoitus: Generate Word and HTML function descriptions for loops and equipment
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:15: '   1. User selects template type (loops/motors) and output format (Word/HTML)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:19: '      - {Equipment references} insert equipment tags
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:20: '      - Lines starting with "-" create indented lists
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:21: '      - Lines starting with "--" create double-indented lists
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:80: ' Tarkoitus: Create new loop descriptions in SELOSTUKSET table
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:97: ' Tarkoitus: Generate single function description
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:111: ' Tarkoitus: Generate all function descriptions
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:124: ' Aliohjelma: TeeSelostus (Generate Description)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:125: ' Tarkoitus: Generate Word or HTML function descriptions
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:127: '   Kaikki - True to generate all descriptions, False for current only
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:215: ' Aliohjelma: TeeHTML (Generate HTML)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:216: ' Tarkoitus: Generate HTML function description file
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:222: '   - Cross-references to other loops
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:340: ' Tarkoitus: Convert plain text to HTML with formatting
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:342: '   TEKSTI - Text to convert (supports {LOOPTAG} links and indentation)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:346: '   - {LOOPTAG} becomes hyperlink to loop description
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:440: ' Tarkoitus: Convert {LOOPTAG} references to HTML hyperlinks
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:443: ' Returns:
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:448: '   where POS is loop tag. Supports both {POS} and {POS Description} formats.
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:480: ' Aliohjelma: PoimiAsetukset (Get Settings)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:481: ' Tarkoitus: Load generation settings from SETTINGS table
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:693: ' Aliohjelma: KorvaaOts (Replace Header)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:694: ' Tarkoitus: Replace text in Word document header
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:697: '   UusiTeksti - New text to replace with
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:726: ' Aliohjelma: Korvaa (Replace)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:727: ' Tarkoitus: Replace text in Word document main text
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:730: '   UusiTeksti - New text to replace with
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:786: ' Aliohjelma: Korvaa2 (Replace 2)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:787: ' Tarkoitus: Replace text in Word document, preserving paragraph breaks
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:833: ' Aliohjelma: POISTA (Delete)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:834: ' Tarkoitus: Delete bookmark text from Word document
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:836: '   TEKSTI - Bookmark text to find and delete
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:864: ' Aliohjelma: LisaaHaly (Add Alarm)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:865: ' Tarkoitus: Add alarm level to alarm text string (for Word output)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:879: ' Aliohjelma: LisaaHalyHTML (Add Alarm HTML)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:880: ' Tarkoitus: Add alarm level to HTML output file
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:894: ' Aliohjelma: LisaaTeksti (Add Text)
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:895: ' Tarkoitus: Insert text at cursor position in text boxes
+C:\database_migration\Access\Function_descriptions_html\Form_FrmMUOKKAUS.cls:897: '   TEKSTI - Text to insert
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:11: '   text boxes. Uses {Department-Eqseq-EqType-Suffix} format for equipment
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:21: ' Aliohjelma: LisaaTeksti (Add Text)
+C:\database_migration\Access\Function_descriptions_html\Form_MOTORS subform.cls:22: ' Tarkoitus: Insert equipment reference at cursor position
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:5: ' Lomake: PIIRIT subform (Loops subform)
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:6: ' Tarkoitus: Loop reference insertion helper
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:10: '   Subform for inserting formatted loop references into parent form text boxes.
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:11: '   Uses {AreaCode-LoopNo} format for loop references in generated documents.
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:20: ' Aliohjelma: LisaaTeksti (Add Text)
+C:\database_migration\Access\Function_descriptions_html\Form_PIIRIT subform.cls:21: ' Tarkoitus: Insert loop reference at cursor position
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:27: ' Tarkoitus: Open revision editing form for equipment tables
+C:\database_migration\Access\Function_descriptions_html\GeneralCodes.bas:55: ' Tarkoitus: Open table browser form
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:6: ' Tarkoitus: Translate equipment/loop references in text to descriptive names
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:11: '   ja kÄÄntÄÄ ne todellisiksi laite- tai piirinimiksi MAINEQ- tai Loops-tauluista.
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:15: '   - Tables: MAINEQ, Loops
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:18: ' Format Examples:
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:21: '   Input:  "{10-TIC-001 Loop description}"
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:22: '   Output: "10-TIC-001 Actual Loop Description" (from Loops table)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:27: ' Tarkoitus: Translate equipment/loop references to actual names
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:29: '   Tieto - Text containing references in format {Area-Type-Seq Description}
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:34: '   - POS format: Area-Type-Seq (e.g., 60-20-01 or 10-TIC-001)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:36: '   - Otherwise: Looks up in Loops table (process loops)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:74: ' Extract position code (e.g., "60-20-01" or "10-TIC-001")
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:84: ' Process loop from Loops table
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:101: ' Build output: position + translation
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:104: ' Add text between this reference and next (or end)
+C:\database_migration\Access\Function_descriptions_html\KAANNOS.bas:115: ' Log errors to Immediate window for debugging
+C:\database_migration\Access\Function_descriptions_html\USysCheck.bas:10: '   Tracks users accessing the database by logging network username,
+C:\database_migration\Access\Function_descriptions_html\USysCheck.bas:32: ' Tarkoitus: Log current user information to UsysUsers table
+C:\database_migration\Access\Function_descriptions_html\USysCheck.bas:52: ' Get Windows network username
+C:\database_migration\Access\Function_descriptions_html\USysCheck.bas:59: ' Get computer name
+C:\database_migration\Access\Function_descriptions_html\USysCheck.bas:68: ' Log to database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:6: ' Tarkoitus: Import loop records and device tables from external Access database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:10: '   Loop import utility that:
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:13: '   - Imports selected loops to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:19: '   - LOOPS table (target for loop import)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:27: '   - Loopit: Subform displaying available loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:30: '   - HaeLoopit: Button to import loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:31: '   - Ulos: Button to close form
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:39: ' Tarkoitus: Clean up temporary tables and database connections on form close
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:42: '   1. Delete temporary LOOPLINK table if it exists
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:43: '   2. Close source database connection
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:47: '   - Uses Resume Next to prevent errors if table doesn't exist
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:48: '   - Always runs when form closes
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:63: ' Tarkoitus: Import selected loops and associated device data from source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:66: '   1. Validate source database is selected
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:67: '   2. Copy loop records from LOOPLINK to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:69: '   4. Import device records matching selected loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:70: '   5. Set TableName field for imported device records
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:71: '   6. Track duplicates and provide status feedback
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:75: '   - Imports to LOOPS and devTable tables
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:78: '   - Estaa duplikaattipiirit (tarkistaa LOOPS-taulun ensin)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:99: ' Validate source database is selected
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:108: 'Kopioidaan ensin Loopit Loops taulukkoon - First copy Loops to LOOPS table
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:117: ' Check if loop already exists in target database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:120: ' New loop - add to import list and copy record
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:134: ' Loop already exists - track for duplicate report
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:147: ' Check if table is a device table (devTbl* or devTable, excluding devTblCommon)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:155: ' Check if this record belongs to one of the imported loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:158: ' Record belongs to imported loop - copy it
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:164: ' Log field copy errors
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:169: ' Set TableName field for device records (except devTable which already has it)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:182: ' Display duplicate loop report
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:223: ' Tarkoitus: Close the form
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:226: '   - Simple close button
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:234: ' Tarkoitus: Open file dialog to select source Access database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:240: '   4. Open database connection (stored in LahdeDB module variable)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:241: '   5. Delete existing LOOPLINK temporary table if exists
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:242: '   6. Create new linked table LOOPLINK pointing to Loops table in source DB
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:243: '   7. Set subform recordsource to display available loops
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:247: '   - Filters for .accdb files only
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:249: '   - Source database remains open until form closes
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:273: ' Extract directory path (remove filename)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:302: ' Extract selected filename (remove null terminator)
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:307: ' Open source database connection
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:318: ' Create linked table to Loops table in source database
+C:\database_migration\Access\instru3\Form_CopyLoops.cls:325: ' Display available loops in subform
+C:\database_migration\Access\instru3\Form_DBUsers.cls:36: '   Purpose : Will read *.LDB file and read who's currently
+C:\database_migration\Access\instru3\Form_DBUsers.cls:44: '             Log-in names start at the 33rd byte and are
+C:\database_migration\Access\instru3\Form_DBUsers.cls:60: ' Get Path of current database.  Should substitute this code
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:31: '   1. Get current database path (directory only)
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:34: '      - Extract filename from current link path
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:36: '      - If paths differ, drop and recreate link to current directory
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:57: ' Get current database directory path
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:65: ' Prevent processing same table multiple times
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:67: ' Extract directory and filename from current link path
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:76: ' Check if link path differs from current database path
+C:\database_migration\Access\instru3\Form_Linkkien vaihto.cls:80: ' Drop existing linked table
+C:\database_migration\Access\instru3\Form_SizingOut.cls:12: '   - Converts decimal commas to periods (Finnish → international format)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:25: '   - Command8: Button to execute export
+C:\database_migration\Access\instru3\Form_SizingOut.cls:33: '   1. Validate output directory exists
+C:\database_migration\Access\instru3\Form_SizingOut.cls:34: '   2. Open source query/table as recordset
+C:\database_migration\Access\instru3\Form_SizingOut.cls:35: '   3. Create output CSV file
+C:\database_migration\Access\instru3\Form_SizingOut.cls:37: '      - Write first field (quoted)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:38: '      - Write remaining fields with semicolon separator
+C:\database_migration\Access\instru3\Form_SizingOut.cls:39: '      - Convert commas to periods in numeric values
+C:\database_migration\Access\instru3\Form_SizingOut.cls:41: '   5. Close file and open containing folder
+C:\database_migration\Access\instru3\Form_SizingOut.cls:43: ' CSV Format:
+C:\database_migration\Access\instru3\Form_SizingOut.cls:74: ' Validate output directory exists
+C:\database_migration\Access\instru3\Form_SizingOut.cls:80: ' Open source query/table
+C:\database_migration\Access\instru3\Form_SizingOut.cls:83: ' Create output CSV file
+C:\database_migration\Access\instru3\Form_SizingOut.cls:88: ' Write first field (quoted)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:91: ' Write remaining fields with semicolon separator
+C:\database_migration\Access\instru3\Form_SizingOut.cls:99: ' Convert decimal comma to period (Finnish → international format)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:106: ' Write field value (quoted, semicolon-separated)
+C:\database_migration\Access\instru3\Form_SizingOut.cls:122: ' Notify user and open output folder
+C:\database_migration\Access\instru3\general.bas:12: '   - Loop existence checking
+C:\database_migration\Access\instru3\general.bas:13: '   - File open dialog (Windows Common Dialog)
+C:\database_migration\Access\instru3\general.bas:18: '   - qrysolvalve query (for loop checking)
+C:\database_migration\Access\instru3\general.bas:87: ' Returns:
+C:\database_migration\Access\instru3\general.bas:88: '   String with decimal point format (e.g., "3,14" becomes "3.14")
+C:\database_migration\Access\instru3\general.bas:92: '   - Used for international number format conversion
+C:\database_migration\Access\instru3\general.bas:105: ' Find and replace comma with period
+C:\database_migration\Access\instru3\general.bas:123: '   UdNote - Variant containing user note string with format "text:date|moretext"
+C:\database_migration\Access\instru3\general.bas:125: ' Returns:
+C:\database_migration\Access\instru3\general.bas:147: ' Parse date from note string (format: "text:date|moretext")
+C:\database_migration\Access\instru3\general.bas:150: ' Extract date portion between : and |
+C:\database_migration\Access\instru3\general.bas:184: '   Looppi - String containing loop number
+C:\database_migration\Access\instru3\general.bas:186: ' Returns:
+C:\database_migration\Access\instru3\general.bas:187: '   String - "1" if loop exists, "" (empty) if not found
+C:\database_migration\Access\instru3\general.bas:192: '   - Used for validation before creating new loops
+C:\database_migration\Access\instru3\general.bas:198: ' Query for matching loop
+C:\database_migration\Access\instru3\USysCheck.bas:5: ' Tarkoitus: User logging and tracking functionality
+C:\database_migration\Access\instru3\USysCheck.bas:46: ' Palauttaa: Nothing (procedure performs logging silently)
+C:\database_migration\Access\instru3\USysCheck.bas:49: '   - Errors are suppressed to prevent interruption of application startup
+C:\database_migration\Access\instru3\USysCheck.bas:62: ' Get network username via Windows API
+C:\database_migration\Access\instru3\USysCheck.bas:72: ' Get computer name via Windows API
+C:\database_migration\Access\instru3\USysCheck.bas:81: ' Write login record to tracking table
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:69: ' Get current database path and construct lock file path
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:89: ' Read 64-byte records until EOF
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:111: ' Build unique login string
+C:\database_migration\Access\LoopCircuit\Form_DBUsers.cls:120: ' Remove trailing semicolon if present
+C:\database_migration\Access\LoopCircuit\Form_Linkkien vaihto.cls:19: ' Get current database path
+C:\database_migration\Access\LoopCircuit\Form_Linkkien vaihto.cls:33: ' Extract path and filename from database field
+C:\database_migration\Access\LoopCircuit\Form_Linkkien vaihto.cls:46: ' Drop and relink table
+C:\database_migration\Access\LoopCircuit\Form_Linkkien vaihto.cls:70: ' Note: Do NOT close db if it's CurrentDb - it's the currently open database
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:49: ' Extract text attributes from DWG blocks
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:119: ' Extract text from selected blocks in active AutoCAD document
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:204: ' Generate DWG files from database data
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:266: ' Validate folders
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:419: ' Extract insertion points from placement block
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:563: ' Add entry to log
+C:\database_migration\Access\LoopCircuit\Form_Tee Kuvat.cls:588: ' Extract directory from file selection dialog
+C:\database_migration\Access\LoopCircuit\General.bas:44: ' Get network username
+C:\database_migration\Access\LoopCircuit\General.bas:56: ' Get computer name (toista sama kuvio)
+C:\database_migration\Access\LoopCircuit\General.bas:67: ' Insert record with transaction
+C:\database_migration\Access\LoopCircuit\Module1.bas:19: ' Validate numeric input
+C:\database_migration\Access\LoopCircuit\Module1.bas:28: ' Validate range
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:92: 'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:97: 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:100: 'Set qry = db.OpenRecordset(sql)
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:254: 'oDoc.Close
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:349: 'Set DB = CurrentDb
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:354: 'Set qry = DB.OpenRecordset("Interlockinpage")
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:357: 'Set tbl = DB.OpenRecordset("Intpage")
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:375: 'Loop
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:379: 'Loop
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:384: 'tbl.Close
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:385: 'qry.Close
+C:\database_migration\Access\Lukituskaavio\Form_Funktiokaavio.cls:473: 'Kirjoitetana reseptin ID piirille (Loops tai drives)
+C:\database_migration\Access\Lukituskaavio\Form_Interlocking.cls:42: '    If Text_2.VALUE = "open" Then
+C:\database_migration\Access\Lukituskaavio\Form_Interlocking.cls:45: '    If Text_2.VALUE = "close" Then
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:5: ' Tarkoitus: Generate AutoCAD LISP files from database data for circuit diagrams
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:33: ' Open cross-reference LISP lookup table
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:47: ' Not a cross-reference, return original text
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:66: ' Tarkoitus: Extract 8-character filename from table name
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:125: ' No more quotes found, return result
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:133: ' Replace quote with LISP escape sequence
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:214: '--- Generate non-loop-based LISP lists ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:215: ' These are simple lists without filtering by loop ID
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:225: ' If no loop ID tables, skip to script generation
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:231: '--- Generate loop-based LISP lists ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:232: ' These lists are filtered by loop ID column
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:244: '--- Close all files with closing parenthesis ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:245: '--- Close all files with closing parenthesis ---
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:248: ' Close non-loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:254: ' Close loop-based files
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:264: ' Generate AutoCAD script file for batch processing
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:340: ' Build reference prefix from ID fields
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:348: ' Write non-null field values to LISP file
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:373: ' Build reference prefix from ID fields
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:381: ' Write non-null field values to LISP file (with cross-reference lookup)
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:537: ' Tarkoitus: Generate installation location files for AutoCAD
+C:\database_migration\Access\MAINEQ\DataToACAD.bas:742: 'Close
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:36: '   Purpose : Will read *.LDB file and read who's currently
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:44: '             Log-in names start at the 33rd byte and are
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:60: ' Get Path of current database.  Should substitute this code
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:64: ' Poistettu dbCurrent.Close - CurrentDb palauttaa uuden instanssin joka kerta,
+C:\database_migration\Access\MAINEQ\Form_DBUsers.cls:68: ' REMOVED: dbCurrent.Close  ' This line causes Error 0 - CurrentDb should not be closed
+C:\database_migration\Access\MAINEQ\Form_GeneroiMoottorikuvat.cls:6: ' Tarkoitus: Generate motor specification drawings in AutoCAD
+C:\database_migration\Access\MAINEQ\Form_GeneroiMoottorikuvat.cls:129: 'Set oEntity = Nothing
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:96: ' Validate that all required selections are made
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:109: ' Create a joined recordset comparing the two tables
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:113: ' Check each field (except ID and Rev) for changes
+C:\database_migration\Access\MAINEQ\Form_Revisiointi.cls:131: ' Append to existing revision history
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:8: '                       Replace() with VBA built-in, comprehensive comments
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:26: ' Purpose: Check if a form is currently open in Form or Datasheet view
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:28: '   strFormName - Name of the form to check
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:29: ' Rerturns: True if form is open and not in design view
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:38: ' Check if form is open (not closed)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:40: ' Check if form is not in design view
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:55: ' Purpose: Extract the most recent revision date from multi-line revision text
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:58: ' Returns: Date portion of the most recent revision (last line)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:59: ' Notes: Assumes format "REV DATE/MAKER/..." with vbCrLf between entries
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:82: ' Extract date portion (between space and first slash)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:94: ' NOTE: Custom Replace() function REMOVED 2025-11-11
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:96: ' The custom Replace() function below has been removed because VBA has provided
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:97: ' a built-in Replace() function since VBA 6.0 (Office 2000+).
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:99: ' VBA Built-in Replace() Syntax:
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:100: '   Replace(expression, find, replace, [start], [count], [compare])
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:109: '   Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:110: '   Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:113: '   Replace("Matti;Maija;Liisa", ";", ", ") ' Same result
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:114: '   Replace("Matti Maija Liisa", " ", "_")  ' Same result
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:118: ' REMOVED 2025-11-11: Custom Replace() function
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:119: 'Public Function Replace(ByVal Source As String, Replaced As String, Replacement As String) As String
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:130: ' Returns: Formatted string like "+Option1 +Option2 +Option3" or empty string
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:152: ' Remove trailing " +"
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:183: ' Returns: Formatted string like "Pos: 01-M-01 / 01 and 01-M-02 / 01"
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:184: ' Notes: Joins MAINEQ and DRIVES tables to build position strings
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:197: ' Build SQL query to join MAINEQ and DRIVES tables
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:213: ' Remove trailing " and "
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:244: ' Returns: Phase angle in radians
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:264: ' Purpose: Calculate motor cable voltage drop percentage
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:272: ' Returns: Formatted voltage drop percentage string (e.g., "2.35 %")
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:283: ' Calculate voltage drop: √3 * I * (R*L*cosφ + X*L*sinφ)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:286: ' Convert to percentage of voltage
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:289: ' Format as percentage with 1-2 decimal places
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:306: ' Purpose: Add a number to a string and pad with leading zeros
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:309: '   Lisays - Number to add (e.g., 100)
+C:\database_migration\Access\MAINEQ\GeneralCodes.bas:310: ' Returns: Padded result string (e.g., "101")
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:17: '   - WhosOn() function to parse lock file
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:53: ' Tarkoitus: Populate logged-on users list when form opens
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:67: ' Tarkoitus: Close form
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:89: ' Tarkoitus: Read .LACCDB lock file to determine currently logged-in users
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:91: ' Returns:
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:95: '   1. Get current database path
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:96: '   2. Replace .accdb extension with .LACCDB
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:98: '   4. Read 64-byte records (32 bytes machine name + 32 bytes user name)
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:99: '   5. Parse null-terminated strings
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:100: '   6. Build semicolon-delimited list
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:103: '   - LACCDB file format: 64-byte records
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:120: ' Get path of current database
+C:\database_migration\Access\PIPE\Form_DBUsers.cls:126: ' Build path to .LACCDB lock file
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:25: '   - Command3: Open selected button
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:26: '   - Command4: Close form button
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:31: ' Tarkoitus: Open selected pipeline segment
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:39: ' Tarkoitus: Close form
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:50: '   1. Parse OpenArgs for AreaCode and LineNo
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:51: '   2. Build SQL to query PIPELINEDATA for matching segments
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:52: '   3. Populate Lista listbox with results
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:53: '   4. If only 2 rows (header + 1 segment), auto-open and close
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:54: '   5. If no data found, show error and close
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:57: '   - Must be opened via OpenArgs with "Area,LineNo" format
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:74: ' Parse OpenArgs
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:85: ' Build SQL query
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:90: ' Check results and auto-open if single segment
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:92: ' Only header + 1 data row, auto-open
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:110: ' Tarkoitus: Open selected pipeline segment in AutoCAD
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:113: '   Sulje - Boolean, True = close form after opening
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:116: '   1. Extract selected row data from Lista listbox
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:117: '   2. Get PATH, ImpFileID (drawing), Handles, identification info
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:118: '   3. Call AvaaKuvasta to open drawing and zoom to block
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:119: '   4. Optionally close form
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:122: '   - Lista.ListIndex is 0-based, so add 1 to skip header
+C:\database_migration\Access\PIPE\Form_frmOpenPIPELINE.cls:123: '   - Column indices: 0=PATH, 1=ImpFileID, 2=Handles, 3=DEP, 5=LINENO
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:30: '   1. Get current database path (directory only)
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:33: '      - Extract filename from current link path
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:35: '      - If paths differ, drop and recreate link to current directory
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:60: ' Get current database directory path
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:76: ' Prevent processing same table multiple times
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:78: ' Extract directory and filename from current link path
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:87: ' Check if link path differs from current database path
+C:\database_migration\Access\PIPE\Form_Linkkien vaihto.cls:91: ' Drop existing linked table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:11: '   - Batch processes .DWG files from specified folder
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:12: '   - Imports pipeline, valve, field instrument, and loop data
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:14: '     1. Read from AutoCAD (Command1x_Click)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:15: '     2. Append to staging table (Command2x_Click)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:17: '   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:22: '   - Query actions: *_APPEND, *_UPDATE, DELETE queries
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:30: '   - INSTLOOPDATA: Instrument loops (UP079D, UP008C, UP085D, UP08C)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:37: '   - Command51-53: Instrument loop workflow
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:38: '   - Command18, 19, 40: Open editor forms
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:50: ' Tarkoitus: Open form to link pipeline references to manual valves
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:67: ' Tarkoitus: Read pipeline data from AutoCAD drawings
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:85: ' Tarkoitus: Append pipeline data to staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:120: ' Tarkoitus: Open FlowPickNo editor form
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:136: ' Tarkoitus: Open Pipeline FROM/TO editor form
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:153: ' Tarkoitus: Read manual valve data from AutoCAD drawings
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:171: ' Tarkoitus: Append manual valve data to staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:207: ' Tarkoitus: Read instrument valve data from AutoCAD drawings
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:208: ' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:226: ' Tarkoitus: Append instrument valve data to staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:261: ' Tarkoitus: Open form to link pipeline references to instrument loops
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:278: ' Tarkoitus: Read field instrument data from AutoCAD drawings (UP080D blocks)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:296: ' Tarkoitus: Append field instrument data to staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:329: '===== Instrument Loop Workflow (Commands 51-53) =====
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:332: ' Tarkoitus: Read instrument loop data from AutoCAD drawings
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:350: ' Tarkoitus: Append instrument loop data to staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:365: ' Tarkoitus: Update database with instrument loop data from staging table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:386: ' Tarkoitus: Check if a field exists in a recordset
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:388: '   RS - Recordset to check
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:402: ' Tarkoitus: Read block data from AutoCAD drawings and store in Access table
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:405: '   Blokki - Block type(s) to extract (comma-separated for multiple)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:465: ' Tarkoitus: Read block data from AutoCAD drawings filtered by attribute names
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:468: '   AttribNames - Attribute tag name(s) to filter by (comma-separated)
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:528: ' Tarkoitus: Read blocks with specific name and attribute value
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:532: '   AttribName - Attribute tag to check
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:593: ' Tarkoitus: Connect to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:599: ' Try to connect to running AutoCAD
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:614: ' Tarkoitus: Open next .DWG file from specified folder for batch processing
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:643: ' Close previous document
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:648: ' Open next document
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:660: ' Tarkoitus: Create filtered selection set of specified block types
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:676: ' Parse block names
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:682: ' Create selection set
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:696: ' Filter: Remove blocks not in list
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:724: ' Tarkoitus: Create selection set of blocks containing specific attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:742: ' Parse attribute names to search for
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:748: ' Create selection set of all blocks
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:762: ' Filter: Keep only blocks that have the specified attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:768: ' Check if block has attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:772: ' Check each attribute in the block
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:774: ' Check if this attribute matches any in our search list
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:803: ' Tarkoitus: Create selection set of specific blocks with attribute containing value
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:806: '   AttribName - Attribute tag name to check
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:826: ' Create selection set of all blocks
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:840: ' Filter: Keep only matching blocks with matching attribute value
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:846: ' Check block name
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:848: ' Check if block has attributes
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:852: ' Check each attribute
+C:\database_migration\Access\PIPE\Form_TYÖKALUT.cls:856: ' Check if attribute value starts with the specified value
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:28: '   - BSulje: Close form button
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:40: ' Tarkoitus: Cleanup AutoCAD selection set when form closes
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:56: '   1. Connect to running AutoCAD (Yhdista function)
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:57: '   2. Delete any existing APUPICK selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:58: '   3. Create new selection set with flow block filter
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:64: '   - Filter: PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA block types
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:72: ' Connect to AutoCAD
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:78: ' Delete existing selection set if present
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:86: ' Create selection set for flow blocks
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:114: '   1. For each flow block in selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:148: '   3. Extract pipeline reference from block attributes
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:203: ' Tarkoitus: Extract pipeline reference from pipeline block attributes
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:248: '   3. Check if pipeline reference is empty
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:321: ' Tarkoitus: Close form
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:332: '   1. Highlight current block in selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:335: '   4. Find and set pipeline attribute reference
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:389: ' Tarkoitus: Connect to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:394: '   1. Try GetObject to connect to running AutoCAD
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:395: '   2. If successful, set oDOC to active document
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:396: '   3. Return connection status
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:420: '   1. Get current flow block insertion point
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:422: '   3. Create selection set with pipeline block filter
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:423: '   4. If pipeline found, extract reference and update flow block
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:424: '   5. If not found, clear attribute and set EiLinjaa flag
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:443: ' Get flow block position
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:452: ' Delete existing temp selection set
+C:\database_migration\Access\PIPE\Form_USysFlowPickNo.cls:460: ' Create selection set for pipelines
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:70: ' Tarkoitus: Close the form
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:78: ' Tarkoitus: Pick a pipeline, tank, pump, or equipment from drawing and extract reference
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:80: '   Teksti - TextBox to populate with reference value
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:131: ' Tarkoitus: Extract pipeline reference from block attributes (DEP+FSB+LINE)
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:196: ' Tarkoitus: Move to next block in selection set (wraps to first)
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:214: ' Tarkoitus: Write text to attribute reference
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:216: '   Teksti - Text to write
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:277: ' Tarkoitus: Move to previous block in selection set (wraps to last)
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:295: ' Tarkoitus: Clean up AutoCAD objects when form closes
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:300: ' Clean up selection set
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:337: ' Filter: Keep only pipeline blocks
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:366: ' Tarkoitus: Create or recreate a named selection set
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:368: '   Nimi - Name of selection set
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:369: '   VJoukko - Selection set object to create
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:376: ' Delete if already exists
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:393: ' Tarkoitus: Display and highlight current pipeline block, load attributes
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:410: ' Get and display current block
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:435: ' Tarkoitus: Connect to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysPipeFromTo.cls:441: ' Try to connect to running AutoCAD
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:12: '   - Filters blocks by type (via OpenArgs parameter)
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:22: '   - Block name (e.g., "VALVE") - filters to single block type
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:23: '   - Comma-separated list (e.g., "VALVE,PUMP") - filters to multiple types
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:41: ' Tarkoitus: Close the form
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:49: ' Tarkoitus: Pick pipeline or plate block from drawing and extract reference
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:107: ' Tarkoitus: Extract pipeline reference from block attributes (DEP+FSB+LINE)
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:172: ' Tarkoitus: Move to next block in selection set (wraps to first)
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:190: ' Tarkoitus: Write text to attribute reference
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:192: '   Teksti - Text to write
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:237: ' Tarkoitus: Move to previous block in selection set (wraps to last)
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:255: ' Tarkoitus: Clean up AutoCAD objects when form closes
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:260: ' Clean up selection set
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:293: ' Filter by OpenArgs: comma-separated list or single block type
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:330: ' Tarkoitus: Create or recreate a named selection set
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:332: '   Nimi - Name of selection set
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:333: '   VJoukko - Selection set object to create
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:340: ' Delete if already exists
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:357: ' Tarkoitus: Display and highlight current equipment block, load PIPELINE attribute
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:374: ' Get and display current block
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:381: ' Extract PIPELINE attribute
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:402: ' Tarkoitus: Connect to running AutoCAD instance
+C:\database_migration\Access\PIPE\Form_USysPipeToOther.cls:408: ' Try to connect to running AutoCAD
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:6: ' Tarkoitus: Replace manual valve blocks in P&I drawings with Araucon standard blocks
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:10: '   Batch replaces manual valve blocks in AutoCAD P&I drawings:
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:13: '   - Replaces old valve blocks with new standardized blocks
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:27: '   Code 5,6 → V09 (Check valve)
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:36: '   - Command0: Execute valve replacement batch process
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:41: ' Tarkoitus: Execute batch valve block replacement
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:66: ' Connect to AutoCAD
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:80: ' Open new drawing if changed
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:135: ' Replace block if mapping exists
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:147: ' Insert new block
+C:\database_migration\Access\PIPE\Form_Venttiiliblokkien vaihto.cls:171: ' Delete old block
+C:\database_migration\Access\PIPE\Form_zFunc.cls:12: '   - Batch query execution for instrument loops
+C:\database_migration\Access\PIPE\Form_zFunc.cls:52: ' Tarkoitus: Convert empty strings to Null across selected table
+C:\database_migration\Access\PIPE\Form_zFunc.cls:55: '   1. Open selected table from KaikkiTaulukot combo
+C:\database_migration\Access\PIPE\Form_zFunc.cls:57: '   3. For each field, if value is empty string, set to Null
+C:\database_migration\Access\PIPE\Form_zFunc.cls:96: ' Check all fields first before editing
+C:\database_migration\Access\PIPE\Form_zFunc.cls:147: '   1. Open sorted recordset (by Loop, then AllDevTag)
+C:\database_migration\Access\PIPE\Form_zFunc.cls:148: '   2. For each loop group, assign sequential block placement numbers (14, 15, 16...)
+C:\database_migration\Access\PIPE\Form_zFunc.cls:149: '   3. Reset counter for each new loop
+C:\database_migration\Access\PIPE\Form_zFunc.cls:153: '   - Groups by Loop identifier ([AreaCode] & [Loopno] & [pageno])
+C:\database_migration\Access\PIPE\Form_zFunc.cls:165: ' Open sorted recordset
+C:\database_migration\Access\PIPE\Form_zFunc.cls:209: ' Tarkoitus: Delete zDetails records that no longer exist in InstrumentIndex
+C:\database_migration\Access\PIPE\Form_zFunc.cls:213: '   2. For each orphaned record, delete it from zDetails
+C:\database_migration\Access\PIPE\Form_zFunc.cls:246: ' Build query to find orphaned zDetails records
+C:\database_migration\Access\PIPE\Form_zFunc.cls:265: ' Build SQL to delete matching record
+C:\database_migration\Access\PIPE\Form_zFunc.cls:335: ' Tarkoitus: Populate KaikkiTaulukot combo box with user table names
+C:\database_migration\Access\PIPE\Form_zFunc.cls:340: '   3. Build semicolon-delimited list for combo box
+C:\database_migration\Access\PIPE\Form_zFunc.cls:341: '   4. Set default selection to first table
+C:\database_migration\Access\PIPE\Form_zFunc.cls:344: '   - Filters out: USys*, MSys*, Dev*, tables containing "old"
+C:\database_migration\Access\PIPE\Form_zFunc.cls:357: ' Filter system tables and old tables
+C:\database_migration\Access\PIPE\Form_zFunc.cls:363: ' Set combo box row source and default value
+C:\database_migration\Access\PIPE\Koodit.bas:38: ' Tarkoitus: Open and highlight AutoCAD block from active database table
+C:\database_migration\Access\PIPE\Koodit.bas:42: '   2. Query database for block information (path, drawing, handle)
+C:\database_migration\Access\PIPE\Koodit.bas:43: '   3. Call AvaaKuvasta to open drawing and zoom to block
+C:\database_migration\Access\PIPE\Koodit.bas:64: ' Get relative path to flowsheets folder
+C:\database_migration\Access\PIPE\Koodit.bas:71: ' Get manual valve block information
+C:\database_migration\Access\PIPE\Koodit.bas:77: ' For pipelines, open selection form
+C:\database_migration\Access\PIPE\Koodit.bas:89: ' Open from detail table view
+C:\database_migration\Access\PIPE\Koodit.bas:111: ' Tarkoitus: Open AutoCAD drawing and zoom/highlight specific block
+C:\database_migration\Access\PIPE\Koodit.bas:116: '   Handle - AutoCAD-blokin kÄsittelytunnus (heksadesimaalimerkkijono)
+C:\database_migration\Access\PIPE\Koodit.bas:120: '   1. Connect to running AutoCAD instance
+C:\database_migration\Access\PIPE\Koodit.bas:121: '   2. Check if drawing already open, otherwise open it
+C:\database_migration\Access\PIPE\Koodit.bas:122: '   3. Find block by handle
+C:\database_migration\Access\PIPE\Koodit.bas:145: ' Try to connect to running AutoCAD
+C:\database_migration\Access\PIPE\Koodit.bas:154: ' Check if drawing already open (use cached lowercase name)
+C:\database_migration\Access\PIPE\Koodit.bas:164: ' Open drawing if not already open
+C:\database_migration\Access\PIPE\Koodit.bas:216: ' Tarkoitus: Get Windows network username (DEPRECATED - Not currently used)
+C:\database_migration\Access\PIPE\Koodit.bas:223: '   - Use SetStartup function instead for actual username logging
+C:\database_migration\Access\PIPE\Koodit.bas:239: ' Tarkoitus: Log user login information to UsysUsers table
+C:\database_migration\Access\PIPE\Koodit.bas:242: '   1. Get network username via Windows API (api_GetUserName)
+C:\database_migration\Access\PIPE\Koodit.bas:243: '   2. Get computer name via Windows API (api_GetComputerName)
+C:\database_migration\Access\PIPE\Koodit.bas:244: '   3. Get current Access database username
+C:\database_migration\Access\PIPE\Koodit.bas:245: '   4. Write all information to UsysUsers table with timestamp
+C:\database_migration\Access\PIPE\Koodit.bas:247: ' Palauttaa: Nothing (procedure performs logging silently)
+C:\database_migration\Access\PIPE\Koodit.bas:266: ' Get network username
+C:\database_migration\Access\PIPE\Koodit.bas:273: ' Get computer name
+C:\database_migration\Access\PIPE\Koodit.bas:282: ' Write login record to UsysUsers table
+C:\database_migration\Access\PIPE\Koodit.bas:311: ' Tarkoitus: Extract part of hyphen-delimited string
+C:\database_migration\Access\PIPE\Koodit.bas:314: '   Tieto - String to parse (format: "part1-part2-part3")
+C:\database_migration\Access\PIPE\Koodit.bas:315: '   osa - Part number to extract (1-based index)
+C:\database_migration\Excel\Moduulit\AcadDATA\AcadHelpers.bas:13: ' Fallback to value 3 (used by some documentation/snippets)
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:33: ' Validate that row has data
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:40: ' Connect to running AutoCAD instance
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:52: ' Get document name from cell
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:55: ' Check if correct document is open
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:57: ' SDI mode - only one document can be open
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:66: ' MDI mode - multiple documents can be open
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:82: ' Open document if requested
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:98: ' Zoom to entity if document is open
+C:\database_migration\Excel\Moduulit\AcadDATA\DATA.bas:103: ' Get bounding box and zoom to entity
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:44: ' Build DXF entity-type filters (INSERT [+ TEXT/MTEXT if requested])
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:124: ' Bulk write buffer (rows x cols)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:154: ' Connect to running AutoCAD instance
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:186: ' Set header styling
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:244: ' no-op (layer filter removed)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:281: ' Get document information
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:302: ' 1) Build a tight DXF filter by entity type (INSERT [+ TEXT/MTEXT if requested]).
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:303: ' 2) If specific block names are given (not just "*"), add a code-2 name OR-group.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:306: ' 4) As an extra precaution, when a name filter is active, remove any non-matching
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:307: '    BlockReferences from the selection set before processing.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:319: ' Build DXF filters to limit selection at source for performance.
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:322: ' Build entity type filter using helper (avoids duplication, exact sizing)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:337: ' Select with filters (works for both Previous and All)
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:343: ' Pre-filter: if specific block names requested, remove non-matching blocks from the selection set
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:382: ' If no blocks found at all (e.g., only text was selected), trigger type-only fallback
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:385: ' Rebuild type-only filter
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:401: ' Rebuild filters: entity types only
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:422: ' Process entities in selection set
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:439: ' Prepare handle; may fail for proxies
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:484: ' Check block name matches filter criteria
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:504: ' Add a buffered row
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:544: ' Find or create a column for this tag
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:628: ' Flush buffered rows to sheet in a single write
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:649: ' Close drawing opened from list (do not save) to match original behavior
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:744: ' Connect to running AutoCAD instance
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:808: ' Column found - check if Excel value is non-empty
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:894: ' Delete selected blocks from AutoCAD drawing
+C:\database_migration\Excel\Moduulit\AcadDATA\Koodit.bas:910: ' Connect to running AutoCAD instance
+C:\database_migration\Excel\Moduulit\Listojen kyselyt\Module2.bas:554: ' Parse revid (first part before space)
+C:\database_migration\Excel\Moduulit\Listojen kyselyt\Module2.bas:562: ' Parse revdate (between space and /)
+C:\database_migration\Excel\Moduulit\Listojen kyselyt\Module2.bas:571: ' Parse designer, checker, approver, desc (slash-delimited parts)
