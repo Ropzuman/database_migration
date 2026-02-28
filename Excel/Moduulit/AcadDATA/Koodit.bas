@@ -129,16 +129,24 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     
     On Error GoTo ErrHandler
   
-    Listasta = Aloitus.Lista.Value
+    ' Nykyinen-valintaruutu (auki oleva AutoCAD-ikkuna) ohittaa Lista-valinnan.
+    ' Tämä korjaa tilanteen, jossa Nykyinen = True mutta Lista = True samaan aikaan.
+    If Aloitus.Nykyinen.Value Then
+        Listasta = False
+    Else
+        Listasta = Aloitus.Lista.Value
+    End If
     
     If Not Listasta Then
         If Valitut Then
             VainValitut = True
-        Else
+        ElseIf Not Aloitus.Nykyinen.Value Then
+            ' Nykyinen-tilassa haetaan aina kaikki blokit avoimesta kuvasta (ei kysyta)
             If MsgBox("Poimitaanko vain valitut kohteet?", vbYesNo, "Tuo DATA") = vbYes Then
                 VainValitut = True
             End If
         End If
+        ' Jos Nykyinen=True, VainValitut pysyy Falsena -> acSelectionSetAll kayttoon
     End If
   
     ' Minimize Excel UI and recalculation overhead during import
@@ -239,9 +247,20 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     
     StepMsg = "Determine entity types"
     Trace StepMsg
+    ' Rakennettaan DXF-suodatin alkuperaisen koodin tapaan: yksi filterdata-merkijono.
+    ' Alkuperainen kaytto: FilterType(0)=0, FilterData(0)="INSERT" (tai "TEXT,MTEXT,DTEXT" jne.)
+    ' Tama on luotettavampi kuin <or>-ryhmä AutoCAD 2019 myohaisessa sidonnassa.
+    ReDim FilterType(0 To 0)
+    ReDim FilterData(0 To 0)
+    FilterType(0) = 0
+    If Aloitus.Range("D5").Value = "Tekstit" Then
+        FilterData(0) = "TEXT,MTEXT,DTEXT"
+    ElseIf Aloitus.Range("D5").Value = "Blokit ja tekstit" Then
+        FilterData(0) = "TEXT,MTEXT,DTEXT,INSERT"
+    Else
+        FilterData(0) = "INSERT"
+    End If
     IncludeTexts = (Aloitus.Range("D5").Value = "Tekstit" Or Aloitus.Range("D5").Value = "Blokit ja tekstit")
-    ' Layer filtering removed by request (simpler and faster)
-    ' no-op (layer filter removed)
     
     ' Save and temporarily change document mode
     Docmode = oACAD.Preferences.System.SingleDocumentMode
@@ -297,115 +316,68 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         
         Set Joukko = oDOC.SelectionSets.Add("EXCELHAKU")
 
-        ' ========================================================================
-        ' Selection strategy
-        ' 1) Build a tight DXF filter by entity type (INSERT [+ TEXT/MTEXT if requested]).
-        ' 2) If specific block names are given (not just "*"), add a code-2 name OR-group.
-        ' 3) If that yields zero items, re-select by type only and prune in VBA by EffectiveName
-        '    to capture dynamic blocks with anonymous names.
-        ' 4) As an extra precaution, when a name filter is active, remove any non-matching
-        '    BlockReferences from the selection set before processing.
-        ' ========================================================================
         StepMsg = "Select entities"
         Trace StepMsg
-        ' Determine wildcard state early for clarity
+        ' Maaritetaan suodatuslogiikka - sama kuin alkuperaisessa koodissa
         AllowAll = False
         For i = 0 To UBound(Blokit)
-            If Blokit(i) = "*" Then
-                AllowAll = True
-                Exit For
-            End If
+            If Blokit(i) = "*" Then AllowAll = True: Exit For
         Next i
-    ' Build DXF filters to limit selection at source for performance.
-    ' To ensure dynamic blocks are always included, we select by type only
-    ' and then prune by EffectiveName in VBA when specific names are provided.
-        ' Build entity type filter using helper (avoids duplication, exact sizing)
-        BuildTypeFilter IncludeTexts, FilterType, FilterData
-        ' Determine if specific names are requested (affects pruning behavior)
         Dim haveNameFilter As Boolean: haveNameFilter = False
-        If UBound(Blokit) >= 0 Then
-            For k = LBound(Blokit) To UBound(Blokit)
-                If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then haveNameFilter = True: Exit For
-            Next k
+        If Not AllowAll Then
+            For i = 0 To UBound(Blokit)
+                If Len(Blokit(i)) > 0 Then haveNameFilter = True: Exit For
+            Next i
         End If
-        If haveNameFilter Then
-            Trace "Using type-only selection with EffectiveName pruning for: " & Nimet
-        Else
-            Trace "Selecting all INSERT (and TEXT/MTEXT if chosen)"
-        End If
+        Trace "Filter: [" & Join(Blokit, ",") & "] AllowAll=" & AllowAll & " haveNameFilter=" & haveNameFilter
 
-        ' Select with filters (works for both Previous and All)
+        ' Valitaan entiteetit piirustuksesta (suodatetaan tyyppi-DXF-suodattimella)
         If VainValitut Then
             Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
         Else
             Joukko.Select acSelectionSetAll, , , FilterType, FilterData
         End If
-        ' Pre-filter: if specific block names requested, remove non-matching blocks from the selection set
-        If haveNameFilter Then
-            L = 0
-            Dim blockRefCount As Long: blockRefCount = 0
-            For j = 0 To Joukko.Count - 1
-                On Error Resume Next
-                Set oEnt = Joukko.Item(j)
-                If Err.Number <> 0 Then Err.Clear
-                If Not oEnt Is Nothing Then
-                    Dim entNm As String
-                    entNm = ""
-                    entNm = CallByName(oEnt, "EntityName", VbGet)
-                    If Err.Number <> 0 Then entNm = "": Err.Clear
-                    ' Only evaluate blocks here; allow TEXT/MTEXT to pass when IncludeTexts is True
-                    If InStr(1, entNm, "BlockReference", vbTextCompare) > 0 Or entNm = "AcDbBlockReference" Then
-                        blockRefCount = blockRefCount + 1
-                        Set Blokki = oEnt
-                        Dim match As Boolean: match = False
-                        For k = LBound(Blokit) To UBound(Blokit)
-                            If Len(Blokit(k)) > 0 And Blokit(k) <> "*" Then
-                                If UCase(Blokki.EffectiveName) = UCase(Blokit(k)) Then
-                                    match = True: Exit For
-                                End If
-                            End If
-                        Next k
-                        If Not match Then
-                            ReDim Preserve Poista(L)
-                            Set Poista(L) = oEnt
-                            L = L + 1
-                        End If
-                    End If
-                End If
-                On Error GoTo ErrHandler
-            Next j
-            If L > 0 Then
-                On Error Resume Next
-                Joukko.RemoveItems Poista
-                On Error GoTo ErrHandler
-            End If
-            ' If no blocks found at all (e.g., only text was selected), trigger type-only fallback
-            If blockRefCount = 0 Then
-                Trace "No BlockReferences in initial selection (with name filter); reselecting by type only"
-                ' Rebuild type-only filter
-                BuildTypeFilter IncludeTexts, FilterType, FilterData
-                If VainValitut Then
-                    Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
-                Else
-                    Joukko.Select acSelectionSetAll, , , FilterType, FilterData
-                End If
-                Trace "Selection count after zero-block fallback: " & Joukko.Count
-            End If
-        End If
-        Trace "Selection count: " & Joukko.Count
+        Trace "Selection count before name-prune: " & Joukko.Count
 
-        ' Fallback: If specific names were requested and the selection is empty, re-select by type only
-        ' (kept for safety, though we already select by type when haveNameFilter=True)
-        If (Not AllowAll) And haveNameFilter And Joukko.Count = 0 Then
-            Trace "Fallback to type-only selection for dynamic blocks"
-            ' Rebuild filters: entity types only
-            BuildTypeFilter IncludeTexts, FilterType, FilterData
-            If VainValitut Then
-                Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
-            Else
-                Joukko.Select acSelectionSetAll, , , FilterType, FilterData
+        ' Esisuodatus: poistetaan blokit joiden nimi ei tasmaa - sama logiikka kuin alkuperaisessa
+        ' Kaytetaan suoraa olio-ominaisuuksien hakua (ei CallByName/TypeName), alkuperainen tapa.
+        L = 0
+        For j = 0 To Joukko.Count - 1
+            On Error Resume Next
+            Set oEnt = Joukko.Item(j)
+            Dim preEntName As String: preEntName = ""
+            preEntName = oEnt.EntityName
+            If Err.Number <> 0 Then preEntName = "": Err.Clear
+            On Error GoTo ErrHandler
+            If preEntName = "AcDbBlockReference" Then
+                EiPoisteta = AllowAll
+                If Not EiPoisteta Then
+                    On Error Resume Next
+                    Dim preEffName As String: preEffName = ""
+                    preEffName = oEnt.EffectiveName
+                    If Err.Number <> 0 Then preEffName = "": Err.Clear
+                    On Error GoTo ErrHandler
+                    For k = 0 To UBound(Blokit)
+                        If UCase(preEffName) = UCase(Blokit(k)) Then
+                            EiPoisteta = True: Exit For
+                        End If
+                    Next k
+                End If
+                If Not EiPoisteta Then
+                    ReDim Preserve Poista(L)
+                    Set Poista(L) = oEnt
+                    L = L + 1
+                End If
             End If
-            Trace "Selection count after fallback: " & Joukko.Count
+        Next j
+        If L > 0 Then
+            On Error Resume Next
+            Joukko.RemoveItems Poista
+            On Error GoTo ErrHandler
+        End If
+        Trace "Selection count after name-prune: " & Joukko.Count
+        If Joukko.Count = 0 Then
+            MsgBox "Kuvasta tai valitulta alueelta ei löytynyt tietoja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
         End If
     selCount = Joukko.Count
     ' Prepare a bulk buffer sized to the selection (plus a tiny slack) and reasonable column capacity
@@ -481,7 +453,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                       (InStr(1, entType, "AcDbText", vbTextCompare) > 0)) And Not isMText
 
             If isBlock Then
-                ' Check block name matches filter criteria
+                ' Tarkistetaan blokin nimi suodatinta vasten - alkuperaisen koodin logiikka
                 On Error Resume Next
                 Set Blokki = oEnt
                 If Err.Number <> 0 Or Blokki Is Nothing Then
@@ -490,14 +462,31 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     GoTo ContinueEntities
                 End If
                 On Error GoTo ErrHandler
+                ' Esisuodatus on jo karsittu nimen perusteella, joten EiPoisteta = True kaikille
+                ' Joukossa jaljella oleville blokeille. Tarkistus tehdaan kuitenkin EffectiveNamella
+                ' varmuuden vuoksi (dynaamisten blokkien ja myohaissidonnan virhetilanteisiin).
                 EiPoisteta = AllowAll
                 If Not EiPoisteta Then
+                    Dim effName As String
+                    On Error Resume Next
+                    effName = Blokki.EffectiveName
+                    If Err.Number <> 0 Then effName = "": Err.Clear
+                    On Error GoTo ErrHandler
+                    Trace "  EffectiveName=[" & effName & "]"
                     For k = 0 To UBound(Blokit)
-                        If UCase(Blokki.EffectiveName) = UCase(Blokit(k)) Then
-                            EiPoisteta = True
-                            Exit For
+                        If UCase(effName) = UCase(Blokit(k)) Then
+                            EiPoisteta = True: Exit For
                         End If
                     Next k
+                    ' Jos EffectiveName hakeminen epaonnistui mutta esisuodatus kasitteli sen,
+                    ' hyvaksytaan blokki (pre-filter on jo poistanut vaarat blokit)
+                    If Not EiPoisteta And haveNameFilter And effName = "" Then
+                        EiPoisteta = True
+                        Trace "  [VAROITUS] EffectiveName ei luettavissa, hyvaksytaan esisuodatuksen perusteella"
+                    End If
+                    If Not EiPoisteta Then
+                        Trace "  [OHITETTU] EffectiveName='" & effName & "' ei vastaa suodatinta: " & Nimet
+                    End If
                 End If
 
                 If EiPoisteta Then
@@ -716,6 +705,7 @@ Public Sub VieDATA()
     Dim UpdateCount As Long
     Dim SkippedCount As Long
     Dim EmptyCount As Long
+    Dim HeaderMap As Object ' Otsikkosarakkeiden välimuisti: TAG -> sarakeindeksi
     
     StepMsg = "VieDATA: Initialization"
     Trace StepMsg
@@ -735,8 +725,20 @@ Public Sub VieDATA()
         Ver = ac2013_dwg ' Ver = 60
     End If
     
-    ' Ensure data sheet is selected
+    ' Varmista että DATA-taulukko on aktiivinen
     DATA.Select
+
+    ' Rakennetaan otsikkokartta kerran (TAG -> sarakeindeksi) suorituskyvyn parantamiseksi.
+    ' Näin jokainen attribuutti ei vaadi erillistä k=8..256-silmukkaa per rivi.
+    Set HeaderMap = CreateObject("Scripting.Dictionary")
+    Dim hk As Long
+    For hk = 8 To 256
+        Dim hv As String
+        hv = UCase(Cells(1, hk).Value)
+        If hv = "" Then Exit For ' Tyhja otsikko - loppuu tahan
+        If Not HeaderMap.Exists(hv) Then HeaderMap.Add hv, hk
+    Next hk
+    Trace "VieDATA: otsikkokartta rakennettu, " & HeaderMap.Count & " saraketta"
 
     StepMsg = "Connect to AutoCAD"
     Trace StepMsg
@@ -793,16 +795,9 @@ Public Sub VieDATA()
                             End If
                             On Error GoTo ErrHandler
                             
-                            ' Find matching column in Excel header (row 1)
+                            ' Hae sarakeindeksi välimuistista (nopeampi kuin k=8..256-skannaus)
                             ColIdx = 0
-                            For k = 8 To 256 ' Start from column H (first attribute column)
-                                If UCase(Cells(1, k).Value) = TagName Then
-                                    ColIdx = k
-                                    Exit For
-                                End If
-                                ' Stop if we hit empty headers
-                                If Cells(1, k).Value = "" Then Exit For
-                            Next k
+                            If HeaderMap.Exists(TagName) Then ColIdx = CLng(HeaderMap(TagName))
                             
                             If ColIdx > 0 Then
                                 ' Column found - check if Excel value is non-empty
@@ -825,6 +820,15 @@ Public Sub VieDATA()
                             End If
 NextAttribute:
                         Next j
+                        ' Pakota AutoCAD piirtämään blokin uudelleen - ilman tätä
+                        ' attribuuttimuutokset eivat näy näytolla ennen tallennusta.
+                        On Error Resume Next
+                        oBlock.Update
+                        If Err.Number <> 0 Then
+                            Trace "  [VAROITUS] oBlock.Update epaonnistui: " & Err.Description
+                            Err.Clear
+                        End If
+                        On Error GoTo ErrHandler
                     Else
                         Trace "Block has no attributes"
                     End If
@@ -868,16 +872,26 @@ NextAttribute:
   
 Cleanup:
     On Error Resume Next
+    ' Regeneroi aktiivinen piirustus ettei muutokset jääkään näytolla nahtaviksi
+    ' vasta tallennuksen jalkeen. acAllViewports = 1.
+    If Not oDOC Is Nothing Then
+        oDOC.Regen 1
+        If Err.Number <> 0 Then
+            Trace "[VAROITUS] oDOC.Regen epaonnistui: " & Err.Description
+            Err.Clear
+        End If
+    End If
     Aloitus.Activate
     If Not oACAD Is Nothing Then
         oACAD.Preferences.System.SingleDocumentMode = Docmode
     End If
     Application.StatusBar = False
-    
-    ' Release objects
+
+    ' Vapauta objektit
     Set oEntity = Nothing
     Set oBlock = Nothing
     Set BlockArray = Nothing
+    Set HeaderMap = Nothing
     Set oDOC = Nothing
     Set oACAD = Nothing
     On Error GoTo 0

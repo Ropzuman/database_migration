@@ -1,4 +1,4 @@
-# Database Migration: 32-bit to 64-bit Office VBA
+﻿# Database Migration: 32-bit to 64-bit Office VBA
 
 ## Purpose
 
@@ -59,37 +59,39 @@ This workbook includes an AutoCAD integration to read block attributes (and opti
 
 ### Import (TuoDATA)
 
-- Run via Macros: TuoDATA_All (all) or TuoDATA_Selected (previous selection in AutoCAD).
+- Run via Macros: `TuoDATA_All` (all blocks) or `TuoDATA_Selected` (previous AutoCAD selection).
 - Inputs on the Start sheet:
-  - D7: Block names, comma-separated. Use `*` to import all blocks.
-  - D5: Entity scope: "Blokit" or "Blokit ja tekstit" (includes TEXT/MTEXT).
+  - **D7:** Block names, comma-separated. Use `*` to import all blocks.
+  - **D5:** Entity scope: `"Blokit"`, `"Tekstit"`, or `"Blokit ja tekstit"` (includes TEXT/MTEXT).
+  - **Nykyinen checkbox:** Import from the currently active AutoCAD drawing (no file list needed).
+  - **Lista checkbox:** Import from the file list on the TIEDLISTA sheet.
 - Output columns: PATH, DWG, BLOCK, HANDLE, XCord, YCord, Layer, then one column per attribute tag (created as needed).
 
 Selection behavior
 
 - No layer filter (by design for simplicity and correctness).
-- The selection uses DXF filters for performance:
-  - Always filters by entity type: `INSERT` (and `TEXT`/`MTEXT` if chosen).
-  - If specific block names are given (not just `*`), a code-2 OR-group is added for those names.
-  - If that yields zero entities (typical for dynamic blocks with anonymous names), the code falls back to type-only selection and prunes in VBA by `EffectiveName` to keep only the requested blocks.
+- DXF type filter: single `FilterType(0)=0` / `FilterData(0)="INSERT"` entry (reliable in AutoCAD 2019 late binding). Text modes use `"TEXT,MTEXT,DTEXT"` or `"TEXT,MTEXT,DTEXT,INSERT"`.
+- When `Nykyinen` is checked, `acSelectionSetAll` is always used — no "select only previous?" prompt — so all blocks in the active drawing are scanned and then name-filtered.
+- Name pre-filter: after selection, entities whose `EffectiveName` does not match D7 are removed via `SelectionSet.RemoveItems` before processing begins.
 - Text entities (when enabled) bypass the block-name filter and are included as-is.
 
 Dynamic blocks
 
-- Matching is performed against `EffectiveName`, so dynamic blocks are handled correctly.
-- The fallback path ensures dynamic blocks are included even if their anonymous DXF names don’t match the code-2 name filter.
+- Matching is performed against `EffectiveName` (direct property access), so dynamic blocks with anonymous internal names are handled correctly.
 
 Dev tracing
 
 - Controlled in `Excel/Moduulit/AcadDATA/Koodit.bas` by `Public Const DEBUG_TRACE As Boolean`.
-- When `True`, detailed timestamps and steps are printed to the Immediate Window (Ctrl+G) during import: filter setup, selection counts, fallback triggers, and per-document row totals.
-- Functional behavior is unchanged; tracing only affects verbosity.
+- When `True`, detailed timestamps and steps are printed to the Immediate Window (Ctrl+G): filter setup, selection counts before/after name-prune, and per-document row totals.
 
 ### Export (VieDATA)
 
 More details for developers: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
 
-- Writes edited attribute values back to blocks by HANDLE.
+- Writes edited attribute values back to blocks by HANDLE using TAG-based matching (symmetric with TuoDATA).
+- Calls `oBlock.Update` after each block so attribute changes are visible on-screen immediately (not only after save).
+- Calls `oDOC.Regen 1` at the end to regenerate all viewports.
+- Uses a `HeaderMap` dictionary (built once before the main loop) for O(1) TAG→column lookups.
 - Respects AutoCAD SingleDocumentMode and performs safe COM cleanup.
 
 ### Double-click navigation
