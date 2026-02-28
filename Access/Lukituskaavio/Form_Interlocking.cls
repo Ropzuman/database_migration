@@ -1,4 +1,4 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 Public BaseDWG1 As String
 Public BaseDWG2 As String
@@ -7,88 +7,88 @@ Public SavePath As String
 Public OldText As String
 Public oBlock As AcadBlockReference
 
-Private Sub Blokki_BeforeUpdate(lancel As Integer)
+Private Sub Blokki_BeforeUpdate(Cancel As Integer)
 Dim TAttrib As String
 Dim i As Integer
   Debug.Print "Blokki_BeforeUpdate: Starting"
   Debug.Print "  Block Value: " & Blokki.VALUE
   
-  TKuva.VALUE = DLookup("[IMAGE]", "SETTINGS", "[VALUE]= " & Blokki.VALUE & " ")
-  TAttrib = Blokki.lolumn(1, Blokki.ListIndex)
+  TKuva.VALUE = DLookup("[IMAGE]", "SETTINGS", "[VALUE]='" & Blokki.VALUE & "'")
+  TAttrib = Blokki.Column(1, Blokki.ListIndex)
   Debug.Print "  TAttrib: " & TAttrib
   
   For i = 1 To 5
-    lontrols("Text_" & i).Backlolor = RGB(255, 0, 0)
-    lontrols("T_IN" & i).Backlolor = RGB(255, 0, 0)
-    lontrols("T_OUT" & i).Backlolor = RGB(255, 0, 0)
+    Controls("Text_" & i).BackColor = RGB(255, 0, 0)
+    Controls("T_IN" & i).BackColor = RGB(255, 0, 0)
+    Controls("T_OUT" & i).BackColor = RGB(255, 0, 0)
     
     If InStr(TAttrib, "T" & i) Then
-      lontrols("Text_" & i).Backlolor = RGB(60, 255, 60)
+      Controls("Text_" & i).BackColor = RGB(60, 255, 60)
     End If
     If InStr(TAttrib, "I" & i) Then
-      lontrols("T_IN" & i).Backlolor = RGB(60, 255, 60)
+      Controls("T_IN" & i).BackColor = RGB(60, 255, 60)
     End If
     If InStr(TAttrib, "O" & i) Then
-      lontrols("T_OUT" & i).Backlolor = RGB(60, 255, 60)
+      Controls("T_OUT" & i).BackColor = RGB(60, 255, 60)
     End If
   
   Next i
-  Debug.Print "Blokki_BeforeUpdate: lOMPLETED"
+  Debug.Print "Blokki_BeforeUpdate: COMPLETED"
 End Sub
 
-Private Sub Blokki_lhange()
+Private Sub Blokki_Change()
 
- If Blokki.VALUE = "transition2KKS" Then
-     If Text_2.VALUE = "open" Then
-     Text_2.VALUE = Text_2.VALUE & " LIMIT"
-     Else
-     If Text_2.VALUE = "close" Then
-     Text_2.VALUE = Text_2.VALUE & " LIMIT"
-     End If
-     End If
- End If
+'If Blokki.VALUE = "transition2KKS" Then
+'    If Text_2.VALUE = "open" Then
+'    Text_2.VALUE = Text_2.VALUE & " LIMIT"
+'    Else
+'    If Text_2.VALUE = "close" Then
+'    Text_2.VALUE = Text_2.VALUE & " LIMIT"
+'    End If
+'    End If
+'End If
 
- If Blokki.VALUE = "transition2kks" And Text_4.VALUE Like "*M*" Then
-     Text_2.VALUE = "RUN"
- Else
-     Text_2.VALUE = Text_2.VALUE
- End If
+'If Blokki.VALUE = "transition2kks" And Text_4.VALUE Like "*M*" Then
+'    Text_2.VALUE = "RUN"
+'Else
+'    Text_2.VALUE = Text_2.VALUE
+'End If
 
- If Blokki.VALUE = "To_Sec_V" And T_OUT4.VALUE Like "*reset*" Then
-     Text_5.VALUE = "R:"
- Else
-     Text_5.VALUE = ""
- End If
- If Blokki.VALUE = "transition2" And Left(Right(Text_4.VALUE, 2), 1) = "M" Then
+'If Blokki.VALUE = "To_Sec_V" And T_OUT4.VALUE Like "*reset*" Then
+'    Text_5.VALUE = "R:"
+'Else
+'    Text_5.VALUE = ""
+'End If
+'If Blokki.VALUE = "transition2" And Left(Right(Text_4.VALUE, 2), 1) = "M" Then
 
- If Blokki.VALUE = "From_Page_Acc_N" Then
-     OldText = Text_1.VALUE
-     Text_1.VALUE = Loop_text.VALUE
- Else
-     Text_1.VALUE = OldText
-     OldText = Text_1.VALUE
- End If
+'If Blokki.VALUE = "From_Page_Acc_N" Then
+'    OldText = Text_1.VALUE
+'    Text_1.VALUE = Loop_text.VALUE
+'Else
+'    Text_1.VALUE = OldText
+'    OldText = Text_1.VALUE
+'End If
 
 End Sub
 
-Private Sub Blokki_llick()
- If Blokki.VALUE = "transition2" And Text_4.VALUE Like "*M*" Then
- Text_2.VALUE = "RUN"
- Else
- Text_2.VALUE = Text_2.VALUE
- End If
+Private Sub Blokki_Click()
+'If Blokki.VALUE = "transition2" And Text_4.VALUE Like "*M*" Then
+'Text_2.VALUE = "RUN"
+'Else
+'Text_2.VALUE = Text_2.VALUE
+'End If
 End Sub
 
-Private Sub BMuokkaa_llick()
- Muokkaa blokkia
+Private Sub BMuokkaa_Click()
+'Muokkaa blokkia
 On Error GoTo ErrorHandler
-  Debug.Print "BMuokkaa_llick: Starting"
-  Debug.Print "  lurrent laption: " & BMuokkaa.laption
+  Debug.Print "BMuokkaa_Click: Starting"
+  Debug.Print "  Current Caption: " & BMuokkaa.Caption
   
-If BMuokkaa.laption = "Muokkaa blokkia" Then
+If BMuokkaa.Caption = "Muokkaa blokkia" Then
   Debug.Print "  Mode: Read from block"
   If LueAttribuutit Then
-    BMuokkaa.laption = "Vie blokkiin"
+    BMuokkaa.Caption = "Vie blokkiin"
     BMuokkaa.FontBold = True
     Debug.Print "  Attributes read successfully"
   End If
@@ -96,20 +96,20 @@ Else
   Debug.Print "  Mode: Write to block"
   KirjoitaAttribuutit
   Set oBlock = Nothing
-  BMuokkaa.laption = "Muokkaa blokkia"
+  BMuokkaa.Caption = "Muokkaa blokkia"
   BMuokkaa.FontBold = False
   Debug.Print "  Attributes written successfully"
 End If
-  Debug.Print "BMuokkaa_llick: lOMPLETED"
+  Debug.Print "BMuokkaa_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in BMuokkaa_llick: " & Err.Number & " - " & Err.Description
-  Debug.Print "    laption: " & BMuokkaa.laption
-  MsgBox "Error: " & Err.Description, vblritical
+  Debug.Print "*** ERROR in BMuokkaa_Click: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Caption: " & BMuokkaa.Caption
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 Private Function LueAttribuutit() As Boolean
- Luetaan attibuutit blokista formiin
+'Luetaan attibuutit blokista formiin
 Dim Valinta As AcadObject
 Dim Point(0 To 2) As Double
 Dim BlockNimi As String
@@ -120,18 +120,18 @@ Dim oAttrib As Variant
 On Error GoTo ErrorHandler
 
   Debug.Print "LueAttribuutit: Starting"
-  AppActivate oAlAD.laption
-   oDOl.Sendlommand "^l^l" & vblrLf   lhr(27) & lhr(27)  Varmistetaan että ollaan poistuttu komennosta
-  oDOl.Utility.GetEntity Valinta, Point, "lhoose Device..."
+  AppActivate oACAD.Caption
+  'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
+  oDOC.Utility.GetEntity Valinta, Point, "Choose Device..."
   Debug.Print "  Entity selected"
   
   If Valinta.ObjectName = "AcDbBlockReference" Then
     Debug.Print "  ObjectName: " & Valinta.ObjectName
-    Set Asetukset = lurrentDb.OpenRecordset("SETTINGS")
-    BlockNimi = Ulase$(Valinta.Name)
+    Set Asetukset = CurrentDb.OpenRecordset("SETTINGS")
+    BlockNimi = UCase$(Valinta.Name)
     Debug.Print "  Block Name: " & BlockNimi
-    Do While Not Asetukset.EOF  Tarkistetaan että blokin nimi löytyy luettelosta
-      If Ulase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then    Löyty
+    Do While Not Asetukset.EOF 'Tarkistetaan että blokin nimi löytyy luettelosta
+      If UCase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then   'Löyty
         Oikea = True
         Exit Do
       End If
@@ -152,14 +152,14 @@ On Error GoTo ErrorHandler
     Debug.Print "  ERROR: Invalid block selection"
     MsgBox "Virhe blokin valinnassa!", vbOKOnly, "Muokkaa blokkia"
   End If
-  AppActivate lurrentDb.Properties("AppTitle").VALUE
-  Debug.Print "LueAttribuutit: lOMPLETED (Result=" & LueAttribuutit & ")"
+  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  Debug.Print "LueAttribuutit: COMPLETED (Result=" & LueAttribuutit & ")"
   Exit Function
   
 ErrorHandler:
   Debug.Print "*** ERROR in LueAttribuutit: " & Err.Number & " - " & Err.Description
   If BlockNimi <> "" Then Debug.Print "    BlockNimi: " & BlockNimi
-  MsgBox "Error: " & Err.Description, vblritical
+  MsgBox "Error: " & Err.Description, vbCritical
   LueAttribuutit = False
 End Function
 Private Sub KirjoitaAttribuutit()
@@ -167,54 +167,54 @@ Dim i As Integer
 Dim oAttrib As Variant
 On Error GoTo ErrorHandler
 
- Kirjoitetaan attribuutit formista takaisin blokkiin
+'Kirjoitetaan attribuutit formista takaisin blokkiin
   Debug.Print "KirjoitaAttribuutit: Starting"
 If Not oBlock Is Nothing Then
     oAttrib = oBlock.GetAttributes
     Debug.Print "  Attributes count: " & UBound(oAttrib) + 1
     For i = 0 To UBound(oAttrib)
       With oAttrib(i)
-        Select lase Left$(Ulase$(.TagString), Len(.TagString) - 1)
-          lase "TEXT_", "TXT"
-            .TextString = IIf(IsNull(lontrols("Text_" & Right$(.TagString, 1))), "", lontrols("Text_" & Right$(.TagString, 1)))
-          lase "IN_"
-            .TextString = IIf(IsNull(lontrols("T_IN" & Right$(.TagString, 1))), "", lontrols("T_IN" & Right$(.TagString, 1)))
-          lase "OUT_"
-            .TextString = IIf(IsNull(lontrols("T_OUT" & Right$(.TagString, 1))), "", lontrols("T_OUT" & Right$(.TagString, 1)))
+        Select Case Left$(UCase$(.TagString), Len(.TagString) - 1)
+          Case "TEXT_", "TXT"
+            .TextString = IIf(IsNull(Controls("Text_" & Right$(.TagString, 1))), "", Controls("Text_" & Right$(.TagString, 1)))
+          Case "IN_"
+            .TextString = IIf(IsNull(Controls("T_IN" & Right$(.TagString, 1))), "", Controls("T_IN" & Right$(.TagString, 1)))
+          Case "OUT_"
+            .TextString = IIf(IsNull(Controls("T_OUT" & Right$(.TagString, 1))), "", Controls("T_OUT" & Right$(.TagString, 1)))
         End Select
       End With
     Next i
     Debug.Print "  All attributes written"
 End If
-  Debug.Print "KirjoitaAttribuutit: lOMPLETED"
+  Debug.Print "KirjoitaAttribuutit: COMPLETED"
   Exit Sub
   
 ErrorHandler:
   Debug.Print "*** ERROR in KirjoitaAttribuutit: " & Err.Number & " - " & Err.Description
-  MsgBox "Error: " & Err.Description, vblritical
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
 
-Private Sub lommand119_llick()
- Avaa uusi pohjakuva
+Private Sub Command119_Click()
+'Avaa uusi pohjakuva
 On Error GoTo ErrorHandler
-  Debug.Print "lommand119_llick: Starting - Open base drawing"
+  Debug.Print "Command119_Click: Starting - Open base drawing"
   Debug.Print "  BasePath: " & BasePath
   Debug.Print "  BaseDWG2: " & BaseDWG2
   
-  Set oDOl = oAlAD.Documents.Open(BasePath & BaseDWG2 & ".dwg", True)
-  oAlAD.ZoomExtents
-  AppActivate oAlAD.laption
-  Debug.Print "lommand119_llick: lOMPLETED"
+  Set oDOC = oACAD.Documents.Open(BasePath & BaseDWG2 & ".dwg", True)
+  oACAD.ZoomExtents
+  AppActivate oACAD.Caption
+  Debug.Print "Command119_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in lommand119_llick: " & Err.Number & " - " & Err.Description
+  Debug.Print "*** ERROR in Command119_Click: " & Err.Number & " - " & Err.Description
   Debug.Print "    BasePath: " & BasePath & ", BaseDWG2: " & BaseDWG2
-  MsgBox "Error: " & Err.Description, vblritical
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
-Private Sub lommand151_llick()
- Luetaan eri positioiden sijaintitieto
+Private Sub Command151_Click()
+'Luetaan eri positioiden sijaintitieto
 Dim Taul As DAO.Recordset
 Dim Tied As String
 Dim FT(0) As Integer
@@ -224,70 +224,70 @@ Dim Blokit As String
 Dim Attribuutti As String
 Dim ATTRIB As Variant
 Dim Joukko As AcadSelectionSet
-Dim Filelount As Long
-Dim Blocklount As Long
+Dim FileCount As Long
+Dim BlockCount As Long
 On Error GoTo ErrorHandler
 
-Debug.Print "lommand151_llick: Starting - Read position data"
+Debug.Print "Command151_Click: Starting - Read position data"
 
-Blokit = DLookup("[VALUE]", "[SETTINGS]", "SETTING= POSBLOlKS ")
-Attribuutti = Ulase$(DLookup("[VALUE]", "[SETTINGS]", "SETTING= POSBLOlKATT "))
+Blokit = DLookup("[VALUE]", "[SETTINGS]", "SETTING='POSBLOCKS'")
+Attribuutti = UCase$(DLookup("[VALUE]", "[SETTINGS]", "SETTING='POSBLOCKATT'"))
 Debug.Print "  Blocks filter: " & Blokit
 Debug.Print "  Attribute: " & Attribuutti
 
 FT(0) = 2
 FD(0) = Blokit
 Tied = Dir(SavePath & "*.dwg")
-lurrentDb.Execute "DELETE * FROM POSANDPAGES"
+CurrentDb.Execute "DELETE * FROM POSANDPAGES"
 Debug.Print "  POSANDPAGES table cleared"
 
-Set Taul = lurrentDb.OpenRecordset("POSANDPAGES")
-Filelount = 0
-Blocklount = 0
+Set Taul = CurrentDb.OpenRecordset("POSANDPAGES")
+FileCount = 0
+BlockCount = 0
 
 Do While Tied <> ""
   If IsNumeric(Mid$(Tied, Len(Tied) - 5, 2)) Then
-    Filelount = Filelount + 1
-    Debug.Print "  Processing file #" & Filelount & ": " & Tied
-    Set oDOl = oAlAD.Documents.Open(SavePath & Tied, True)
-    Set Joukko = oDOl.SelectionSets.Add("iLockAPU")
+    FileCount = FileCount + 1
+    Debug.Print "  Processing file #" & FileCount & ": " & Tied
+    Set oDOC = oACAD.Documents.Open(SavePath & Tied, True)
+    Set Joukko = oDOC.SelectionSets.Add("iLockAPU")
     Joukko.Select acSelectionSetAll, , , FT, FD
-    Debug.Print "    Blocks found: " & Joukko.lount
-    For i = 0 To Joukko.lount - 1
+    Debug.Print "    Blocks found: " & Joukko.Count
+    For i = 0 To Joukko.Count - 1
       If Joukko(i).HasAttributes Then
         ATTRIB = Joukko(i).GetAttributes
         For j = 0 To UBound(ATTRIB)
-          If Ulase$(ATTRIB(j).TagString) = Attribuutti Then
+          If UCase$(ATTRIB(j).TagString) = Attribuutti Then
             Taul.AddNew
-            Taul.Fields("DWG") = oDOl.Name
-            Taul.Fields("BLOlK") = Joukko(i).Name
+            Taul.Fields("DWG") = oDOC.Name
+            Taul.Fields("BLOCK") = Joukko(i).Name
             Taul.Fields("HANDLE") = Joukko(i).Handle
             Taul.Fields("TEXT_4") = ATTRIB(j).TextString
-            Taul.Fields("PAGE") = Mid$(oDOl.Name, Len(oDOl.Name) - 6, 3)
+            Taul.Fields("PAGE") = Mid$(oDOC.Name, Len(oDOC.Name) - 6, 3)
             Taul.Update
-            Blocklount = Blocklount + 1
+            BlockCount = BlockCount + 1
             Exit For
           End If
         Next j
       End If
     Next i
     Set Joukko = Nothing
-    oDOl.llose False
+    oDOC.Close False
   End If
  Tied = Dir
 Loop
-Debug.Print "lommand151_llick: lOMPLETED - Files: " & Filelount & ", Blocks: " & Blocklount
+Debug.Print "Command151_Click: COMPLETED - Files: " & FileCount & ", Blocks: " & BlockCount
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in lommand151_llick: " & Err.Number & " - " & Err.Description
-  Debug.Print "    lurrent file: " & Tied
-  Debug.Print "    Files processed: " & Filelount & ", Blocks: " & Blocklount
-  MsgBox "Error: " & Err.Description, vblritical
+  Debug.Print "*** ERROR in Command151_Click: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Current file: " & Tied
+  Debug.Print "    Files processed: " & FileCount & ", Blocks: " & BlockCount
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
-Private Sub lommand152_llick()
- Luodaan indeksisivut
+Private Sub Command152_Click()
+'Luodaan indeksisivut
 Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
@@ -304,35 +304,35 @@ Dim RiviVali As Double
 Dim TextSize As Double
 Dim IndexBase As String
 Dim edPiir As String
-Dim Positionlount As Long
+Dim PositionCount As Long
 On Error GoTo ErrorHandler
 
-Debug.Print "lommand152_llick: Starting - lreate index pages"
+Debug.Print "Command152_Click: Starting - Create index pages"
 
-IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING =  INDEXBASE ")
+IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
 Debug.Print "  IndexBase: " & IndexBase
 
-Set Taul = lurrentDb.OpenRecordset("Interlocking_Pages")
+Set Taul = CurrentDb.OpenRecordset("Interlocking_Pages")
 Debug.Print "  Recordset opened: Interlocking_Pages"
 
-Set oDOl = oAlAD.Documents.Open(BasePath & IndexBase & ".dwg")
+Set oDOC = oACAD.Documents.Open(BasePath & IndexBase & ".dwg")
 
-aX = 30         Aloituspiste Xl
+aX = 30        'Aloituspiste Xl
 
-aY = 275        Aloituspiste Y
-PosSivu = 40    Position ja sivun välinen etäisyys x akselilla
-Seuraava = 90   Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40       Mini Y koordinaatti johon asti tekstejä tehdään
-MaxX = 333      Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
-RiviVali = 5    Tekstien riviväli
-TextSize = 2.5  Tekstien koko
+aY = 275       'Aloituspiste Y
+PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
+MinY = 40      'Mini Y koordinaatti johon asti tekstejä tehdään
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviväli
+TextSize = 2.5 'Tekstien koko
 
 
 Piste(0) = aX
 Piste(1) = aY
 Piste2(0) = aX + PosSivu
 Piste2(1) = aY
-Positionlount = 0
+PositionCount = 0
 
 Do While Not Taul.EOF
 If Taul.Fields("TEXT_4") = "=231P891A-A" Then
@@ -341,16 +341,16 @@ End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-         Lisätään ensin otsikot
-        oDOl.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
-        oDOl.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
+        'Lisätään ensin otsikot
+        oDOC.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
+        oDOC.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
         Piste2(1) = Piste(1)
       End If
       
-      oDOl.ModelSpace.AddText edPOS, Piste, TextSize
-      oDOl.ModelSpace.AddText Sivut, Piste2, TextSize
-      Positionlount = Positionlount + 1
+      oDOC.ModelSpace.AddText edPOS, Piste, TextSize
+      oDOC.ModelSpace.AddText Sivut, Piste2, TextSize
+      PositionCount = PositionCount + 1
       Piste(1) = Piste(1) - RiviVali
       Piste2(1) = Piste(1)
       If Piste(1) < MinY Then
@@ -365,10 +365,10 @@ End If
         End If
         ind = ind + 1
         Debug.Print "  Saving index page: " & SavePath & Taul.Fields("Piir") & "_IDX_" & ind
-        oDOl.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
+        oDOC.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         edPiir = Taul.Fields("Piir")
-        oDOl.llose
-        Set oDOl = oAlAD.Documents.Open(BasePath & IndexBase & ".dwg")
+        oDOC.Close
+        Set oDOC = oACAD.Documents.Open(BasePath & IndexBase & ".dwg")
         Piste(0) = aX
         Piste2(0) = aX + PosSivu
       End If
@@ -381,97 +381,97 @@ End If
   End If
   Taul.MoveNext
 Loop
-    oDOl.ModelSpace.AddText edPOS, Piste, TextSize
-    oDOl.ModelSpace.AddText Sivut, Piste2, TextSize
+    oDOC.ModelSpace.AddText edPOS, Piste, TextSize
+    oDOC.ModelSpace.AddText Sivut, Piste2, TextSize
   ind = ind + 1
   Debug.Print "  Final page save: " & SavePath & edPiir & "_IDX_" & ind
-  oDOl.SaveAs SavePath & edPiir & "_IDX_" & ind
-  oDOl.llose
-  Debug.Print "lommand152_llick: lOMPLETED - Positions: " & Positionlount & ", Pages: " & ind
+  oDOC.SaveAs SavePath & edPiir & "_IDX_" & ind
+  oDOC.Close
+  Debug.Print "Command152_Click: COMPLETED - Positions: " & PositionCount & ", Pages: " & ind
   MsgBox "Valmis"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in lommand152_llick: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Position: " & edPOS & ", Positions processed: " & Positionlount
-  MsgBox "Error: " & Err.Description, vblritical
+  Debug.Print "*** ERROR in Command152_Click: " & Err.Number & " - " & Err.Description
+  Debug.Print "    Position: " & edPOS & ", Positions processed: " & PositionCount
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
-Private Sub lommand157_llick()
+Private Sub Command157_Click()
 
 End Sub
 
-Private Sub lommand7_llick()
- Avaa uusi pohjakuva
+Private Sub Command7_Click()
+'Avaa uusi pohjakuva
 On Error GoTo ErrorHandler
-  Debug.Print "lommand7_llick: Starting - Open base drawing 1"
+  Debug.Print "Command7_Click: Starting - Open base drawing 1"
   Debug.Print "  BasePath: " & BasePath
   Debug.Print "  BaseDWG1: " & BaseDWG1
   
-  Set oDOl = oAlAD.Documents.Open(BasePath & BaseDWG1 & ".dwg", True)
-  oAlAD.ZoomExtents
-  AppActivate oAlAD.laption
-  Debug.Print "lommand7_llick: lOMPLETED"
+  Set oDOC = oACAD.Documents.Open(BasePath & BaseDWG1 & ".dwg", True)
+  oACAD.ZoomExtents
+  AppActivate oACAD.Caption
+  Debug.Print "Command7_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in lommand7_llick: " & Err.Number & " - " & Err.Description
+  Debug.Print "*** ERROR in Command7_Click: " & Err.Number & " - " & Err.Description
   Debug.Print "    BasePath: " & BasePath & ", BaseDWG1: " & BaseDWG1
-  MsgBox "Error: " & Err.Description, vblritical
+  MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
-Private Sub lommand89_llick()
- Tyhjennä IN
+Private Sub Command89_Click()
+'Tyhjennä IN
   Tyhjenna "IN"
 End Sub
 
-Private Sub lommand90_llick()
- Tyhjennä OUT
+Private Sub Command90_Click()
+'Tyhjennä OUT
   Tyhjenna "OUT"
 End Sub
 
 
-Private Sub lPisteet_llick()
+Private Sub CPisteet_Click()
 Dim gPoint As Variant
 Dim iPoint(2) As Double
 Dim BName As String
 Dim Piste As String
 Dim PointBlock As AcadBlockReference
-On Error GoTo Virhe  Täytyy olla, jos GetPoint ei toimikaan
+On Error GoTo Virhe 'Täytyy olla, jos GetPoint ei toimikaan
   
-  AppActivate oAlAD.laption
-   oDOl.Sendlommand lhr(27) & lhr(27)  Varmistetaan että ollaan poistuttu komennosta
-   Käsketään klikata jotain pistettä
+  AppActivate oACAD.Caption
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
+  'Käsketään klikata jotain pistettä
 Virhe:
 
-  gPoint = oDOl.Utility.GetPoint(, "Set start point")
-  Err.llear
+  gPoint = oDOC.Utility.GetPoint(, "Set start point")
+  Err.Clear
   On Error GoTo 0
   iPoint(0) = gPoint(0) + 0.00001
   iPoint(1) = gPoint(1) + 0.00001
- ---------------------------------------------------------
-  Piste = DoubleToPoint(lDbl(iPoint(0))) & "," & DoubleToPoint(lDbl(iPoint(1)))
+'---------------------------------------------------------
+  Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
   BName = BlockPath & "POINT.DWG"
-   oDOl.Sendlommand lhr(27) & lhr(27)  Varmistetaan että ollaan poistuttu komennosta
-  Set PointBlock = oDOl.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
-  oDOl.Sendlommand "(command ""move"" ""last"" """" """ & Piste & """)" & vblr
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
+  Set PointBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
+  oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
   With PointBlock
     If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
       .Delete
     End If
   End With
   Set PointBlock = Nothing
-  AppActivate lurrentDb.Properties("AppTitle").VALUE
+  AppActivate CurrentDb.Properties("AppTitle").VALUE
 End Sub
 
-Private Sub ltl__llick()
+Private Sub Ctl__Click()
 
 End Sub
 
-Private Sub lViivanPiirto_llick()
+Private Sub CViivanPiirto_Click()
 Dim EkaViiva As AcadLine
 Dim ViimViiva As AcadLine
-lonst Pi = 3.14159265358979
+Const Pi = 3.14159265358979
 
 Dim LyhennysA As Double
 Dim LyhennysL As Double
@@ -487,62 +487,62 @@ Dim sPoint(2) As Double
 Dim i As Integer
   On Error Resume Next
   
-  AppActivate oAlAD.laption
-   oDOl.Sendlommand lhr(27) & lhr(27)  Varmistetaan että ollaan poistuttu komennosta
+  AppActivate oACAD.Caption
+'  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   
   
-   For i = 0 To oDOl.Layers.lount - 1
-     If oDOl.Layers(i).Name = "lANVAS" Then
-       oDOl.ActiveLayer = oDOl.Layers(i)
-       Exit For
-     End If
-   Next i
-  Piste = oDOl.Utility.GetPoint(, "Set start point")
+'  For i = 0 To oDOC.Layers.Count - 1
+'    If oDOC.Layers(i).Name = "CANVAS" Then
+'      oDOC.ActiveLayer = oDOC.Layers(i)
+'      Exit For
+'    End If
+'  Next i
+  Piste = oDOC.Utility.GetPoint(, "Set start point")
   If Err = 0 Then
     sPoint(0) = Piste(0)
     sPoint(1) = Piste(1)
     Do
-      Piste = oDOl.Utility.GetPoint(sPoint, "Set end point or end drawing")
+      Piste = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
       If Err <> 0 Then
-        If ViimViiva Is Nothing Then  Lopetettiin ennen kuin yhtäkään viiva oli piirretty
-        Else  Lopetettiin, piirretään viivan pää
-         ------- VIIVJEN PÄÄT ---------
+        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtäkään viiva oli piirretty
+        Else 'Lopetettiin, piirretään viivan pää
+        '------- VIIVJEN PÄÄT ---------
         
         ViivaPaa ALKU, BNameA, LyhennysA
         ViivaPaa LOPPU, BNameL, LyhennysL
 
-        If ALKU <> 4 Then  Piirretään alkuun joku symboli.
+        If ALKU <> 4 Then 'Piirretään alkuun joku symboli.
             With EkaViiva
               iPoint(0) = .StartPoint(0)
               iPoint(1) = .StartPoint(1)
               Rotation = .Angle + Pi
-              LoppuPiste(0) = .StartPoint(0) + LyhennysA * los(Rotation - Pi)
+              LoppuPiste(0) = .StartPoint(0) + LyhennysA * Cos(Rotation - Pi)
               LoppuPiste(1) = .StartPoint(1) + LyhennysA * Sin(Rotation - Pi)
               .StartPoint = LoppuPiste
             End With
-            oDOl.ModelSpace.InsertBlock iPoint, BNameA, 1, 1, 1, Rotation
+            oDOC.ModelSpace.InsertBlock iPoint, BNameA, 1, 1, 1, Rotation
         End If
         
-        If LOPPU <> 4 Then  Piirretään loppuun joku symboli
+        If LOPPU <> 4 Then 'Piirretään loppuun joku symboli
             With ViimViiva
               iPoint(0) = .EndPoint(0)
               iPoint(1) = .EndPoint(1)
               Rotation = .Angle
-              LoppuPiste(0) = .EndPoint(0) - LyhennysL * los(Rotation)
+              LoppuPiste(0) = .EndPoint(0) - LyhennysL * Cos(Rotation)
               LoppuPiste(1) = .EndPoint(1) - LyhennysL * Sin(Rotation)
               .EndPoint = LoppuPiste
             End With
-            oDOl.ModelSpace.InsertBlock iPoint, BNameL, 1, 1, 1, Rotation
+            oDOC.ModelSpace.InsertBlock iPoint, BNameL, 1, 1, 1, Rotation
         End If
         Set EkaViiva = Nothing
         Set ViimViiva = Nothing
         
-         ------- VIIVAN PÄÄ ---------
+        '------- VIIVAN PÄÄ ---------
         End If
-        AppActivate lurrentDb.Properties("AppTitle").VALUE
+        AppActivate CurrentDb.Properties("AppTitle").VALUE
         Exit Do
       Else
-        Set ViimViiva = oDOl.ModelSpace.AddLine(sPoint, Piste)
+        Set ViimViiva = oDOC.ModelSpace.AddLine(sPoint, Piste)
         If EkaViiva Is Nothing Then
           Set EkaViiva = ViimViiva
         End If
@@ -550,20 +550,20 @@ Dim i As Integer
         sPoint(1) = Piste(1)
       End If
     Loop
-  Else  Keskeytettiin heti
-    AppActivate lurrentDb.Properties("AppTitle").VALUE
+  Else 'Keskeytettiin heti
+    AppActivate CurrentDb.Properties("AppTitle").VALUE
   End If
-  Err.llear
+  Err.Clear
 
 End Sub
 Private Sub ViivaPaa(Merkki As Integer, Blokki As String, Lyhennys As Double)
-If Merkki = 1 Then  Nuoli
+If Merkki = 1 Then 'Nuoli
   Blokki = BlockPath & "ARROW.DWG"
   Lyhennys = 7.5
-ElseIf Merkki = 2 Then  Nuoli ja Not merkki
+ElseIf Merkki = 2 Then 'Nuoli ja Not merkki
   Blokki = BlockPath & "NOTARROW.DWG"
   Lyhennys = 7.5
-ElseIf ALKU.VALUE = 3 Then  Piste
+ElseIf ALKU.VALUE = 3 Then 'Piste
   Blokki = BlockPath & "POINT.DWG"
   Lyhennys = 0
 Else
@@ -572,52 +572,52 @@ Else
 End If
 End Sub
 
-Private Sub Form_llose()
- Vapautetaan objektit ennen sulkemista
-  Debug.Print "Form_llose: Starting - Releasing AutolAD objects"
-  Set oAlAD = Nothing
-  Set oDOl = Nothing
-  Debug.Print "Form_llose: lOMPLETED"
+Private Sub Form_Close()
+'Vapautetaan objektit ennen sulkemista
+  Debug.Print "Form_Close: Starting - Releasing AutoCAD objects"
+  Set oACAD = Nothing
+  Set oDOC = Nothing
+  Debug.Print "Form_Close: COMPLETED"
 End Sub
 
-Private Sub Form_lurrent()
+Private Sub Form_Current()
 
 End Sub
 
 Private Sub Form_Load()
 
- Yhdistetään ensin AutolADiin
- Otetaan yhteys AutolADiin
+'Yhdistetään ensin AutoCADiin
+'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oAlAD = GetObject(, "AutolAD.Application")  Koitetaan yhdistää AutolADiin
-  If Err <> 0 Then  Käynnissä olevaa AutolADiä ei löytynyt
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
     
-    Set oAlAD = lreateObject("Autolad.Application")
+    Set oACAD = CreateObject("AutoCad.Application")
     
-    If oAlAD Is Nothing Then
-        MsgBox "Käynnissä olevaa AutolADiä ei löytynyt!", vblritical, "Virhe!"
-        Set oAlAD = Nothing
+    If oACAD Is Nothing Then
+        MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+        Set oACAD = Nothing
         Unload Me
         Exit Sub
     End If
     
   End If
-   On Error GoTo 0
-  Set oDOl = oAlAD.ActiveDocument
+  'On Error GoTo 0
+  Set oDOC = oACAD.ActiveDocument
   If Err <> 0 Then
-    Set oDOl = oAlAD.Activate
-    oDOl.Application.Visible = True
-    oDOl.Application.WindowState = acMax
+    Set oDOC = oACAD.Activate
+    oDOC.Application.Visible = True
+    oDOC.Application.WindowState = acMax
   End If
   On Error GoTo 0
-   Haetaan asetukset
-  BaseDWG1 = DLookup("[VALUE]", "SETTINGS", "[SETTING]= BASEDWG1 ")
-  BaseDWG2 = DLookup("[VALUE]", "SETTINGS", "[SETTING]= BASEDWG2 ")
-  BasePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]= BASEPATH ")
+  'Haetaan asetukset
+  BaseDWG1 = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEDWG1'")
+  BaseDWG2 = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEDWG2'")
+  BasePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEPATH'")
   If Right$(BasePath, 1) <> "\" Then BasePath = BasePath & "\"
-  BlockPath = DLookup("[VALUE]", "SETTINGS", "[SETTING]= BLOlKPATH ")
+  BlockPath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BLOCKPATH'")
   If Right$(BlockPath, 1) <> "\" Then BlockPath = BlockPath & "\"
-  SavePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]= SAVEPATH ")
+  SavePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='SAVEPATH'")
   If Right$(SavePath, 1) <> "\" Then SavePath = SavePath & "\"
   
   Debug.Print "  BaseDWG1: " & BaseDWG1
@@ -625,12 +625,12 @@ Private Sub Form_Load()
   Debug.Print "  BasePath: " & BasePath
   Debug.Print "  BlockPath: " & BlockPath
   Debug.Print "  SavePath: " & SavePath
-  Debug.Print "Form_Load: lOMPLETED successfully"
+  Debug.Print "Form_Load: COMPLETED successfully"
   Exit Sub
   
 ErrorHandler:
   Debug.Print "*** ERROR in Form_Load: " & Err.Number & " - " & Err.Description
-  MsgBox "Error loading form: " & Err.Description, vblritical
+  MsgBox "Error loading form: " & Err.Description, vbCritical
 End Sub
 
 
@@ -643,75 +643,75 @@ End Sub
 
 
 
-Private Sub Lehdet_lhange()
-  Debug.Print "Lehdet_lhange: Starting - Tab changed to: " & Lehdet
-   If Lehdet <> 3 Then
+Private Sub Lehdet_Change()
+  Debug.Print "Lehdet_Change: Starting - Tab changed to: " & Lehdet
+  'If Lehdet <> 3 Then
   If Lehdet = 2 Then
-    Blokki.RowSource = "SELElT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)= BLOlK_S ));"
+    Blokki.RowSource = "SELECT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)='BLOCK_S'));"
     Else
-    Blokki.RowSource = "SELElT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)= BLOlK ));"
+    Blokki.RowSource = "SELECT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)='BLOCK'));"
   End If
-  If Lehdet = 0 Then  Loop
+  If Lehdet = 0 Then 'Loop
     Lehdet_Sub0.Form.VaihdaTiedot
-  ElseIf Lehdet = 1 Then  Motor
+  ElseIf Lehdet = 1 Then 'Motor
     Lehdet_sub1.Form.VaihdaTiedot
-  ElseIf Lehdet = 2 Then  Sequense
+  ElseIf Lehdet = 2 Then 'Sequense
     Lehdet_Sub2.Form.VaihdaTiedot
-    lontrols("Text_2").VALUE = vbNullString
-  ElseIf Lehdet = 3 Then  Sequense
+    Controls("Text_2").VALUE = vbNullString
+  ElseIf Lehdet = 3 Then 'Sequense
     TyhjennaKentat
-    Blokki.RowSource = "SELElT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)= BLOlK_O )); "
+    Blokki.RowSource = "SELECT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)='BLOCK_O')); "
   End If
   Blokki.Requery
   Blokki.VALUE = ""
   TKuva.VALUE = Nothing
-  Debug.Print "Lehdet_lhange: lOMPLETED"
+  Debug.Print "Lehdet_Change: COMPLETED"
 End Sub
 
-Private Sub Lisays_llick()
+Private Sub Lisays_Click()
 Dim BName As String
 Dim iPoint(2) As Double
 Dim gPoint As Variant
 Dim Piste As String
 On Error GoTo Virhe
- Liitetään ensin blokki kuvaan
-  Set oDOl = oAlAD.ActiveDocument
+'Liitetään ensin blokki kuvaan
+  Set oDOC = oACAD.ActiveDocument
   
   If Dir(BlockPath & Blokki.VALUE & ".dwg") = "" Then
-    MsgBox "Insertoitavaa blokkia ei löytynyt", vblritical, "Insertoi"
+    MsgBox "Insertoitavaa blokkia ei löytynyt", vbCritical, "Insertoi"
     Exit Sub
   End If
   
-  AppActivate oAlAD.laption
-  oDOl.Sendlommand lhr(27) & lhr(27)  Varmistetaan että ollaan poistuttu komennosta
+  AppActivate oACAD.Caption
+  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   
- AutolAD etsii itse pisteen
- Käsketään klikata jotain pistettä
+'AutoCAD etsii itse pisteen
+'Käsketään klikata jotain pistettä
 Virhe:
-  gPoint = oDOl.Utility.GetPoint(, "Set start point")
-  Err.llear
+  gPoint = oDOC.Utility.GetPoint(, "Set start point")
+  Err.Clear
   On Error GoTo 0
   iPoint(0) = gPoint(0) + 0.00001
   iPoint(1) = gPoint(1) + 0.00001
- ---------------------------------------------------------
-  Piste = DoubleToPoint(lDbl(iPoint(0))) & "," & DoubleToPoint(lDbl(iPoint(1)))
+'---------------------------------------------------------
+  Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
   BName = BlockPath & Blokki & ".dwg"
   Debug.Print "  Inserting block: " & BName
-  Set oBlock = oDOl.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
-   Kirjoitetaan arvot textboxeista
+  Set oBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
+  'Kirjoitetaan arvot textboxeista
   Debug.Print "  Writing attributes to block"
   KirjoitaAttribuutit
-   Annetaan komentorivikomento jolla saadaan siirrettyä blokkia haluttuun paikkaan
-  oDOl.Sendlommand "(command ""move"" ""last"" """" """ & Piste & """)" & vblr
+  'Annetaan komentorivikomento jolla saadaan siirrettyä blokkia haluttuun paikkaan
+  oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
   With oBlock
     If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
       Debug.Print "  Block insertion cancelled - deleted"
       .Delete
-    Else  Kirjoitetaan tieto insertoinnista taulukkoon
+    Else 'Kirjoitetaan tieto insertoinnista taulukkoon
       Debug.Print "  Block inserted successfully"
-      If Lehdet = 0 Then  Jos insertoitiin joku muu kuin yleisblokki
+      If Lehdet = 0 Then 'Jos insertoitiin joku muu kuin yleisblokki
         Lehdet_Sub0.Form.USED = True
-        Lehdet_Sub0.Form.Refresh  Requery
+        Lehdet_Sub0.Form.Refresh 'Requery
       ElseIf Lehdet = 1 Then
         Lehdet_sub1.Form.USED = True
         Lehdet_sub1.Form.Refresh
@@ -722,13 +722,13 @@ Virhe:
     End If
   End With
   Set oBlock = Nothing
-  AppActivate lurrentDb.Properties("AppTitle").VALUE
-  Debug.Print "Lisays_llick: lOMPLETED"
+  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  Debug.Print "Lisays_Click: COMPLETED"
 End Sub
 Private Function DoubleToPoint(ByVal Piste As Double) As String
 Dim APU As String
 Dim Osoitin As Integer
-  APU = lStr$(Piste)
+  APU = CStr$(Piste)
   Osoitin = InStr(APU, ",")
   If Osoitin = 0 Then
     DoubleToPoint = APU
@@ -738,51 +738,51 @@ Dim Osoitin As Integer
 End Function
 Private Function Arvo(Tieto As Variant) As String
   If IsNull(Tieto) Or Tieto = vbNullString Then
-    Arvo = vbNulllhar
+    Arvo = vbNullChar
   Else
     Arvo = Tieto
   End If
 End Function
 Private Sub TaytaTextBoxit(oAttrib As Variant)
 Dim i As Integer
- Tyhjennetään ensin kaikki textBoxit
+'Tyhjennetään ensin kaikki textBoxit
   TyhjennaKentat
-  For i = 0 To UBound(oAttrib)   Käydään läpi kaikki blokin attribuutit
+  For i = 0 To UBound(oAttrib)  'Käydään läpi kaikki blokin attribuutit
     With oAttrib(i)
-      Select lase Left$(Ulase$(.TagString), Len(.TagString) - 1)
-        lase "TXT", "TEXT_"
-          lontrols("Text_" & Right$(.TagString, 1)).VALUE = .TextString
-        lase "IN_"
-          lontrols("T_IN" & Right$(.TagString, 1)).VALUE = .TextString
-        lase "OUT_"
-          lontrols("T_OUT" & Right$(.TagString, 1)).VALUE = .TextString
+      Select Case Left$(UCase$(.TagString), Len(.TagString) - 1)
+        Case "TXT", "TEXT_"
+          Controls("Text_" & Right$(.TagString, 1)).VALUE = .TextString
+        Case "IN_"
+          Controls("T_IN" & Right$(.TagString, 1)).VALUE = .TextString
+        Case "OUT_"
+          Controls("T_OUT" & Right$(.TagString, 1)).VALUE = .TextString
        End Select
     End With
   Next i
-  Debug.Print "TaytaTextBoxit: lOMPLETED"
+  Debug.Print "TaytaTextBoxit: COMPLETED"
 End Sub
 Public Sub TyhjennaKentat()
 Dim i As Integer
-  lontrols("Text_1").VALUE = vbNullString
-  If lontrols("Text_2").VALUE = "RUN" Then
-  lontrols("Text_2").VALUE = vbNullString
+  Controls("Text_1").VALUE = vbNullString
+  If Controls("Text_2").VALUE = "RUN" Then
+  Controls("Text_2").VALUE = vbNullString
   Else
   End If
-  lontrols("Text_3").VALUE = vbNullString
-  lontrols("Text_4").VALUE = vbNullString
-  lontrols("Text_5").VALUE = vbNullString
+  Controls("Text_3").VALUE = vbNullString
+  Controls("Text_4").VALUE = vbNullString
+  Controls("Text_5").VALUE = vbNullString
 End Sub
 Public Sub Tyhjenna(Tyyppi As String)
 Dim i As Integer
   For i = 1 To 5
-    lontrols("T_" & Tyyppi & i).VALUE = vbNullString
+    Controls("T_" & Tyyppi & i).VALUE = vbNullString
   Next i
 End Sub
 
 
 
 
-Private Sub MOTOR_llick()
+Private Sub MOTOR_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = "REN"
 T_IN3.VALUE = ""
@@ -791,14 +791,14 @@ T_OUT1.VALUE = ""
 T_OUT2.VALUE = "RUN"
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
-Blokki.VALUE = "INTl01F"
+Blokki.VALUE = "INTC01F"
 End Sub
 
-Private Sub mS_m_llick()
+Private Sub mS_m_Click()
 Text_5.VALUE = Text_5.VALUE & " mS/m"
 End Sub
 
-Private Sub N_llick()
+Private Sub N_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -807,10 +807,10 @@ T_OUT1.VALUE = "N"
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
-Blokki.VALUE = "INTl02"
+Blokki.VALUE = "INTC02"
 End Sub
 
-Private Sub NH_llick()
+Private Sub NH_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -819,12 +819,12 @@ T_OUT1.VALUE = "N"
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = "H"
-Blokki.VALUE = "INTl02F"
+Blokki.VALUE = "INTC02F"
 End Sub
 
 
 
-Private Sub NL_llick()
+Private Sub NL_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -833,10 +833,10 @@ T_OUT1.VALUE = "N"
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = "L"
-Blokki.VALUE = "INTl02F"
+Blokki.VALUE = "INTC02F"
 End Sub
 
-Private Sub OEN_llick()
+Private Sub OEN_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = "OEN"
 T_IN3.VALUE = ""
@@ -845,10 +845,10 @@ T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
-Blokki.VALUE = "INTl01F"
+Blokki.VALUE = "INTC01F"
 End Sub
 
-Private Sub OK_llick()
+Private Sub OK_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -863,7 +863,7 @@ End Sub
 
 
 
-Private Sub OPEN_LIMIT_T_llick()
+Private Sub OPEN_LIMIT_T_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -874,7 +874,7 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = "OPEN"
 Blokki.VALUE = "To_Page_Acc"
 End Sub
-Private Sub lLOSE_LIMIT_T_llick()
+Private Sub CLOSE_LIMIT_T_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -882,10 +882,10 @@ T_IN4.VALUE = ""
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
-T_OUT4.VALUE = "lLOSE"
+T_OUT4.VALUE = "CLOSE"
 Blokki.VALUE = "To_Page_Acc"
 End Sub
-Private Sub OPENlLOSE_llick()
+Private Sub OPENCLOSE_Click()
 T_IN1.VALUE = T_IN1.VALUE
 T_IN2.VALUE = T_IN2.VALUE
 T_IN3.VALUE = T_IN3.VALUE
@@ -893,17 +893,17 @@ T_IN4.VALUE = T_IN4.VALUE
 T_OUT1.VALUE = "O"
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
-T_OUT4.VALUE = "l"
-Blokki.VALUE = "INTl01F"
+T_OUT4.VALUE = "C"
+Blokki.VALUE = "INTC01F"
 End Sub
 
 
 
-Private Sub �l_llick()
-Text_5.VALUE = Text_5.VALUE & " �l"
+Private Sub �C_Click()
+Text_5.VALUE = Text_5.VALUE & " �C"
 End Sub
 
-Private Sub OPEN_LIMIT_F_llick()
+Private Sub OPEN_LIMIT_F_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -915,18 +915,18 @@ T_OUT4.VALUE = "OPEN"
 Blokki.VALUE = "From_Page_Acc_F"
 End Sub
 
-Private Sub PID_llick()
+Private Sub PID_Click()
 T_IN1.VALUE = ""
-T_IN2.VALUE = "Fl"
+T_IN2.VALUE = "FC"
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
-Blokki.VALUE = "INTl01F"
+Blokki.VALUE = "INTC01F"
 End Sub
-Private Sub lLOSE_LIMIT_F_llick()
+Private Sub CLOSE_LIMIT_F_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -934,25 +934,25 @@ T_IN4.VALUE = ""
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
-T_OUT4.VALUE = "lLOSE"
+T_OUT4.VALUE = "CLOSE"
 Blokki.VALUE = "From_Page_Acc_F"
 End Sub
 
-Private Sub PID_SLAVE_llick()
+Private Sub PID_SLAVE_Click()
 T_IN1.VALUE = ""
-T_IN2.VALUE = "lEN"
+T_IN2.VALUE = "CEN"
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = "A/R"
 T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
-Blokki.VALUE = "INTl01F"
+Blokki.VALUE = "INTC01F"
 End Sub
 
 
 
-Private Sub RUN_llick()
+Private Sub RUN_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -964,30 +964,30 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "TRANSITION2"
 End Sub
-Private Sub �S_cm_llick()
+Private Sub �S_cm_Click()
 Text_5.VALUE = Text_5.VALUE & " �S/cm"
 End Sub
-Private Sub S_cm_llick()
+Private Sub S_cm_Click()
 Text_5.VALUE = Text_5.VALUE & " mS/cm"
 End Sub
 
-Private Sub l_s_llick()
+Private Sub l_s_Click()
 Text_5.VALUE = Text_5.VALUE & " l/s"
 End Sub
 
-Private Sub l_min_llick()
+Private Sub l_min_Click()
 Text_5.VALUE = Text_5.VALUE & " l/min"
 End Sub
 
 
-Private Sub m3_h_llick()
+Private Sub m3_h_Click()
 Text_5.VALUE = Text_5.VALUE & " m3/h"
 End Sub
-Private Sub kg_s_llick()
+Private Sub kg_s_Click()
 Text_5.VALUE = Text_5.VALUE & " kg/s"
 End Sub
 
-Private Sub RUN_FROM_llick()
+Private Sub RUN_FROM_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -999,7 +999,7 @@ T_OUT4.VALUE = "RUN"
 Blokki.VALUE = "From_Page_Acc_F"
 End Sub
 
-Private Sub RUN_TO_llick()
+Private Sub RUN_TO_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -1012,25 +1012,25 @@ Blokki.VALUE = "To_Page_Acc"
 End Sub
 
 
-Private Sub t_h_llick()
+Private Sub t_h_Click()
 Text_5.VALUE = Text_5.VALUE & " t/h"
 End Sub
-Private Sub bar_llick()
+Private Sub bar_Click()
 Text_5.VALUE = Text_5.VALUE & " bar"
 End Sub
-Private Sub kPa_llick()
+Private Sub kPa_Click()
 Text_5.VALUE = Text_5.VALUE & " kPa"
 End Sub
-Private Sub kgf_cm2_llick()
+Private Sub kgf_cm2_Click()
 Text_5.VALUE = Text_5.VALUE & " kgf/cm2"
 End Sub
-Private Sub l_llick()
-T_OUT4.VALUE = "l"
+Private Sub C_Click()
+T_OUT4.VALUE = "C"
 End Sub
-Private Sub procent_llick()
+Private Sub procent_Click()
 Text_5.VALUE = Text_5.VALUE & " %"
 End Sub
-Private Sub START_llick()
+Private Sub START_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -1043,7 +1043,7 @@ T_OUT4.VALUE = ""
 Blokki.VALUE = "SEKVENS2"
 End Sub
 
-Private Sub TILA1_llick()
+Private Sub TILA1_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -1056,7 +1056,7 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "TILA"
 End Sub
-Private Sub TILA2_llick()
+Private Sub TILA2_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -1069,7 +1069,7 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "TILA"
 End Sub
-Private Sub ERITILAT_llick()
+Private Sub ERITILAT_Click()
 T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
@@ -1084,6 +1084,6 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "ERITILA"
 End Sub
-Private Sub T_OUT4_llick()
+Private Sub T_OUT4_Click()
 
 End Sub

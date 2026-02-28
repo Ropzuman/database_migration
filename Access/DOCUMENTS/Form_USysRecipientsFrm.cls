@@ -1,8 +1,8 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
-Private Sub Text36_llick()
-  lommon = IIf(IsNull(Address.Value), "", Address.Value)
-  lommonOts = "Detail Address:"
-  lommonType = 0
-  Dolmd.OpenForm "USysShowlommon", , , , , acDialog
+Private Sub Text36_Click()
+  Common = IIf(IsNull(Address.Value), "", Address.Value)
+  CommonOts = "Detail Address:"
+  CommonType = 0
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
 End Sub

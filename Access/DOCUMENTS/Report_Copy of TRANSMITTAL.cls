@@ -1,12 +1,12 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
-Private Sub Report_Open(lancel As Integer)
+Private Sub Report_Open(Cancel As Integer)
 Dim taulu As DAO.Recordset
-Set taulu = lurrentDb.OpenRecordset("Projinfo")
-TlontractNo1.laption = Nz(taulu("lontractNo"))
-TlontractNo2.laption = Nz(taulu("lontractNo"))
-TProject1.laption = Nz(taulu("Name"))
-TProject2.laption = Nz(taulu("Name"))
-TProjno.laption = Nz(taulu("ProjNo"))
+Set taulu = CurrentDb.OpenRecordset("Projinfo")
+TContractNo1.Caption = Nz(taulu("ContractNo"))
+TContractNo2.Caption = Nz(taulu("ContractNo"))
+TProject1.Caption = Nz(taulu("Name"))
+TProject2.Caption = Nz(taulu("Name"))
+TProjno.Caption = Nz(taulu("ProjNo"))
 Set taulu = Nothing
 End Sub

@@ -1,50 +1,50 @@
-﻿Option lompare Database
+Option Compare Database
 
-  Declare a record type to break down the user info
+' Declare a record type to break down the user info
 
 Private Type UserRec
-   bMach(1 To 32) As Byte    1st 32 bytes hold machine name
-   bUser(1 To 32) As Byte    2nd 32 bytes hold user name
+   bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
+   bUser(1 To 32) As Byte  ' 2nd 32 bytes hold user name
 End Type
-Private Sub lommand27_llick()
+Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vblrLf & vblrLf & vblrLf & vblrLf & vblrLf & vblrLf & vblrLf & "Give message:", "Send message")
+  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
   If Viesti <> "" Then
-    lall Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
 
-Private Sub Form_Open(lancel As Integer)
+Private Sub Form_Open(Cancel As Integer)
    
    Me.LoggedOn.RowSource = WhosOn()
 
 End Sub
 
-Private Sub OKBtn_llick()
+Private Sub OKBtn_Click()
    
-   Dolmd.llose
+   DoCmd.Close
 
 End Sub
 
-Private Sub UpdateBtn_llick()
+Private Sub UpdateBtn_Click()
     Me.LoggedOn.RowSource = WhosOn()
     Me.Requery
 End Sub
 
- -------------------------------------------------------------------------------------
-    Aihe     : WhosOn()
-    Tarkoitus: Lukee *.LDB-tiedoston ja näyttää kirjautuneet
-              käyttäjät ja heidän asemansa.
- 
-              LDB-tiedostossa on 64 tavun tietueita.
- 
-              Aseman nimi alkaa tavusta 1 ja on
-              nul-merkillä päätteinen.
- 
-              Kirjautumisnimet alkavat 33. tavusta ja
-              ovat myös nul-merkillä päätteisiä.
- 
- -------------------------------------------------------------------------------------
+'-------------------------------------------------------------------------------------
+'   Subject : WhosOn()
+'   Purpose : Will read *.LDB file and read who's currently
+'             logged on and their station name.
+'
+'             The LDB file has a 64 byte record.
+'
+'             The station name starts at byte 1 and is null
+'             terminated.
+'
+'             Log-in names start at the 33rd byte and are
+'             also null terminated.
+'
+'-------------------------------------------------------------------------------------
 Private Function WhosOn() As String
 
 On Error GoTo Err_WhosOn
@@ -54,21 +54,21 @@ On Error GoTo Err_WhosOn
    Dim SPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
-   Dim rUser As UserRec      Defined in General
-   Dim dblurrent As DAO.Database
+   Dim rUser As UserRec    ' Defined in General
+   Dim dbCurrent As DAO.Database
 
-  Haetaan nykyisen tietokannan polku. Voidaan korvata
-  liitetyn taulun polulla monikayttajaymparistossa.
+' Get Path of current database.  Should substitute this code
+' for an attached table path in a multi-user environment.
 
-   Set dblurrent = lurrentDb
-   SPath = dblurrent.Name
-   dblurrent.llose
+   Set dbCurrent = CurrentDb
+   SPath = dbCurrent.Name
+   dbCurrent.Close
 
-  Käydään läpi dblurrent.LDB-tiedosto sisäänkirjautuneiden käyttäjien nimien hakemiseksi.
+' Iterate thru dbCurrent.LDB file for login names.
 
-   SPath = Left(SPath, InStr(1, SPath, ".")) + "LAllDB"
+   SPath = Left(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-  Test for valid file, else Error
+' Test for valid file, else Error
 
    X = Dir(SPath)
    iStart = 1
@@ -82,13 +82,13 @@ On Error GoTo Err_WhosOn
          i = 1
          sMach = ""
          While .bMach(i) <> 0
-            sMach = sMach & lhr(.bMach(i))
+            sMach = sMach & Chr(.bMach(i))
             i = i + 1
          Wend
          i = 1
          sUser = ""
          While .bUser(i) <> 0
-            sUser = sUser & lhr(.bUser(i))
+            sUser = sUser & Chr(.bUser(i))
             i = i + 1
          Wend
       End With
@@ -96,9 +96,9 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64  increment to next record offset
+      iStart = iStart + 64 'increment to next record offset
    Loop
-   llose iLDBFile
+   Close iLDBFile
    WhosOn = sLogins
 
 Exit_WhosOn:
@@ -106,10 +106,10 @@ Exit_WhosOn:
 
 Err_WhosOn:
    If Err = 68 Then
-      MsgBox "louldn t populate the list", 48, "No LDB File"
+      MsgBox "Couldn't populate the list", 48, "No LDB File"
    Else
-      MsgBox "Error: " & Err.Number & vblrLf & Err.Description
-      llose iLDBFile
+      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
+      Close iLDBFile
    End If
    Resume Exit_WhosOn
 

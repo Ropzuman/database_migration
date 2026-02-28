@@ -1,8 +1,8 @@
-﻿Option lompare Database    Use database order for string comparisons
+Option Compare Database   'Use database order for string comparisons
 Option Explicit
 
-Private Sub lommand16_llick()
-  Dolmd.llose
+Private Sub Command16_Click()
+  DoCmd.Close
 End Sub
 
 Private Sub Form_Load()
@@ -10,7 +10,7 @@ Private Sub Form_Load()
   FReportType.Value = 1
 End Sub
 
-Private Sub OK_llick()
+Private Sub OK_Click()
 Dim DB As DAO.Database
 Dim Kysely As String
 Dim Kysely2 As String
@@ -19,7 +19,7 @@ Dim ExcelTaulu As DAO.Recordset
 Dim DTaulu As DAO.Recordset
 Dim Itemi As String
 
-Set DB = lurrentDb
+Set DB = CurrentDb
 If FReportType.Value = 1 Then
   If FMetsoUnit.Value = 1 Then
     Kysely = "USysqryForExcelPDU"
@@ -30,29 +30,29 @@ If FReportType.Value = 1 Then
   End If
 Else
   If FMetsoUnit.Value = 1 Then
-    Kysely = "USysqryForExcelPDU_lNReq"
-    Kysely2 = "USysDIForExcelPDU_lNReq"
+    Kysely = "USysqryForExcelPDU_CNReq"
+    Kysely2 = "USysDIForExcelPDU_CNReq"
   Else
-    Kysely = "USysqryForExcelFLU_lNReq"
-    Kysely2 = "USysDIForExcelFLU_lNReq"
+    Kysely = "USysqryForExcelFLU_CNReq"
+    Kysely2 = "USysDIForExcelFLU_CNReq"
   End If
 End If
-On Error GoTo Err_OK_llick
-       Tyhjennetään ensin taulukko
+On Error GoTo Err_OK_Click
+      'Tyhjennetään ensin taulukko
       DB.Execute "DELETE * FROM USysTblForExcel;"
       DB.Execute "DELETE * FROM USysDIForExcel;"
-       Täytetään taulukko tiedoilla
+      'Täytetään taulukko tiedoilla
       DB.Execute Kysely
       DB.Execute Kysely2
       Set ExcelTaulu = DB.OpenRecordset("USysTblForExcel")
       Do While Not ExcelTaulu.EOF
-         Set DTaulu = DB.OpenRecordset("SELElT DocSchedule.[Item No], DocSchedule.Status, DocSchedule.Date FROM (DOlUMENTS INNER JOIN USysDocsInSched ON DOlUMENTS.lounter = USysDocsInSched.TDoc) INNER JOIN DocSchedule ON USysDocsInSched.TSchedItem = DocSchedule.ID WHERE (((DOlUMENTS.lounter)=" & ExcelTaulu.Fields("lounter").Value & "));")
+         Set DTaulu = DB.OpenRecordset("SELECT DocSchedule.[Item No], DocSchedule.Status, DocSchedule.Date FROM (DOCUMENTS INNER JOIN USysDocsInSched ON DOCUMENTS.Counter = USysDocsInSched.TDoc) INNER JOIN DocSchedule ON USysDocsInSched.TSchedItem = DocSchedule.ID WHERE (((DOCUMENTS.Counter)=" & ExcelTaulu.Fields("Counter").Value & "));")
          Do While Not DTaulu.EOF
            ExcelTaulu.Edit
            If DTaulu.Fields("Status").Value = "Preliminary" Then
-             Itemi = "lItemP"
+             Itemi = "CItemP"
            Else
-             Itemi = "lIteml"
+             Itemi = "CItemC"
            End If
            If IsNull(ExcelTaulu.Fields(Itemi)) Then
              ExcelTaulu.Fields(Itemi).Value = DTaulu.Fields("Item No").Value & ": " & DTaulu.Fields("Date").Value
@@ -65,23 +65,23 @@ On Error GoTo Err_OK_llick
         ExcelTaulu.MoveNext
       Loop
       Set DB = Nothing
-       Käynnistetään excel ja tiedosto jossa kyseinen makro on (makro käynnistyy automaattisesti)
-      Set xlApp = lreateObject("Excel.Application")
+      'Käynnistetään excel ja tiedosto jossa kyseinen makro on (makro käynnistyy automaattisesti)
+      Set xlApp = CreateObject("Excel.Application")
       xlApp.Workbooks.Open "l:\projekti\valdivia\sheets\tools\DocumentReport.xls", , True
       xlApp.Visible = True
       If FReportType.Value = 1 Then
         xlApp.Run "AjaKaikki", False
-        xlApp.Workbooks("DocumentReport.xls").llose False
+        xlApp.Workbooks("DocumentReport.xls").Close False
       Else
         xlApp.Run "AjaKaikki", True
-        xlApp.Workbooks("DocumentReport.xls").llose False
+        xlApp.Workbooks("DocumentReport.xls").Close False
       End If
       Set xlApp = Nothing
-Exit_OK_llick:
-      Dolmd.llose acForm, "USysExcelReport"
+Exit_OK_Click:
+      DoCmd.Close acForm, "USysExcelReport"
       Exit Sub
 
-Err_OK_llick:
+Err_OK_Click:
       MsgBox Err.Description
-      Resume Exit_OK_llick
+      Resume Exit_OK_Click
 End Sub

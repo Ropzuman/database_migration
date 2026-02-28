@@ -1,9 +1,9 @@
-﻿Option lompare Database
+Option Compare Database
 
-Private Sub BValitsePolku_llick()
+Private Sub BValitsePolku_Click()
 Dim TPolku As String
 
- Valitaan polku
+'Valitaan polku
 TPolku = ValitseHakem(Application.hWndAccessApp, Nz(Polku.VALUE))
 If TPolku <> "" Then
   Polku = TPolku
@@ -12,32 +12,32 @@ End If
 
 End Sub
 
-Private Sub lommand0_llick()
+Private Sub Command0_Click()
 
 
 If Dir(Polku.VALUE) = "" Then
-  MsgBox "Valitse tietokanta.", vblritical, "Linkkaa"
+  MsgBox "Valitse tietokanta.", vbCritical, "Linkkaa"
   Exit Sub
 Else
     KillLinks
-    Linkkaa LMAINEQ.laption, "DRIVES"
-    Linkkaa LMAINEQ.laption, "MAINEQ"
-    Linkkaa LINSTRU.laption, "LOOPS"
-    Linkkaa LINSTRU.laption, "DevTable"
-    Linkkaa LINSTRU.laption, "DevSpec"
-     Linkkaa LINSTRU.laption, "motor"
+    Linkkaa LMAINEQ.Caption, "DRIVES"
+    Linkkaa LMAINEQ.Caption, "MAINEQ"
+    Linkkaa LINSTRU.Caption, "LOOPS"
+    Linkkaa LINSTRU.Caption, "DevTable"
+    Linkkaa LINSTRU.Caption, "DevSpec"
+'    Linkkaa LINSTRU.Caption, "motor"
     
-    Dolmd.OpenForm "Interlocking"
+    DoCmd.OpenForm "Interlocking"
 End If
 End Sub
 Private Sub Linkkaa(Tietokanta As String, TAULUKKO As String)
     Dim tdfLinkki As DAO.TableDef
     Dim rstLinkki As DAO.Recordset
     
-    Set tdfLinkki = lurrentDb.lreateTableDef(TAULUKKO)
-    tdfLinkki.lonnect = ";DATABASE=" & Tietokanta
+    Set tdfLinkki = CurrentDb.CreateTableDef(TAULUKKO)
+    tdfLinkki.Connect = ";DATABASE=" & Tietokanta
     tdfLinkki.SourceTableName = TAULUKKO
-    lurrentDb.TableDefs.Append tdfLinkki
+    CurrentDb.TableDefs.Append tdfLinkki
 
 
 End Sub
@@ -46,18 +46,18 @@ Private Sub Form_Load()
   PaivitaNimet
 End Sub
 
-Private Sub Polku_lhange()
+Private Sub Polku_Change()
   PaivitaNimet
 End Sub
 Private Sub PaivitaNimet()
-  LMAINEQ.laption = ""
-  LINSTRU.laption = ""
+  LMAINEQ.Caption = ""
+  LINSTRU.Caption = ""
   If Polku <> "" Then
     If Right$(Polku, 1) <> "\" Then
       Polku = Polku & "\"
     End If
-    LMAINEQ.laption = Polku & "MAINEQ.AllDB"
-    LINSTRU.laption = Polku & "INSTRU3.AllDB"
+    LMAINEQ.Caption = Polku & "MAINEQ.ACCDB"
+    LINSTRU.Caption = Polku & "INSTRU3.ACCDB"
    
   End If
 End Sub

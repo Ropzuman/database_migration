@@ -1,44 +1,44 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 
- ==============================================================================
-  Moduuli: Generallodes
-  Tarkoitus: Yleiset apufunktiot laskentaan, tietokantakyselyihin ja käyttöliittymään
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely, DAO-tyypitys, korvattu mukautettu
-                        Replace() VBA:n sisäisellä, kattavat kommentit
- ==============================================================================
+'==============================================================================
+' Module: GeneralCodes
+' Purpose: General utility functions for calculations, database queries, and UI
+' Updated: 2025-11-11 - Added error handling, DAO typing, replaced custom
+'                       Replace() with VBA built-in, comprehensive comments
+'==============================================================================
 
- --- Public Variables for Revision Tracking ---
+'--- Public Variables for Revision Tracking ---
 Public Revisioteksti As String
- ---------------------------------------
-  Edellisen kirjoitetun revision muistamista varten
+'---------------------------------------
+' Edellisen kirjoitetun revision muistamista varten
 Public MRevRev As String
 Public MRevDrawn As String
-Public MRevlhecked As String
+Public MRevChecked As String
 Public MRevApproved As String
 Public MRevDescription As String
- ---------------------------------------
+'---------------------------------------
 Public TRevHist As String
 Public TRevDesc As String
 
- ------------------------------------------------------------------------------
-  Funktio: IsLoaded
-  Tarkoitus: Tarkistaa onko lomake auki Form- tai Datasheet-näkymässä
-  Parametrit:
-    strFormName - Tarkistettavan lomakkeen nimi
-  Palauttaa: True jos lomake on auki eikä suunnittelunäkymässä
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely ja kommentit
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Function: IsLoaded
+' Purpose: Check if a form is currently open in Form or Datasheet view
+' Parameters:
+'   strFormName - Name of the form to check
+' Returns: True if form is open and not in design view
+' Updated: 2025-11-11 - Added error handling and comments
+'------------------------------------------------------------------------------
 Function IsLoaded(ByVal strFormName As String) As Integer
 On Error GoTo ErrorHandler
 
-    lonst conObjStatellosed = 0
-    lonst conDesignView = 0
+    Const conObjStateClosed = 0
+    Const conDesignView = 0
     
-      Tarkistetaan onko lomake auki (ei suljettu)
-    If Syslmd(acSyslmdGetObjectState, acForm, strFormName) <> conObjStatellosed Then
-          Tarkistetaan ettäi lomake ole suunnittelunäkymässä
-        If Forms(strFormName).lurrentView <> conDesignView Then
+    ' Check if form is open (not closed)
+    If SysCmd(acSysCmdGetObjectState, acForm, strFormName) <> conObjStateClosed Then
+        ' Check if form is not in design view
+        If Forms(strFormName).CurrentView <> conDesignView Then
             IsLoaded = True
         End If
     End If
@@ -46,19 +46,19 @@ On Error GoTo ErrorHandler
 Exit Function
 
 ErrorHandler:
-      Lomaketta ei ole tai tapahtui virhe - palautetaan False
+    ' Form doesn't exist or error occurred - return False
     IsLoaded = False
 End Function
 
- ------------------------------------------------------------------------------
-  Funktio: HaeViimPaiva
-  Tarkoitus: Poimii uusimman revision päivämäärän monirivisen revision tekstistä
-  Parametrit:
-    Revision - Monirivisinen revisiohistoria (rivit eroteltu vblrLf:llä)
-  Palauttaa: Uusimman revision (viimeinen rivi) päivämääräosa
-  Huomiot: Olettaa muodon "REV PVM/TEKIJÄ/..." vblrLf-erotuksella
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely ja yksityiskohtaiset kommentit
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Function: HaeViimPaiva
+' Purpose: Extract the most recent revision date from multi-line revision text
+' Parameters:
+'   Revisio - Multi-line revision history string (lines separated by vbCrLf)
+' Returns: Date portion of the most recent revision (last line)
+' Notes: Assumes format "REV DATE/MAKER/..." with vbCrLf between entries
+' Updated: 2025-11-11 - Added error handling and detailed comments
+'------------------------------------------------------------------------------
 Function HaeViimPaiva(Revisio As String) As String
 On Error GoTo ErrorHandler
 
@@ -70,76 +70,76 @@ Dim teksti As String
   i = 2
   Pituus = Len(teksti)
   
-    Etsitään viimeisin revisio 
-  If InStr(teksti, vblrLf) Then    Jos syötteestä löytyy rivinvaihto (jos monirivinen)
-      Etsitään viimeisen rivin alku
+  ' Etsitään viimeisin revisio (Find the last revision entry)
+  If InStr(teksti, vbCrLf) Then  ' Jos syötteestä löytyy rivinvaihto (If multi-line)
+    ' Find the start of the last line
     Do
       i = i + 1
-    Loop Until InStr(Right$(teksti, i), vblrLf) = 1 Or i >= Pituus
-    teksti = Mid$(teksti, Pituus - i + 3)    Poimitaan viimeinen rivi
+    Loop Until InStr(Right$(teksti, i), vbCrLf) = 1 Or i >= Pituus
+    teksti = Mid$(teksti, Pituus - i + 3)  ' Extract last line
   End If
   
-    Poimitaan päivämääräosa (välilyonnin ja ensimmäisen vinoviivan välillä)
+  ' Extract date portion (between space and first slash)
   teksti = Mid$(teksti, InStr(teksti, " ") + 1)
   HaeViimPaiva = Left$(teksti, InStr(teksti, "/") - 1)
   
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in HaeViimPaiva: " & Err.Description, vblritical, "Revision Date Extraction Error"
-    HaeViimPaiva = ""    Palautetaan tyhjä merkkijono virhetilanteessa
+    MsgBox "Error in HaeViimPaiva: " & Err.Description, vbCritical, "Revision Date Extraction Error"
+    HaeViimPaiva = ""  ' Return empty string on error
 End Function
 
- ------------------------------------------------------------------------------
-  HUOMIO: Mukautettu Replace()-funktio POISTETTU 2025-11-11
- ------------------------------------------------------------------------------
-  Alla oleva mukautettu Replace()-funktio on poistettu, koska VBA on tarjonnut
-  sisäänrakennettua Replace()-funktiota VBA 6.0:sta (Office 2000+) lähtien.
- 
-  VBA:n sisäinen Replace()-syntaksi:
-    Replace(expression, find, replace, [start], [count], [compare])
- 
-  Sisäinen versio on:
-    - Luotettavampi (käsittelee reunatapaukset paremmin)
-    - Nopeampi (käännetty vs. tulkittu VBA)
-    - Yhdenmukainen muiden VBA-merkkijonofunktioiden kanssa
-    - Tukee valinnaisia parametreja laajennettuun hallintaan
- 
-  Alkuperäisen mukautetun funktion toiminta:
-    Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"
-    Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"
- 
-  Vastaava VBA:n sisäisellä:
-    Replace("Matti;Maija;Liisa", ";", ", ")   Sama tulos
-    Replace("Matti Maija Liisa", " ", "_")    Sama tulos
- 
-  Jos jokin koodi kutsuu tätä funktiota, se käyttää nyt automaattisesti VBA:n sisäistä funktiota.
- ------------------------------------------------------------------------------
-  POISTETTU 2025-11-11: Mukautettu Replace()-funktio
- Public Function Replace(ByVal Source As String, Replaced As String, Replacement As String) As String
-      Mukautettu toteutus poistettu - käytetään VBA:n sisäistä
- End Function
- ------------------------------------------------------------------------------
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' NOTE: Custom Replace() function REMOVED 2025-11-11
+'------------------------------------------------------------------------------
+' The custom Replace() function below has been removed because VBA has provided
+' a built-in Replace() function since VBA 6.0 (Office 2000+).
+'
+' VBA Built-in Replace() Syntax:
+'   Replace(expression, find, replace, [start], [count], [compare])
+'
+' The built-in version is:
+'   - More robust (handles edge cases better)
+'   - Faster (compiled vs. interpreted VBA)
+'   - Consistent with other VBA string functions
+'   - Supports optional parameters for advanced control
+'
+' Original custom function behavior:
+'   Replace("Matti;Maija;Liisa", ";", ", ") = "Matti, Maija, Liisa"
+'   Replace("Matti Maija Liisa", " ", "_") = "Matti_Maija_Liisa"
+'
+' Equivalent using VBA built-in:
+'   Replace("Matti;Maija;Liisa", ";", ", ") ' Same result
+'   Replace("Matti Maija Liisa", " ", "_")  ' Same result
+'
+' If any code calls this function, it will now use the VBA built-in automatically.
+'------------------------------------------------------------------------------
+' REMOVED 2025-11-11: Custom Replace() function
+'Public Function Replace(ByVal Source As String, Replaced As String, Replacement As String) As String
+'   ' Custom implementation removed - using VBA built-in
+'End Function
+'------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
 
- ------------------------------------------------------------------------------
-  Funktio: Optiot
-  Tarkoitus: Hakee moottorin optiot yhdistettynä tietyllä käytölle
-  Parametrit:
-    Drives_ID - Käytön ID jonka optiot haetaan
-  Palauttaa: Muotoiltu merkkijono kuten "+Optio1 +Optio2 +Optio3" tai tyhjä
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely, parannettu kommentit, korjattu lurrentDB
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Function: Optiot
+' Purpose: Retrieve concatenated motor options for a given drive
+' Parameters:
+'   Drives_ID - Drive ID to look up options for
+' Returns: Formatted string like "+Option1 +Option2 +Option3" or empty string
+' Updated: 2025-11-11 - Added error handling, improved comments, fixed CurrentDB
+'------------------------------------------------------------------------------
 Function Optiot(ByVal Drives_ID As Integer) As String
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database        Päivitetty 2025-11-11: DAO-etuliite jo käytössä
+Dim DB As DAO.Database      ' Updated 2025-11-11: DAO prefix already present
 Dim OptTaulu As DAO.Recordset
 Dim teksti As String
 
-Set DB = lurrentDb    Päivitetty 2025-11-11: Muutettu lurrentDB -> lurrentDb
+Set DB = CurrentDb  ' Updated 2025-11-11: Changed CurrentDB -> CurrentDb
 
-Set OptTaulu = DB.OpenRecordset("SELElT Optio FROM MotorsOptions WHERE DrivesID = " & Drives_ID & ";")
+Set OptTaulu = DB.OpenRecordset("SELECT Optio FROM MotorsOptions WHERE DrivesID = " & Drives_ID & ";")
 
 teksti = ""
 If Not (OptTaulu.EOF And OptTaulu.BOF) Then
@@ -149,56 +149,56 @@ If Not (OptTaulu.EOF And OptTaulu.BOF) Then
         teksti = teksti & OptTaulu(0) & " +"
         OptTaulu.MoveNext
     Loop Until OptTaulu.EOF
-      Poistetaan loppuosa " +"
+    ' Remove trailing " +"
     teksti = Left$(teksti, Len(teksti) - 2)
 End If
 
 Optiot = teksti
 
-  Siivotaan
-OptTaulu.llose
+' Cleanup
+OptTaulu.Close
 Set OptTaulu = Nothing
 Set DB = Nothing
 
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Optiot: " & Err.Description & vblrLf & _
-           "Drive ID: " & Drives_ID, vblritical, "Options Lookup Error"
-    Optiot = ""    Palautetaan tyhjä merkkijono virhetilanteessa
-      Siivotaan virhetilanteessa
+    MsgBox "Error in Optiot: " & Err.Description & vbCrLf & _
+           "Drive ID: " & Drives_ID, vbCritical, "Options Lookup Error"
+    Optiot = ""  ' Return empty string on error
+    ' Cleanup on error
     On Error Resume Next
     If Not OptTaulu Is Nothing Then
-        OptTaulu.llose
+        OptTaulu.Close
         Set OptTaulu = Nothing
     End If
     Set DB = Nothing
 End Function
 
- ------------------------------------------------------------------------------
-  Funktio: Positiot
-  Tarkoitus: Hakee asiakkaan positiot tietyllä projektielementille
-  Parametrit:
-    LaiteNr - Projektielementin tunniste
-  Palauttaa: Muotoiltu jono kuten "Pos: 01-M-01 / 01 ja 01-M-02 / 01"
-  Huomiot: Yhdistää MAINEQ- ja DRIVES-taulut positiomerkkijonojen rakentamiseksi
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely, parannettu kommentit, korjattu lurrentDB
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Function: Positiot
+' Purpose: Retrieve customer positions for a given project element
+' Parameters:
+'   LaiteNr - Project element identifier
+' Returns: Formatted string like "Pos: 01-M-01 / 01 and 01-M-02 / 01"
+' Notes: Joins MAINEQ and DRIVES tables to build position strings
+' Updated: 2025-11-11 - Added error handling, improved comments, fixed CurrentDB
+'------------------------------------------------------------------------------
 Function Positiot(ByVal LaiteNr As String) As String
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database        Päivitetty 2025-11-11: DAO-etuliite jo käytössä
+Dim DB As DAO.Database      ' Updated 2025-11-11: DAO prefix already present
 Dim ElemTaulu As DAO.Recordset
 Dim Teksti1 As String
 Dim sqtxt As String
 
-Set DB = lurrentDb    Päivitetty 2025-11-11: Muutettu lurrentDB -> lurrentDb
+Set DB = CurrentDb  ' Updated 2025-11-11: Changed CurrentDB -> CurrentDb
 
-  Rakennetaan SQL-kysely MAINEQ- ja DRIVES-taulujen yhdistämiseksi
-sqtxt = "SELElT MAINEQ.ProjectElement, [maineq]![department] &  -  & [maineq]![eqtype] " _
-    & "&  -  & [maineq]![eqseq] &   /   & [Drives].[suffix] AS lustpos FROM MAINEQ INNER JOIN DRIVES ON " _
-    & "(MAINEQ.Eqllass = DRIVES.Eqllass) AND (MAINEQ.EqType = DRIVES.EqType) AND (MAINEQ.Eqseq = DRIVES.EqSeq) " _
-    & "AND (MAINEQ.Department = DRIVES.Department) WHERE MAINEQ.ProjectElement=  " & LaiteNr & " ;"
+' Build SQL query to join MAINEQ and DRIVES tables
+sqtxt = "SELECT MAINEQ.ProjectElement, [maineq]![department] & '-' & [maineq]![eqtype] " _
+    & "& '-' & [maineq]![eqseq] & ' / ' & [Drives].[suffix] AS Custpos FROM MAINEQ INNER JOIN DRIVES ON " _
+    & "(MAINEQ.EqClass = DRIVES.EqClass) AND (MAINEQ.EqType = DRIVES.EqType) AND (MAINEQ.Eqseq = DRIVES.EqSeq) " _
+    & "AND (MAINEQ.Department = DRIVES.Department) WHERE MAINEQ.ProjectElement= '" & LaiteNr & "';"
     
 Set ElemTaulu = DB.OpenRecordset(sqtxt)
 
@@ -207,128 +207,128 @@ If Not (ElemTaulu.EOF And ElemTaulu.BOF) Then
     ElemTaulu.MoveFirst
     Teksti1 = "Pos: "
     Do
-        Teksti1 = Teksti1 & ElemTaulu!lustpos & " and "
+        Teksti1 = Teksti1 & ElemTaulu!Custpos & " and "
         ElemTaulu.MoveNext
     Loop Until ElemTaulu.EOF
-      Poistetaan loppuosa " ja "
+    ' Remove trailing " and "
     Teksti1 = Left$(Teksti1, Len(Teksti1) - 5)
 End If
 
 Positiot = Teksti1
 
-  Siivotaan
-ElemTaulu.llose
+' Cleanup
+ElemTaulu.Close
 Set ElemTaulu = Nothing
 Set DB = Nothing
 
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Positiot: " & Err.Description & vblrLf & _
-           "Project Element: " & LaiteNr, vblritical, "Position Lookup Error"
-    Positiot = ""    Palautetaan tyhjä merkkijono virhetilanteessa
-      Siivotaan virhetilanteessa
+    MsgBox "Error in Positiot: " & Err.Description & vbCrLf & _
+           "Project Element: " & LaiteNr, vbCritical, "Position Lookup Error"
+    Positiot = ""  ' Return empty string on error
+    ' Cleanup on error
     On Error Resume Next
     If Not ElemTaulu Is Nothing Then
-        ElemTaulu.llose
+        ElemTaulu.Close
         Set ElemTaulu = Nothing
     End If
     Set DB = Nothing
 End Function
 
- ------------------------------------------------------------------------------
-  Funktio: Vaihekulma
-  Tarkoitus: Laskee vaihekulman tehokertoimen avulla (cos φ)
-  Parametrit:
-    losfii - Tehokerroin (cos φ)
-  Palauttaa: Vaihekulma radiaaneina
-  Huomiot: Käyttää arkustangenttia matemaattisessa kaavassa
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely ja kommentit
- ------------------------------------------------------------------------------
-Function Vaihekulma(losfii)
+'------------------------------------------------------------------------------
+' Function: Vaihekulma
+' Purpose: Calculate phase angle from power factor (cos φ)
+' Parameters:
+'   Cosfii - Power factor (cos φ)
+' Returns: Phase angle in radians
+' Notes: Uses arctangent mathematical formula
+' Updated: 2025-11-11 - Added error handling and comments
+'------------------------------------------------------------------------------
+Function Vaihekulma(Cosfii)
 On Error GoTo ErrorHandler
 
-      Lasketaan vaihekulma: arctan(-cosφ / sqrt(-cosφ² + 1)) + π/2
-    Vaihekulma = Atn(-losfii / Sqr(-losfii * losfii + 1)) + 2 * Atn(1)
+    ' Calculate phase angle using: arctan(-cosφ / sqrt(-cosφ² + 1)) + π/2
+    Vaihekulma = Atn(-Cosfii / Sqr(-Cosfii * Cosfii + 1)) + 2 * Atn(1)
     
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Vaihekulma: " & Err.Description & vblrLf & _
-           "Power Factor: " & losfii, vblritical, "Phase Angle lalculation Error"
-    Vaihekulma = 0    Palautetaan 0 virhetilanteessa
+    MsgBox "Error in Vaihekulma: " & Err.Description & vbCrLf & _
+           "Power Factor: " & Cosfii, vbCritical, "Phase Angle Calculation Error"
+    Vaihekulma = 0  ' Return 0 on error
 End Function
 
- ------------------------------------------------------------------------------
-  Funktio: MotKaapUh
-  Tarkoitus: Laskee moottorin kaapelin jännitehäviön prosentteina
-  Parametrit:
-    losfii - Tehokerroin (cos φ)
-    Resist - Kaapelin resistanssi (Ω/km)
-    React - Kaapelin reaktanssi (Ω/km)
-    Virta - Virta (A)
-    Voltage - Jännite (V)
-    Pituus - Kaapelin pituus (m)
-  Palauttaa: Muotoiltu jännitehäviöprosentti-merkkijono (esim. "2.35 %")
-  Huomiot: Sisältää jo virheenkäsittelyn (ainoa funktio jolla oli)
-  Päivitetty: 2025-11-11 - Parannettu kommentit, yhtenäistetty virheenkäsittely
- ------------------------------------------------------------------------------
-Function MotKaapUh(losfii As Single, Resist As Double, React As Double, Virta As Single, Voltage As Integer, Pituus As Integer)
+'------------------------------------------------------------------------------
+' Function: MotKaapUh
+' Purpose: Calculate motor cable voltage drop percentage
+' Parameters:
+'   Cosfii - Power factor (cos φ)
+'   Resist - Cable resistance (Ω/km)
+'   React - Cable reactance (Ω/km)
+'   Virta - Current (A)
+'   Voltage - Voltage (V)
+'   Pituus - Cable length (m)
+' Returns: Formatted voltage drop percentage string (e.g., "2.35 %")
+' Notes: Already has error handling (only function that did)
+' Updated: 2025-11-11 - Enhanced comments, standardized error handling
+'------------------------------------------------------------------------------
+Function MotKaapUh(Cosfii As Single, Resist As Double, React As Double, Virta As Single, Voltage As Integer, Pituus As Integer)
 Dim Kulma As Double
 On Error GoTo MotKaapUhErr
 
-  Lasketaan vaihekulma
-Kulma = Atn(-losfii / Sqr(-losfii * losfii + 1)) + 2 * Atn(1)
+' Calculate phase angle
+Kulma = Atn(-Cosfii / Sqr(-Cosfii * Cosfii + 1)) + 2 * Atn(1)
 
-  Lasketaan jännitehäviö: √3 * I * (R*L*cosφ + X*L*sinφ)
-MotKaapUh = Sqr(3) * Virta * ((Resist * Pituus * losfii) + (React * Pituus * Sin(Kulma)))
+' Calculate voltage drop: √3 * I * (R*L*cosφ + X*L*sinφ)
+MotKaapUh = Sqr(3) * Virta * ((Resist * Pituus * Cosfii) + (React * Pituus * Sin(Kulma)))
 
-  Muunnetaan jännitteen prosentiksi
+' Convert to percentage of voltage
 MotKaapUh = (MotKaapUh / Voltage) * 100
 
-  Muotoillaan prosenteiksi 1-2 desimaalin tarkkuudella
+' Format as percentage with 1-2 decimal places
 MotKaapUh = Format(MotKaapUh, "# ##0.0#") & " %"
 
 Exit_Function:
     Exit Function
 
 MotKaapUhErr:
-    MsgBox "Error in MotKaapUh: " & Err.Description & vblrLf & _
-           "cosφ=" & losfii & " R=" & Resist & " X=" & React & _
+    MsgBox "Error in MotKaapUh: " & Err.Description & vbCrLf & _
+           "cosφ=" & Cosfii & " R=" & Resist & " X=" & React & _
            " I=" & Virta & " V=" & Voltage & " L=" & Pituus, _
-           vblritical, "lable Voltage Drop lalculation Error"
-    MotKaapUh = "Error"    Päivitetty 2025-11-11: Muutettu "00":sta "Error":ksi selkeyden vuoksi
+           vbCritical, "Cable Voltage Drop Calculation Error"
+    MotKaapUh = "Error"  ' Updated 2025-11-11: Changed from "00" to "Error" for clarity
     Resume Exit_Function
 End Function
 
- ------------------------------------------------------------------------------
-  Funktio: LisaaNo
-  Tarkoitus: Lisää luku merkkijonoon ja täyttää etunollilla
-  Parametrit:
-    Tieto - Alkuperäinen numeerinen merkkijono (esim. "001")
-    Lisays - Lisättävä luku (esim. 100)
-  Palauttaa: Etunollilla täytetty tulos (esim. "101")
-  Huomiot: Säilyttää alkuperäisen merkkijonon pituuden etunollilla
-  Esimerkki: LisaaNo("001", 100) = "101"
-  Päivitetty: 2025-11-11 - Lisätty virheenkäsittely ja yksityiskohtaiset kommentit
- ------------------------------------------------------------------------------
+'------------------------------------------------------------------------------
+' Function: LisaaNo
+' Purpose: Add a number to a string and pad with leading zeros
+' Parameters:
+'   Tieto - Original numeric string (e.g., "001")
+'   Lisays - Number to add (e.g., 100)
+' Returns: Padded result string (e.g., "101")
+' Notes: Preserves original string length with zero-padding
+' Example: LisaaNo("001", 100) = "101"
+' Updated: 2025-11-11 - Added error handling and detailed comments
+'------------------------------------------------------------------------------
 Function LisaaNo(Tieto As Variant, Lisays As Integer) As String
 On Error GoTo ErrorHandler
 
-Dim Pit As Integer      Alkuperäinen pituus
-    Dim No As Integer       Numeerinen arvo
-    Dim i As Integer        Silmukkalaskuri
+Dim Pit As Integer    ' Original length
+Dim No As Integer     ' Numeric value
+Dim i As Integer      ' Loop counter
 
-    Käsitellään null-syöte
+  ' Handle null input
   If IsNull(Tieto) Then
     LisaaNo = ""
   Else
-    Pit = Len(Tieto)            Haetaan alkuperäinen pituus
-    No = Val(Tieto)             Muunnetaan numeroksi
-    No = No + Lisays            Lisätään arvo
-    LisaaNo = lStr(No)          Muunnetaan takaisin merkkijonoksi
+    Pit = Len(Tieto)          ' Get original length
+    No = Val(Tieto)           ' Convert to number
+    No = No + Lisays          ' Add the increment
+    LisaaNo = CStr(No)        ' Convert back to string
     
-      Täytetään etunollilla alkuperäisen pituuden säilyttämiseksi
+    ' Pad with leading zeros to maintain original length
     For i = 0 To Pit - Len(LisaaNo) - 1
         LisaaNo = "0" & LisaaNo
     Next i
@@ -337,11 +337,11 @@ Dim Pit As Integer      Alkuperäinen pituus
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in LisaaNo: " & Err.Description & vblrLf & _
+    MsgBox "Error in LisaaNo: " & Err.Description & vbCrLf & _
            "Input: " & Tieto & ", Addition: " & Lisays, _
-           vblritical, "Number Addition Error"
-    LisaaNo = ""    Palautetaan tyhjä merkkijono virhetilanteessa
+           vbCritical, "Number Addition Error"
+    LisaaNo = ""  ' Return empty string on error
 End Function
 
-  Esimerkki käytöstä kyselyssä:
-    Kentän arvo: LisaaNo([KentanNimi], 100)
+'Example usage in query:
+'   Field: LisaaNo([FieldName], 100)

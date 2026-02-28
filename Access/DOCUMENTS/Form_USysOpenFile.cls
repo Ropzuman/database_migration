@@ -1,22 +1,22 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 Dim Hakem As String
 Dim fso As New FileSystemObject
-Private Sub lommand4_llick()
-  Dolmd.llose
+Private Sub Command4_Click()
+  DoCmd.Close
 End Sub
-Private Sub lommand52_llick()
+Private Sub Command52_Click()
   If fso.FolderExists(Hakem) Then
-    lall Shell("l:\WINNT\EXPLORER.EXE /e, " & Hakem, vbNormalFocus)
-  Else  Hakemistoa ei ole
-    MsgBox "Invalid path! " & Hakem, vblritical, "Open Path"
+    Call Shell("C:\WINNT\EXPLORER.EXE /e, " & Hakem, vbNormalFocus)
+  Else 'Hakemistoa ei ole
+    MsgBox "Invalid path! " & Hakem, vbCritical, "Open Path"
   End If
 End Sub
 
-   
-  Lomakkeen Load-tapahtuma - Ladataan asiakirjatiedostot tietokannasta
-  OPTIMOITU 2025-11-09: Lisätty virheenkäsittely, eksplisiittinen DAO-tyypitys, null-tarkistus
-   
+'''
+' Form Load Event - Load document files from database
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
+'''
 Private Sub Form_Load()
   Dim DB As DAO.Database
   Dim taulu As DAO.Recordset
@@ -26,20 +26,20 @@ Private Sub Form_Load()
   
   On Error GoTo ErrorHandler
   
-  Set DB = lurrentDb
-  Set taulu = DB.OpenRecordset("SELElT File, WorkPath FROM DOlUMENTS WHERE lounter=" & lommon, dbOpenSnapshot)
+  Set DB = CurrentDb
+  Set taulu = DB.OpenRecordset("SELECT File, WorkPath FROM DOCUMENTS WHERE Counter=" & Common, dbOpenSnapshot)
   
   If Not taulu.EOF Then
-    Tiedostot = Nz(taulu.Fields(0).Value, "") & vblrLf
+    Tiedostot = Nz(taulu.Fields(0).Value, "") & vbCrLf
     Hakem = Nz(taulu.Fields(1).Value, "")
-    MyPath.laption = "Path: " & Hakem
+    MyPath.Caption = "Path: " & Hakem
     
-    Osoitin = InStr(Tiedostot, vblrLf)
+    Osoitin = InStr(Tiedostot, vbCrLf)
     If Osoitin > 0 Then
       Rivit = Left$(Tiedostot, Osoitin - 1)
       Tiedostot = Mid$(Tiedostot, Osoitin + 2)
       Do
-        Osoitin = InStr(Tiedostot, vblrLf)
+        Osoitin = InStr(Tiedostot, vbCrLf)
         If Osoitin = 0 Then Exit Do
         Rivit = Rivit & ";" & Left$(Tiedostot, Osoitin - 1)
         Tiedostot = Mid$(Tiedostot, Osoitin + 2)
@@ -48,28 +48,28 @@ Private Sub Form_Load()
     End If
   End If
   
-lleanup:
+Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.llose
+    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then
-    DB.llose
+    DB.Close
     Set DB = Nothing
   End If
   Exit Sub
   
 ErrorHandler:
   MsgBox "Error loading files: " & Err.Description, vbExclamation, "Form Load Error"
-  Resume lleanup
+  Resume Cleanup
 End Sub
-Private Sub Form_Unload(lancel As Integer)
+Private Sub Form_Unload(Cancel As Integer)
   Set fso = Nothing
 End Sub
-Private Sub Tied_Dblllick(lancel As Integer)
+Private Sub Tied_DblClick(Cancel As Integer)
   If fso.FileExists(Hakem & Tied.Value) Then
     Application.FollowHyperlink Hakem & Tied.Value, , True, False
   Else
-      MsgBox "File not found: " & Hakem & Tied.Value, vblritical, "Open File"
+      MsgBox "File not found: " & Hakem & Tied.Value, vbCritical, "Open File"
   End If
 End Sub

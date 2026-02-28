@@ -1,29 +1,29 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 
- ================================================================================
-  Lomake: PIIRIT subform (Loops subform)
-  Tarkoitus: Loop reference insertion helper
-  Päivitetty: 2025-11-13 - Added error handling and null safety
- 
-  Kuvaus:
-    Subform for inserting formatted loop references into parent form text boxes.
-    Uses {Arealode-LoopNo} format for loop references in generated documents.
- 
-  Riippuvuudet:
-    - Parent form with KohdeTextBox and lLoppuun controls
-    - Public Kursori variable (cursor position)
-    - lontrols: TEKSTI, Arealode, LoopNo
- ================================================================================
+'================================================================================
+' Form: PIIRIT subform (Loops subform)
+' Purpose: Loop reference insertion helper
+' Updated: 2025-11-13 - Added error handling and null safety
+'
+' Description:
+'   Subform for inserting formatted loop references into parent form text boxes.
+'   Uses {AreaCode-LoopNo} format for loop references in generated documents.
+'
+' Dependencies:
+'   - Parent form with KohdeTextBox and CLoppuun controls
+'   - Public Kursori variable (cursor position)
+'   - Controls: TEKSTI, AreaCode, LoopNo
+'================================================================================
 
- ================================================================================
-  Aliohjelma: LisaaTeksti (Add Text)
-  Tarkoitus: Insert loop reference at cursor position
- 
-  Kuvaus:
-    LisÄÄ tekstin {hakasulkeissa} kursorin kohtaan tai kentÄn loppuun.
-    KÄsittelee null-arvot ja sÄilyttÄÄ kursorin paikan lisÄÄmisen jÄlkeen.
- ================================================================================
+'================================================================================
+' Sub: LisaaTeksti (Add Text)
+' Purpose: Insert loop reference at cursor position
+'
+' Description:
+'   Inserts text in {brackets} at current cursor position or end of field.
+'   Handles null values and maintains cursor position after insertion.
+'================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
     Dim Loppu As String
@@ -31,12 +31,12 @@ Private Sub LisaaTeksti()
     On Error GoTo ErrorHandler
     
     If Not KohdeTextBox Is Nothing Then
-        If Form.Parent.lLoppuun = True Then
-              LisÄtÄÄn kentÄn loppuun
+        If Form.Parent.CLoppuun = True Then
+            ' Append to end
             Alku = Nz(KohdeTextBox.Value, "")
             Loppu = ""
         Else
-              LisÄtÄÄn kursorin kohtaan
+            ' Insert at cursor position
             Alku = Left$(Nz(KohdeTextBox.Value, ""), Kursori)
             Loppu = Mid$(Nz(KohdeTextBox.Value, ""), Kursori + 1)
         End If
@@ -54,15 +54,15 @@ ErrorHandler:
     MsgBox "Error inserting text: " & Err.Description, vbExclamation
 End Sub
 
-Private Sub Arealode_Dblllick(lancel As Integer)
+Private Sub AreaCode_DblClick(Cancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub LoopNo_Dblllick(lancel As Integer)
+Private Sub LoopNo_DblClick(Cancel As Integer)
     LisaaTeksti
 End Sub
 
-Private Sub TEKSTI_Dblllick(lancel As Integer)
+Private Sub TEKSTI_DblClick(Cancel As Integer)
     LisaaTeksti
 End Sub
 

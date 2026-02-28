@@ -1,31 +1,31 @@
-﻿   
-  Module2.vba - Metadata-, info- ja linkityslogiikka Kytkentälista Excel-makrojärjestelmälle
-  Käsittelee dokumentin ominaisuuksien poiminnan, kommenttipohjaisen linkityksen ja virheraportoinnin.
-  Huomiot:
-  - HaeDocTiedot lukee DB2-otsikot case-insensitively ja trimm aa whitespacet.
-  - WorkPath tunnistetaan useiden synonyymienhyvällä (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
-    ja normalisoidaan backslasheilla ja varmistetaan loppuun tulevaksi backslash.
-  - File otetaan DB2:sta (file/filename/file_name) ja käytetään oletuksena Save As -nimeen GenPrintoutissa.
-  27.2.2026 - Poistettu duplikaattifunktiot (ne ovat Module1.bas:ssä)
-   
+'''
+' Module2.vba - Metadata-, info- ja linkityslogiikka Kytkentälista Excel-makrojärjestelmälle
+' Käsittelee dokumentin ominaisuuksien poiminnan, kommenttipohjaisen linkityksen ja virheraportoinnin.
+' Huomiot:
+' - HaeDocTiedot lukee DB2-otsikot case-insensitively ja trimm aa whitespacet.
+' - WorkPath tunnistetaan useiden synonyymienhyvällä (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
+'   ja normalisoidaan backslasheilla ja varmistetaan loppuun tulevaksi backslash.
+' - File otetaan DB2:sta (file/filename/file_name) ja käytetään oletuksena Save As -nimeen GenPrintoutissa.
+' 27.2.2026 - Poistettu duplikaattifunktiot (ne ovat Module1.bas:ssä)
+'''
 
-  Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
-Private lonst MAX_EXlEL_lOLUMNS As Long = 16384
+' Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
+Private Const MAX_EXCEL_COLUMNS As Long = 16384
 
 Sub HaeDocTiedot()
-   
-  HaeDocTiedot: Poimii dokumentin ominaisuudet DB2-sheetistä ja tallentaa ne globaaleihin muuttujiin.
-  Käytetään otsikoiden,alatunnisteiden ja info-kenttien täyttöön tulosteessa.
-  Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
-  27.2.2026 - Poistettu duplicate case "status"
-   
+'''
+' HaeDocTiedot: Poimii dokumentin ominaisuudet DB2-sheetistä ja tallentaa ne globaaleihin muuttujiin.
+' Käytetään otsikoiden,alatunnisteiden ja info-kenttien täyttöön tulosteessa.
+' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
+' 27.2.2026 - Poistettu duplicate case "status"
+'''
 Dim i As Long
 Dim Arvo As String
 Dim wsDB2 As Worksheet
 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeDocTiedot] Poimitaan dokumentin metadata DB2:sta"
 
-    Alustetaan kaikki asiakirjatietomuuttujat
+  ' Initialize all document info variables
   DIRev = ""
   DIRevID = ""
   DIRevDate = ""
@@ -37,7 +37,7 @@ Dim wsDB2 As Worksheet
   DIDocName1 = ""
   DIDocName2 = ""
   DIDocName3 = ""
-  DIlontract = ""
+  DIContract = ""
   DIProjNo = ""
   DIProjName = ""
   DIPath = ""
@@ -46,7 +46,7 @@ Dim wsDB2 As Worksheet
   DIMunit = ""
   DIMill = ""
   DIDepartName = ""
-  DIlustomer = ""
+  DICustomer = ""
   DIFile = ""
 
   On Error Resume Next
@@ -57,91 +57,91 @@ Dim wsDB2 As Worksheet
   
   i = 1
   Do
-      Normalisoidaan otsikko: pienet kirjaimet ja trimmaus extra-spacet pois
-    Arvo = Llase(Trim(wsDB2.lells(1, i).Value & ""))
-    Select lase Arvo
-      lase "rev"
-        DIRev = wsDB2.lells(2, i).Value
+    ' Normalisoidaan otsikko: pienet kirjaimet ja trimmaus extra-spacet pois
+    Arvo = LCase(Trim(wsDB2.Cells(1, i).Value & ""))
+    Select Case Arvo
+      Case "rev"
+        DIRev = wsDB2.Cells(2, i).Value
         Erase DIRevArr
-        DIRevArr() = Split(DIRev, lhr(10))
-      lase "revid"
-        DIRevID = wsDB2.lells(2, i).Value
-      lase "revdate"
-        DIRevDate = wsDB2.lells(2, i).Value
-      lase "date", "dateoriginal"
-        DIDate = wsDB2.lells(2, i).Value
-      lase "docno"
-        DIDocNo = wsDB2.lells(2, i).Value
-      lase "metsodocno"
-        DIMetsoDocNo = wsDB2.lells(2, i).Value
-      lase "project"
-        DIProject = wsDB2.lells(2, i).Value
-      lase "status"
-        DIStatus = wsDB2.lells(2, i).Value
-      lase "docname"
-        DIDocName = wsDB2.lells(2, i).Value
-      lase "docname1"
-        DIDocName1 = wsDB2.lells(2, i).Value
-      lase "docname2"
-        DIDocName2 = wsDB2.lells(2, i).Value
-      lase "docname3"
-        DIDocName3 = wsDB2.lells(2, i).Value
-      lase "contractno"
-        DIlontract = wsDB2.lells(2, i).Value
-      lase "projno"
-        DIProjNo = wsDB2.lells(2, i).Value
-      lase "name"
-        DIProjName = wsDB2.lells(2, i).Value
-      lase "workpath", "path", "work_path", "listpath", "lists_path", "zlistspath", "savepath", "targetpath", "outputpath"
+        DIRevArr() = Split(DIRev, Chr(10))
+      Case "revid"
+        DIRevID = wsDB2.Cells(2, i).Value
+      Case "revdate"
+        DIRevDate = wsDB2.Cells(2, i).Value
+      Case "date", "dateoriginal"
+        DIDate = wsDB2.Cells(2, i).Value
+      Case "docno"
+        DIDocNo = wsDB2.Cells(2, i).Value
+      Case "metsodocno"
+        DIMetsoDocNo = wsDB2.Cells(2, i).Value
+      Case "project"
+        DIProject = wsDB2.Cells(2, i).Value
+      Case "status"
+        DIStatus = wsDB2.Cells(2, i).Value
+      Case "docname"
+        DIDocName = wsDB2.Cells(2, i).Value
+      Case "docname1"
+        DIDocName1 = wsDB2.Cells(2, i).Value
+      Case "docname2"
+        DIDocName2 = wsDB2.Cells(2, i).Value
+      Case "docname3"
+        DIDocName3 = wsDB2.Cells(2, i).Value
+      Case "contractno"
+        DIContract = wsDB2.Cells(2, i).Value
+      Case "projno"
+        DIProjNo = wsDB2.Cells(2, i).Value
+      Case "name"
+        DIProjName = wsDB2.Cells(2, i).Value
+      Case "workpath", "path", "work_path", "listpath", "lists_path", "zlistspath", "savepath", "targetpath", "outputpath"
         Dim p As String
-        p = lStr(wsDB2.lells(2, i).Value)
+        p = CStr(wsDB2.Cells(2, i).Value)
         If Len(p) > 0 Then
-            Normalisoidaan erottajat ja varmistetaan loppuun tulevaksi slash
+          ' Normalisoidaan erottajat ja varmistetaan loppuun tulevaksi slash
           p = Replace(p, "/", "\\")
           DIPath = p & IIf(Right$(p, 1) = "\\", "", "\\")
         End If
-      lase "manager"
-        DIManager = wsDB2.lells(2, i).Value
-      lase "mill"
-        DIMill = wsDB2.lells(2, i).Value
-      lase "departname"
-        DIDepartName = wsDB2.lells(2, i).Value
-      lase "customer"
-        DIlustomer = wsDB2.lells(2, i).Value
-      lase "metsounitname"
-        DIMunit = wsDB2.lells(2, i).Value
-      lase "file", "filename", "file_name"
-        DIFile = lStr(wsDB2.lells(2, i).Value)
-      lase ""
+      Case "manager"
+        DIManager = wsDB2.Cells(2, i).Value
+      Case "mill"
+        DIMill = wsDB2.Cells(2, i).Value
+      Case "departname"
+        DIDepartName = wsDB2.Cells(2, i).Value
+      Case "customer"
+        DICustomer = wsDB2.Cells(2, i).Value
+      Case "metsounitname"
+        DIMunit = wsDB2.Cells(2, i).Value
+      Case "file", "filename", "file_name"
+        DIFile = CStr(wsDB2.Cells(2, i).Value)
+      Case ""
         Exit Do
-      lase Else
+      Case Else
     End Select
     i = i + 1
-    If i > MAX_EXlEL_lOLUMNS Then Exit Do   Turvatarkistus
+    If i > MAX_EXCEL_COLUMNS Then Exit Do ' Turvatarkistus
   Loop
   
-    DEBUG: Raportoidaan mitä ladattiin
+  ' DEBUG: Raportoidaan mitä ladattiin
   Debug.Print "  Ladattu " & (i - 1) & " saraketta DB2:sta"
-  Debug.Print "  DIProject:  " & DIProject & " "
-  Debug.Print "  DIManager:  " & DIManager & " "
-  Debug.Print "  DIDocNo:  " & DIDocNo & " "
-  Debug.Print "  DIProjNo:  " & DIProjNo & " "
-  Debug.Print "  DIPath:  " & DIPath & " "
-  Debug.Print "  DIFile:  " & DIFile & " "
+  Debug.Print "  DIProject: '" & DIProject & "'"
+  Debug.Print "  DIManager: '" & DIManager & "'"
+  Debug.Print "  DIDocNo: '" & DIDocNo & "'"
+  Debug.Print "  DIProjNo: '" & DIProjNo & "'"
+  Debug.Print "  DIPath: '" & DIPath & "'"
+  Debug.Print "  DIFile: '" & DIFile & "'"
 End Sub
 Sub VaihdaInfo(Optional SheetName As String = "Info")
-   
-  VaihdaInfo: Päivittää määritellyn sheetin kommenttimerkatut solut dokumentin ominaisuuksilla.
-  Käsittelee Info- ja Revisions-sheetit. Käyttää fast mode -tilaa suorituskyvyn parantamiseksi.
-  27.2.2026 - Lisätty virheenkäsittely
-   
+'''
+' VaihdaInfo: Päivittää määritellyn sheetin kommenttimerkatut solut dokumentin ominaisuuksilla.
+' Käsittelee Info- ja Revisions-sheetit. Käyttää fast mode -tilaa suorituskyvyn parantamiseksi.
+' 27.2.2026 - Lisätty virheenkäsittely
+'''
 Dim i As Long
 Dim Row As Long
-Dim lolumn As Long
+Dim Column As Long
 Dim r As Long
 Dim ws As Worksheet
 Dim processedRevId As Boolean, processedRevDate As Boolean
-Dim processedDesigner As Boolean, processedlhecker As Boolean
+Dim processedDesigner As Boolean, processedChecker As Boolean
 Dim processedApprover As Boolean, processedDesc As Boolean
 
   Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Käsitellään sheet: " & SheetName
@@ -151,72 +151,72 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   Set ws = Sheets(SheetName)
   
   If ws Is Nothing Then
-    Debug.Print "  VAROITUS: Sheet  " & SheetName & "  puuttuu!"
+    Debug.Print "  VAROITUS: Sheet '" & SheetName & "' puuttuu!"
     Exit Sub
   End If
   
-    DEBUG: Raportoidaan sheetin tiedot
-  Debug.Print "  Sheetissä  " & SheetName & "  on " & ws.lomments.lount & " kommenttia"
-  If ws.lomments.lount = 0 Then
+  ' DEBUG: Raportoidaan sheetin tiedot
+  Debug.Print "  Sheetissä '" & SheetName & "' on " & ws.Comments.Count & " kommenttia"
+  If ws.Comments.Count = 0 Then
     Debug.Print "  VAROITUS: Ei kommentteja - Info jää tyhjäksi!"
   End If
   
-    Alustetaan liput yksikertaisesti käsiteltäviksi Revisions-sheet-taulukoiksi
+  ' Alustetaan liput yksikertaisesti käsiteltäviksi Revisions-sheet-taulukoiksi
   processedRevId = False
   processedRevDate = False
   processedDesigner = False
-  processedlhecker = False
+  processedChecker = False
   processedApprover = False
   processedDesc = False
   
   With ws
-    For i = 1 To .lomments.lount  Käydään läpi kaikki kommentit
-        Select lase Llase(.lomments(i).Text)   Muutetaan kommenttiteksti pieniksi kirjaimiksi
-        lase "unit"
-          .lomments(i).Parent.Value = "Metso Paper - " & DIMunit
-        lase "project"
-          .lomments(i).Parent.Value = DIProject
-        lase "manager"
-          .lomments(i).Parent.Value = DIManager
-        lase "contractno"
-          .lomments(i).Parent.Value = DIlontract
-        lase "projname"
-          .lomments(i).Parent.Value = DIProjName
-        lase "projno"
-          .lomments(i).Parent.Value = DIProjNo
-        lase "date"
-          .lomments(i).Parent.Value = DIDate
-        lase "status"
-          .lomments(i).Parent.Value = DIStatus
-        lase "mill"
-          .lomments(i).Parent.Value = DIMill
-        lase "departname"
-          .lomments(i).Parent.Value = DIDepartName
-        lase "customer"
-          .lomments(i).Parent.Value = DIlustomer
-        lase "docname"
-          .lomments(i).Parent.Value = DIDocName
-        lase "docname1"
-          .lomments(i).Parent.Value = DIDocName1
-        lase "docname2"
-          .lomments(i).Parent.Value = DIDocName2
-        lase "docname3"          
-          .lomments(i).Parent.Value = DIDocName3
-        lase "metsodocno"
-          .lomments(i).Parent.Value = DIMetsoDocNo
-        lase "rev"
-          .lomments(i).Parent.Value = DIRev
-        lase "revid"
+    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
+        Select Case LCase(.Comments(i).Text) ' Muutetaan kommenttiteksti pieniksi kirjaimiksi
+        Case "unit"
+          .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
+        Case "project"
+          .Comments(i).Parent.Value = DIProject
+        Case "manager"
+          .Comments(i).Parent.Value = DIManager
+        Case "contractno"
+          .Comments(i).Parent.Value = DIContract
+        Case "projname"
+          .Comments(i).Parent.Value = DIProjName
+        Case "projno"
+          .Comments(i).Parent.Value = DIProjNo
+        Case "date"
+          .Comments(i).Parent.Value = DIDate
+        Case "status"
+          .Comments(i).Parent.Value = DIStatus
+        Case "mill"
+          .Comments(i).Parent.Value = DIMill
+        Case "departname"
+          .Comments(i).Parent.Value = DIDepartName
+        Case "customer"
+          .Comments(i).Parent.Value = DICustomer
+        Case "docname"
+          .Comments(i).Parent.Value = DIDocName
+        Case "docname1"
+          .Comments(i).Parent.Value = DIDocName1
+        Case "docname2"
+          .Comments(i).Parent.Value = DIDocName2
+        Case "docname3"          
+          .Comments(i).Parent.Value = DIDocName3
+        Case "metsodocno"
+          .Comments(i).Parent.Value = DIMetsoDocNo
+        Case "rev"
+          .Comments(i).Parent.Value = DIRev
+        Case "revid"
           If SheetName <> "Info" Then
             If Not processedRevId Then
               On Error Resume Next
-                Käsitellään vain jos DIRevArr:ssa on dataa
+              ' Käsitellään vain jos DIRevArr:ssa on dataa
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                  If (DIRevArr(r) <> "") Then
-                   .lells(Row, lolumn).Value = Split(DIRevArr(r), " ")(0)
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
                    Row = Row + 1
                  End If
                 Next r
@@ -225,18 +225,18 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevId = True
             End If
           Else
-            .lomments(i).Parent.Value = " " & DIRevID
+            .Comments(i).Parent.Value = "'" & DIRevID
           End If
-        lase "revdate"
+        Case "revdate"
           If SheetName <> "Info" Then
             If Not processedRevDate Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                    .lells(Row, lolumn).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
+                    .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
                     Row = Row + 1
                   End If
                 Next r
@@ -245,18 +245,18 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevDate = True
             End If
           Else
-            .lomments(i).Parent.Value = DIRevDate
+            .Comments(i).Parent.Value = DIRevDate
           End If
-        lase "designer"
+        Case "designer"
           If SheetName <> "Info" Then
             If Not processedDesigner Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .lells(Row, lolumn).Value = Split(DIRevArr(r), "/")(1)
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
                    Row = Row + 1
                   End If
                 Next r
@@ -265,34 +265,34 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedDesigner = True
             End If
           End If
-        lase "checker"
+        Case "checker"
           If SheetName <> "Info" Then
-            If Not processedlhecker Then
+            If Not processedChecker Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .lells(Row, lolumn).Value = Split(DIRevArr(r), "/")(2)
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
                    Row = Row + 1
                   End If
                 Next r
               End If
               On Error GoTo ErrHandler
-              processedlhecker = True
+              processedChecker = True
             End If
           End If
-        lase "approver"
+        Case "approver"
           If SheetName <> "Info" Then
             If Not processedApprover Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .lells(Row, lolumn).Value = Split(DIRevArr(r), "/")(3)
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
                    Row = Row + 1
                   End If
                 Next r
@@ -301,16 +301,16 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedApprover = True
             End If
           End If
-        lase "desc"
+        Case "desc"
           If SheetName <> "Info" Then
             If Not processedDesc Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .lomments(i).Parent.Row
-                lolumn = .lomments(i).Parent.lolumn
+                Row = .Comments(i).Parent.Row
+                Column = .Comments(i).Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .lells(Row, lolumn).Value = Split(DIRevArr(r), "/")(4)
+                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
                    Row = Row + 1
                   End If
                 Next r
@@ -328,22 +328,22 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   
 ErrHandler:
   Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo ERROR] " & Err.Number & ": " & Err.Description
-  MsgBox "Virhe Info-sheetin päivityksessä:" & vblrLf & Err.Description & vblrLf & vblrLf & _
-         "Sheet: " & SheetName, vblritical, "VaihdaInfo Error"
-  Err.llear
+  MsgBox "Virhe Info-sheetin päivityksessä:" & vbCrLf & Err.Description & vbCrLf & vbCrLf & _
+         "Sheet: " & SheetName, vbCritical, "VaihdaInfo Error"
+  Err.Clear
   On Error GoTo 0
 End Sub
 Function EtsiOts(Otsikko As String, Rivi As Long, Sarake As Long, LRivi As Long) As Boolean
-   
-  EtsiOts: Etsii otsikkoa (Otsikko) DB1:stä ja merkitsee TEMPLATEn kommentilla jos löytyi.
-  Jos ei löydy, lokitetaan puuttuva otsikko ERRORS-sheettiin. Käytetään templaten validointiin.
-  Optimoitu: Poistettu kaikki Select/Activate, käytetään suoria worksheetviittauksia.
-   
+'''
+' EtsiOts: Etsii otsikkoa (Otsikko) DB1:stä ja merkitsee TEMPLATEn kommentilla jos löytyi.
+' Jos ei löydy, lokitetaan puuttuva otsikko ERRORS-sheettiin. Käytetään templaten validointiin.
+' Optimoitu: Poistettu kaikki Select/Activate, käytetään suoria worksheetviittauksia.
+'''
 Dim i As Long
 Dim j As Long
 Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
 
-   Debug.Print Format(Now, "hh:mm:ss") & " [EtsiOts] Etsitään otsikkoa:  " & Otsikko & " "
+   Debug.Print Format(Now, "hh:mm:ss") & " [EtsiOts] Etsitään otsikkoa: '" & Otsikko & "'"
 
    On Error Resume Next
    Set wsDB1 = Sheets("DB1")
@@ -358,43 +358,43 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    
    i = 1
    Do
-     If i > MAX_EXlEL_lOLUMNS Then   Turvatarkistus
+     If i > MAX_EXCEL_COLUMNS Then ' Turvatarkistus
        EtsiOts = False
-       Debug.Print "  [EtsiOts VAROITUS] Ei löytynyt ennen MAX_EXlEL_lOLUMNS"
+       Debug.Print "  [EtsiOts VAROITUS] Ei löytynyt ennen MAX_EXCEL_COLUMNS"
        Exit Do
      End If
-     If Llase(wsDB1.lells(1, i).Value) = Llase(Otsikko) Then
-         Löytyi otsikko - lisää kommentti TEMPLATEen
+     If LCase(wsDB1.Cells(1, i).Value) = LCase(Otsikko) Then
+       ' Löytyi otsikko - lisää kommentti TEMPLATEen
        Debug.Print "  Löytyi sarakkeesta " & i
-       With wsTemplate.lells(Rivi, Sarake)
-         .Addlomment
-         .lomment.Text Text:=LRivi & ":" & i
-         .lomment.Shape.DrawingObject.AutoSize = True
+       With wsTemplate.Cells(Rivi, Sarake)
+         .AddComment
+         .Comment.Text Text:=LRivi & ":" & i
+         .Comment.Shape.DrawingObject.AutoSize = True
        End With
        EtsiOts = True
        Exit Do
-     ElseIf wsDB1.lells(1, i).Value = "" Then
-         Ei löytynyt - lokitetaan ERRORS-sheettiin
+     ElseIf wsDB1.Cells(1, i).Value = "" Then
+       ' Ei löytynyt - lokitetaan ERRORS-sheettiin
        Debug.Print "  [EtsiOts ERROR] Ei löytynyt - lisätään ERRORS-sheettiin"
-       If wsErrors.lells(1, 1).Value = "" Then
-         wsErrors.lells(1, 1).Value = "Seuraavat otsikot oli määritelty TEMPLATEssa, mutta ei löytynyt DB-sheetistä:"
-         wsErrors.lells(2, 1).Value = "Otsikko"
-         wsErrors.lells(2, 2).Value = "Sijainti TEMPLATEssa"
-         wsErrors.lells(1, 1).Font.Bold = True
-         wsErrors.lells(2, 1).Font.Bold = True
-         wsErrors.lells(2, 2).Font.Bold = True
-         wsErrors.lolumns("A:A").lolumnWidth = 30
-         wsErrors.lolumns("B:B").lolumnWidth = 25
+       If wsErrors.Cells(1, 1).Value = "" Then
+         wsErrors.Cells(1, 1).Value = "Seuraavat otsikot oli määritelty TEMPLATEssa, mutta ei löytynyt DB-sheetistä:"
+         wsErrors.Cells(2, 1).Value = "Otsikko"
+         wsErrors.Cells(2, 2).Value = "Sijainti TEMPLATEssa"
+         wsErrors.Cells(1, 1).Font.Bold = True
+         wsErrors.Cells(2, 1).Font.Bold = True
+         wsErrors.Cells(2, 2).Font.Bold = True
+         wsErrors.Columns("A:A").ColumnWidth = 30
+         wsErrors.Columns("B:B").ColumnWidth = 25
        End If
        j = 3
        Do
-         If wsErrors.lells(j, 1) = "" Then
-            wsErrors.lells(j, 1).Value = Otsikko
-            wsErrors.lells(j, 2).Value = wsTemplate.lells(Rivi, Sarake).Address
+         If wsErrors.Cells(j, 1) = "" Then
+            wsErrors.Cells(j, 1).Value = Otsikko
+            wsErrors.Cells(j, 2).Value = wsTemplate.Cells(Rivi, Sarake).Address
            Exit Do
          End If
          j = j + 1
-           Turvatarkistus: estä ikuinen silmukka
+         ' Turvatarkistus: estä ikuinen silmukka
          If j > 10000 Then Exit Do
        Loop
        EtsiOts = False
@@ -404,60 +404,60 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
    Loop
 End Function
 Sub VaihdaLinkit(TargetSheet As Worksheet, Alku As Long, Loppu As Long, Kerta As Long)
-   
-  VaihdaLinkit: Jokaiselle kommentille määritellyllä alueella päivitetään vastaava solu LINKINGissä kaavalla
-  ja arvolla, ja sovelletaan muotoilua tarvittaessa. Käytetään tulosteen päälinkityslogiikkaan.
-  Käsittelee vain kommentit Alku:Loppu -rivialueelta välttäen aiemmin täytettyjen lohkojen ylikirjoittamista.
-  OPTIMOITU: Käyttää lomments-kokoelmaa solulta-solulle-iteraation sijaan (30-50% nopeampi).
-   
-Dim TRow As Long, lRow As Long
-Dim Tlol As Long
+'''
+' VaihdaLinkit: Jokaiselle kommentille määritellyllä alueella päivitetään vastaava solu LINKINGissä kaavalla
+' ja arvolla, ja sovelletaan muotoilua tarvittaessa. Käytetään tulosteen päälinkityslogiikkaan.
+' Käsittelee vain kommentit Alku:Loppu -rivialueelta välttäen aiemmin täytettyjen lohkojen ylikirjoittamista.
+' OPTIMOITU: Käyttää Comments-kokoelmaa solulta-solulle-iteraation sijaan (30-50% nopeampi).
+'''
+Dim TRow As Long, CRow As Long
+Dim TCol As Long
 Dim i As Long
 Dim Teksti As String
 Dim Kaava As String
 Dim Osoite As String
-Dim cmt As lomment
-Dim commentsToDelete As lollection
+Dim cmt As Comment
+Dim commentsToDelete As Collection
 Dim parentRow As Long
 
-  Set commentsToDelete = New lollection
+  Set commentsToDelete = New Collection
   
   With TargetSheet
-      OPTIMOINTI: Iteroidaan lomments-kokoelmaa kaikkien solujen sijaan
-      Tämä ohittaa tyhjät solut ja on paljon nopeampi harvoille kommenttijakaumille
-    For Each cmt In .lomments
+    ' OPTIMOINTI: Iteroidaan Comments-kokoelmaa kaikkien solujen sijaan
+    ' Tämä ohittaa tyhjät solut ja on paljon nopeampi harvoille kommenttijakaumille
+    For Each cmt In .Comments
       parentRow = cmt.Parent.Row
       
-        Käsitellään vain kommentit määritellyllä rivialueella
+      ' Käsitellään vain kommentit määritellyllä rivialueella
       If parentRow >= Alku And parentRow <= Loppu Then
-          Löyttyi kommentti alueella - käsitellään se
+        ' Löyttyi kommentti alueella - käsitellään se
         Teksti = cmt.Text
         Osoite = cmt.Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
-        TRow = 1 + lInt(Left(Teksti, 1)) + Kerta * RMAX
-        Tlol = lInt(Mid(Teksti, 3))
-        With .Parent.Sheets("LINKING").lells(TRow, Tlol)
+        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
+        TCol = CInt(Mid(Teksti, 3))
+        With .Parent.Sheets("LINKING").Cells(TRow, TCol)
           Teksti = .Value
-          .Font.lolorIndex = 5
+          .Font.ColorIndex = 5
           .Font.Bold = True
-          Kaava = " " & POSheet & " !" & Osoite
+          Kaava = "'" & POSheet & "'!" & Osoite
           .Formula = "=IF(" & Kaava & "="""", """"," & Kaava & ")"
         End With
         If cmt.Parent.Value = "££Deleted" Then
           cmt.Parent.Value = Teksti
           If Teksti = "Yes" Then
-            lRow = cmt.Parent.Row
-            .Rows(lRow).Font.Strikethrough = True
+            CRow = cmt.Parent.Row
+            .Rows(CRow).Font.Strikethrough = True
           End If
         Else
           cmt.Parent.Value = Teksti
         End If
-          Merkitään kommentti poistettavaksi (ei voi poistaa iteraation aikana)
+        ' Merkitään kommentti poistettavaksi (ei voi poistaa iteraation aikana)
         commentsToDelete.Add cmt
       End If
     Next cmt
     
-      Poistetaan käsitellyt kommentit iteraation valmistuttua
-    For i = 1 To commentsToDelete.lount
+    ' Poistetaan käsitellyt kommentit iteraation valmistuttua
+    For i = 1 To commentsToDelete.Count
       commentsToDelete(i).Delete
     Next i
   End With
@@ -465,15 +465,15 @@ Dim parentRow As Long
   Set commentsToDelete = Nothing
 End Sub
 Sub PopulateRevisionsSimple()
-   
-  PopulateRevisionsSimple: Kevyt funktio Revisions-sheetin täyttöön ilman kommenttikäsittelyä.
-  Etsii ensimmäisen solun revisiodata-merkillä ja kirjoittaa DIRevArr-datan suoraan.
-  27.2.2026 - Rajoitettu On Error Resume Next -käyttö
-   
+'''
+' PopulateRevisionsSimple: Kevyt funktio Revisions-sheetin täyttöön ilman kommenttikäsittelyä.
+' Etsii ensimmäisen solun revisiodata-merkillä ja kirjoittaa DIRevArr-datan suoraan.
+' 27.2.2026 - Rajoitettu On Error Resume Next -käyttö
+'''
 Dim ws As Worksheet
 Dim r As Long, startRow As Long
-Dim revIdlol As Long, revDatelol As Long, designerlol As Long
-Dim checkerlol As Long, approverlol As Long, desclol As Long
+Dim revIdCol As Long, revDateCol As Long, designerCol As Long
+Dim checkerCol As Long, approverCol As Long, descCol As Long
 Dim i As Long
 Dim arrSize As Long
 Dim spacePos As Long, slashPos As Long
@@ -492,7 +492,7 @@ Dim slashParts() As String
     Exit Sub
   End If
   
-    Tarkistetaan onko DIRevArr validi taulukko datalla
+  ' Tarkistetaan onko DIRevArr validi taulukko datalla
   If Not IsArray(DIRevArr) Then
     Debug.Print "  VAROITUS: DIRevArr ei ole taulukko - ohitetaan"
     Exit Sub
@@ -509,34 +509,34 @@ Dim slashParts() As String
   
   Debug.Print "  DIRevArr-koko: " & arrSize
   
-    Etsitään sarakkeet hakemalla kommenttimerkit ensimmäisestä 20 rivistä
-    Tämä on yksinkertainen heuristiikka -  säädä jos templaten rakenne eroaa
+  ' Etsitään sarakkeet hakemalla kommenttimerkit ensimmäisestä 20 rivistä
+  ' Tämä on yksinkertainen heuristiikka -  säädä jos templaten rakenne eroaa
   startRow = 0
   For r = 1 To 20
-    For i = 1 To 10   Tarkistetaan ensimmäiset 10 saraketta
+    For i = 1 To 10 ' Check first 10 columns
       On Error Resume Next
-      If ws.lells(r, i).lomment Is Nothing Then GoTo Nextlell
+      If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
       On Error GoTo 0
       
-      Select lase Llase(ws.lells(r, i).lomment.Text)
-        lase "revid"
-          revIdlol = i: If startRow = 0 Then startRow = r
-        lase "revdate"
-          revDatelol = i: If startRow = 0 Then startRow = r
-        lase "designer"
-          designerlol = i: If startRow = 0 Then startRow = r
-        lase "checker"
-          checkerlol = i: If startRow = 0 Then startRow = r
-        lase "approver"
-          approverlol = i: If startRow = 0 Then startRow = r
-        lase "desc"
-          desclol = i: If startRow = 0 Then startRow = r
+      Select Case LCase(ws.Cells(r, i).Comment.Text)
+        Case "revid"
+          revIdCol = i: If startRow = 0 Then startRow = r
+        Case "revdate"
+          revDateCol = i: If startRow = 0 Then startRow = r
+        Case "designer"
+          designerCol = i: If startRow = 0 Then startRow = r
+        Case "checker"
+          checkerCol = i: If startRow = 0 Then startRow = r
+        Case "approver"
+          approverCol = i: If startRow = 0 Then startRow = r
+        Case "desc"
+          descCol = i: If startRow = 0 Then startRow = r
       End Select
-Nextlell:
+NextCell:
     Next i
   Next r
   
-    Jos sarakkeita ei löytynyt, poistu
+  ' Jos sarakkeita ei löytynyt, poistu
   If startRow = 0 Then
     Debug.Print "  VAROITUS: Ei löytynyt revisiomarkkereita - ohitetaan"
     Exit Sub
@@ -544,38 +544,38 @@ Nextlell:
   
   Debug.Print "  Revisiotiedot alkavat riviltä " & startRow
   
-    Kirjoitetaan revisiodata suoraan - rajattu On Error Resume Next vain parsing-osaan
+  ' Kirjoitetaan revisiodata suoraan - rajattu On Error Resume Next vain parsing-osaan
   r = startRow
   
   For i = UBound(DIRevArr) To LBound(DIRevArr) Step -1
     If DIRevArr(i) <> "" Then
       revText = DIRevArr(i)
       
-        Jäsennnetään revid (ensimmäinen osa ennen välilyöntiä)
+      ' Parse revid (first part before space)
       On Error Resume Next
-      If revIdlol > 0 And InStr(revText, " ") > 0 Then
+      If revIdCol > 0 And InStr(revText, " ") > 0 Then
         revParts = Split(revText, " ")
-        If UBound(revParts) >= 0 Then ws.lells(r, revIdlol).Value = revParts(0)
+        If UBound(revParts) >= 0 Then ws.Cells(r, revIdCol).Value = revParts(0)
       End If
       On Error GoTo 0
       
-        Jäsennnetään revdate (välilyönnin ja / välissä)
-      If revDatelol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
+      ' Parse revdate (between space and /)
+      If revDateCol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
         spacePos = InStr(revText, " ")
         slashPos = InStr(revText, "/")
         If slashPos > spacePos Then
-          ws.lells(r, revDatelol).Value = Mid(revText, spacePos + 1, slashPos - spacePos - 1)
+          ws.Cells(r, revDateCol).Value = Mid(revText, spacePos + 1, slashPos - spacePos - 1)
         End If
       End If
       
-        Jäsennnetään suunnittelija, tarkistaja, hyäksyjä, kuvaus (vinoviivalla eroteltu)
+      ' Parse designer, checker, approver, desc (slash-delimited parts)
       On Error Resume Next
       If InStr(revText, "/") > 0 Then
         slashParts = Split(revText, "/")
-        If designerlol > 0 And UBound(slashParts) >= 1 Then ws.lells(r, designerlol).Value = slashParts(1)
-        If checkerlol > 0 And UBound(slashParts) >= 2 Then ws.lells(r, checkerlol).Value = slashParts(2)
-        If approverlol > 0 And UBound(slashParts) >= 3 Then ws.lells(r, approverlol).Value = slashParts(3)
-        If desclol > 0 And UBound(slashParts) >= 4 Then ws.lells(r, desclol).Value = slashParts(4)
+        If designerCol > 0 And UBound(slashParts) >= 1 Then ws.Cells(r, designerCol).Value = slashParts(1)
+        If checkerCol > 0 And UBound(slashParts) >= 2 Then ws.Cells(r, checkerCol).Value = slashParts(2)
+        If approverCol > 0 And UBound(slashParts) >= 3 Then ws.Cells(r, approverCol).Value = slashParts(3)
+        If descCol > 0 And UBound(slashParts) >= 4 Then ws.Cells(r, descCol).Value = slashParts(4)
       End If
       On Error GoTo 0
       
@@ -587,17 +587,17 @@ Nextlell:
   
 End Sub
 Sub TeeLinkingKommentit()
-   
-  TeeLinkingKommentit: Lisää kommentit kaikille kaavayksikkösoluille LINKING-sheetissä jäljitettävyyttä varten.
-  Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
-   
+'''
+' TeeLinkingKommentit: Lisää kommentit kaikille kaavayksikkösoluille LINKING-sheetissä jäljitettävyyttä varten.
+' Optimoitu: Poistettu Select/Activate, käytetään suoria worksheetviittauksia.
+'''
 Dim Solu As Range
 Dim wsLinking As Worksheet
-Dim formulalells As Range
+Dim formulaCells As Range
 
   Debug.Print Format(Now, "hh:mm:ss") & " [TeeLinkingKommentit] Lisätään kommentit LINKING-sheettiin"
   
-    Tarkistetaan onko LINKING-sheet olemassa
+  ' Tarkistetaan onko LINKING-sheet olemassa
   On Error Resume Next
   Set wsLinking = Sheets("LINKING")
   On Error GoTo 0
@@ -607,21 +607,21 @@ Dim formulalells As Range
     Exit Sub
   End If
   
-    Etsitään kaikki kaavasolut
+  ' Etsitään kaikki kaavasolut
   On Error Resume Next
-  Set formulalells = wsLinking.lells.Speciallells(xllellTypeFormulas)
+  Set formulaCells = wsLinking.Cells.SpecialCells(xlCellTypeFormulas)
   On Error GoTo 0
   
-  If Not formulalells Is Nothing Then
-    Application.StatusBar = "Asetetaan kommentit LINKING-sheettiin (" & formulalells.lells.lount & ")"
-    Debug.Print "  Käsitellään " & formulalells.lells.lount & " kaavasolua"
-    For Each Solu in formulalells.lells
+  If Not formulaCells Is Nothing Then
+    Application.StatusBar = "Asetetaan kommentit LINKING-sheettiin (" & formulaCells.Cells.Count & ")"
+    Debug.Print "  Käsitellään " & formulaCells.Cells.Count & " kaavasolua"
+    For Each Solu in formulaCells.Cells
       On Error Resume Next
-      Solu.Addlomment lStr(Solu.Value)
+      Solu.AddComment CStr(Solu.Value)
       On Error GoTo 0
     Next
   End If
   
-  Application.DisplaylommentIndicator = xllommentIndicatorOnly
+  Application.DisplayCommentIndicator = xlCommentIndicatorOnly
   Debug.Print Format(Now, "hh:mm:ss") & " [TeeLinkingKommentit] Valmis"
 End Sub

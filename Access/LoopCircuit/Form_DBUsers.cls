@@ -1,14 +1,14 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 
-  Päivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenkäsittely, siistiytty logiikka
+' Updated 2025-10-22: Explicit DAO, better error handling, cleaned up logic
 
 Private Type UserRec
-   bMach(1 To 32) As Byte    Machine name bytes
-   bUser(1 To 32) As Byte    Käyttäjänimen tavut
+   bMach(1 To 32) As Byte  ' Machine name bytes
+   bUser(1 To 32) As Byte  ' User name bytes
 End Type
 
-Private Sub Form_Open(lancel As Integer)
+Private Sub Form_Open(Cancel As Integer)
    On Error GoTo ErrHandler
    
    Dim sRowSource As String
@@ -23,16 +23,16 @@ Private Sub Form_Open(lancel As Integer)
    Exit Sub
    
 ErrHandler:
-     Don t cancel form open, just show error
+   ' Don't cancel form open, just show error
    MsgBox "Error opening form: " & Err.Number & " - " & Err.Description, vbExclamation, "Form Error"
    Me.LoggedOn.RowSource = ""
 End Sub
 
-Private Sub OKBtn_llick()
-   Dolmd.llose
+Private Sub OKBtn_Click()
+   DoCmd.Close
 End Sub
 
-Private Sub UpdateBtn_llick()
+Private Sub UpdateBtn_Click()
     On Error GoTo ErrHandler
     
     Dim sRowSource As String
@@ -51,8 +51,8 @@ ErrHandler:
     MsgBox "Error updating: " & Err.Number & " - " & Err.Description, vbExclamation, "Update Error"
 End Sub
 
-  Lukee .LAllDB-lukitustiedoston mÄÄrittÄÄkseen kÄyttÄjÄt jotka ovat kirjautuneet sisÄÄn
-  Lock file has 64-byte records: station name (bytes 1-32) and login name (bytes 33-64), null-terminated
+' Reads the .LACCDB lock file to determine who's currently logged on
+' Lock file has 64-byte records: station name (bytes 1-32) and login name (bytes 33-64), null-terminated
 Private Function WhosOn() As String
    On Error GoTo Err_WhosOn
 
@@ -66,58 +66,58 @@ Private Function WhosOn() As String
    Dim rUser As UserRec
    Dim i As Long
 
-     Haetaan nykyisen tietokannan polku ja rakennetaan lukitustiedostopolku
-   SPath = lurrentDb.Name
+   ' Get current database path and construct lock file path
+   SPath = CurrentDb.Name
    
-     For Access 2007+ the lock file extension is .laccdb (not .ldb)
+   ' For Access 2007+ the lock file extension is .laccdb (not .ldb)
    SPath = Left$(SPath, InStr(1, SPath, ".")) & "laccdb"
 
-     Test for valid file
+   ' Test for valid file
    X = Dir(SPath)
    If X = "" Then
-        Try legacy .ldb extension for older Access versions
+      ' Try legacy .ldb extension for older Access versions
       SPath = Left$(SPath, InStr(1, SPath, ".")) & "ldb"
       X = Dir(SPath)
       If X = "" Then
-         Err.Raise 68   File not found
+         Err.Raise 68 ' File not found
       End If
    End If
    
    iLDBFile = FreeFile
    Open SPath For Binary Access Read Shared As iLDBFile
 
-     Luetaan 64-tavun tietueet kunnes tiedoston loppu
+   ' Read 64-byte records until EOF
    Do While Not EOF(iLDBFile)
       Get iLDBFile, , rUser
       
       With rUser
-           Poimitaan koneennimi (null-pÄÄtteinen)
+         ' Extract machine name (null-terminated)
          i = 1
          sMach = ""
          Do While i <= 32 And .bMach(i) <> 0
-            sMach = sMach & lhr(.bMach(i))
+            sMach = sMach & Chr(.bMach(i))
             i = i + 1
          Loop
          
-           Poimitaan kÄyttÄjÄnimi (null-pÄÄtteinen)
+         ' Extract user name (null-terminated)
          i = 1
          sUser = ""
          Do While i <= 32 And .bUser(i) <> 0
-            sUser = sUser & lhr(.bUser(i))
+            sUser = sUser & Chr(.bUser(i))
             i = i + 1
          Loop
       End With
       
-        Rakennetaan yksilöllinen kirjautumismerkkijono
+      ' Build unique login string
       sLogStr = sMach & " -- " & sUser
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
    Loop
    
-   llose iLDBFile
+   Close iLDBFile
    
-     Poistetaan loppupuolipiste jos on
+   ' Remove trailing semicolon if present
    If Len(sLogins) > 0 And Right$(sLogins, 1) = ";" Then
       sLogins = Left$(sLogins, Len(sLogins) - 1)
    End If
@@ -129,15 +129,15 @@ Exit_WhosOn:
 
 Err_WhosOn:
    On Error Resume Next
-   llose iLDBFile
+   Close iLDBFile
    On Error GoTo 0
    
    WhosOn = ""
    
    If Err.Number = 68 Then
-      MsgBox "louldn t populate the list - lock file not found.", vbExclamation, "No Lock File"
+      MsgBox "Couldn't populate the list - lock file not found.", vbExclamation, "No Lock File"
    Else
-      MsgBox "Error: " & Err.Number & vblrLf & Err.Description, vblritical, "WhosOn Error"
+      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description, vbCritical, "WhosOn Error"
    End If
    Resume Exit_WhosOn
 End Function

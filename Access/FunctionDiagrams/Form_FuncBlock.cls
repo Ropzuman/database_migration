@@ -1,5 +1,5 @@
-﻿Option lompare Database
-Private Sub NEWVALUE_Dblllick(lancel As Integer)
+Option Compare Database
+Private Sub NEWVALUE_DblClick(Cancel As Integer)
 Dim DB As DAO.Database
 Dim Taulu As DAO.Recordset
 Dim ALUE As String
@@ -11,16 +11,16 @@ Dim tagi As String
 Dim taginarvo As String
 Dim tagiid As String
 
-Set DB = lurrentDb
+Set DB = CurrentDb
 Set Taulu = DB.OpenRecordset("FunBlockAttr", dbOpenTable)
-Blokki = Me!BLOlK
+Blokki = Me!BLOCK
 tagi = Me!Atag
 taginarvo = Me!NEWVALUE
-ALUE = Forms!funktiokaavio.FUNl.Form!Arealode
-LooppiNo = Forms!funktiokaavio.FUNl.Form!LoopNo
-LooppiSymb = Forms!funktiokaavio.FUNl.Form!LoopSymb
-Suffiksi = Forms!funktiokaavio.FUNl.Form!Suffix
-tagiid = Forms!funktiokaavio.FUNl.Form!Text68
+ALUE = Forms!funktiokaavio.FUNC.Form!AreaCode
+LooppiNo = Forms!funktiokaavio.FUNC.Form!LoopNo
+LooppiSymb = Forms!funktiokaavio.FUNC.Form!LoopSymb
+Suffiksi = Forms!funktiokaavio.FUNC.Form!Suffix
+tagiid = Forms!funktiokaavio.FUNC.Form!Text68
 Taulu.AddNew
 Taulu.Fields("Areacode") = ALUE
 Taulu.Fields("loopno") = LooppiNo
@@ -37,12 +37,12 @@ MsgBox "Uusi arvo lisätty"
 End Sub
 
 Private Sub NEWVALUE_Enter()
-  If Ulase$(Left$(Atag, 5)) = "FTAGI" Then
-      NEWVALUE.RowSource = "SELElT POS FROM POS_List;"
-  ElseIf Ulase$(Left$(Atag, 7)) = "REFFROM" Or Ulase$(Left$(Atag, 5)) = "REFTO" Then
-      NEWVALUE.RowSource = "SELElT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like  REFTO* ));"
+  If UCase$(Left$(Atag, 5)) = "FTAGI" Then
+      NEWVALUE.RowSource = "SELECT POS FROM POS_List;"
+  ElseIf UCase$(Left$(Atag, 7)) = "REFFROM" Or UCase$(Left$(Atag, 5)) = "REFTO" Then
+      NEWVALUE.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like 'REFTO*'));"
   Else
-      NEWVALUE.RowSource = "SELElT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) =  " & Atag & " ));"
+      NEWVALUE.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & Atag & "'));"
   End If
   NEWVALUE.Requery
 End Sub
@@ -57,33 +57,33 @@ Dim looppi As String
 Dim tagi As String
 Dim Sfx As String
 
-  SelectValue.RowSource = "SELElT Number, POS FROM POS_List;"
-  If Ulase$(Atag) = "RANGE" Then
-      ALUE = Me.Parent.Parent.Arealode
+  SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
+  If UCase$(Atag) = "RANGE" Then
+      ALUE = Me.Parent.Parent.AreaCode
       looppi = Me.Parent.Parent.LoopNo
-      tagi = "T"  Right$(Me.Parent.LoopSymb, 1)
+      tagi = "T" 'Right$(Me.Parent.LoopSymb, 1)
       Sfx = Me.Parent.Suffix
       
-      SelectValue.Boundlolumn = 1
-      SelectValue.lolumnlount = 1
-      SelectValue.RowSource = "SELElT LRange &  -  & URange & EngUnits as RANGE From Devtable WHERE ArealOde =  " & ALUE & "  AND TagID =  " & tagi & "  AND LoopNo =  " & looppi & "  AND  Suffix =  " & Sfx & " ;"
-      SelectValue.lolumnWidths = ""
+      SelectValue.BoundColumn = 1
+      SelectValue.ColumnCount = 1
+      SelectValue.RowSource = "SELECT LRange & '-' & URange & EngUnits as RANGE From Devtable WHERE AreaCOde = '" & ALUE & "' AND TagID = '" & tagi & "' AND LoopNo = '" & looppi & "' AND  Suffix = '" & Sfx & "';"
+      SelectValue.ColumnWidths = ""
     
-  ElseIf Ulase$(Left$(Atag, 5)) = "FTAGI" Then
-      SelectValue.Boundlolumn = 2
-      SelectValue.lolumnlount = 2
-      SelectValue.RowSource = "SELElT Number, POS FROM POS_List;"
-      SelectValue.lolumnWidths = "567;1701"
-  ElseIf Ulase$(Left$(Atag, 7)) = "REFFROM" Or Ulase$(Left$(Atag, 5)) = "REFTO" Then
-      SelectValue.Boundlolumn = 1
-      SelectValue.lolumnlount = 1
-      SelectValue.RowSource = "SELElT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like  REFTO* ));"
-      SelectValue.lolumnWidths = ""
+  ElseIf UCase$(Left$(Atag, 5)) = "FTAGI" Then
+      SelectValue.BoundColumn = 2
+      SelectValue.ColumnCount = 2
+      SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
+      SelectValue.ColumnWidths = "567;1701"
+  ElseIf UCase$(Left$(Atag, 7)) = "REFFROM" Or UCase$(Left$(Atag, 5)) = "REFTO" Then
+      SelectValue.BoundColumn = 1
+      SelectValue.ColumnCount = 1
+      SelectValue.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like 'REFTO*'));"
+      SelectValue.ColumnWidths = ""
   Else
-      SelectValue.Boundlolumn = 1
-      SelectValue.lolumnlount = 1
-      SelectValue.RowSource = "SELElT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) =  " & Atag & " ));"
-      SelectValue.lolumnWidths = ""
+      SelectValue.BoundColumn = 1
+      SelectValue.ColumnCount = 1
+      SelectValue.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & Atag & "'));"
+      SelectValue.ColumnWidths = ""
   End If
   SelectValue.Requery
   Me.Refresh

@@ -1,6 +1,6 @@
-﻿Option lompare Database
+Option Compare Database
 
-Private Sub lommand0_llick()
+Private Sub Command0_Click()
 Dim DB As DAO.Database
 Dim MyQuery As DAO.QueryDef
 Dim qry As DAO.Recordset
@@ -10,12 +10,12 @@ Dim ssSQL As String
 Dim qry2 As DAO.Recordset
 Dim MyString As String
 
-Dolmd.Hourglass True
-Set DB = lurrentDb
+DoCmd.Hourglass True
+Set DB = CurrentDb
 
 DB.Execute "to_letter_update"
 
-L = lhr(34)
+L = Chr(34)
 
 Set qry = DB.OpenRecordset("FromInt")
 Set qry2 = DB.OpenRecordset("ToInt")
@@ -41,8 +41,8 @@ Do Until qry.EOF
 Do Until qry2.EOF
             If qry2!Text_4 = qry!Text_4 And qry2!out_4 = qry!out_4 Then
                 qry2.Edit
-                 OnJo = InStr(tbl!Page, qry!Page)
-                 If OnJo = 0 Then
+             '   OnJo = InStr(tbl!Page, qry!Page)
+              '  If OnJo = 0 Then
               If Len(qry2!to3) > 26 Then
               qry2!to4 = qry2!to4 & "," & Right$(qry!DWG, 3)
               Else
@@ -69,8 +69,8 @@ Do Until qry.EOF
 Do Until qry2.EOF
             If qry2!Text_1 = qry!Text_1 And qry2!out_4 = qry!out_4 Then
                 qry2.Edit
-                 OnJo = InStr(tbl!Page, qry!Page)
-                 If OnJo = 0 Then
+             '   OnJo = InStr(tbl!Page, qry!Page)
+              '  If OnJo = 0 Then
             If Len(qry2!to3) > 26 Then
               qry2!to4 = qry2!to4 & "," & Right$(qry!DWG, 3)
               Else
@@ -112,7 +112,7 @@ Do Until tbl.EOF
 Loop
        
 qry2.MoveFirst
-qry.MoveFirst  lisätty jotta saataisiin myös eka
+qry.MoveFirst 'lisätty jotta saataisiin myös eka
 
 Do Until qry2.EOF
 
@@ -155,53 +155,53 @@ Loop
 
 
 
-Dolmd.Hourglass False
+DoCmd.Hourglass False
 
-qry2.llose
-qry.llose
-Dolmd.OpenTable "DATA9"
+qry2.Close
+qry.Close
+DoCmd.OpenTable "DATA9"
 
 End Sub
 
-Private Sub lommand12_llick()
- Vie tiedot kuviin
+Private Sub Command12_Click()
+'Vie tiedot kuviin
 Dim EdTied As String
 Dim Taul As DAO.Recordset
 Dim oBlock As AcadBlockReference
 Dim ATTRIB As Variant
 Dim i As Integer
-Set Taul = lurrentDb.OpenRecordset("SELElT * FROM DATA9 order by Path, DWG")
+Set Taul = CurrentDb.OpenRecordset("SELECT * FROM DATA9 order by Path, DWG")
   On Error Resume Next
-  Set oAlAD = GetObject(, "AutolAD.Application")  Koitetaan yhdistää AutolADiin
-  If Err <> 0 Then  Käynnissä olevaa AutolADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutolADiä ei löytynyt!", vblritical, "Virhe!"
-    Set oAlAD = Nothing
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+    Set oACAD = Nothing
     Exit Sub
   End If
   On Error GoTo 0
   Do While Not Taul.EOF
     If EdTied <> Taul.Fields("DWG") Then
-      If Not oDOl Is Nothing Then
-        oDOl.llose True
+      If Not oDOC Is Nothing Then
+        oDOC.Close True
       End If
-      Set oDOl = oAlAD.Documents.Open(Taul.Fields("Path") & Taul.Fields("DWG") & ".dwg", False)
+      Set oDOC = oACAD.Documents.Open(Taul.Fields("Path") & Taul.Fields("DWG") & ".dwg", False)
       EdTied = Taul.Fields("DWG")
     End If
-    Set oBlock = oDOl.HandleToObject(Taul.Fields("HANDLE").VALUE)
+    Set oBlock = oDOC.HandleToObject(Taul.Fields("HANDLE").VALUE)
     ATTRIB = oBlock.GetAttributes
     For i = 0 To UBound(ATTRIB)
       ATTRIB(i).TextString = Taul.Fields(ATTRIB(i).TagString)
     Next i
     Taul.MoveNext
   Loop
-  oDOl.Save
-  oDOl.llose
-  Set oDOl = Nothing
-  Set oAlAD = Nothing
+  oDOC.Save
+  oDOC.Close
+  Set oDOC = Nothing
+  Set oACAD = Nothing
 End Sub
 
-Private Sub lommand5_llick()
- Listataan tiedostot polussa
+Private Sub Command5_Click()
+'Listataan tiedostot polussa
 Dim FS As New FileSystemObject
 Dim Tied As String
 Dim i As Integer
@@ -210,12 +210,12 @@ If TPolku.VALUE <> "" Then
    TPolku.VALUE = TPolku.VALUE & "\"
   End If
 Else
-  MsgBox "Kirjoita ensin polku.", vblritical, "Listaa tiedostot"
+  MsgBox "Kirjoita ensin polku.", vbCritical, "Listaa tiedostot"
   Exit Sub
 End If
 
 If FS.FolderExists(TPolku.VALUE) Then
-  For i = 1 To Lista.Listlount
+  For i = 1 To Lista.ListCount
     Lista.RemoveItem 1
   Next i
   Tied = Dir(TPolku & "*.dwg")
@@ -224,30 +224,30 @@ If FS.FolderExists(TPolku.VALUE) Then
     Tied = Dir()
   Loop
 Else
-  MsgBox "Virheellinen polku", vblritical, "Listaa tiedostot"
+  MsgBox "Virheellinen polku", vbCritical, "Listaa tiedostot"
 End If
 End Sub
 
-Private Sub lommand6_llick()
+Private Sub Command6_Click()
   NoudaTiedot True
  
 End Sub
 Private Sub NoudaTiedot(Listalta As Boolean)
 Dim i As Integer
 Dim Tied As String
- Yhdistetään ensin AutolADiin
- Otetaan yhteys AutolADiin
+'Yhdistetään ensin AutoCADiin
+'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oAlAD = GetObject(, "AutolAD.Application")  Koitetaan yhdistää AutolADiin
-  If Err <> 0 Then  Käynnissä olevaa AutolADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutolADiä ei löytynyt!", vblritical, "Virhe!"
-    Set oAlAD = Nothing
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
+  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
+    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
+    Set oACAD = Nothing
     Exit Sub
   End If
   On Error GoTo 0
-  lurrentDb.Execute "DELETE * FROM DATA9"
+  CurrentDb.Execute "DELETE * FROM DATA9"
   If Listalta Then
-    For i = 1 To Lista.ItemsSelected.lount
+    For i = 1 To Lista.ItemsSelected.Count
         PoimiTiedot Lista.ItemData(Lista.ItemsSelected(i - 1))
     Next i
   Else
@@ -257,9 +257,9 @@ Dim Tied As String
       Tied = Dir()
     Loop
   End If
-  Set oDOl = Nothing
-  Set oAlAD = Nothing
-  Dolmd.OpenTable "DATA9"
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  DoCmd.OpenTable "DATA9"
 End Sub
 Private Sub PoimiTiedot(Tiedosto)
 Dim FT(0) As Integer
@@ -269,52 +269,52 @@ Dim i As Integer, j As Integer
 Dim Taul As DAO.Recordset
 Dim ATTRIB As Variant
 Dim TNimi As String
-  Set Taul = lurrentDb.OpenRecordset("DATA9")
-  FT(0) = 2        ObjecName
-  FD(0) = FROMTOBLOlKS.VALUE
-  Set oDOl = oAlAD.Documents.Open(TPolku & Tiedosto)
-  Set Joukko = oDOl.SelectionSets.Add("APUFROMTO")
+  Set Taul = CurrentDb.OpenRecordset("DATA9")
+  FT(0) = 2       'ObjecName
+  FD(0) = FROMTOBLOCKS.VALUE
+  Set oDOC = oACAD.Documents.Open(TPolku & Tiedosto)
+  Set Joukko = oDOC.SelectionSets.Add("APUFROMTO")
   Joukko.Select acSelectionSetAll, , , FT, FD
   TNimi = Left$(Tiedosto, Len(Tiedosto) - 4)
-  For i = 0 To Joukko.lount - 1
+  For i = 0 To Joukko.Count - 1
     ATTRIB = Joukko(i).GetAttributes
     Taul.AddNew
     Taul.Fields("PATH") = TPolku
     Taul.Fields("DWG") = TNimi
     Taul.Fields("HANDLE") = Joukko(i).Handle
-    Taul.Fields("BLOlK") = Joukko(i).Name
+    Taul.Fields("BLOCK") = Joukko(i).Name
     
     For j = 0 To UBound(ATTRIB)
       Taul.Fields(ATTRIB(j).TagString) = ATTRIB(j).TextString
     Next j
     Taul.Update
   Next i
-  oDOl.llose False
+  oDOC.Close False
   
-  Set oDOl = Nothing
+  Set oDOC = Nothing
 End Sub
 
-Private Sub lommand7_llick()
+Private Sub Command7_Click()
   NoudaTiedot False
 End Sub
 
 Private Sub Form_Load()
-  TPolku.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING =  FROMTOPATH ")
-  FROMTOBLOlKS.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING =  FROMTOBLOlKS ")
+  TPolku.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOPATH'")
+  FROMTOBLOCKS.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOBLOCKS'")
 End Sub
 
-Private Sub Form_Unload(lancel As Integer)
+Private Sub Form_Unload(Cancel As Integer)
   PaivitaPolku
 End Sub
 
 
-Private Sub FROMTOBLOlKS_AfterUpdate()
- lurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] =  " & FROMTOBLOlKS.VALUE & "  WHERE (((SETTINGS.SETTING)= FROMTOBLOlKS ));"
+Private Sub FROMTOBLOCKS_AfterUpdate()
+ CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & FROMTOBLOCKS.VALUE & "' WHERE (((SETTINGS.SETTING)='FROMTOBLOCKS'));"
 End Sub
 
 Private Sub TPolku_AfterUpdate()
   PaivitaPolku
 End Sub
 Private Sub PaivitaPolku()
- lurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] =  " & TPolku.VALUE & "  WHERE (((SETTINGS.SETTING)= FROMTOPATH ));"
+ CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & TPolku.VALUE & "' WHERE (((SETTINGS.SETTING)='FROMTOPATH'));"
 End Sub

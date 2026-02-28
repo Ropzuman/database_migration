@@ -1,10 +1,10 @@
-﻿Option lompare Database
- Updated: 2025 - 64-bit compliance (PtrSafe, LongPtr)
+Option Compare Database
+'Updated: 2025 - 64-bit compliance (PtrSafe, LongPtr)
 Private Declare PtrSafe Function api_GetUserName _
                 Lib "advapi32.dll" _
                 Alias "GetUserNameA" _
                 (ByVal lpBuffer As String, nSize As LongPtr) As Long
-Private Sub ADDNEWREV_llick()
+Private Sub ADDNEWREV_Click()
 Dim DB As DAO.Database
 Dim vrev As String
 Dim urev As String
@@ -19,25 +19,25 @@ Dim revpaiva As String
 Dim revteki As String
 Dim BuffSize As LongPtr
 Dim NBuffer As String
-Set DB = lurrentDb
+Set DB = CurrentDb
 
- BuffSize = 256
- NBuffer = Space$(BuffSize)
- 
-     If api_GetUserName(NBuffer, BuffSize) Then
-      revteki = Left$(NBuffer, InStr(NBuffer, lhr(0)) - 1)
-     Else
-       revteki = "Unknown"
-     End If
+'BuffSize = 256
+'NBuffer = Space$(BuffSize)
+'
+'    If api_GetUserName(NBuffer, BuffSize) Then
+'     revteki = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+'    Else
+'      revteki = "Unknown"
+'    End If
 
 revteki = Me!RevBy
 
 urev = Me!NEWREV
-ALUE = Me!Arealode
+ALUE = Me!AreaCode
 LooppiNo = Me!LoopNo
 paiva = Day(Date)
 kk = Month(Date)
- vuosi = Right(Year(Date), 2)
+'vuosi = Right(Year(Date), 2)
 vuosi = Year(Date)
 revpaiva = paiva & "." & kk & "." & vuosi
 LooppiSymb = Me!LoopSymb
@@ -59,73 +59,73 @@ Taulu.Fields("doctype") = "F"
 Taulu.Fields("revdesc") = Me!RevDesc
 Taulu.Update
 
- If IsNull(Forms!funktiokaavio.FReV.Value) Then
+'If IsNull(Forms!funktiokaavio.FReV.Value) Then
 Me!FReV = urev
- Else
- vrev = Me!FReV
- Me!FReV = vrev & "/" & urev
- End If
+'Else
+'vrev = Me!FReV
+'Me!FReV = vrev & "/" & urev
+'End If
 
 
 End Sub
 
-Private Sub lommand50_llick()
+Private Sub Command50_Click()
 Dim qry As DAO.Recordset
 Dim sql As String
-Dim DB As Object   Database
-Set DB = lurrentDb
+Dim DB As Object ' Database
+Set DB = CurrentDb
 
-Dolmd.SetWarnings False
-Dolmd.OpenQuery ("lontrol_Poistatulostus")
- sql = "UPDATE lontrol SET lontrol.Sel = ""x"" WHERE lontrol.Arealode = " & Me!Muokkaus0.Value & " And lontrol.LoopNo = " & Me!Muokkaus4.Value & ""
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Control_Poistatulostus")
+'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
 
-lurrentDb.Execute "UPDATE lontrol SET Sel =  " & KAYTTAJA() & "  WHERE Arealode = """ & Me!Muokkaus0.Value & """ And LoopNo = """ & Me!Muokkaus4.Value & """ And TagID = """ & Me!Muokkaus3.Value & """"
-
-
- lurrentDb.Execute "UPDATE lontrol SET lontrol.Sel = ""x"" WHERE lontrol.Arealode = " & Me!Muokkaus0.Value & " And lontrol.LoopNo = " & Me!Muokkaus4.Value & ""
+CurrentDb.Execute "UPDATE Control SET Sel = '" & KAYTTAJA() & "' WHERE AreaCode = """ & Me!Muokkaus0.Value & """ And LoopNo = """ & Me!Muokkaus4.Value & """ And TagID = """ & Me!Muokkaus3.Value & """"
 
 
- Set qry = db.OpenRecordset(sql)
+'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
 
- Dolmd.OpenQuery ("lontrol_Lisaa_tulostus")
-Dolmd.SetWarnings True
+
+'Set qry = db.OpenRecordset(sql)
+
+'DoCmd.OpenQuery ("Control_Lisaa_tulostus")
+DoCmd.SetWarnings True
 End Sub
 
 
-Private Sub lommand83_llick()
- Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+Private Sub Command83_Click()
+'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
-Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RElIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vblrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNolancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
-If Vastaus = vbYes Then  Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
-  lurrentDb.Execute "DELETE * FROM lontrol where Recipeid = " & RElIPES.Form.ID
+Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+  CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID
 End If
-If Vastaus <> vblancel Then
-  lurrentDb.Execute "INSERT INTO control ( RecipeID, Arealode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELElT * FROM RElIPES_ADD_ID where RecipeID=" & RElIPES.Form.ID
+If Vastaus <> vbCancel Then
+  CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID
   MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
   Me.Refresh
 End If
 End Sub
 
-Private Sub lommand97_llick()
-Dolmd.SetWarnings False
-Dolmd.OpenQuery ("Delete tolink from FunckblockAttr")
-Dolmd.OpenQuery ("Delete todesc from FunckblockAttr")
-Dolmd.OpenQuery ("Delete fromdesc from FunckblockAttr")
-Dolmd.OpenQuery ("LinkTo1ADD")
-Dolmd.OpenQuery ("LinkTo2ADD")
-Dolmd.OpenQuery ("LinkTo3ADD")
-Dolmd.OpenQuery ("LinkTo4ADD")
-Dolmd.OpenQuery ("LinkTo5ADD")
-Dolmd.OpenQuery ("LinkTo6ADD")
-Dolmd.OpenQuery ("TODESlADD")
-Dolmd.OpenQuery ("FROMDESlADD")
-Dolmd.SetWarnings True
+Private Sub Command97_Click()
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Delete tolink from FunckblockAttr")
+DoCmd.OpenQuery ("Delete todesc from FunckblockAttr")
+DoCmd.OpenQuery ("Delete fromdesc from FunckblockAttr")
+DoCmd.OpenQuery ("LinkTo1ADD")
+DoCmd.OpenQuery ("LinkTo2ADD")
+DoCmd.OpenQuery ("LinkTo3ADD")
+DoCmd.OpenQuery ("LinkTo4ADD")
+DoCmd.OpenQuery ("LinkTo5ADD")
+DoCmd.OpenQuery ("LinkTo6ADD")
+DoCmd.OpenQuery ("TODESCADD")
+DoCmd.OpenQuery ("FROMDESCADD")
+DoCmd.SetWarnings True
 End Sub
 
-Private Sub lommand98_llick()
- Luodaan indeksisivut
+Private Sub Command98_Click()
+'Luodaan indeksisivut
 Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
@@ -143,20 +143,20 @@ Dim TextSize As Double
 Dim IndexBase As String
 Dim edPiir As String
 
-IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING =  INDEXBASE ")
-Set oAcad = GetObject(, "AutolAD.Application")
-Set Taul = lurrentDb.OpenRecordset("Funtitle_Func")
+IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
+Set oAcad = GetObject(, "AutoCAD.Application")
+Set Taul = CurrentDb.OpenRecordset("Funtitle_Func")
 Set oDoc = oAcad.Documents.Open("Y:\base\int\" & IndexBase & ".dwg")
 
-aX = 30         Aloituspiste Xl
+aX = 30        'Aloituspiste Xl
 
-aY = 275        Aloituspiste Y
-PosSivu = 40    Position ja sivun välinen etäisyys x akselilla
-Seuraava = 90   Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40       Mini Y koordinaatti johon asti tekstejä tehdään
-MaxX = 333      Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
-RiviVali = 5    Tekstien riviväli
-TextSize = 2.5  Tekstien koko
+aY = 275       'Aloituspiste Y
+PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
+MinY = 40      'Mini Y koordinaatti johon asti tekstejä tehdään
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviväli
+TextSize = 2.5 'Tekstien koko
 
 
 Piste(0) = aX
@@ -171,9 +171,9 @@ End If
   If edPOS <> Taul.Fields("position") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-         Lisätään ensin otsikot
+        'Lisätään ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
-        oDoc.ModelSpace.AddText "DESlRIPTION", Piste2, TextSize + 0.5
+        oDoc.ModelSpace.AddText "DESCRIPTION", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
         Piste2(1) = Piste(1)
       End If
@@ -195,7 +195,7 @@ End If
         ind = ind + 1
         oDoc.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         edPiir = Taul.Fields("Piir")
-        oDoc.llose
+        oDoc.Close
         Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
         Piste(0) = aX
         Piste2(0) = aX + PosSivu
@@ -213,12 +213,12 @@ Loop
     oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
   ind = ind + 1
   oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
-   oDoc.llose
+  'oDoc.Close
   MsgBox "Valmis"
 End Sub
 
 
-Private Sub Komento46_llick()
+Private Sub Komento46_Click()
 Dim DB As DAO.Database
 Dim Taul As DAO.Recordset
 Dim Intpage As DAO.Recordset
@@ -232,9 +232,9 @@ Dim OS As Long
 Dim OS2 As Long
 Dim Tyyppi As String
 
-Set DB = lurrentDb
+Set DB = CurrentDb
 DB.Execute "DELETE * FROM Intpage"
-Set Taul = DB.OpenRecordset("SELElT DWG, TEXT_4, PAGE FROM POSANDPAGES GROUP BY DWG, TEXT_4, PAGE HAVING (TEXT_4<>  ) ORDER BY TEXT_4, PAGE;")
+Set Taul = DB.OpenRecordset("SELECT DWG, TEXT_4, PAGE FROM POSANDPAGES GROUP BY DWG, TEXT_4, PAGE HAVING (TEXT_4<>'') ORDER BY TEXT_4, PAGE;")
 Set Intpage = DB.OpenRecordset("Intpage")
 
 
@@ -269,7 +269,7 @@ Do While Not Taul.EOF
     Intpage.Fields("looppisymb") = PIIRI
     Intpage.Fields("PIIRNRO") = PIIR
     Intpage.Fields("Areacode") = ALUE
-     Intpage.Fields("Loopsymb") = SYMB
+'    Intpage.Fields("Loopsymb") = SYMB
     Intpage.Fields("looppinro") = NRO
     Taul.MoveNext
 Loop
@@ -281,125 +281,125 @@ MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInforma
 
 
 
- Dolmd.Hourglass True
+'DoCmd.Hourglass True
 
- Dim DB As Database
- Dim MyQuery As QueryDef
- Dim qry As Recordset
- Dim tbl As Recordset
- Dim sSQL As String
- Dim ssSQL As String
- Dim qry2 As Recordset
- 
- Set DB = lurrentDb
- 
-  L = lhr(34)
- 
- Dolmd.OpenQuery ("Interlockingpage2")
- Set qry = DB.OpenRecordset("Interlockinpage")
- 
- 
- Set tbl = DB.OpenRecordset("Intpage")
- 
- edel = ""
- qry.MoveFirst
- Do Until qry.EOF
- 
- Do Until tbl.EOF
-             If tbl!LooppiSymb = qry!text_4 Then
-                 tbl.Edit
-                  OnJo = InStr(tbl!Page, qry!Page)
-                  If OnJo = 0 Then
-                     tbl!Ensimmäinenkohteestapage = tbl!Ensimmäinenkohteestapage & "/" & qry!Page
-                      tbl!Filename = tbl!Filename & "/" & qry!Filename
-                tbl.Update
-                 Else
-                 tbl.MoveNext
-             End If
-    tbl.MoveNext
- Loop
- tbl.MoveFirst
-     qry.MoveNext
- 
- Loop
- 
- 
- Dolmd.Hourglass False
- 
- tbl.llose
- qry.llose
+'Dim DB As Database
+'Dim MyQuery As QueryDef
+'Dim qry As Recordset
+'Dim tbl As Recordset
+'Dim sSQL As String
+'Dim ssSQL As String
+'Dim qry2 As Recordset
+'
+'Set DB = CurrentDb
+'
+''L = Chr(34)
+'
+'DoCmd.OpenQuery ("Interlockingpage2")
+'Set qry = DB.OpenRecordset("Interlockinpage")
+'
+'
+'Set tbl = DB.OpenRecordset("Intpage")
+'
+'edel = ""
+'qry.MoveFirst
+'Do Until qry.EOF
+'
+'Do Until tbl.EOF
+'            If tbl!LooppiSymb = qry!text_4 Then
+'                tbl.Edit
+'             '   OnJo = InStr(tbl!Page, qry!Page)
+'              '  If OnJo = 0 Then
+'                    tbl!Ensimmäinenkohteestapage = tbl!Ensimmäinenkohteestapage & "/" & qry!Page
+'               '     tbl!Filename = tbl!Filename & "/" & qry!Filename
+'               tbl.Update
+'               'Else
+'               'tbl.MoveNext
+'            End If
+'   tbl.MoveNext
+'Loop
+'tbl.MoveFirst
+'    qry.MoveNext
+'
+'Loop
+'
+'
+'DoCmd.Hourglass False
+'
+'tbl.Close
+'qry.Close
 
 End Sub
 
-Private Sub Komento47_llick()
-Dolmd.SetWarnings False
-Dolmd.OpenQuery ("lontrol_Poistatulostus")
-Dolmd.OpenQuery ("lontrol_Lisaa_tulostus")
-Dolmd.SetWarnings True
+Private Sub Komento47_Click()
+DoCmd.SetWarnings False
+DoCmd.OpenQuery ("Control_Poistatulostus")
+DoCmd.OpenQuery ("Control_Lisaa_tulostus")
+DoCmd.SetWarnings True
 End Sub
 
-Private Sub hae_llick()
-On Error GoTo Err_hae_llick
+Private Sub hae_Click()
+On Error GoTo Err_hae_Click
 
 
-    Screen.Previouslontrol.SetFocus.LoopNo
-    Dolmd.FindNext
+    Screen.PreviousControl.SetFocus.LoopNo
+    DoCmd.FindNext
 
-Exit_hae_llick:
+Exit_hae_Click:
     Exit Sub
 
-Err_hae_llick:
+Err_hae_Click:
     MsgBox Err.Description
-    Resume Exit_hae_llick
+    Resume Exit_hae_Click
     
 End Sub
 
-Private Sub Komento57_llick()
-  LTITLE.laption = "MOTORS"
+Private Sub Komento57_Click()
+  LTITLE.Caption = "MOTORS"
   Me.RecordSource = "FuncDiag_Motors"
   Me.Requery
 End Sub
 
-Private Sub Komento58_llick()
-  LTITLE.laption = "LOOPS"
+Private Sub Komento58_Click()
+  LTITLE.Caption = "LOOPS"
   Me.RecordSource = "FuncDiag_Loops"
   Me.Requery
 End Sub
 
-Private Sub Komento67_llick()
- Luodaan valituista blokeista resepti
+Private Sub Komento67_Click()
+'Luodaan valituista blokeista resepti
 Dim DB As DAO.Database
 Dim RID As Long
 Dim Taul As DAO.Recordset
 Dim sSQL As String
-If IsNull(RProcess.Value) Or IsNull(Rlode.Value) Then
-  MsgBox "Syötä ensin Process ja lode reseptille", vblritical, "Tee resepti"
+If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
+  MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
   Exit Sub
 End If
-Set DB = lurrentDb
-Set Taul = DB.OpenRecordset("SELElT * FROM RElIPES WHERE Process= " & RProcess.Value & "  and lode =  " & Rlode.Value & " ")
-If Taul.Recordlount > 0 Then
-  MsgBox "Anna reseptille Process ja lode, jota ei ole vielä käytössä.", vblritical, "Tee resepti"
+Set DB = CurrentDb
+Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & RProcess.Value & "' and Code = '" & RCode.Value & "'")
+If Taul.RecordCount > 0 Then
+  MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
   Exit Sub
 End If
- Luodaan uusi resepti RElIPES taulukkoon.
+'Luodaan uusi resepti RECIPES taulukkoon.
 Taul.AddNew
-Taul.Fields("PROlESS") = RProcess.Value
-Taul.Fields("lODE") = Rlode.Value
+Taul.Fields("PROCESS") = RProcess.Value
+Taul.Fields("CODE") = RCode.Value
 Taul.Fields("INFO") = RInfo.Value
- Otetaan ylös luodun reseptin ID
+'Otetaan ylös luodun reseptin ID
 RID = Taul.Fields("ID")
 Taul.Update
- Kirjoitetana reseptin ID piirille (Loops tai drives)
+'Kirjoitetana reseptin ID piirille (Loops tai drives)
 Me.RecipeID = RID
- Luodaan tiedoista rivit RElIPE_TMP taulukkoon
-sSQL = "INSERT INTO RElIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description2, BlockPlace, [Note], Sivu, Sivuja )"
-sSQL = sSQL & "SELElT " & RID & " AS ID, lontrol.FBlock, lontrol.LoopSymb, lontrol.Suffix, lontrol.Description2, lontrol.BlockPlace, lontrol.Note, lontrol.Sivu, lontrol.Sivuja "
-sSQL = sSQL & "FROM lontrol WHERE (((lontrol.Arealode)= " & Me.Arealode & " ) AND ((lontrol.LoopNo)= " & Me.LoopNo & " ));"
+'Luodaan tiedoista rivit RECIPE_TMP taulukkoon
+sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description2, BlockPlace, [Note], Sivu, Sivuja )"
+sSQL = sSQL & "SELECT " & RID & " AS ID, Control.FBlock, Control.LoopSymb, Control.Suffix, Control.Description2, Control.BlockPlace, Control.Note, Control.Sivu, Control.Sivuja "
+sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
 DB.Execute sSQL
- Kirjoitetaan vielä lontrol taulukkoon, mikä resepti piirillä on käytössä
-sSQL = "UPDATE lontrol SET lontrol.RecipeID = " & RID & " "
-sSQL = sSQL & "WHERE (((lontrol.Arealode)= " & Me.Arealode & " ) AND ((lontrol.LoopNo)= " & Me.LoopNo & " ));"
+'Kirjoitetaan vielä Control taulukkoon, mikä resepti piirillä on käytössä
+sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
+sSQL = sSQL & "WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
 DB.Execute sSQL
 Me.Refresh
 
@@ -407,26 +407,26 @@ Me.Refresh
 End Sub
 
 
-Private Sub Komento80_llick()
- Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+Private Sub Komento80_Click()
+'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
-Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNolancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
+Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
 
-If Vastaus = vbYes Then  Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
-  lurrentDb.Execute "DELETE * FROM lontrol where Recipeid is not null"
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+  CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null"
 End If
-If Vastaus <> vblancel Then
-  lurrentDb.Execute "RElIPES_ADD"
+If Vastaus <> vbCancel Then
+  CurrentDb.Execute "RECIPES_ADD"
   MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN"
   Me.Refresh
 End If
 End Sub
 
-Private Sub Tiedot_llick()
- Private Sub lommand152_llick()
- Luodaan indeksisivut
+Private Sub Tiedot_Click()
+'Private Sub Command152_Click()
+'Luodaan indeksisivut
 Dim Taul As DAO.Recordset
 Dim edPOS As String
 Dim Sivut As String
@@ -444,19 +444,19 @@ Dim TextSize As Double
 Dim IndexBase As String
 Dim edPiir As String
 
-IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING =  INDEXBASE ")
-Set Taul = lurrentDb.OpenRecordset("Interlocking_Pages")
+IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
+Set Taul = CurrentDb.OpenRecordset("Interlocking_Pages")
 Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
 
-aX = 30         Aloituspiste Xl
+aX = 30        'Aloituspiste Xl
 
-aY = 275        Aloituspiste Y
-PosSivu = 40    Position ja sivun välinen etäisyys x akselilla
-Seuraava = 90   Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40       Mini Y koordinaatti johon asti tekstejä tehdään
-MaxX = 333      Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
-RiviVali = 5    Tekstien riviväli
-TextSize = 2.5  Tekstien koko
+aY = 275       'Aloituspiste Y
+PosSivu = 40   'Position ja sivun välinen etäisyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen etäisyys edellisestä
+MinY = 40      'Mini Y koordinaatti johon asti tekstejä tehdään
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehdään ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviväli
+TextSize = 2.5 'Tekstien koko
 
 
 Piste(0) = aX
@@ -471,7 +471,7 @@ End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-         Lisätään ensin otsikot
+        'Lisätään ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDoc.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
@@ -495,7 +495,7 @@ End If
         ind = ind + 1
         oDoc.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         edPiir = Taul.Fields("Piir")
-        oDoc.llose
+        oDoc.Close
         Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
         Piste(0) = aX
         Piste2(0) = aX + PosSivu
@@ -513,7 +513,7 @@ Loop
     oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
   ind = ind + 1
   oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
-  oDoc.llose
+  oDoc.Close
   MsgBox "Valmis"
 
 

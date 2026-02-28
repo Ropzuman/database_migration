@@ -1,69 +1,69 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
-Private Sub Add_Distr_llick()
-  lurRecord = lounter.Value
+Private Sub Add_Distr_Click()
+  CurRecord = Counter.Value
   If IsNull(Rev.Value) Then
-    MsgBox "You have to put revision for document first!", vblritical, "Error!"
+    MsgBox "You have to put revision for document first!", vbCritical, "Error!"
   Else
-    lommon = ""
+    Common = ""
     DefRev = ""
     DocStatus = ""
-    lommon = HaeRevisio(Rev.Value)
+    Common = HaeRevisio(Rev.Value)
     DocStatus = Nz(Status.Value)
-    Dolmd.OpenForm "USysAddToDistr", , , , , acDialog
+    DoCmd.OpenForm "USysAddToDistr", , , , , acDialog
     Lahetykset.Requery
   End If
 End Sub
-Private Sub AvaaTiedosto_llick()
- Tämä avaa määritellyn tiedosto
+Private Sub AvaaTiedosto_Click()
+'Tämä avaa määritellyn tiedosto
 Dim fso As New FileSystemObject
 Dim Avattava As String
 If IsNull(File.Value) Then
-  MsgBox "No filename defined", vblritical, "Open File"
+  MsgBox "No filename defined", vbCritical, "Open File"
 ElseIf IsNull(WorkPath.Value) Then
-  MsgBox "No path defined", vblritical, "Open File"
+  MsgBox "No path defined", vbCritical, "Open File"
 Else
-  If InStr(File.Value, vblrLf) Then
-    lommon = lounter.Value
-    Dolmd.OpenForm "USysOpenFile", , , , , acDialog
+  If InStr(File.Value, vbCrLf) Then
+    Common = Counter.Value
+    DoCmd.OpenForm "USysOpenFile", , , , , acDialog
   Else
     Avattava = fso.BuildPath(WorkPath.Value, File.Value)
     If fso.FileExists(Avattava) Then
          Application.FollowHyperlink Avattava, , True, False
-    Else  Tiedostoa ei löytynyt
-      MsgBox "File not found: " & WorkPath.Value & File.Value, vblritical, "Open File"
+    Else 'Tiedostoa ei löytynyt
+      MsgBox "File not found: " & WorkPath.Value & File.Value, vbCritical, "Open File"
     End If
   End If
 End If
 Set fso = Nothing
 End Sub
-Private Sub llientDwg_llick()
-  If IsNull(llientNo.Value) Then  Numeroa ei vielä varattu, joten voidaan suorittaa varaus
-    Dolmd.OpenForm "USysReserve", , , "lounter = " & lounterfield.Value, , acDialog
+Private Sub ClientDwg_Click()
+  If IsNull(ClientNo.Value) Then 'Numeroa ei vielä varattu, joten voidaan suorittaa varaus
+    DoCmd.OpenForm "USysReserve", , , "Counter = " & Counterfield.Value, , acDialog
     Me.Refresh
   Else
-    MsgBox "You can t change reserved client number.", , "llient Document number"
+    MsgBox "You can't change reserved client number.", , "Client Document number"
   End If
 End Sub
-Private Sub lommand58_llick()
-  Dolmd.llose
+Private Sub Command58_Click()
+  DoCmd.Close
 End Sub
-Private Sub LisaaUusi_llick()
-  lurRecord = ""
+Private Sub LisaaUusi_Click()
+  CurRecord = ""
   Me.Refresh
   Me.Filter = ""
   Me.FilterOn = False
-  Dolmd.OpenForm "USysAddDocument", , , , , acDialog
-  If lurRecord = "" Then
+  DoCmd.OpenForm "USysAddDocument", , , , , acDialog
+  If CurRecord = "" Then
   Else
     Me.Requery
     Me.Refresh
-    lounterfield.SetFocus
-    Dolmd.FindRecord lurRecord, , , , , aclurrent, True
+    Counterfield.SetFocus
+    DoCmd.FindRecord CurRecord, , , , , acCurrent, True
     LisaaUusi.SetFocus
   End If
 End Sub
-Private Sub lPath_llick()
+Private Sub CPath_Click()
 Dim Hakemisto As String
   Hakemisto = ValitseHakem(Me.hWnd, IIf(IsNull(WorkPath.Value), "", WorkPath.Value))
   If Hakemisto <> "" Then
@@ -71,89 +71,89 @@ Dim Hakemisto As String
     Me.Refresh
   End If
 End Sub
-Private Sub DetDwg_llick()
-  lommon = IIf(IsNull(DetDwg.Value), "", DetDwg.Value)
-  lommonOts = "Detail drawing(s):"
-  lommonType = 1
-  Dolmd.OpenForm "USysShowlommon", , , , , acDialog
-  DetDwg.Value = IIf(lommon = "", Null, lommon)
+Private Sub DetDwg_Click()
+  Common = IIf(IsNull(DetDwg.Value), "", DetDwg.Value)
+  CommonOts = "Detail drawing(s):"
+  CommonType = 1
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
+  DetDwg.Value = IIf(Common = "", Null, Common)
 End Sub
-Private Sub File_llick()
-  lommon = Nz(File.Value)
-  lommonOts = "Files(s):"
-  lommonType = 1
-  Dolmd.OpenForm "USysShowlommon", , , , , acDialog
-  File.Value = IIf(lommon = "", Null, lommon)
+Private Sub File_Click()
+  Common = Nz(File.Value)
+  CommonOts = "Files(s):"
+  CommonType = 1
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
+  File.Value = IIf(Common = "", Null, Common)
 End Sub
-   
-  Lomakkeen Load-tapahtuma - Alustetaan lomake projektin tiedoilla
-  OPTIMOITU 2025-11-09: Lisätty virheenhallinta, eksplisiittinen DAO-tyypitys, poistettu turha lurrentDb-kutsu
-   
+'''
+' Form Load Event - Initialize form with project information
+' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, removed redundant CurrentDb call
+'''
 Private Sub Form_Load()
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
     
     On Error GoTo ErrorHandler
     
-    Set DB = lurrentDb
+    Set DB = CurrentDb
     Set taulu = DB.OpenRecordset("ProjInfo")
     
     If Not taulu.EOF Then
-        tProjekti.laption = Nz(taulu("Name"), "")
+        tProjekti.Caption = Nz(taulu("Name"), "")
     End If
     
-lleanup:
+Cleanup:
     If Not taulu Is Nothing Then
-        taulu.llose
+        taulu.Close
         Set taulu = Nothing
     End If
     If Not DB Is Nothing Then
-        DB.llose
+        DB.Close
         Set DB = Nothing
     End If
     Exit Sub
     
 ErrorHandler:
     MsgBox "Error loading project information: " & Err.Description, vbExclamation, "Form Load Error"
-    Resume lleanup
+    Resume Cleanup
 End Sub
-Private Sub Form_Unload(lancel As Integer)
+Private Sub Form_Unload(Cancel As Integer)
   Me.Filter = ""
   Me.FilterOn = False
 End Sub
-Private Sub Note_llick()
-  lommon = IIf(IsNull(Note.Value), "", Note.Value)
-  lommonOts = "Note:"
-  lommonType = 1
-  Dolmd.OpenForm "USysShowlommon", , , , , acDialog
-  Note.Value = IIf(lommon = "", Null, lommon)
+Private Sub Note_Click()
+  Common = IIf(IsNull(Note.Value), "", Note.Value)
+  CommonOts = "Note:"
+  CommonType = 1
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
+  Note.Value = IIf(Common = "", Null, Common)
 End Sub
-Private Sub OpenPath_llick()
+Private Sub OpenPath_Click()
 Dim fso As New FileSystemObject
 If IsNull(WorkPath.Value) Then
-  MsgBox "No path defined", vblritical, "Open Path"
+  MsgBox "No path defined", vbCritical, "Open Path"
 Else
   If fso.FolderExists(WorkPath.Value) Then
     Application.FollowHyperlink WorkPath.Value
-  Else  Hakemistoa ei ole
-    MsgBox "Invalid path", vblritical, "Open Path"
+  Else 'Hakemistoa ei ole
+    MsgBox "Invalid path", vbCritical, "Open Path"
   End If
 End If
 Set fso = Nothing
 End Sub
-Private Sub Pos_llick()
-  lommon = IIf(IsNull(Pos.Value), "", Pos.Value)
-  lommonOts = "Position(s):"
-  lommonType = 1
-  Dolmd.OpenForm "USysShowlommon", , , , , acDialog
-  Pos.Value = IIf(lommon = "", Null, lommon)
+Private Sub Pos_Click()
+  Common = IIf(IsNull(Pos.Value), "", Pos.Value)
+  CommonOts = "Position(s):"
+  CommonType = 1
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
+  Pos.Value = IIf(Common = "", Null, Common)
 End Sub
-Private Sub Rev_llick()
+Private Sub Rev_Click()
   MuutaRevisio
 End Sub
 Private Sub MuutaRevisio()
   Revisioteksti = Nz(Rev.Value)
-  Dolmd.OpenForm "USysRevText", , , , , acDialog
+  DoCmd.OpenForm "USysRevText", , , , , acDialog
   If Revisioteksti <> "" Then
       Rev.Value = Revisioteksti
   End If

@@ -1,10 +1,10 @@
-﻿Option lompare Database
+Option Compare Database
 Option Explicit
 
-  Päivitetty 2025-10-22: 64-bit-yhteensopivuus, siistimpi koodi
-  Päivitetty 2025-10-23: Muutettu API-määrittelyt Private:sta Public:ksi
+' Updated 2025-10-22: 64-bit compatibility, cleaner code
+' Updated 2025-10-23: Changed API Declarations from Private to Public
 
-  Type must be declared outside conditional compilation for Access form compatibility
+' Type must be declared outside conditional compilation for Access form compatibility
 Public Type OPENFILENAME
     lStructSize As Long
 #If VBA7 Then
@@ -15,8 +15,8 @@ Public Type OPENFILENAME
     hInstance As Long
 #End If
     lpstrFilter As String
-    lpstrlustomFilter As String
-    nMaxlustFilter As Long
+    lpstrCustomFilter As String
+    nMaxCustFilter As Long
     nFilterIndex As Long
     lpstrFile As String
     nMaxFile As Long
@@ -29,16 +29,16 @@ Public Type OPENFILENAME
     nFileExtension As Integer
     lpstrDefExt As String
 #If VBA7 Then
-    llustData As LongPtr
+    lCustData As LongPtr
     lpfnHook As LongPtr
 #Else
-    llustData As Long
+    lCustData As Long
     lpfnHook As Long
 #End If
     lpTemplateName As String
 End Type
 
-  KORJATTU: Muutettu "Private Declare" -> "Public Declare"
+' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 #If VBA7 Then
     Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
@@ -51,23 +51,23 @@ End Type
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
-  Module-level state variables (consider replacing with collection or class for better encapsulation)
+' Module-level state variables (consider replacing with collection or class for better encapsulation)
 Private m_last_criteria As Variant
 Private m_last_used As Variant
 
-  Tallentaa viimeksi käytetyt arvot ja hakuehdot
+' Stores last used values and criteria
 Function Set_last(Values As Variant, criterias As Variant) As Variant
     m_last_criteria = criterias
     m_last_used = Values
     Set_last = m_last_used
 End Function
 
-  Retrieves last used values
+' Retrieves last used values
 Function Show_last(criterias As Variant) As Variant
     Show_last = m_last_used
 End Function
 
-  Retrieves last used criteria
+' Retrieves last used criteria
 Function Show_last_criteria(criterias As Variant) As Variant
     Show_last_criteria = m_last_criteria
 End Function
