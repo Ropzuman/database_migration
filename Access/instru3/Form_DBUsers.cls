@@ -5,7 +5,9 @@ Option Explicit
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' Ensimmäiset 32 tavua: koneen nimi
-   bUser(1 To 32) As Byte  ' Seuraavat 32 tavua: käyttäjänimiEnd Type
+   bUser(1 To 32) As Byte  ' Seuraavat 32 tavua: käyttäjänimi
+End Type
+
 Private Sub Command27_Click()
 Dim Viesti As String
   Viesti = INPUTBOX("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
