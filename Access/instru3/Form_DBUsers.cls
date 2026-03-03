@@ -1,12 +1,11 @@
 Option Compare Database
 Option Explicit
 
-' Declare a record type to break down the user info
+' Käyttäjätietuetyyppi kirjautumisnimien purkamiseen LACCDB-tiedostosta
 
 Private Type UserRec
-   bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
-   bUser(1 To 32) As Byte  ' 2nd 32 bytes hold user name
-End Type
+   bMach(1 To 32) As Byte  ' Ensimmäiset 32 tavua: koneen nimi
+   bUser(1 To 32) As Byte  ' Seuraavat 32 tavua: käyttäjänimiEnd Type
 Private Sub Command27_Click()
 Dim Viesti As String
   Viesti = INPUTBOX("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
@@ -33,50 +32,45 @@ Private Sub UpdateBtn_Click()
 End Sub
 
 '-------------------------------------------------------------------------------------
-'   Subject : WhosOn()
-'   Purpose : Will read *.LDB file and read who's currently
-'             logged on and their station name.
+'   Funktio  : WhosOn()
+'   Tarkoitus: Lukee *.LACCDB-tiedoston ja palauttaa kirjautuneiden käyttäjien
+'              ja heidän tietokoneensa tiedot.
 '
-'             The LDB file has a 64 byte record.
+'              LACCDB-tietueessa on 64 tavua.
 '
-'             The station name starts at byte 1 and is null
-'             terminated.
+'              Koneen nimi alkaa tavusta 1 ja on null-päätteinen.
 '
-'             Log-in names start at the 33rd byte and are
-'             also null terminated.
+'              Kirjautumisnimi alkaa tavusta 33 ja on myös null-päätteinen.
 '
 '-------------------------------------------------------------------------------------
 Private Function WhosOn() As String
 
 On Error GoTo Err_WhosOn
 
-   Dim iLDBFile As Integer, iStart As Integer
-   Dim iLOF As Integer, i As Integer
+   Dim iLDBFile As Integer
+   Dim i As Integer
    Dim SPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' Defined in General
+   Dim rUser As UserRec    ' Käyttäjätietue, määritelty moduulin alussa
    Dim dbCurrent As DAO.Database
 
-' Get Path of current database.  Should substitute this code
-' for an attached table path in a multi-user environment.
+' Haetaan nykyisen tietokannan polku.
 
    Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
    dbCurrent.Close
 
-' Iterate thru dbCurrent.LDB file for login names.
+' Rakennetaan LACCDB-tiedoston polku.
 
    SPath = Left(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-' Test for valid file, else Error
+' Tarkistetaan, että tiedosto on olemassa.
 
-   X = Dir(SPath)
-   iStart = 1
+   X = Dir(SPath)  'Tarkistetaan, että tiedosto on olemassa
    iLDBFile = FreeFile
 
    Open SPath For Binary Access Read Shared As iLDBFile
-   iLOF = LOF(iLDBFile)
    Do While Not EOF(iLDBFile)
       Get iLDBFile, , rUser
       With rUser
@@ -97,7 +91,6 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 'increment to next record offset
    Loop
    Close iLDBFile
    WhosOn = sLogins

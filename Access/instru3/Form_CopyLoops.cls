@@ -2,55 +2,56 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: CopyLoops
-' Purpose: Import loop records and device tables from external Access database
-' Updated: 2025-11-11 - Added VBA7/64-bit support
+' Lomake: CopyLoops
+' Tarkoitus: Tuo looppirivejä ja laitetaulukoita ulkoisesta Access-tietokannasta
+' Päivitetty: 2025-11-11 - VBA7/64-bit-tuki lisätty
+'             2026-03-03 - Me.-etuliitteet ja kommentit suomeksi
 '
-' Description:
-'   Loop import utility that:
-'   - Links to external instru3 database
-'   - Displays available loops from source database
-'   - Imports selected loops to LOOPS table
-'   - Imports associated device records from devTbl* tables
-'   - Handles duplicate loop prevention
-'   - Provides detailed status feedback
+' Kuvaus:
+'   Looppien tuontityökalu, joka:
+'   - Linkittää ulkoiseen instru3-tietokantaan
+'   - Näyttää saatavilla olevat loopit lähdetietokannasta
+'   - Tuo valitut loopit LOOPS-taulukkoon
+'   - Tuo laiterivit devTbl*-taulukoista
+'   - Estää duplikaattilooppien tuonnin
+'   - Antaa yksityiskohtaisen tilapalautteen
 '
-' Dependencies:
-'   - LOOPS table (target for loop import)
-'   - LOOPLINK temporary linked table
-'   - devTable table (target for device import)
-'   - devTbl* tables (source device tables in external database)
-'   - comdlg32.dll (Windows Common Dialog for file selection)
+' Riippuvuudet:
+'   - LOOPS-taulu (looppien kohdetaulu)
+'   - LOOPLINK-väliaikainen linkitetty taulu
+'   - devTable-taulu (laitteiden kohdetaulu)
+'   - devTbl*-taulut (lähteen laitetaulut ulkoisessa tietokannassa)
+'   - comdlg32.dll (Windows Common Dialog tiedostovalintaan)
 '
-' Controls:
-'   - Kanta: TextBox for database path
-'   - Loopit: Subform displaying available loops
-'   - TTiedot: TextBox for status messages
-'   - ValitseKanta: Button to select source database
-'   - HaeLoopit: Button to import loops
-'   - Ulos: Button to close form
+' Kontrollit:
+'   - Kanta: TextBox tietokannan polkua varten
+'   - Loopit: Alilomake, joka näyttää saatavilla olevat loopit
+'   - TTiedot: TextBox tilaviesteille
+'   - ValitseKanta: Painike lähdetietokannan valintaan
+'   - HaeLoopit: Painike looppien tuontiin
+'   - Ulos: Painike lomakkeen sulkemiseen
 '================================================================================
 
-' Module-level variable for source database connection
-Dim LahdeDB As DAO.Database  ' Source database connection (persists during session)
+' Moduulitason muuttuja lähdetietokantayhteydelle – pysyy auki koko session ajan
+Dim LahdeDB As DAO.Database
 
 '--------------------------------------------------------------------------------
-' Event: Form_Unload
-' Purpose: Clean up temporary tables and database connections on form close
+' Tapahtuma: Form_Unload
+' Tarkoitus: Siivotaan väliaikaiset taulut ja yhteydet lomakkeen sulkeutuessa
 '
-' Process:
-'   1. Delete temporary LOOPLINK table if it exists
-'   2. Close source database connection
-'   3. Clear all object references
+' Prosessi:
+'   1. Poistetaan väliaikainen LOOPLINK-taulu, jos se on olemassa
+'   2. Suljetaan lähdetietokantayhteys
+'   3. Tyhjennetään kaikki objektiviittaukset
 '
-' Notes:
-'   - Uses Resume Next to prevent errors if table doesn't exist
-'   - Always runs when form closes
-'   - Ensures no lingering temporary tables or connections
+' Huomiot:
+'   - Resume Next estää virheen, jos taulua ei löydy
+'   - Suoritetaan aina lomakkeen sulkeutuessa
+'   - Varmistaa, ettei jää avoimia väliaikaistauluja tai yhteyksiä
 '--------------------------------------------------------------------------------
 Private Sub Form_Unload(Cancel As Integer)
   On Error Resume Next
-  CurrentDb.TableDefs.Delete "LOOPLINK"  ' Remove temporary linked table
+  CurrentDb.TableDefs.Delete "LOOPLINK"  ' Poistetaan väliaikainen LOOPLINK-taulu
   Err.Clear
   On Error GoTo 0
   If Not LahdeDB Is Nothing Then
@@ -59,36 +60,36 @@ Private Sub Form_Unload(Cancel As Integer)
   End If
 End Sub
 '--------------------------------------------------------------------------------
-' Event: HaeLoopit_Click
-' Purpose: Import selected loops and associated device data from source database
+' Tapahtuma: HaeLoopit_Click
+' Tarkoitus: Tuo valitut loopit ja laitedata lähdetietokannasta
 '
-' Process:
-'   1. Validate source database is selected
-'   2. Copy loop records from LOOPLINK to LOOPS table
-'   3. Iterate through all devTbl* tables in source database
-'   4. Import device records matching selected loops
-'   5. Set TableName field for imported device records
-'   6. Track duplicates and provide status feedback
+' Prosessi:
+'   1. Tarkistetaan, että lähdetietokanta on valittu
+'   2. Kopioidaan loopit LOOPLINK-taulusta LOOPS-taulukkoon
+'   3. Iteroidaan kaikki devTbl*-taulut lähdetietokannassa
+'   4. Tuodaan laiterivit valituille loopeille
+'   5. Asetetaan TABLEName-kenttä tuoduille laiteriveille
+'   6. Seurataan duplikaatit ja annetaan tilapalaute
 '
-' Parameters:
-'   - Uses Loopit subform as source (linked to LOOPLINK table)
-'   - Imports to LOOPS and devTable tables
+' Parametrit:
+'   - Käyttää Loopit-alilomaketta lähteenä (linkitetty LOOPLINK-tauluun)
+'   - Tuo LOOPS- ja devTable-tauluihin
 '
-' Notes:
-'   - Prevents duplicate loops (checks LOOPS table first)
-'   - Imports from devTbl* tables and devTable (case insensitive)
-'   - Excludes devTblCommon table from import
-'   - Provides detailed status messages in TTiedot textbox
-'   - Uses SysCmd for progress indication
+' Huomiot:
+'   - Estää duplikaattilooppien tuonnin (tarkistaa LOOPS-taulusta ensin)
+'   - Tuo devTbl*- ja devTable-tauluista (kirjainkoosta riippumaton)
+'   - Sulkee devTblCommon-taulun pois tuonnista
+'   - Antaa yksityiskohtaisia tilaviestejä TTiedot-tekstikenttään
+'   - Käyttää SysCmd-funktiota edistymisen näyttämiseen
 '--------------------------------------------------------------------------------
 Private Sub HaeLoopit_Click()
 On Error GoTo ErrorHandler
-    Dim OliJo As String  ' Tracks loops that already existed (duplicates)
-    Dim LahdeTaulu As DAO.Recordset  ' Source table recordset (from external DB)
-    Dim KohdeTaulu As DAO.Recordset  ' Target table recordset (current DB)
-    Dim Kopioitavat() As String  ' Array of loops to import (format: "AreaCode-LoopNo")
-    Dim i As Integer, j As Integer, a As Integer  ' Loop counters
-    Dim Taulukko As String  ' Current table name being processed
+    Dim OliJo As String  ' Kerää jo olemassa olevat (duplikaatti)loopit
+    Dim LahdeTaulu As DAO.Recordset  ' Lähteen laitetaulun recordset
+    Dim KohdeTaulu As DAO.Recordset  ' Kohdetaulun recordset (nykyinen tietokanta)
+    Dim Kopioitavat() As String  ' Kopioitavien looppien lista (muoto: "AreaCode-LoopNo")
+    Dim i As Integer, j As Integer, a As Integer  ' Silmukkalaskurit
+    Dim Taulukko As String  ' Käsiteltävän taulun nimi
     
     Debug.Print "========================================"
     Debug.Print "HaeLoopit: Starting loop copy operation"
@@ -99,13 +100,13 @@ On Error GoTo ErrorHandler
     ' Validate source database is selected
     If LahdeDB Is Nothing Then
         Debug.Print "ERROR: No source database selected"
-        MsgBox "Select database first!", vbCritical, "Get Loops"
+        MsgBox "Valitse ensin tietokanta!", vbCritical, "Hae loopit"
         Exit Sub
     End If
     
     Debug.Print "Source DB: " & LahdeDB.Name
   
-  'Kopioidaan ensin Loopit Loops taulukkoon - First copy Loops to LOOPS table
+  'Kopioidaan ensin loopit LOOPS-taulukkoon
   Me.TTiedot.Value = ""  ' Tyhjennetään tilatieto
   
   Debug.Print "Copying selected loops to LOOPS table..."
@@ -151,9 +152,9 @@ On Error GoTo ErrorHandler
       Set LahdeTaulu = LahdeDB.OpenRecordset(Taulukko)
       
       ' Iterate through all records in source device table
-      Do While Not LahdeTaulu.EOF 'Käydään läpi kaikki taulukon recordit - Go through all table records
+      Do While Not LahdeTaulu.EOF  'Käydään läpi kaikki laitetaulukon rivit
         ' Check if this record belongs to one of the imported loops
-        For j = 1 To UBound(Kopioitavat) 'Tarkistetaan että ko. recordi kuuluu kopioitaviin - Check if record should be copied
+        For j = 1 To UBound(Kopioitavat)  'Tarkistetaan, kuuluuko rivi kopioitaviin looppeihin
           If Kopioitavat(j) = LahdeTaulu.Fields("AreaCode").Value & "-" & LahdeTaulu.Fields("LoopNo").Value Then
             ' Record belongs to imported loop - copy it
             KohdeTaulu.AddNew
@@ -192,7 +193,7 @@ On Error GoTo ErrorHandler
   
   Me.TTiedot.Value = Me.TTiedot.Value & "Valmis!"
   SysCmd acSysCmdClearStatus
-  MsgBox "Ready!", vbInformation, "Get Loops"
+  MsgBox "Valmis!", vbInformation, "Hae loopit"
   
   ' Cleanup recordsets
   If Not KohdeTaulu Is Nothing Then
@@ -210,7 +211,7 @@ ErrorHandler:
   Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   Debug.Print "========================================"
   SysCmd acSysCmdClearStatus
-  MsgBox "Error during loop import: " & Err.Description, vbCritical, "Get Loops"
+  MsgBox "Virhe looppien tuonnissa: " & Err.Description, vbCritical, "Hae loopit"
   On Error Resume Next
   If Not KohdeTaulu Is Nothing Then KohdeTaulu.Close
   If Not LahdeTaulu Is Nothing Then LahdeTaulu.Close
@@ -219,46 +220,46 @@ ErrorHandler:
   On Error GoTo 0
 End Sub
 '--------------------------------------------------------------------------------
-' Event: Ulos_Click
-' Purpose: Close the form
+' Tapahtuma: Ulos_Click
+' Tarkoitus: Sulkee lomakkeen
 '
-' Notes:
-'   - Simple close button
-'   - Form_Unload event will handle cleanup
+' Huomiot:
+'   - Yksinkertainen sulkemispainike
+'   - Form_Unload-tapahtuma hoitaa siivousoperaatiot
 '--------------------------------------------------------------------------------
 Private Sub Ulos_Click()
   DoCmd.Close
 End Sub
 '--------------------------------------------------------------------------------
-' Event: ValitseKanta_Click
-' Purpose: Open file dialog to select source Access database
+' Tapahtuma: ValitseKanta_Click
+' Tarkoitus: Avaa tiedostovalintaikkuna lähde-Access-tietokannan valintaan
 '
-' Process:
-'   1. Determine initial directory (current database folder or previously selected)
-'   2. Display Windows Common Dialog for Access database selection
-'   3. Store selected path in Kanta textbox
-'   4. Open database connection (stored in LahdeDB module variable)
-'   5. Delete existing LOOPLINK temporary table if exists
-'   6. Create new linked table LOOPLINK pointing to Loops table in source DB
-'   7. Set subform recordsource to display available loops
+' Prosessi:
+'   1. Määritellään alkuhakemisto (nykyinen tai aiemmin valittu kansio)
+'   2. Näytetään Windows Common Dialog -tiedostovalinta
+'   3. Tallennetaan valittu polku Kanta-tekstikenttään
+'   4. Avataan tietokantayhteys (tallennetaan LahdeDB-moduulimuuttujaan)
+'   5. Poistetaan mahdollinen olemassa oleva LOOPLINK-väliaikainen taulu
+'   6. Luodaan uusi LOOPLINK, joka viittaa lähteen Loops-tauluun
+'   7. Asetetaan alilomakkeen tietolähde näyttämään saatavilla olevat loopit
 '
-' Notes:
-'   - Uses GetOpenFileName API from comdlg32.dll
-'   - Filters for .accdb files only
-'   - Creates temporary linked table for loop browsing
-'   - Source database remains open until form closes
-'   - LOOPLINK table is deleted in Form_Unload
+' Huomiot:
+'   - Käyttää GetOpenFileName-APIa comdlg32.dll:stä
+'   - Suodattaa vain .accdb-tiedostot
+'   - Luo väliaikaisen linkitetyn taulun looppien selailua varten
+'   - Lähdetietokanta pysyy auki, kunnes lomake sulkeutuu
+'   - LOOPLINK poistetaan Form_Unload-tapahtumassa
 '--------------------------------------------------------------------------------
 Private Sub ValitseKanta_Click()
 On Error GoTo ErrorHandler
-    'Valitaan tietokanta - Select database
-    Dim OpenFile As OPENFILENAME  ' Windows Common Dialog structure
-    Dim lReturn As Long  ' Dialog return value
-    Dim Filtteri As String  ' File type filter
-    Dim AHakem As String  ' Initial directory path
-    Dim Otsikko As String  ' Dialog title
-    Dim i As Integer  ' Loop counter
-    Dim Linkki As DAO.TableDef  ' Temporary linked table definition
+    'Avataan tiedostovalintaikkuna tietokannan valitsemiseksi
+    Dim OpenFile As OPENFILENAME  ' Windows Common Dialog -rakenne
+    Dim lReturn As Long  ' Dialogin paluuarvo
+    Dim Filtteri As String  ' Tiedostotyyppisuodatin
+    Dim AHakem As String  ' Alkuhakemiston polku
+    Dim Otsikko As String  ' Dialogin otsikko
+    Dim i As Integer  ' Silmukkalaskuri
+    Dim Linkki As DAO.TableDef  ' Väliaikaisen linkitetyn taulun määritys
     
     Debug.Print "ValitseKanta: Opening database selection dialog"
     
@@ -283,11 +284,11 @@ On Error GoTo ErrorHandler
     Otsikko = "Choose Instru Database"
     With OpenFile
       .lStructSize = Len(OpenFile)
-      .hwndOwner = Me.Hwnd  ' Parent window handle
+      .hwndOwner = Me.Hwnd  ' Isäntäikkunan kahva
       .hInstance = 0
       .lpstrFilter = Filtteri
       .nFilterIndex = 1
-      .lpstrFile = String(257, 0)  ' Buffer for filename
+      .lpstrFile = String(257, 0)  ' Puskuri tiedostonimelle
       .nMaxFile = Len(.lpstrFile) - 1
       .lpstrFileTitle = .lpstrFile
       .nMaxFileTitle = .nMaxFile
@@ -299,7 +300,7 @@ On Error GoTo ErrorHandler
     ' Display file dialog
     lReturn = GetOpenFileName(OpenFile)
     If lReturn <> 0 Then
-      ' Extract selected filename (remove null terminator)
+      ' Poimitaan valittu tiedostonimi (poistetaan null-päätteen merkki)
       Me.Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
       
       Debug.Print "  Valittu tietokanta: " & Me.Kanta.Value
@@ -307,22 +308,22 @@ On Error GoTo ErrorHandler
       ' Open source database connection
       Set LahdeDB = OpenDatabase(Me.Kanta.Value)
       
-      Debug.Print "  Database opened successfully"
+      Debug.Print "  Tietokanta avattu onnistuneesti"
       
-      ' Clean up any existing LOOPLINK table
+      ' Poistetaan mahdollinen olemassa oleva LOOPLINK-taulu
       On Error Resume Next
       CurrentDb.TableDefs.Delete "LOOPLINK"
       Err.Clear
       On Error GoTo 0
       
-      ' Create linked table to Loops table in source database
+      ' Luodaan linkitetty taulu lähteen Loops-tauluun
       Set Linkki = CurrentDb.CreateTableDef("LOOPLINK")
       Linkki.Connect = ";DATABASE=" & Me.Kanta.Value
       Linkki.SourceTableName = "Loops"
       CurrentDb.TableDefs.Append Linkki
       Set Linkki = Nothing
       
-      ' Display available loops in subform
+      ' Näytetään saatavilla olevat loopit alilomakkeessa
       Me.Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
     End If
     Me.Refresh
@@ -331,23 +332,23 @@ On Error GoTo ErrorHandler
 ErrorHandler:
     Debug.Print "*** ERROR in ValitseKanta: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Error selecting database: " & Err.Description, vbCritical, "Choose Database"
+    MsgBox "Virhe tietokannan valinnassa: " & Err.Description, vbCritical, "Valitse tietokanta"
     On Error Resume Next
     Set Linkki = Nothing
     On Error GoTo 0
 End Sub
 '--------------------------------------------------------------------------------
-' Event: Form_Resize
-' Purpose: Adjust subform size when form window is resized
+' Tapahtuma: Form_Resize
+' Tarkoitus: Säätää alilomakkeen koko lomakkeen ikkunakoon muuttuessa
 '
-' Process:
-'   - Resize Loopit subform width to match form window
-'   - Adjust height if sufficient vertical space available
+' Prosessi:
+'   - Muutetaan Loopit-alilomakkeen leveys vastaamaan lomakeikkunaa
+'   - Säädetään korkeus, jos pystysuunnassa on riittävästi tilaa
 '
-' Notes:
-'   - Maintains 400 twips margin on right side
-'   - Only adjusts height if window taller than 3300 twips
-'   - Provides responsive UI for better loop viewing
+' Huomiot:
+'   - Ylläpitää 400 twipsin marginaalin oikealla puolella
+'   - Korkeus säädetään vain, jos ikkuna on yli 3300 twipsiä korkea
+'   - Tarjoaa mukautuvan käyttöliittymän looppien katseluun
 '--------------------------------------------------------------------------------
 Private Sub Form_Resize()
   Me.Loopit.Width = Me.WindowWidth - 400  ' Säilytetään oikea marginaali
