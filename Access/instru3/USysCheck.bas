@@ -23,11 +23,11 @@ Option Explicit
     Private Declare PtrSafe Function api_GetUserName _
                     Lib "advapi32.dll" _
                     Alias "GetUserNameA" _
-                    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+                    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Private Declare PtrSafe Function api_GetComputerName _
                     Lib "kernel32" _
                     Alias "GetComputerNameA" _
-                    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+                    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
     Private Declare Function api_GetUserName _
                     Lib "advapi32.dll" _

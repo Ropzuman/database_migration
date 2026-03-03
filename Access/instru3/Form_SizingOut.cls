@@ -64,7 +64,7 @@ On Error GoTo ErrorHandler
     Dim Arvo As String  ' Current field value
     
     Set DB = CurrentDb
-    Path = Hakem.Value
+    Path = Me.Hakem.Value
     
     ' Ensure path ends with backslash
     If Right$(Path, 1) <> "\" Then
@@ -78,10 +78,10 @@ On Error GoTo ErrorHandler
     End If
     
     ' Open source query/table
-    Set Taulu = DB.OpenRecordset("SELECT * FROM " & Taulukko.Value)
+    Set Taulu = DB.OpenRecordset("SELECT * FROM " & Me.Taulukko.Value)
     
     ' Create output CSV file
-    Set Tiedosto = FSO.CreateTextFile(Path & FileName.Value & ".csv")
+    Set Tiedosto = FSO.CreateTextFile(Path & Me.FileName.Value & ".csv")
     
     ' Export all records
     Do While Not Taulu.EOF
@@ -148,6 +148,6 @@ End Sub
 '   - Directory path intentionally left blank (was "d:\tilap\")
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
-  Taulukko.Value = "qryValveSizingOut"  ' Default query for valve sizing data
+  Me.Taulukko.Value = "qryValveSizingOut"  ' Oletusky sely venttiilien mitoitusdata vientiin
   'Hakem.VALUE = "d:\tilap\"  ' Example directory (commented out - user specified)
 End Sub

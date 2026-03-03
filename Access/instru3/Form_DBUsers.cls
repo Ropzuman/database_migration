@@ -1,4 +1,5 @@
 Option Compare Database
+Option Explicit
 
 ' Declare a record type to break down the user info
 
@@ -8,9 +9,9 @@ Private Type UserRec
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Viesti = INPUTBOX("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
   If Viesti <> "" Then
-    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
 

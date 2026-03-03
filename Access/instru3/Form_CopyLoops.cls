@@ -106,12 +106,12 @@ On Error GoTo ErrorHandler
     Debug.Print "Source DB: " & LahdeDB.Name
   
   'Kopioidaan ensin Loopit Loops taulukkoon - First copy Loops to LOOPS table
-  TTiedot.Value = ""  ' Clear status messages
+  Me.TTiedot.Value = ""  ' Tyhjennetään tilatieto
   
   Debug.Print "Copying selected loops to LOOPS table..."
   
   ' Iterate through selected loops in subform
-  With Loopit.Form.RecordsetClone
+  With Me.Loopit.Form.RecordsetClone
     .MoveFirst
     Do While Not .EOF
       ' Check if loop already exists in target database
@@ -162,7 +162,7 @@ On Error GoTo ErrorHandler
               KohdeTaulu.Fields(LahdeTaulu.Fields(a).Name).Value = LahdeTaulu.Fields(a).Value
               If Err <> 0 Then
                 ' Log field copy errors
-                TTiedot.Value = TTiedot.Value & "Problem with field: " & LahdeDB.TableDefs(i).Name & "!" & LahdeTaulu.Fields(a).Name
+                Me.TTiedot.Value = Me.TTiedot.Value & "Ongelma kentässä: " & LahdeDB.TableDefs(i).Name & "!" & LahdeTaulu.Fields(a).Name
                 Err.Clear
               End If
             Next a
@@ -183,14 +183,14 @@ On Error GoTo ErrorHandler
   If OliJo <> "" Then
     Debug.Print "Duplicate loops found (already in database):"
     Debug.Print OliJo
-    TTiedot.Value = TTiedot.Value & "Following Loops were already in current database:" & vbCrLf & OliJo
+    Me.TTiedot.Value = Me.TTiedot.Value & "Seuraavat loopit olivat jo tietokannassa:" & vbCrLf & OliJo
   End If
   
   Debug.Print "HaeLoopit: COMPLETED successfully"
   Debug.Print "  Total loops copied: " & (UBound(Kopioitavat))
   Debug.Print "========================================"
   
-  TTiedot.Value = TTiedot.Value & "Ready!"
+  Me.TTiedot.Value = Me.TTiedot.Value & "Valmis!"
   SysCmd acSysCmdClearStatus
   MsgBox "Ready!", vbInformation, "Get Loops"
   
@@ -264,8 +264,8 @@ On Error GoTo ErrorHandler
     
     
     ' Determine initial directory from previously selected database or current database
-    If InStr(Nz(Kanta.Value), "\") Then
-      AHakem = Kanta.Value
+    If InStr(Nz(Me.Kanta.Value), "\") Then
+      AHakem = Me.Kanta.Value
     Else
       AHakem = Application.CurrentDb.Name
     End If
@@ -300,12 +300,12 @@ On Error GoTo ErrorHandler
     lReturn = GetOpenFileName(OpenFile)
     If lReturn <> 0 Then
       ' Extract selected filename (remove null terminator)
-      Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
+      Me.Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
       
-      Debug.Print "  Selected database: " & Kanta.Value
+      Debug.Print "  Valittu tietokanta: " & Me.Kanta.Value
       
       ' Open source database connection
-      Set LahdeDB = OpenDatabase(Kanta.Value)
+      Set LahdeDB = OpenDatabase(Me.Kanta.Value)
       
       Debug.Print "  Database opened successfully"
       
@@ -317,13 +317,13 @@ On Error GoTo ErrorHandler
       
       ' Create linked table to Loops table in source database
       Set Linkki = CurrentDb.CreateTableDef("LOOPLINK")
-      Linkki.Connect = ";DATABASE=" & Kanta.Value
+      Linkki.Connect = ";DATABASE=" & Me.Kanta.Value
       Linkki.SourceTableName = "Loops"
       CurrentDb.TableDefs.Append Linkki
       Set Linkki = Nothing
       
       ' Display available loops in subform
-      Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
+      Me.Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
     End If
     Me.Refresh
     Exit Sub
@@ -350,9 +350,9 @@ End Sub
 '   - Provides responsive UI for better loop viewing
 '--------------------------------------------------------------------------------
 Private Sub Form_Resize()
-  Loopit.Width = Me.WindowWidth - 400  ' Maintain right margin
+  Me.Loopit.Width = Me.WindowWidth - 400  ' Säilytetään oikea marginaali
   If Me.WindowHeight > 3300 Then
-    Loopit.Height = Me.WindowHeight - 3300  ' Adjust height for better viewing
+    Me.Loopit.Height = Me.WindowHeight - 3300  ' Suurennetaan korkeus, kun tilaa on
   End If
 End Sub
 
