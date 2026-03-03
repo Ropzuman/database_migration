@@ -1,35 +1,33 @@
 Option Compare Database   ' Käytä tietokantajärjestystä merkkijonovertailuissa
 Option Explicit           ' Muuttujaesittely pakollinen
 '==============================================================================
-' Module: DataToACAD
-' Purpose: Generate AutoCAD LISP files from database data for circuit diagrams
-' Original: 1997-02-21 Fr 11:10 /tw
-' Revised: 1997-03-19 We 15:46 /tw
-' Revised: 1997-03-21 Fr 16:07 /tw
-' Revised: 1997-07-14 Mo 14:29 /tw
-' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
-'                       Fixed DBEngine pattern, replaced deprecated constants
+' Moduuli: DataToACAD
+' Tarkoitus: Luo AutoCAD LISP-tiedostot tietokannassa olevista piirikaaviotiedoista
+' Alkuperäinen: 1997-02-21 Fr 11:10 /tw
+' Muokattu: 1997-03-19 We 15:46 /tw
+' Muokattu: 1997-03-21 Fr 16:07 /tw
+' Muokattu: 1997-07-14 Mo 14:29 /tw
+' Päivitetty: 2025-11-11 — DAO-tyypit, virheenkäsittely, kommentit lisätty
 '==============================================================================
 
 '------------------------------------------------------------------------------
-' Function: CrsRefLink
-' Purpose: Look up LISP code from cross-reference table
-' Parameters:
-'   tblnimi - Table name identifier
-'   teksti - Cross-reference ID to look up
-' Returns: LISP code string or original text if not found
-' Updated: 2025-11-11 - Added DAO typing, error handling, comments
+' Funktio: CrsRefLink
+' Tarkoitus: Hakee LISP-koodin ristiviitetaulukosta
+' Parametrit:
+'   tblnimi - Taulukonnimi
+'   teksti  - Haettava ristiviite-ID
+' Palautusarvo: LISP-koodi tai alkuperäinen teksti, jos ei löydy
 '------------------------------------------------------------------------------
 Function CrsRefLink(tblnimi As String, teksti As String) As String
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim tble As DAO.Recordset   ' Updated 2025-11-11: Added DAO prefix for early binding
-Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
+Dim DB As DAO.Database
+Dim tble As DAO.Recordset
+Set DB = CurrentDb
 
 If tblnimi = "CRSREF" Then
-    ' Open cross-reference LISP lookup table
-    Set tble = DB.OpenRecordset("CrsRefLisps", dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
+    ' Avataan ristiviite-LISP-hakutaulukko
+    Set tble = DB.OpenRecordset("CrsRefLisps", dbOpenDynaset)
     Do Until tble.EOF
         If tble!CrsRefID = teksti Then
             CrsRefLink = tble!Lisp
@@ -39,10 +37,10 @@ If tblnimi = "CRSREF" Then
         End If
     tble.MoveNext
     Loop
-    CrsRefLink = teksti  ' Return original text if not found
+    CrsRefLink = teksti  ' Ei löydetty — palautetaan alkuperäinen teksti
     tble.Close
 Else
-    ' Not a cross-reference, return original text
+    ' Ei ristiviite — palautetaan alkuperäinen teksti
     CrsRefLink = teksti
 End If
 
@@ -51,7 +49,7 @@ Exit Function
 
 ErrorHandler:
     MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
-    CrsRefLink = teksti  ' Return original text on error
+    CrsRefLink = teksti  ' Virhetilanteessa palautetaan alkuperäinen teksti
     If Not tble Is Nothing Then
         tble.Close
         Set tble = Nothing
@@ -59,13 +57,11 @@ ErrorHandler:
 End Function
 
 '------------------------------------------------------------------------------
-' Function: get_filename
-' Purpose: Extract 8-character filename from table name
-' Parameters:
-'   taulnimi - Table name (may contain asterisk separator)
-' Returns: 8-character uppercase filename
-' Notes: Handles legacy naming convention with asterisk markers
-' Updated: 2025-11-11 - Added error handling and comments
+' Funktio: get_filename
+' Tarkoitus: Poimii 8-merkkisen tiedostonimen taulukonnimestä
+' Parametrit:
+'   taulnimi - Taulukonnimi (voi sisältää tähti-erottimen)
+' Palautusarvo: 8-merkkinen isolla kirjoitettu tiedostonimi
 '------------------------------------------------------------------------------
 Function get_filename(taulnimi As String) As String
 On Error GoTo ErrorHandler
@@ -74,10 +70,10 @@ Dim ast As Integer
 
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
-    ' No asterisk, take first 8 characters
+    ' Ei tähteä — otetaan 8 ensimmäistä merkkiä
     get_filename = UCase$(Mid$(taulnimi, 1, 8))
 Else
-    ' Asterisk found, take first 8 characters before it
+    ' Tähti löytyi — otetaan 8 ensimmäistä merkkiä ennen sitä
     get_filename = UCase$(Mid$(Mid$(taulnimi, 1, ast - 1), 1, 8))
 End If
 
@@ -89,37 +85,35 @@ ErrorHandler:
 End Function
 
 '------------------------------------------------------------------------------
-' Function: inch
-' Purpose: Escape double quotes for AutoCAD LISP syntax
-' Parameters:
-'   a - String containing double quotes to be escaped
-' Returns: String with double quotes replaced by \042 (octal code)
-' Notes: LISP requires special escaping of quote characters
-' Updated: 2025-11-11 - Added error handling, improved variable names, comments
+' Funktio: inch
+' Tarkoitus: Korvaa lainausmerkit LISP-syntaksin \042-sekvenssillä
+' Parametrit:
+'   a - Merkkijono, joka sisältää lainausmerkkejä
+' Palautusarvo: Merkkijono, jossa lainausmerkit korvattu \042-sekvenssillä
 '------------------------------------------------------------------------------
 Function inch(a As String) As String
 On Error GoTo ErrorHandler
 
-Dim L As String     ' Double quote character
-Dim E As String     ' Working string
-Dim b As Integer    ' Position of quote
-Dim c As String     ' String before quote
-Dim D As String     ' String after quote
+Dim L As String     ' Lainausmerkki
+Dim E As String     ' Käsiteltävä merkkijono
+Dim b As Integer    ' Lainausmerkin sijainti
+Dim c As String     ' Merkkijono ennen lainausmerkkiä
+Dim D As String     ' Merkkijono lainausmerkin jälkeen
 
-L = Chr(34)  ' Double quote character
+L = Chr(34)  ' Lainausmerkki
 E = a
 
 Do
     b = InStr(1, E, L)
     If b = 0 Then
-        ' No more quotes found, return result
+        ' Ei lisää lainausmerkkejä — palautetaan tulos
         inch = E
         Exit Function
     End If
-    ' Split string at quote position
+    ' Jaetaan merkkijono lainausmerkin kohdasta
     c = Mid$(E, 1, b - 1)
     D = Mid$(E, b + 1, Len(a))
-    ' Replace quote with LISP escape sequence
+    ' Korvataan lainausmerkki LISP-erikoissekvenssillä
     E = c & "\042" & D
 Loop
 
@@ -127,59 +121,58 @@ Exit Function
 
 ErrorHandler:
     MsgBox "Error in inch: " & Err.Description, vbCritical, "LISP Quote Escaping Error"
-    inch = a  ' Return original string on error
+    inch = a  ' Virhetilanteessa palautetaan alkuperäinen merkkijono
 End Function
 
 '------------------------------------------------------------------------------
-' Function: makeFiles
-' Purpose: Main orchestrator for generating AutoCAD LISP files
-' Parameters:
-'   common - Name of configuration table containing file generation settings
-' Process:
-'   1. Reads configuration from common table
-'   2. Resets/initializes output .txt files
-'   3. Generates non-loop-based lists
-'   4. Generates loop-based lists (if applicable)
-'   5. Closes all files properly
-' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
+' Funktio: makeFiles
+' Tarkoitus: Pääorkestraattori — luo kaikki AutoCAD LISP-tiedostot tietokannasta
+' Parametrit:
+'   common - Konfiguraatiotaulun nimi
+' Toiminta:
+'   1. Lukee asetukset konfiguraatiotaulusta
+'   2. Alustaa .txt-tulostiedostot
+'   3. Luo silmukoimattomat listat
+'   4. Luo silmukoihin perustuvat listat (jos käytössä)
+'   5. Sulkee tiedostot asianmukaisesti
 '------------------------------------------------------------------------------
 Function makeFiles(common As String) As Integer
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim cmmn As DAO.Recordset   ' Configuration recordset
-Dim tbl As DAO.Recordset    ' Data recordset
-Dim L As String             ' Double quote character
-Dim suod As Variant         ' Filter value
-Dim direc As String         ' Output directory path
+Dim DB As DAO.Database
+Dim cmmn As DAO.Recordset   ' Konfiguraatiotietue
+Dim tbl As DAO.Recordset    ' Datatietue
+Dim L As String             ' Lainausmerkki
+Dim suod As Variant         ' Suodatusarvo
+Dim direc As String         ' Tulostushakemiston polku
 
-Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
-Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
+Set DB = CurrentDb
+Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
 
-L = Chr(34)  ' Double quote character for LISP
+L = Chr(34)  ' Lainausmerkki LISP-listoja varten
 
 cmmn.MoveFirst
 suod = cmmn.Fields("Filter")
-direc = cmmn!AcadDirectory  ' Directory where LISP .txt files will be created
+direc = cmmn!AcadDirectory  ' Hakemisto, jonne LISP-tiedostot tallennetaan
 
-' If only generating script file, skip LISP file generation
+' Jos vain skriptitiedosto — ohitetaan LISP-tiedostojen luonti
 If cmmn!OnlyScript Then
     GoTo scrtest
 End If
 
-'--- Reset/Initialize all output .txt files with opening parenthesis ---
+'--- Alustetaan kaikki tulostiedostot avaavalla sulkumerkillä ---
 cmmn.MoveFirst
 Do Until cmmn.EOF
-    ' Initialize non-loop-based files
+    ' Alustetaan silmukoimattomat tiedostot
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Output As #1
-        Print #1, "("  ' Opening parenthesis for LISP list
+        Print #1, "("  ' LISP-listan avaava sulku
         Close #1
     End If
-    ' Initialize loop-based files
+    ' Alustetaan silmukkaan perustuvat tiedostot
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Output As #1
-        Print #1, "("  ' Opening parenthesis for LISP list
+        Print #1, "("  ' LISP-listan avaava sulku
         Close #1
     End If
     cmmn.MoveNext
@@ -187,8 +180,8 @@ Loop
 
 cmmn.MoveFirst
 
-'--- Generate non-loop-based LISP lists ---
-' These are simple lists without filtering by loop ID
+'--- Luodaan silmukoimattomat LISP-listat ---
+' Yksinkertaiset listat ilman silmukka-ID-suodatusta
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         MakeListNoLoopID cmmn!TablesOrQueriesNoLoop.Value, direc
@@ -197,13 +190,13 @@ Do Until cmmn.EOF
 Loop
 
 cmmn.MoveFirst
-' If no loop ID tables, skip to script generation
+' Jos ei silmukkatauluja — hypätään skriptinluontiin
 If cmmn!NoLoopIDTables Then
     GoTo scrtest
 End If
 
-'--- Generate loop-based LISP lists ---
-' These lists are filtered by loop ID column
+'--- Luodaan silmukkaan perustuvat LISP-listat ---
+' Nämä listat suodatetaan silmukka-ID-sarakkeen mukaan
 cmmn.MoveFirst
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
@@ -214,31 +207,31 @@ Loop
 
 cmmn.MoveFirst
 
-'--- Close all files with closing parenthesis ---
-'--- Close all files with closing parenthesis ---
+'--- Suljetaan tiedostot päättävällä sulkumerkillä ---
+'--- Suljetaan tiedostot päättävällä sulkumerkillä ---
 cmmn.MoveFirst
 Do Until cmmn.EOF
-    ' Close non-loop-based files
+    ' Suljetaan silmukoimattomat tiedostot
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' Closing parenthesis for LISP list
+        Print #1, ")"  ' LISP-listan päättävä sulku
         Close #1
     End If
-    ' Close loop-based files
+    ' Suljetaan silmukkaan perustuvat tiedostot
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' Closing parenthesis for LISP list
+        Print #1, ")"  ' LISP-listan päättävä sulku
         Close #1
     End If
     cmmn.MoveNext
 Loop
 
 scrtest:
-' Generate AutoCAD script file for batch processing
+' Luodaan AutoCAD-skriptitiedosto eräajoa varten
 cmmn.MoveFirst
 MakeScript common, suod, cmmn!LoopIDColumn
 
-' Cleanup
+' Siivotaan objektit
 cmmn.Close
 Set cmmn = Nothing
 Set DB = Nothing
@@ -248,9 +241,9 @@ Exit Function
 ErrorHandler:
     MsgBox "Error in makeFiles: " & Err.Description & vbCrLf & _
            "Error occurred while generating LISP files.", vbCritical, "File Generation Error"
-    ' Cleanup on error
+    ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
-    Close #1  ' Close any open file handle
+    Close #1  ' Suljetaan mahdollisesti auki oleva tiedostokahva
     If Not cmmn Is Nothing Then
         cmmn.Close
         Set cmmn = Nothing
@@ -259,47 +252,45 @@ ErrorHandler:
 End Function
 
 '------------------------------------------------------------------------------
-' Sub: MakeListNoLoopID
-' Purpose: Generate LISP lists from tables/queries that don't require loop ID filtering
-' Parameters:
-'   tanimi - Table or query name (may contain asterisk for wildcard matching)
-'   Hakem - Output directory path
-' Notes: Handles both single tables and wildcard table groups (e.g., "CIRCUIT*")
-' Updated: 2025-11-11 - Added DAO typing, error handling, comprehensive comments
+' Proseduuri: MakeListNoLoopID
+' Tarkoitus: Luo LISP-listat taulukoista/kyselyistä ilman silmukka-ID-suodatusta
+' Parametrit:
+'   tanimi - Taulu/kyselynnimi (voi sisältää * jokerina, esim. "CIRCUIT*")
+'   Hakem  - Tulostushakemiston polku
 '------------------------------------------------------------------------------
 Sub MakeListNoLoopID(tanimi As String, Hakem As String)
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim tble As DAO.Recordset   ' Updated 2025-11-11: Added DAO prefix
-Dim L As String             ' Double quote character
-Dim aster As Integer        ' Position of asterisk in table name
-Dim filenum As Integer      ' File handle number
-Dim i As Integer, ii As Integer  ' Loop counters
-Dim preref As String        ' Prefix reference for LISP variable names
+Dim DB As DAO.Database
+Dim tble As DAO.Recordset
+Dim L As String             ' Lainausmerkki
+Dim aster As Integer        ' Tähtimerkin sijainti taulukonnimessä
+Dim filenum As Integer      ' Tiedostokahvan numero
+Dim i As Integer, ii As Integer  ' Silmukkalaskurit
+Dim preref As String        ' LISP-muuttujien etuliiteviite
 
-Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
+Set DB = CurrentDb
 
-L = Chr(34)  ' Double quote character for LISP
+L = Chr(34)  ' Lainausmerkki LISP-listoja varten
 
 aster = InStr(tanimi, "*")
 
-'--- Handle wildcard table names (e.g., "CIRCUIT*") ---
+'--- Käsitellään jokerilliset taulukotnimet (esim. "CIRCUIT*") ---
 If aster <> 0 Then
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
-  ' Loop through all tables matching the prefix
+  ' Käydään läpi kaikki etuliitettä vastaavat taulukot
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tanimi) Then
-        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
+        Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
         preref = get_filename(tanimi)
         
-        ' Process each record in the table
+        ' Käsitellään jokainen tietue
         Do Until tble.EOF
             preref = get_filename(tanimi)
-            ' Build reference prefix from ID fields
+            ' Rakennetaan viittausprefiksi ID-kentät
             For ii = 0 To tble.Fields.Count - 1
                 If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                     preref = preref & "." & tble.Fields(ii).Value
@@ -307,7 +298,7 @@ If aster <> 0 Then
                     Exit For
                 End If
             Next
-            ' Write non-null field values to LISP file
+            ' Kirjoitetaan ei-tyhjät kenttäarvot LISP-tiedostoon
             For ii = 0 To tble.Fields.Count - 1
                 If Not IsNull(tble.Fields(ii).Value) Then
                     Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
@@ -321,18 +312,18 @@ If aster <> 0 Then
   Next
   Close filenum
 
-'--- Handle single table/query names ---
+'--- Käsitellään yksittäinen taulu/kysely ---
 Else
-  Set tble = DB.OpenRecordset(tanimi, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
+  Set tble = DB.OpenRecordset(tanimi, dbOpenDynaset)
   If Not tble.EOF Then tble.MoveFirst
 
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
-  ' Process each record
+  ' Käsitellään jokainen tietue
   Do Until tble.EOF
     preref = get_filename(tanimi)
-    ' Build reference prefix from ID fields
+    ' Rakennetaan viittausprefiksi ID-kentät
     For ii = 0 To tble.Fields.Count - 1
         If Right$(tble.Fields(ii).Name, 2) = "ID" Then
             preref = preref & "." & tble.Fields(ii).Value
@@ -340,7 +331,7 @@ Else
             Exit For
         End If
     Next
-    ' Write non-null field values to LISP file (with cross-reference lookup)
+    ' Kirjoitetaan ei-tyhjät arvot LISP-tiedostoon (ristiviitehaku mukana)
     For ii = 0 To tble.Fields.Count - 1
         If Not IsNull(tble.Fields(ii).Value) Then
             Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
@@ -354,16 +345,16 @@ Else
   tble.Close
 End If
 
-' Cleanup
+' Siivotaan objektit
 Set tble = Nothing
 Set DB = Nothing
 
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error in MakeListNoLoopID: " & Err.Description & vbCrLf & _
-           "Table/Query: " & tanimi, vbCritical, "LISP Generation Error"
-    ' Cleanup on error
+    MsgBox "Virhe MakeListNoLoopID-rutiinissa: " & Err.Description & vbCrLf & _
+           "Taulu/Kysely: " & tanimi, vbCritical, "LISP-generointi epäonnistui"
+    ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
     Close filenum
     If Not tble Is Nothing Then
@@ -394,12 +385,12 @@ If aster <> 0 Then
 
   filenum = FreeFile
   Open Hakem & get_filename(tblnimipre) & ".txt" For Append As filenum
-  ' tables
+  ' Käydään läpi kaikki taulukot
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tblnimipre) Then
         Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
-        ' records
+        ' Käydään läpi kaikki tietueet
         Do Until tble.EOF
             If tble.Fields(0).Value = suoda Then
                 preref = tble.Fields(Looppid).Value & "." & get_filename(tblnimipre)
@@ -487,15 +478,13 @@ ErrorHandler:
 End Sub
 
 '------------------------------------------------------------------------------
-' Function: MakeLocFiles
-' Purpose: Generate installation location files for AutoCAD
-' Updated: 2025-11-11 - Documented hard-coded paths
+' Funktio: MakeLocFiles
+' Tarkoitus: Luo asennussijainnin tiedostot AutoCADille
 '
-' HARD-CODED PATHS - Project Specific:
+' KOVAKOODATUT POLUT — projektikohtaiset:
 '   P:\acaddata\projekti\agropm10\tyo\instloc.txt
 '
-' Note: These paths are specific to the "AGROPM10" project structure.
-' If adapting for new projects, update these paths or move to configuration table.
+' Huom: Polut ovat agropm10-projektille. Muokkaa tai siirrä konfiguraatiotauluun.
 '------------------------------------------------------------------------------
 Function MakeLocFiles()
 On Error GoTo ErrorHandler
@@ -516,7 +505,7 @@ Set tble = DB.OpenRecordset("Loops", dbOpenDynaset)
 
 L = Chr(34)
 
-' reset txt-files
+' Alustetaan txt-tiedostot
         Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Output As #1
         Print #1, "(";
         Close
@@ -564,7 +553,7 @@ L = Chr(34)
  End If
 Next
 
-' print last ')'-mark to file
+' Kirjoitetaan päättävä sulkumerkki tiedostoon
         Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Append As #1
         Print #1, ")"
         Close

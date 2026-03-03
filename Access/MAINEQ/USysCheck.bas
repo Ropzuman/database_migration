@@ -1,10 +1,7 @@
 Option Compare Database
 Option Explicit
 
-' Updated 2025-10-22: 64-bit compatibility, cleaner code
-' Updated 2025-10-23: Changed API Declarations from Private to Public
-
-' Type must be declared outside conditional compilation for Access form compatibility
+' OPENFILENAME-tyyppi täytyy esitellä ehtokääntämislohkon ulkopuolella Access-lomakkeiden yhteensopivuuden vuoksi
 Public Type OPENFILENAME
     lStructSize As Long
 #If VBA7 Then
@@ -39,6 +36,7 @@ Public Type OPENFILENAME
 End Type
 
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
+' (nSize: LongPtr → ByRef Long — Win32 DWORD on 32-bittinen, ei osoitinkokoinen)
 #If VBA7 Then
     Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
@@ -51,23 +49,23 @@ End Type
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
-' Module-level state variables (consider replacing with collection or class for better encapsulation)
+' Moduulitason tilamuuttujat viimeisimmälle hakuehdolle
 Private m_last_criteria As Variant
 Private m_last_used As Variant
 
-' Stores last used values and criteria
+' Tallentaa viimeksi käytetyn arvon ja hakuehdon
 Function Set_last(Values As Variant, criterias As Variant) As Variant
     m_last_criteria = criterias
     m_last_used = Values
     Set_last = m_last_used
 End Function
 
-' Retrieves last used values
+' Palauttaa viimeksi käytetyn arvon
 Function Show_last(criterias As Variant) As Variant
     Show_last = m_last_used
 End Function
 
-' Retrieves last used criteria
+' Palauttaa viimeksi käytetyn hakuehdon
 Function Show_last_criteria(criterias As Variant) As Variant
     Show_last_criteria = m_last_criteria
 End Function
