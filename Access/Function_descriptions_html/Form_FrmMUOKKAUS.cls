@@ -2,9 +2,10 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: FrmMUOKKAUS (Edit/Generate)
-' Purpose: Generate Word and HTML function descriptions for loops and equipment
-' Updated: 2025-11-13 - Added VBA7/64-bit support and optimization
+' Lomake: FrmMUOKKAUS (Muokkaus/Luonti)
+' Tarkoitus: Luo Word- ja HTML-toimintakuvaukset piireille ja laitteistolle
+' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
+'             2026-03-03 — Me.-etuliite lomakeohjaimille; SelStart-suojaukset
 '
 ' Description:
 '   Main editing and generation form for creating function descriptions.
@@ -58,26 +59,26 @@ Dim Suomeksi As Boolean        ' Finnish language flag
 Dim TOUT As TextStream         ' HTML output file stream
 
 '================================================================================
-' Event Handlers: Text Box Focus and Cursor Tracking
+' Tapahtumat: Tekstikenttien fokus ja kursoriseuranta
 '================================================================================
 Private Sub Alarms_GotFocus()
     On Error Resume Next
-    Set KohdeTextBox = Alarms
+    Set KohdeTextBox = Me.Alarms
 End Sub
 
 Private Sub Alarms_KeyUp(KeyCode As Integer, Shift As Integer)
     On Error Resume Next
-    Kursori = Alarms.SelStart
+    Kursori = Me.Alarms.SelStart
 End Sub
 
 Private Sub Alarms_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
-    Kursori = Alarms.SelStart
+    Kursori = Me.Alarms.SelStart
 End Sub
 
 '================================================================================
-' Event: Command13_Click
-' Purpose: Create new loop descriptions in SELOSTUKSET table
+' Tapahtuma: Command13_Click
+' Tarkoitus: Luo uudet piirikuvaukset SELOSTUKSET-tauluun
 '================================================================================
 Private Sub Command13_Click()
     On Error GoTo ErrorHandler
@@ -89,12 +90,12 @@ Private Sub Command13_Click()
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error creating loop descriptions: " & Err.Description, vbExclamation
+    MsgBox "Virhe piirikuvausten luonnissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Event: Command16_Click
-' Purpose: Generate single function description
+' Tapahtuma: Command16_Click
+' Tarkoitus: Luo yksittäinen toimintakuvaus
 '================================================================================
 Private Sub Command16_Click()
     On Error GoTo ErrorHandler
@@ -103,12 +104,12 @@ Private Sub Command16_Click()
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error generating description: " & Err.Description, vbExclamation
+    MsgBox "Virhe kuvauksen luonnissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Event: Command17_Click
-' Purpose: Generate all function descriptions
+' Tapahtuma: Command17_Click
+' Tarkoitus: Luo kaikki toimintakuvaukset
 '================================================================================
 Private Sub Command17_Click()
     On Error GoTo ErrorHandler
@@ -117,14 +118,14 @@ Private Sub Command17_Click()
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error generating descriptions: " & Err.Description, vbExclamation
+    MsgBox "Virhe kuvausten luonnissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Sub: TeeSelostus (Generate Description)
-' Purpose: Generate Word or HTML function descriptions
-' Parameters:
-'   Kaikki - True to generate all descriptions, False for current only
+' Aliohjelma: TeeSelostus
+' Tarkoitus: Luo Word- tai HTML-toimintakuvauksia
+' Parametrit:
+'   Kaikki — True = kaikki kuvaukset, False = vain nykyinen tietue
 '================================================================================
 Private Sub TeeSelostus(Kaikki As Boolean)
     Dim Nimi As String
@@ -135,7 +136,7 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     On Error GoTo ErrorHandler
    
     Suomeksi = False
-'  If FKieli.Value = 2 Then Suomeksi = True
+'  If Me.FKieli.Value = 2 Then Suomeksi = True
 
     PoimiAsetukset
     Samaan = False
@@ -146,13 +147,14 @@ Private Sub TeeSelostus(Kaikki As Boolean)
 '    End If
     End If
     
-    If LomakePohja.Value = 1 Then
+    ' Valitaan tietolähde lomakepohjan tyypin mukaan
+    If Me.LomakePohja.Value = 1 Then
         TTIEDOT = "TIEDOT_PIIRIT"
     Else
         TTIEDOT = "TIEDOT_MOOTTORIT"
     End If
   
-    If FTyyppi = 1 Then 'WORD
+    If Me.FTyyppi = 1 Then 'WORD
         Set oWord = CreateObject("Word.Application") ' oTemplate.Application
         oWord.Visible = True
     Else
@@ -162,10 +164,10 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     If Kaikki Then
         Set Tiedot = CurrentDb.OpenRecordset(TTIEDOT)
     Else
-        If LomakePohja.Value = 1 Then
-            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & LOOPTAG & "'")
+        If Me.LomakePohja.Value = 1 Then
+            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
         Else
-            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & LOOPTAG & "'")
+            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
         End If
     End If
     
@@ -187,7 +189,7 @@ Private Sub TeeSelostus(Kaikki As Boolean)
         Loop
     Else
         Do While Not Tiedot.EOF
-            If FTyyppi = 1 Then 'Word versiot
+            If Me.FTyyppi = 1 Then 'Word versiot
                 Set oTemplate = oWord.Documents.Open(POHJA)
                 Nimi = POLKU & DOCNO & "_" & Tiedot.Fields("LoopTAG") & ".docx"
                 MuutaTiedot
@@ -205,7 +207,7 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error generating description(s): " & Err.Description, vbExclamation
+    MsgBox "Virhe kuvausten luonnissa: " & Err.Description, vbExclamation
     If Not Tiedot Is Nothing Then Tiedot.Close
     If Not oTemplate Is Nothing Then oTemplate.Close False
     If Not oWord Is Nothing Then oWord.Quit False
@@ -336,8 +338,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: MuutaTeksti (Modify Text)
-' Purpose: Convert plain text to HTML with formatting
+' Aliohjelma: MuutaTeksti
+' Tarkoitus: Muuttaa pelkän tekstin HTML-muotoiseksi
 ' Parameters:
 '   TEKSTI - Text to convert (supports {LOOPTAG} links and indentation)
 '
@@ -432,12 +434,12 @@ End If
   Exit Sub
   
 ErrorHandler:
-    MsgBox "Error formatting text to HTML: " & Err.Description, vbExclamation
+    MsgBox "Virhe tekstin HTML-muuntamisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Function: MuutaLinkit (Modify Links)
-' Purpose: Convert {LOOPTAG} references to HTML hyperlinks
+' Funktio: MuutaLinkit
+' Tarkoitus: Muuntaa {LOOPTAG}-viittaukset HTML-hyperlinkeiksi
 ' Parameters:
 '   Tieto - Text containing {LOOPTAG} references
 ' Returns:
@@ -477,8 +479,8 @@ ErrorHandler:
 End Function
 
 '================================================================================
-' Sub: PoimiAsetukset (Get Settings)
-' Purpose: Load generation settings from SETTINGS table
+' Aliohjelma: PoimiAsetukset
+' Tarkoitus: Lataa luontiasetukset SETTINGS-taulusta
 '
 ' Description:
 '   Reads configuration from SETTINGS table including template paths,
@@ -513,8 +515,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: MuutaTiedot (Modify Data)
-' Purpose: Fill Word template bookmarks with loop/equipment data
+' Aliohjelma: MuutaTiedot
+' Tarkoitus: Täyttää Word-mallin kirjanmerkit piirin/laitteen tiedoilla
 '
 ' Description:
 '   Replaces Word template bookmarks with data from current record.
@@ -564,6 +566,7 @@ Private Sub MuutaTiedot()
   End If
 
   
+  ' Me.LomakePohja.Value tarkistettu ylempänä — tässä otetaan arvo moduulitasolta
   If Samaan = False Or Eka = True Then
     KorvaaOts "[REV]", REV
     KorvaaOts "[PROJECT_LINE1]", PROJECT_L1
@@ -589,7 +592,7 @@ Private Sub MuutaTiedot()
   Korvaa "[LINKS]", Nz(Tiedot.Fields("Linkit"))
   Korvaa "[CHANGES]", Nz(Tiedot.Fields("Muutokset"))
   
-  If LomakePohja.Value = 1 Then ' Kysymyksessä piiri
+  If Me.LomakePohja.Value = 1 Then ' Kysymyksessä piiri
     PID_D = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_D'")
     PID_U = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_U'")
      
@@ -690,8 +693,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: KorvaaOts (Replace Header)
-' Purpose: Replace text in Word document header
+' Aliohjelma: KorvaaOts
+' Tarkoitus: Korvaa teksti Word-dokumentin otsikossa
 ' Parameters:
 '   VanhaTeksti - Old text to find
 '   UusiTeksti - New text to replace with
@@ -723,8 +726,8 @@ Private Sub KorvaaOts(VanhaTeksti As String, UusiTeksti As String)
 End Sub
 
 '================================================================================
-' Sub: Korvaa (Replace)
-' Purpose: Replace text in Word document main text
+' Aliohjelma: Korvaa
+' Tarkoitus: Korvaa teksti Word-dokumentin päätekstissä
 ' Parameters:
 '   VanhaTeksti - Old text to find (bookmark)
 '   UusiTeksti - New text to replace with
@@ -783,8 +786,8 @@ Private Sub Korvaa(VanhaTeksti As String, UusiTeksti As String)
 End Sub
 
 '================================================================================
-' Sub: Korvaa2 (Replace 2)
-' Purpose: Replace text in Word document, preserving paragraph breaks
+' Aliohjelma: Korvaa2
+' Tarkoitus: Korvaa teksti Word-dokumentissa säilyttäen kappaleiden vaihdot
 ' Parameters:
 '   VanhaTeksti - Old text to find (bookmark)
 '   UusiTeksti - New text with vbCrLf paragraph separators
@@ -830,8 +833,8 @@ Private Sub Korvaa2(VanhaTeksti As String, ByVal UusiTeksti As String)
 End Sub
 
 '================================================================================
-' Sub: POISTA (Delete)
-' Purpose: Delete bookmark text from Word document
+' Aliohjelma: POISTA
+' Tarkoitus: Poistaa kirjanmerkin tekstin Word-dokumentista
 ' Parameters:
 '   TEKSTI - Bookmark text to find and delete
 '================================================================================
@@ -861,8 +864,8 @@ Private Sub POISTA(TEKSTI As String)
 End Sub
 
 '================================================================================
-' Sub: LisaaHaly (Add Alarm)
-' Purpose: Add alarm level to alarm text string (for Word output)
+' Aliohjelma: LisaaHaly
+' Tarkoitus: Lisää hälytystasorivi hälytyksien tekstimerkkijonoon (Word-tulostus)
 ' Parameters:
 '   Tieto - Alarm level value
 '   Haly - Current alarm text
@@ -876,8 +879,8 @@ Private Sub LisaaHaly(Tieto As Variant, Haly As String, Alku As String)
 End Sub
 
 '================================================================================
-' Sub: LisaaHalyHTML (Add Alarm HTML)
-' Purpose: Add alarm level to HTML output file
+' Aliohjelma: LisaaHalyHTML
+' Tarkoitus: Kirjoittaa hälytystasorivi suoraan HTML-tulostiedostoon
 ' Parameters:
 '   Tieto - Alarm level value
 '   Alku - Alarm prefix text (e.g., "HH: > ")
@@ -891,10 +894,11 @@ Private Sub LisaaHalyHTML(Tieto As Variant, Alku As String)
 End Sub
 
 '================================================================================
-' Sub: LisaaTeksti (Add Text)
-' Purpose: Insert text at cursor position in text boxes
-' Parameters:
-'   TEKSTI - Text to insert
+' Aliohjelma: LisaaTeksti
+' Tarkoitus: Lisää teksti kursorin kohdalle kohdetekstikenttään
+' Parametrit:
+'   TEKSTI — Lisättävä teksti
+' Huom: SelStart vaatii fokuksen — kietotaan virheensuojauksen sisään (Virhe 2185)
 '================================================================================
 Private Sub LisaaTeksti(TEKSTI As String)
     Dim Alku As String
@@ -907,18 +911,21 @@ Private Sub LisaaTeksti(TEKSTI As String)
         Loppu = Mid$(Nz(KohdeTextBox.Value, ""), Kursori + 1)
         KohdeTextBox.Value = Alku & TEKSTI & Loppu
         KohdeTextBox.SetFocus
+        ' SelStart ja SelLength vaativat fokuksen — estetään Virhe 2185
+        On Error Resume Next
         KohdeTextBox.SelStart = Kursori + Len(TEKSTI)
         KohdeTextBox.SelLength = 0
         Kursori = KohdeTextBox.SelStart
+        On Error GoTo ErrorHandler
     End If
     Exit Sub
     
 ErrorHandler:
-    ' Silently ignore errors in text insertion
+    ' Tekstin lisäys epäonnistui hiljaisesti
 End Sub
 
 '================================================================================
-' Event Handlers: Text Insertion Buttons
+' Tapahtumat: Tekstiä lisäävät painikkeet
 '================================================================================
 Private Sub Command32_Click()
     On Error Resume Next
@@ -1067,7 +1074,7 @@ End Sub
 
 Private Sub Command104_Click()
 If KohdeTextBox.Name = "TFunction" Then
-    LisaaTeksti vbCrLf & vbCrLf & "<h4>Askel nro. " & Text105.Value & ": " & Text107.Value & "</h4>" & _
+    LisaaTeksti vbCrLf & vbCrLf & "<h4>Askel nro. " & Me.Text105.Value & ": " & Me.Text107.Value & "</h4>" & _
                 vbCrLf & "-Odotusaika: 0 s" & vbCrLf & _
                 "-Valvonta-aika: 1 s" & vbCrLf & vbCrLf & _
                 "-Toimenpiteet:" & vbCrLf & _
@@ -1095,7 +1102,7 @@ Private Sub Form_Load()
 End Sub
 
 '================================================================================
-' Event Handlers: Text Box Focus Tracking and Cursor Position
+' Tapahtumat: Tekstikenttien fokusseuranta ja kursorin paikka
 '================================================================================
 Private Sub INTERLOCKS_FROM__Click()
     On Error Resume Next
@@ -1104,17 +1111,17 @@ End Sub
 
 Private Sub Interlocks_GotFocus()
     On Error Resume Next
-    Set KohdeTextBox = Interlocks
+    Set KohdeTextBox = Me.Interlocks
 End Sub
 
 Private Sub Interlocks_KeyUp(KeyCode As Integer, Shift As Integer)
     On Error Resume Next
-    Kursori = Interlocks.SelStart
+    Kursori = Me.Interlocks.SelStart
 End Sub
 
 Private Sub Interlocks_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
-    Kursori = Interlocks.SelStart
+    Kursori = Me.Interlocks.SelStart
 End Sub
 
 Private Sub INTERLOCKS_TO__Click()
@@ -1124,47 +1131,48 @@ End Sub
 
 Private Sub Linkit_GotFocus()
     On Error Resume Next
-    Set KohdeTextBox = Linkit
+    Set KohdeTextBox = Me.Linkit
 End Sub
 
 Private Sub Linkit_KeyUp(KeyCode As Integer, Shift As Integer)
     On Error Resume Next
-    Kursori = Linkit.SelStart
+    Kursori = Me.Linkit.SelStart
 End Sub
 
 Private Sub Linkit_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
-    Kursori = Linkit.SelStart
+    Kursori = Me.Linkit.SelStart
 End Sub
 
 Private Sub LomakePohja_AfterUpdate()
     On Error GoTo ErrorHandler
     
-    If LomakePohja.Value = 1 Then
+    ' Vaihdetaan tietolähde valitun pohjan mukaan
+    If Me.LomakePohja.Value = 1 Then
         Me.RecordSource = "MUOKKAUSPIIRIT"
-        Halyt.Visible = True
+        Me.Halyt.Visible = True
     Else
         Me.RecordSource = "MUOKKAUSMOOTTORIT"
-        Halyt.Visible = False
+        Me.Halyt.Visible = False
     End If
     Me.Requery
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error changing template: " & Err.Description, vbExclamation
+    MsgBox "Virhe pohjan vaihtamisessa: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub TFunction_GotFocus()
     On Error Resume Next
-    Set KohdeTextBox = TFunction
+    Set KohdeTextBox = Me.TFunction
 End Sub
 
 Private Sub TFunction_KeyUp(KeyCode As Integer, Shift As Integer)
     On Error Resume Next
-    Kursori = TFunction.SelStart
+    Kursori = Me.TFunction.SelStart
 End Sub
 
 Private Sub TFunction_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
-    Kursori = TFunction.SelStart
+    Kursori = Me.TFunction.SelStart
 End Sub

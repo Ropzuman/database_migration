@@ -2,27 +2,29 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: PIIRIT subform (Loops subform)
-' Purpose: Loop reference insertion helper
-' Updated: 2025-11-13 - Added error handling and null safety
+' Lomake: PIIRIT subform (Piirit-alilomake)
+' Tarkoitus: Piiriviittauksen lisäämisapuri päälomakkeen tekstikenttiin
+' Päivitetty: 2025-11-13 — Virheenkäsittely ja null-suojaus lisätty
+'             2026-03-03 — Me.-etuliite, SelStart-suojaus (Virhe 2185)
 '
-' Description:
-'   Subform for inserting formatted loop references into parent form text boxes.
-'   Uses {AreaCode-LoopNo} format for loop references in generated documents.
+' Kuvaus:
+'   Alilomake piiriviittausten lisäämiseksi päälomakkeen tekstikenttiin.
+'   Käyttää {AlueKoodi-PiiriNumero}-muotoa.
 '
-' Dependencies:
-'   - Parent form with KohdeTextBox and CLoppuun controls
-'   - Public Kursori variable (cursor position)
-'   - Controls: TEKSTI, AreaCode, LoopNo
+' Riippuvuudet:
+'   - Päälomake, jossa KohdeTextBox ja CLoppuun-ohjaimet
+'   - Julkinen Kursori-muuttuja (kursorin sijainti)
+'   - Ohjaimet: TEKSTI, AreaCode, LoopNo
 '================================================================================
 
 '================================================================================
-' Sub: LisaaTeksti (Add Text)
-' Purpose: Insert loop reference at cursor position
+' Aliohjelma: LisaaTeksti
+' Tarkoitus: Lisää piiriviittaus kursorin kohdalle tai kentän loppuun
 '
-' Description:
-'   Inserts text in {brackets} at current cursor position or end of field.
-'   Handles null values and maintains cursor position after insertion.
+' Kuvaus:
+'   Lisää tekstin {hakasulkeissa} nykyiseen kursorin sijaintiin tai kentän
+'   loppuun. Käsittelee null-arvot ja yllapitää kursorin sijainnin.
+' Huom: SelStart vaatii fokuksen — kietotaan virheensuojauksen sisään (Virhe 2185)
 '================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
@@ -32,26 +34,29 @@ Private Sub LisaaTeksti()
     
     If Not KohdeTextBox Is Nothing Then
         If Form.Parent.CLoppuun = True Then
-            ' Append to end
+            ' Lisätään kentän loppuun
             Alku = Nz(KohdeTextBox.Value, "")
             Loppu = ""
         Else
-            ' Insert at cursor position
+            ' Lisätään kursorin kohtaan
             Alku = Left$(Nz(KohdeTextBox.Value, ""), Kursori)
             Loppu = Mid$(Nz(KohdeTextBox.Value, ""), Kursori + 1)
         End If
         
-        KohdeTextBox.Value = Alku & " {" & TEKSTI.Value & "}" & Loppu
+        KohdeTextBox.Value = Alku & " {" & Me.TEKSTI.Value & "}" & Loppu
         KohdeTextBox.SetFocus
-        KohdeTextBox.SelStart = Kursori + Len(TEKSTI.Value) + 3
+        ' SelStart ja SelLength vaativat fokuksen — estetään Virhe 2185
+        On Error Resume Next
+        KohdeTextBox.SelStart = Kursori + Len(Me.TEKSTI.Value) + 3
         KohdeTextBox.SelLength = 0
         Kursori = KohdeTextBox.SelStart
+        On Error GoTo ErrorHandler
     End If
     
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error inserting text: " & Err.Description, vbExclamation
+    MsgBox "Virhe tekstin lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub AreaCode_DblClick(Cancel As Integer)

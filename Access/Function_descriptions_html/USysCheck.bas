@@ -2,22 +2,24 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Module: USysCheck
-' Purpose: User tracking and validation utilities
-' Updated: 2025-11-13 - Added VBA7/64-bit support
+' Moduuli: USysCheck
+' Tarkoitus: Käyttäjäseuranta ja validointityökalut
+' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
+'             2026-03-03 — ErrorHandler-lohkoon lisätty DB.Close ennen Nothing
 '
-' Description:
-'   Tracks users accessing the database by logging network username,
-'   database username, computer name, and timestamp to UsysUsers table.
+' Kuvaus:
+'   Kirjaa tietokantaan kirjautuvat käyttäjät tallentamalla verkkokäyttäjänimen,
+'   tietokannan käyttäjänimen, tietokoneen nimen ja aikaleiman UsysUsers-tauluun.
 '
-' Dependencies:
+' Riippuvuudet:
 '   - Windows API (advapi32.dll, Kernel32)
-'   - UsysUsers table
+'   - UsysUsers-taulu
 '   - DAO.Recordset
 '================================================================================
 
 '---------------------------------------------
-' Windows API Declarations - 64-bit compatible
+' Windows API -esittelyt — 64-bit-yhteensopiva
+' Huom: nSize on Long (32-bit DWORD), ei LongPtr — vältetään Type Mismatch
 '---------------------------------------------
 #If VBA7 Then
     Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
@@ -28,13 +30,14 @@ Option Explicit
 #End If
 
 '================================================================================
-' Function: SniffUser
-' Purpose: Log current user information to UsysUsers table
-' Returns: Nothing (implicit)
+' Funktio: SniffUser
+' Tarkoitus: Kirjaa nykyisen käyttäjän tiedot UsysUsers-tauluun
+' Palauttaa: Ei paluuarvoa
 '
-' Description:
-'   Retrieves network username and computer name from Windows API,
-'   combines with Access CurrentUser(), and logs to UsysUsers table with timestamp.
+' Kuvaus:
+'   Hakee verkkokäyttäjänimen ja tietokoneen nimen Windows API:lta,
+'   yhdistää ne Access CurrentUser() -funktioon, ja kirjaa tiedot
+'   UsysUsers-tauluun aikaleiman kera.
 '================================================================================
 Function SniffUser()
     Dim DB As DAO.Database
@@ -49,14 +52,14 @@ Function SniffUser()
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     
-    ' Get Windows network username
+    ' Haetaan Windows-verkkokäyttäjänimi
     If api_GetUserName(NBuffer, BuffSize) Then
       NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
     Else
       NWUserName = "Unknown"
     End If
     
-    ' Get computer name
+    ' Haetaan tietokoneen nimi
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     If api_GetComputerName(NBuffer, BuffSize) Then
@@ -65,25 +68,31 @@ Function SniffUser()
       CName = "Unknown"
     End If
        
-    ' Log to database
+    ' Kirjataan tiedot tietokantaan
     Set DB = CurrentDb
     Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
     
     With Taulu
         .AddNew
-        .Fields(0) = NWUserName     ' Network username
-        .Fields(1) = CurrentUser()  ' Access database username
-        .Fields(2) = CName          ' Computer name
-        .Fields(3) = Now            ' Timestamp
+        .Fields(0) = NWUserName     ' Verkkokäyttäjänimi
+        .Fields(1) = CurrentUser()  ' Access-tietokannan käyttäjänimi
+        .Fields(2) = CName          ' Tietokoneen nimi
+        .Fields(3) = Now            ' Aikaleima
         .Update
     End With
     
+    ' Suljetaan oikein — .Close ennen Set Nothing (DAO-sääntö)
+    Taulu.Close
+    Set Taulu = Nothing
+    DB.Close
+    Set DB = Nothing
     Exit Function
     
 ErrorHandler:
-    ' Silent error handling - don't disrupt application flow
+    ' Hiljainen virheenk\u00e4sittely \u2014 ei keskeytet\u00e4 sovelluksen toimintaa
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
+    If Not DB Is Nothing Then DB.Close
     Set DB = Nothing
 End Function
