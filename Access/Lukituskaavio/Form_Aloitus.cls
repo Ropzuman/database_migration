@@ -1,12 +1,13 @@
 Option Compare Database
+Option Explicit
 
 Private Sub BValitsePolku_Click()
 Dim TPolku As String
 
-'Valitaan polku
-TPolku = ValitseHakem(Application.hWndAccessApp, Nz(Polku.VALUE))
+' Avataan kansioselain polun valitsemiseksi
+TPolku = ValitseHakem(Application.hWndAccessApp, Nz(Me.Polku.Value))
 If TPolku <> "" Then
-  Polku = TPolku
+  Me.Polku = TPolku
   PaivitaNimet
 End If
 
@@ -15,16 +16,16 @@ End Sub
 Private Sub Command0_Click()
 
 
-If Dir(Polku.VALUE) = "" Then
+If Dir(Me.Polku.Value) = "" Then
   MsgBox "Valitse tietokanta.", vbCritical, "Linkkaa"
   Exit Sub
 Else
     KillLinks
-    Linkkaa LMAINEQ.Caption, "DRIVES"
-    Linkkaa LMAINEQ.Caption, "MAINEQ"
-    Linkkaa LINSTRU.Caption, "LOOPS"
-    Linkkaa LINSTRU.Caption, "DevTable"
-    Linkkaa LINSTRU.Caption, "DevSpec"
+    Linkkaa Me.LMAINEQ.Caption, "DRIVES"
+    Linkkaa Me.LMAINEQ.Caption, "MAINEQ"
+    Linkkaa Me.LINSTRU.Caption, "LOOPS"
+    Linkkaa Me.LINSTRU.Caption, "DevTable"
+    Linkkaa Me.LINSTRU.Caption, "DevSpec"
 '    Linkkaa LINSTRU.Caption, "motor"
     
     DoCmd.OpenForm "Interlocking"
@@ -50,14 +51,14 @@ Private Sub Polku_Change()
   PaivitaNimet
 End Sub
 Private Sub PaivitaNimet()
-  LMAINEQ.Caption = ""
-  LINSTRU.Caption = ""
-  If Polku <> "" Then
-    If Right$(Polku, 1) <> "\" Then
-      Polku = Polku & "\"
+  Me.LMAINEQ.Caption = ""
+  Me.LINSTRU.Caption = ""
+  If Me.Polku <> "" Then
+    If Right$(Me.Polku, 1) <> "\" Then
+      Me.Polku = Me.Polku & "\"
     End If
-    LMAINEQ.Caption = Polku & "MAINEQ.ACCDB"
-    LINSTRU.Caption = Polku & "INSTRU3.ACCDB"
+    Me.LMAINEQ.Caption = Me.Polku & "MAINEQ.ACCDB"
+    Me.LINSTRU.Caption = Me.Polku & "INSTRU3.ACCDB"
    
   End If
 End Sub

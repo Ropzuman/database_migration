@@ -1,13 +1,31 @@
 Option Compare Database
 Option Explicit
-Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
 
-' --------- [ CHOOSE FILE ] -----------------
-Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
+' KORJATTU: GetUserNameA kirjoittaa DWORD:n (32-bit) — nSize on ByRef Long, ei LongPtr
+#If VBA7 Then
+    Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    ' --------- [ CHOOSE FILE ] -----------------
+    ' KORJATTU: GetOpenFileName palauttaa BOOL/osoitteen — LongPtr 64-bittisellä
+    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+        (pOpenfilename As OPENFILENAME) As LongPtr
+#Else
+    Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+        (pOpenfilename As OPENFILENAME) As Long
+#End If
+
+' UDT määritellään ehdollisen käännöksen ulkopuolella (Access-lomakeyhteensopivuus)
 Public Type OPENFILENAME
     lStructSize As Long
+#If VBA7 Then
     hwndOwner As LongPtr
     hInstance As LongPtr
+#Else
+    hwndOwner As Long
+    hInstance As Long
+#End If
     lpstrFilter As String
     lpstrCustomFilter As String
     nMaxCustFilter As Long
@@ -22,8 +40,13 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
+#If VBA7 Then
     lCustData As LongPtr
     lpfnHook As LongPtr
+#Else
+    lCustData As Long
+    lpfnHook As Long
+#End If
     lpTemplateName As String
 End Type
 Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As LongPtr
@@ -95,7 +118,7 @@ End Function
 Public Function BrowseCallbackProc(ByVal hWnd As LongPtr, ByVal uMsg As Long, ByVal lParam As LongPtr, ByVal lpData As LongPtr) As LongPtr
   Const BFFM_INITIALIZED = 1
   Const BFFM_SETSELECTION = &H466
-  Dim retval As LongPtr         'Return value
+  Dim retval As LongPtr         'Palautusarvo
   On Error Resume Next
   Select Case uMsg
   Case BFFM_INITIALIZED
@@ -109,9 +132,13 @@ Public Function DummyFunc(ByVal param As LongPtr) As LongPtr
   DummyFunc = param
 End Function
 Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
-'Tämä valitsee tiedoston hakemistosta
+' Avaa tiedostovalintaikkuna tietokantapolun hakemiseksi
     Dim OpenFile As OPENFILENAME
-    Dim lReturn As Long
+    #If VBA7 Then
+        Dim lReturn As LongPtr
+    #Else
+        Dim lReturn As Long
+    #End If
     Dim Filtteri As String
     Dim AHakem As String
     Dim Polku As String
