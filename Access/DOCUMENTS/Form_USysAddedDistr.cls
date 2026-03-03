@@ -31,7 +31,7 @@ Me.SHakemisto.HyperlinkAddress = SentPath
 
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
+    taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then

@@ -52,13 +52,13 @@ Private Sub Form_Load()
         Rivit = Rivit & ";" & Left$(Tiedostot, Osoitin - 1)
         Tiedostot = Mid$(Tiedostot, Osoitin + 2)
       Loop
-      Tied.RowSource = Rivit
+      Me.Tied.RowSource = Rivit
     End If
   End If
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
+    taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then

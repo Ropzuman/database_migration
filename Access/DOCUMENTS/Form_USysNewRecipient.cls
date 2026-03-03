@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysNewRecipient
@@ -37,7 +37,6 @@ SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.Item
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then
@@ -92,7 +91,6 @@ Private Sub Valmis_Click()
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then

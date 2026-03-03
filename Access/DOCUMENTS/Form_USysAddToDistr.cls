@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysAddToDistr
@@ -38,7 +38,6 @@ Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurReco
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then

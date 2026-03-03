@@ -42,8 +42,8 @@ Private Sub Add_Click()
     KaikkiOK = True
     Set DB = CurrentDb
     
-    ' Begin transaction for atomicity
-    DB.BeginTrans
+' Aloitetaan transaktio atomaarisuuden takaamiseksi
+    DBEngine.BeginTrans
     
 Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.TDistr.Value, dbOpenSnapshot)
 
@@ -58,7 +58,7 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
                 KaikkiOK = False
             Else
                 ' Check if document already added to this distribution
-                Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & j & " AND TDistr=" & TDistr.Value, dbOpenDynaset)
+                Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & j & " AND TDistr=" & Me.TDistr.Value, dbOpenDynaset)
                 
                 If taulu.EOF Then  ' Document not yet in distribution, add it
                     taulu.AddNew
@@ -77,8 +77,8 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
         Set Taulu2 = Nothing
     Next i
     
-    ' Commit transaction
-    DB.CommitTrans
+' Vahvistetaan transaktio
+    DBEngine.CommitTrans
     
     If Not KaikkiOK Then
         MsgBox "At least one of the documents did not have Revision!" & vbCrLf & "Please check the revision and try again.", vbCritical, "Add to DISTRIBUTION"
@@ -86,11 +86,11 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
     
 Cleanup:
     If Not taulu Is Nothing Then
-        If taulu.State = 1 Then taulu.Close
+        taulu.Close
         Set taulu = Nothing
     End If
     If Not Taulu2 Is Nothing Then
-        If Taulu2.State = 1 Then Taulu2.Close
+        Taulu2.Close
         Set Taulu2 = Nothing
     End If
     If Not DB Is Nothing Then
@@ -101,11 +101,10 @@ Cleanup:
     Exit Sub
     
 ErrorHandler:
-    ' Rollback on error
-    If Not DB Is Nothing Then
-        On Error Resume Next
-        DB.Rollback
-    End If
+' Peräytetään transaktio virhetilanteessa
+    On Error Resume Next
+    DBEngine.Rollback
+    On Error GoTo 0
     MsgBox "Error adding documents to distribution: " & Err.Description, vbExclamation, "Add Error"
     Resume Cleanup
 End Sub
@@ -214,7 +213,7 @@ Public Sub Form_Load()
     
 Cleanup:
     If Not taulu Is Nothing Then
-        If taulu.State = 1 Then taulu.Close
+        taulu.Close
         Set taulu = Nothing
     End If
     If Not DB Is Nothing Then

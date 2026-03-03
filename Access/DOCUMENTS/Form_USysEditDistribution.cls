@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysEditDistribution
@@ -36,7 +36,6 @@ Private Sub Form_Load()
   Me.Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & Common
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then
@@ -97,11 +96,9 @@ Private Sub Lista_DblClick(Cancel As Integer)
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not Taulu2 Is Nothing Then
-    If Taulu2.State = 1 Then Taulu2.Close
     Set Taulu2 = Nothing
   End If
   If Not DB Is Nothing Then
@@ -187,7 +184,6 @@ Private Sub Valmis_Click()
   
 Cleanup:
   If Not taulu Is Nothing Then
-    If taulu.State = 1 Then taulu.Close
     Set taulu = Nothing
   End If
   If Not DB Is Nothing Then
