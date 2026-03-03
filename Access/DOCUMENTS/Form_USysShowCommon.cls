@@ -1,5 +1,14 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysShowCommon
+' SOVELLUS : DOCUMENTS — Yleiskkäyttöinen tekstin näyttö/muokkauksest
+' KUVAUS   : Pidättää järjestelmän yleisen teksti-ikkunan.
+'            CommonType 0 = näytä ainoastaan (Locked), 1 = muokkaa.
+'            SetFocus-kutsu on kosmeettinen — kaatumattomuuden vuoksi
+'            suojattu On Error Resume Next -lohkolla.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 Private Sub BCancel_Click()
   DoCmd.Close
@@ -8,24 +17,27 @@ Private Sub BOK_Click()
   Select Case CommonType
   Case 0
   Case 1
-    Common = Nz(Teksti.Value)
+    Common = Nz(Me.Teksti.Value)
   End Select
   DoCmd.Close
 End Sub
 
 Private Sub Form_Load()
-  Otsikko.Caption = CommonOts
+  Me.Otsikko.Caption = CommonOts
   Me.Caption = CommonOts
-  Teksti.Value = Common
+  Me.Teksti.Value = Common
   Select Case CommonType
   Case 0
-    BCancel.Visible = False
-    BOK.Caption = "Close"
-    Teksti.Locked = True
+    Me.BCancel.Visible = False
+    Me.BOK.Caption = "Close"
+    Me.Teksti.Locked = True
   Case 1
-    BCancel.Visible = True
-    BOK.Caption = "OK"
-    Teksti.Locked = False
-    Teksti.SetFocus
+    Me.BCancel.Visible = True
+    Me.BOK.Caption = "OK"
+    Me.Teksti.Locked = False
+    ' SetFocus on kosmeettinen toiminto — suojataan kaatumiselta
+    On Error Resume Next
+    Me.Teksti.SetFocus
+    On Error GoTo 0
   End Select
 End Sub

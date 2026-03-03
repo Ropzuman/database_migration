@@ -1,5 +1,12 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysReserve
+' SOVELLUS : DOCUMENTS — Asiakkaan piirustunumeron varaus
+' KUVAUS   : Varaa asiakkaan piirustunumeron UsysClientDocNos-tauluun.
+'            Tallennuksessa kirjataan varaajan nimi ja aikaleima.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Public SelDept As String
 Public Varaaja As String
 Private Sub Form_Load()
@@ -47,5 +54,6 @@ Private Sub TPaperSize_Change()
   MuodostaNumero
 End Sub
 Private Sub MuodostaNumero()
-  TClientNo.Caption = TPaperSize.Value & "-2090-210-" & TDiscipline.Value & "-" & TNumber.Value
+  ' Muodostetaan asiakkaan piirustunumero valituista kenttien arvoista
+  Me.TClientNo.Caption = Me.TPaperSize.Value & "-2090-210-" & Me.TDiscipline.Value & "-" & Me.TNumber.Value
 End Sub

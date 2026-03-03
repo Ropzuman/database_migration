@@ -1,5 +1,13 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysOpenFile
+' SOVELLUS : DOCUMENTS — Tiedoston avaus
+' KUVAUS   : Näyttää dokumenttiin liitetyt tiedostot listassa.
+'            Kaksoisnapsautuksella avataan tiedosto FollowHyperlink-kutsulla.
+'            Hakemiston voi avata Explorerissa Shell-komennolla.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Dim Hakem As String
 Dim fso As New FileSystemObject
 Private Sub Command4_Click()
@@ -32,7 +40,7 @@ Private Sub Form_Load()
   If Not taulu.EOF Then
     Tiedostot = Nz(taulu.Fields(0).Value, "") & vbCrLf
     Hakem = Nz(taulu.Fields(1).Value, "")
-    MyPath.Caption = "Path: " & Hakem
+    Me.MyPath.Caption = "Path: " & Hakem
     
     Osoitin = InStr(Tiedostot, vbCrLf)
     If Osoitin > 0 Then
@@ -67,9 +75,9 @@ Private Sub Form_Unload(Cancel As Integer)
   Set fso = Nothing
 End Sub
 Private Sub Tied_DblClick(Cancel As Integer)
-  If fso.FileExists(Hakem & Tied.Value) Then
-    Application.FollowHyperlink Hakem & Tied.Value, , True, False
+  If fso.FileExists(Hakem & Me.Tied.Value) Then
+    Application.FollowHyperlink Hakem & Me.Tied.Value, , True, False
   Else
-      MsgBox "File not found: " & Hakem & Tied.Value, vbCritical, "Open File"
+      MsgBox "File not found: " & Hakem & Me.Tied.Value, vbCritical, "Open File"
   End If
 End Sub

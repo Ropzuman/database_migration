@@ -1,5 +1,14 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_DISTRIBUTION
+' SOVELLUS : DOCUMENTS — Distribuutioiden hallinta
+' KUVAUS   : Hallinnoi lähetysten (distribuutioiden) luontia, dokumenttien
+'            lisäämistä distribuutioihin, TRANSMITTAL-raportin tulostusta
+'            sekä Excel-raporttien generointia. Käyttää transaktioita
+'            atomaarisuuden takaamiseksi.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 '''
 ' Add Documents to Distribution
@@ -18,10 +27,10 @@ Private Sub Add_Click()
     On Error GoTo ErrorHandler
     
     ' Validation
-    If Nz(TDistr.Value) = "" Then
+    If Nz(Me.TDistr.Value) = "" Then
         MsgBox "Select Distribution First!", vbCritical, "Error!"
         Exit Sub
-    ElseIf Docs.ItemsSelected.Count = 0 Then
+    ElseIf Me.Docs.ItemsSelected.Count = 0 Then
         MsgBox "Select Documents!", vbCritical, "Error!"
         Exit Sub
     End If
@@ -36,10 +45,10 @@ Private Sub Add_Click()
     ' Begin transaction for atomicity
     DB.BeginTrans
     
-    Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & TDistr.Value, dbOpenSnapshot)
-    
-    For i = 0 To Docs.ItemsSelected.Count - 1
-        j = Docs.ItemData(Docs.ItemsSelected.Item(i))
+Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.TDistr.Value, dbOpenSnapshot)
+
+    For i = 0 To Me.Docs.ItemsSelected.Count - 1
+        j = Me.Docs.ItemData(Me.Docs.ItemsSelected.Item(i))
         
         ' Find document in DOCUMENTS table
         Set Taulu2 = DB.OpenRecordset("SELECT Rev, Counter, Status From DOCUMENTS WHERE Counter=" & j, dbOpenSnapshot)
@@ -54,7 +63,7 @@ Private Sub Add_Click()
                 If taulu.EOF Then  ' Document not yet in distribution, add it
                     taulu.AddNew
                     taulu.Fields(0) = j
-                    taulu.Fields(1) = TDistr.Value
+                    taulu.Fields(1) = Me.TDistr.Value
                     taulu.Fields(2) = HaeRevisio(Taulu2.Fields("Rev"))
                     taulu.Fields(3) = Nz(Taulu2.Fields("Status"), "")
                     taulu.Update
@@ -88,7 +97,7 @@ Cleanup:
         DB.Close
         Set DB = Nothing
     End If
-    USysDocs.Requery
+    Me.USysDocs.Requery
     Exit Sub
     
 ErrorHandler:
@@ -105,20 +114,20 @@ Private Sub BExit_Click()
   DoCmd.Close
 End Sub
 Private Sub Command23_Click()
-'Tehdään ensin kysely transmittaalia varten
-  If TDistr.Value = "" Or IsNull(TDistr.Value) Then
+' Avataan TRANSMITTAL-raportti valitulle distribuutiolle
+  If Me.TDistr.Value = "" Or IsNull(Me.TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else
-    DoCmd.OpenReport "TRANSMITTAL", acViewPreview, , "ID=" & TDistr.Value
+    DoCmd.OpenReport "TRANSMITTAL", acViewPreview, , "ID=" & Me.TDistr.Value
   End If
 End Sub
 Private Sub Command27_Click()
-'Tehdään uusi DISTRIBUUTIO
+' Luodaan uusi distribuutio
     Common = ""
     DoCmd.OpenForm "USysNewDISTRIBUTION"
-    TDistr.Requery
+    Me.TDistr.Requery
     Me.Refresh
-    If Common <> "" Then TDistr.Value = Common
+    If Common <> "" Then Me.TDistr.Value = Common
 End Sub
 '''
 ' Generate Excel Report for Distribution or All Documents
@@ -164,10 +173,10 @@ ErrorHandler:
     Resume Cleanup
 End Sub
 Private Sub Command34_Click()
-If IsNull(TDistr.Value) Then
+If IsNull(Me.TDistr.Value) Then
   MsgBox "Select distribution first!", vbCritical, "Excel report"
 Else
-  ExcelRep TDistr.Value
+  ExcelRep Me.TDistr.Value
 End If
 End Sub
 
@@ -176,14 +185,14 @@ DoCmd.OpenForm "Reserve Number"
 End Sub
 
 Private Sub EditDistrib_Click()
-  'Muokataan vastaanottajia kyseisessä lähetyksessä
-  If TDistr.Value = "" Or IsNull(TDistr.Value) Then
+  ' Muokataan vastaanottajia kyseisessä lähetyksessä
+  If Me.TDistr.Value = "" Or IsNull(Me.TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else
-    Common = TDistr.Value
+    Common = Me.TDistr.Value
     DoCmd.OpenForm "USysEditDISTRIBUTION", , , , , acDialog
-    TDistr.Requery
-    FRecip.Requery
+    Me.TDistr.Requery
+    Me.FRecip.Requery
   End If
 End Sub
 '''
@@ -200,7 +209,7 @@ Public Sub Form_Load()
     Set taulu = DB.OpenRecordset("ProjInfo", dbOpenSnapshot)
     
     If Not taulu.EOF Then
-        tProjekti.Caption = Nz(taulu("Name"), "")
+        Me.tProjekti.Caption = Nz(taulu("Name"), "")
     End If
     
 Cleanup:
@@ -221,14 +230,14 @@ End Sub
 
 Private Sub Form_Resize()
     If Me.WindowWidth > 8000 Then
-      Logo.Left = Me.WindowWidth - 2000
-      VPalkki.Width = Me.WindowWidth - 100
-      Docs.Width = Me.WindowWidth - 1100
-      BExit.Left = Me.WindowWidth - 1730
-      USysDocs.Width = Me.WindowWidth - 1100
-      FRecip.Width = Me.WindowWidth - 1100
+      Me.Logo.Left = Me.WindowWidth - 2000
+      Me.VPalkki.Width = Me.WindowWidth - 100
+      Me.Docs.Width = Me.WindowWidth - 1100
+      Me.BExit.Left = Me.WindowWidth - 1730
+      Me.USysDocs.Width = Me.WindowWidth - 1100
+      Me.FRecip.Width = Me.WindowWidth - 1100
     End If
     If Me.WindowWidth > 9500 Then
-      Info.Left = Me.WindowWidth - 4150
+      Me.Info.Left = Me.WindowWidth - 4150
     End If
 End Sub

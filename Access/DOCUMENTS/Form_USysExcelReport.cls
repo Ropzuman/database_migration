@@ -1,13 +1,20 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysExcelReport
+' SOVELLUS : DOCUMENTS — Excel-raporttien luonti
+' KUVAUS   : Generoi dokumenttilistausraportin Exceliin valitun
+'            raporttityypin ja yksikön mukaan (PDU/FLU, normaali/CN-pyynnöt).
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 Private Sub Command16_Click()
   DoCmd.Close
 End Sub
 
 Private Sub Form_Load()
-  FMetsoUnit.Value = 1
-  FReportType.Value = 1
+  Me.FMetsoUnit.Value = 1
+  Me.FReportType.Value = 1
 End Sub
 
 Private Sub OK_Click()
@@ -20,8 +27,8 @@ Dim DTaulu As DAO.Recordset
 Dim Itemi As String
 
 Set DB = CurrentDb
-If FReportType.Value = 1 Then
-  If FMetsoUnit.Value = 1 Then
+If Me.FReportType.Value = 1 Then
+  If Me.FMetsoUnit.Value = 1 Then
     Kysely = "USysqryForExcelPDU"
     Kysely2 = "USysDIForExcelPDU"
   Else
@@ -29,7 +36,7 @@ If FReportType.Value = 1 Then
     Kysely2 = "USysDIForExcelFLU"
   End If
 Else
-  If FMetsoUnit.Value = 1 Then
+  If Me.FMetsoUnit.Value = 1 Then
     Kysely = "USysqryForExcelPDU_CNReq"
     Kysely2 = "USysDIForExcelPDU_CNReq"
   Else
@@ -69,7 +76,7 @@ On Error GoTo Err_OK_Click
       Set xlApp = CreateObject("Excel.Application")
       xlApp.Workbooks.Open "l:\projekti\valdivia\sheets\tools\DocumentReport.xls", , True
       xlApp.Visible = True
-      If FReportType.Value = 1 Then
+      If Me.FReportType.Value = 1 Then
         xlApp.Run "AjaKaikki", False
         xlApp.Workbooks("DocumentReport.xls").Close False
       Else

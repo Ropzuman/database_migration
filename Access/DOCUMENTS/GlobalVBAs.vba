@@ -1,15 +1,25 @@
 Option Explicit
-'---------------------------------------------
-' 2001 VG Codes for checking current user name
-'---------------------------------------------
-Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
-Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
+'==========================================================================
+' MODUULI  : GlobalVBAs
+' SOVELLUS : DOCUMENTS — Yleiset apufunktiot
+' KUVAUS   : Käynnistyskirjaus (SetStartup), merkkijono-operaatiot
+'            (Yhdista, aReplace) sekä revisiotietojen parsintafunktiot
+'            (HaeTekija, HaeRevisioija, HaeRevisio, jne.).
+'            Windows-kutsut on päivitetty 64-bittisiksi: nSize on ByRef Long,
+'            koska API kirjoittaa DWORD-arvoon (4 tavua), ei 8-tavuiseen LongPtr:iin.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
+
+' Windows-rajapinnan kutsut käyttäjänimen ja koneen nimen hakemiseen
+' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) — ByRef Long, EI LongPtr
+Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 Function SetStartup()
     Dim DB As DAO.Database ' Changed to DAO.Database for clarity and best practice
     Dim taulu As DAO.Recordset ' Changed to DAO.Recordset
     Dim NWUserName As String
     Dim CName As String
-    Dim BuffSize As LongPtr ' Changed to LongPtr
+    Dim BuffSize As Long    ' LPDWORD-yhteensopiva: 32-bittinen arvo
     Dim NBuffer As String
     
     BuffSize = 256
@@ -32,18 +42,19 @@ Function SetStartup()
     Set taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
     With taulu
       .AddNew
-      .Fields(0) = NWUserName    'Users Name In Network
-      .Fields(1) = CurrentUser()  'Users Name In This Database
-      .Fields(2) = CName          'Users Computer Name
-      .Fields(3) = Now            'Time At the Moment
+      .Fields(0) = NWUserName    ' Verkkokäyttäjänimi
+      .Fields(1) = CurrentUser()  ' Tietokantakäyttäjänimi
+      .Fields(2) = CName          ' Koneen nimi
+      .Fields(3) = Now            ' Kirjautumishetki
       .Update
     End With
     Set DB = Nothing
     Set taulu = Nothing
 End Function
 Public Function Yhdista(T1 As String, T2 As String, T3 As String) As String
-'This combines the Document name fields into one column.
-'This cannot be done directly in a query because Access interprets the line break (vbCrLf) as a field name.
+' Yhdistää dokumentin nimikenttä yhdeksi sarakkeeksi.
+' Tätä ei voi tehdä suoraan kyselyssä, koska Access tulkitsee
+' CrLf-merkkiä kenttänimenee eikä rivinvaihtona.
 Dim apu As String
 apu = IIf(T1 = "", "0", "1") & IIf(T2 = "", "0", "1") & IIf(T3 = "", "0", "1")
 Select Case apu

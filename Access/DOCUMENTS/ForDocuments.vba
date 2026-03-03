@@ -1,6 +1,18 @@
-Option Compare Database 'Use database order for string comparisons
+Option Compare Database
 Option Explicit
-'DOCUMENTS-alaformien välistä tiedonsiirtoa varten
+'==========================================================================
+' MODUULI  : ForDocuments
+' SOVELLUS : DOCUMENTS — Jaetut muuttujat ja apufunktiot
+' KUVAUS   : Sisältää lomakkeiden välisen tiedonsiirron julkiset muuttujat,
+'            Shell-kansion valintadialogin API-kutsut (BrowseForFolder),
+'            verkkonimen haun (NetworkUserName) sekä apufunktiot
+'            hakemistopoluille (ValitseHakem, BrowseCallbackProc).
+'            Kaikki API-julistukset päivitetty 64-bittisiksi (PtrSafe, LongPtr).
+'            nSize GetUserNameA:ssa on ByRef Long (LPDWORD), EI LongPtr.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
+
+' DOCUMENTS-alaformien välinen tiedonsiirto
 Public Revisioteksti As String
 Public Revisionumero As String
 Public UusiRevisio As Boolean
@@ -67,8 +79,8 @@ End Type
 Public CDialogPath As String  ' Default path for folder browser dialog
 '---------- [Hakemiston valintaa varten API-funktiot Loppu] ------------
 
-' Network username API
-Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
+' Verkkokäyttäjänimi-API: nSize on LPDWORD (ByRef Long), EI LongPtr
+Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 Public Function IsLoaded(ByVal strFormName As String) As Integer
  ' Palauttaa arvon "Tosi", jos m��ritetty lomake on avoinna
  ' lomake- tai taulukkon�kym�ss�.
@@ -86,7 +98,7 @@ Public Function IsTableLoaded(TableName As String) As Integer
 End Function
 
 Public Function NetworkUserName() As String
-    Dim lngStringLength As LongPtr ' Changed to LongPtr
+    Dim lngStringLength As Long  ' LPDWORD-yhteensopiva: 32-bittinen arvo, EI LongPtr
     Dim sString As String * 255
     lngStringLength = Len(sString)
     sString = String$(lngStringLength, 0)

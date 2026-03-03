@@ -1,5 +1,12 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysNewRecipient
+' SOVELLUS : DOCUMENTS — Uuden vastaanottajan lisäys
+' KUVAUS   : Lisää tai hakee vastaanottajatietoja USysRecipients-tauluun.
+'            Lista_DblClick lataa valitun vastaanottajan tiedot kenttiin.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Private Sub BExit_Click()
   DoCmd.Close
 End Sub
@@ -15,17 +22,17 @@ Private Sub Lista_DblClick(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  SQL = "SELECT * FROM USysRecipients WHERE ID=" & Lista.ItemData(Lista.ItemsSelected(0))
+SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.ItemsSelected(0))
   Set taulu = DB.OpenRecordset(SQL, dbOpenSnapshot)
-  
+
   If Not taulu.EOF Then
-    TName = Nz(taulu.Fields("name"), "")
-    TUnit = Nz(taulu.Fields("unit"), "")
-    TDescription = Nz(taulu.Fields("description"), "")
-    TCompany = Nz(taulu.Fields("company"), "")
-    TCopies = taulu.Fields("copies")
-    TAddress = Nz(taulu.Fields("address"), "")
-    Temail = Nz(taulu.Fields("email"), "")
+    Me.TName = Nz(taulu.Fields("name"), "")
+    Me.TUnit = Nz(taulu.Fields("unit"), "")
+    Me.TDescription = Nz(taulu.Fields("description"), "")
+    Me.TCompany = Nz(taulu.Fields("company"), "")
+    Me.TCopies = taulu.Fields("copies")
+    Me.TAddress = Nz(taulu.Fields("address"), "")
+    Me.Temail = Nz(taulu.Fields("email"), "")
   End If
   
 Cleanup:
@@ -54,10 +61,10 @@ Private Sub Valmis_Click()
   On Error GoTo ErrorHandler
   
   ' Validation
-  If IsNull(TName) Then
+  If IsNull(Me.TName) Then
     MsgBox "You have to give name for the recipient!", vbCritical, "Error!"
     Exit Sub
-  ElseIf IsNull(TAddress) And IsNull(Temail) Then
+  ElseIf IsNull(Me.TAddress) And IsNull(Me.Temail) Then
     MsgBox "You have to give some address to the recipient!", vbCritical, "Error!"
     Exit Sub
   End If
@@ -68,16 +75,16 @@ Private Sub Valmis_Click()
   Set taulu = DB.OpenRecordset("USysRecipients", dbOpenTable)
   With taulu
     .AddNew
-    If IsNull(TCopies) = False Then
+    If IsNull(Me.TCopies) = False Then
       .Fields("To Distribution") = True
     End If
-    .Fields("Name") = TName
-    .Fields("Unit") = Nz(TUnit, Null)
-    .Fields("Description") = Nz(TDescription, Null)
-    .Fields("Company") = Nz(TCompany, Null)
-    .Fields("Copies") = TCopies
-    .Fields("Address") = Nz(TAddress, Null)
-    .Fields("email") = Nz(Temail, Null)
+    .Fields("Name") = Me.TName
+    .Fields("Unit") = Nz(Me.TUnit, Null)
+    .Fields("Description") = Nz(Me.TDescription, Null)
+    .Fields("Company") = Nz(Me.TCompany, Null)
+    .Fields("Copies") = Me.TCopies
+    .Fields("Address") = Nz(Me.TAddress, Null)
+    .Fields("email") = Nz(Me.Temail, Null)
     .Update
   End With
   

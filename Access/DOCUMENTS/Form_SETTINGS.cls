@@ -1,5 +1,13 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_SETTINGS
+' SOVELLUS : DOCUMENTS — Sovellusasetukset
+' KUVAUS   : Tallennetaan sovelluksen nimi (AppTitle) tietokantaan
+'            sulkemisen yhteydessä ja avataan DOCUMENTS-päälomake.
+'            Hakemiston valintadialogia käytetään polun valintaan.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 Private Sub Sulje_Click()
   DoCmd.Close
@@ -14,7 +22,7 @@ Private Sub Form_Unload(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  DB.Properties("AppTitle").Value = Nz(Nimi.Value)
+  DB.Properties("AppTitle").Value = Nz(Me.Nimi.Value)
   Application.RefreshTitleBar
   
   DB.Close
@@ -41,5 +49,5 @@ Dim Hakemisto As String
 End Sub
 
 Private Sub TPath_DblClick(Cancel As Integer)
-  PoimiPolku TPath
+  PoimiPolku Me.TPath
 End Sub

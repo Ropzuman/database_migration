@@ -1,6 +1,15 @@
 Option Compare Database
+Option Explicit
+'==========================================================================
+' LOMAKE   : Form_DBUsers
+' SOVELLUS : DOCUMENTS — Kirjautuneet käyttäjät
+' KUVAUS   : Lukee .laccdb-lukitustiedostosta kirjautuneet käyttäjät
+'            ja näyttää heiät listassa (WhosOn). Mahdollistaa
+'            viestien lähettamisen verkkokomennoilla.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
-' Declare a record type to break down the user info
+' UserRec: LDB-tiedoston 64-tavuinen tietue (kone 32 t + käyttäjä 32 t)
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
@@ -8,9 +17,9 @@ Private Type UserRec
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = InputBox("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Viesti = InputBox("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
   If Viesti <> "" Then
-    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
 

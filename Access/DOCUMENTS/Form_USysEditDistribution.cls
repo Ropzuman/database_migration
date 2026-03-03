@@ -1,5 +1,12 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysEditDistribution
+' SOVELLUS : DOCUMENTS — Distribuution muokkaus
+' KUVAUS   : Lataa olemassa olevan distribuution tiedot muokkauslomakkeelle
+'            ja mahdollistaa vastaanottajien lisäyksen tai poiston.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Private Sub BExit_Click()
   DoCmd.Close
 End Sub
@@ -18,16 +25,15 @@ Private Sub Form_Load()
   Set taulu = DB.OpenRecordset("SELECT * FROM USySDISTRIBUTION WHERE ID=" & Common, dbOpenSnapshot)
   
   If Not taulu.EOF Then
-    DistrNo = Nz(taulu.Fields("No"), "")
-    TDate = taulu.Fields("Date")
-    TReason = Nz(taulu.Fields("Reason"), "")
-    Desc = Nz(taulu.Fields("Description"), "")
-    TSender = Nz(taulu.Fields("Sender"), "")
-    Note = Nz(taulu.Fields("Note"), "")
+    Me.DistrNo = Nz(taulu.Fields("No"), "")
+    Me.TDate = taulu.Fields("Date")
+    Me.TReason = Nz(taulu.Fields("Reason"), "")
+    Me.Desc = Nz(taulu.Fields("Description"), "")
+    Me.TSender = Nz(taulu.Fields("Sender"), "")
+    Me.Note = Nz(taulu.Fields("Note"), "")
   End If
-  
-  Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & Common
-  
+
+  Me.Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & Common
 Cleanup:
   If Not taulu Is Nothing Then
     If taulu.State = 1 Then taulu.Close
@@ -63,7 +69,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  SQL = "SELECT * FROM USysRecipients WHERE ID=" & Lista.ItemData(Lista.ItemsSelected(0))
+  SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.ItemsSelected(0))
   Set taulu = DB.OpenRecordset(SQL, dbOpenSnapshot)
   
   Oletus = IIf(IsNull(taulu.Fields("Copies")), "", taulu.Fields("Copies"))
@@ -87,7 +93,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
     DB.CommitTrans
   End If
   
-  Vastaanottajat.Requery
+  Me.Vastaanottajat.Requery
   
 Cleanup:
   If Not taulu Is Nothing Then
@@ -123,8 +129,8 @@ Private Sub Vastaanottajat_DblClick(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  DB.Execute "DELETE * FROM USysRecipByDistr WHERE (((USysRecipByDistr.Counter)=" & Vastaanottajat.ItemData(Vastaanottajat.ItemsSelected(0)) & "));"
-  Vastaanottajat.Requery
+  DB.Execute "DELETE * FROM USysRecipByDistr WHERE (((USysRecipByDistr.Counter)=" & Me.Vastaanottajat.ItemData(Me.Vastaanottajat.ItemsSelected(0)) & "));"
+  Me.Vastaanottajat.Requery
   
   DB.Close
   Set DB = Nothing
@@ -150,13 +156,13 @@ Private Sub Valmis_Click()
   On Error GoTo ErrorHandler
   
   ' Validation
-  If IsNull(TDate) Then
+  If IsNull(Me.TDate) Then
     MsgBox "You have to select date!", vbCritical, "Error!"
     Exit Sub
-  ElseIf IsNull(Desc) Then
+  ElseIf IsNull(Me.Desc) Then
     MsgBox "You have to put description!", vbCritical, "Error!"
     Exit Sub
-  ElseIf IsNull(TReason) Then
+  ElseIf IsNull(Me.TReason) Then
     MsgBox "Distribution must have reason! Select reason and try again", vbCritical, "Error!"
     Exit Sub
   End If
@@ -169,11 +175,11 @@ Private Sub Valmis_Click()
   
   With taulu
     .Edit
-    .Fields("Description") = Desc
-    .Fields("Date") = TDate
-    .Fields("Sender") = TSender
-    .Fields("Reason") = TReason
-    .Fields("Note") = Nz(Note, Null)
+    .Fields("Description") = Me.Desc
+    .Fields("Date") = Me.TDate
+    .Fields("Sender") = Me.TSender
+    .Fields("Reason") = Me.TReason
+    .Fields("Note") = Nz(Me.Note, Null)
     .Update
   End With
   

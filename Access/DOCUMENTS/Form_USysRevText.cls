@@ -1,13 +1,21 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysRevText
+' SOVELLUS : DOCUMENTS — Revisiotekstin muokkaus
+' KUVAUS   : Hallinnoi dokumentin revisiohistoriaa. Revisiot tallennetaan
+'            puolipisteellä eroteltuina merkkijonoina, jotka parsitaan
+'            kenttiin näytöllä editointia varten.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Public Alku As String
 Public Loppu As String
 Private Sub Form_Resize()
   Dim Rivit As String
   If Revisioteksti <> "" Then
-    Lista.RowSource = Replace(CStr(Revisioteksti), vbCrLf, ";")
-    Lista.SetFocus
-    Lista.ListIndex = 0
+    Me.Lista.RowSource = Replace(CStr(Revisioteksti), vbCrLf, ";")
+    Me.Lista.SetFocus
+    Me.Lista.ListIndex = 0
     If InStr(Revisioteksti, vbCrLf) Then
       NaytaRev Left$(Revisioteksti, InStr(Revisioteksti, vbCrLf) - 1), 0
     Else
@@ -18,49 +26,50 @@ Private Sub Form_Resize()
   End If
 End Sub
 Private Sub Rev_Change()
-  Lista.RowSource = Alku & Rev.Text & " " & DateFld.Value & "/" & Drawn.Value & "/" & Checked.Value & "/" & Approved.Value & "/" & Description.Value & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Text & " " & Me.DateFld.Value & "/" & Me.Drawn.Value & "/" & Me.Checked.Value & "/" & Me.Approved.Value & "/" & Me.Description.Value & Loppu
 End Sub
 Private Sub DateFld_Change()
-  Lista.RowSource = Alku & Rev.Value & " " & DateFld.Text & "/" & Drawn.Value & "/" & Checked.Value & "/" & Approved.Value & "/" & Description.Value & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Value & " " & Me.DateFld.Text & "/" & Me.Drawn.Value & "/" & Me.Checked.Value & "/" & Me.Approved.Value & "/" & Me.Description.Value & Loppu
 End Sub
 Private Sub Drawn_Change()
-  Lista.RowSource = Alku & Rev.Value & " " & DateFld.Value & "/" & Drawn.Text & "/" & Checked.Value & "/" & Approved.Value & "/" & Description.Value & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Value & " " & Me.DateFld.Value & "/" & Me.Drawn.Text & "/" & Me.Checked.Value & "/" & Me.Approved.Value & "/" & Me.Description.Value & Loppu
 End Sub
 Private Sub Checked_Change()
-  Lista.RowSource = Alku & Rev.Value & " " & DateFld.Value & "/" & Drawn.Value & "/" & Checked.Text & "/" & Approved.Value & "/" & Description.Value & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Value & " " & Me.DateFld.Value & "/" & Me.Drawn.Value & "/" & Me.Checked.Text & "/" & Me.Approved.Value & "/" & Me.Description.Value & Loppu
 End Sub
 Private Sub Approved_Change()
-  Lista.RowSource = Alku & Rev.Value & " " & DateFld.Value & "/" & Drawn.Value & "/" & Checked.Value & "/" & Approved.Text & "/" & Description.Value & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Value & " " & Me.DateFld.Value & "/" & Me.Drawn.Value & "/" & Me.Checked.Value & "/" & Me.Approved.Text & "/" & Me.Description.Value & Loppu
 End Sub
 Private Sub Description_Change()
-  Lista.RowSource = Alku & Rev.Value & " " & DateFld.Value & "/" & Drawn.Value & "/" & Checked.Value & "/" & Approved.Value & "/" & Description.Text & Loppu
+  Me.Lista.RowSource = Alku & Me.Rev.Value & " " & Me.DateFld.Value & "/" & Me.Drawn.Value & "/" & Me.Checked.Value & "/" & Me.Approved.Value & "/" & Me.Description.Text & Loppu
 End Sub
 Private Sub Lista_Click()
-  If Lista.ListIndex > 0 Then
-     TOtsikko.Caption = "Older Revision"
+  If Me.Lista.ListIndex > 0 Then
+     Me.TOtsikko.Caption = "Older Revision"
   Else
-    If AddNew.Enabled Then
-      TOtsikko.Caption = "Current Revision"
+    If Me.AddNew.Enabled Then
+      Me.TOtsikko.Caption = "Current Revision"
     Else
-      TOtsikko.Caption = "New Revision"
+      Me.TOtsikko.Caption = "New Revision"
     End If
   End If
-  NaytaRev Nz(Lista.Value), Lista.ListIndex
+  NaytaRev Nz(Me.Lista.Value), Me.Lista.ListIndex
 End Sub
 Private Sub Talleta_Click()
 Dim koe As String
- If Lista.RowSource <> "" Then
-   koe = Rev & Drawn & Checked & Approved & Description
+ ' Tarkistetaan että lista ei ole tyhjä ennen tallennusta
+ If Me.Lista.RowSource <> "" Then
+   koe = Me.Rev.Value & Me.Drawn.Value & Me.Checked.Value & Me.Approved.Value & Me.Description.Value
    If InStr(koe, "/") Then
-     MsgBox "Letter ""/"" is not allowed!", vbCritical, "Save revision"
+     MsgBox "Letter \"/\" is not allowed!", vbCritical, "Save revision"
      Exit Sub
    Else
-     MRevRev = Rev.Value
-     MRevDrawn = Drawn.Value
-     MRevChecked = Checked.Value
-     MRevApproved = Approved.Value
-     MRevDescription = Description.Value
-     Revisioteksti = Replace(Lista.RowSource, ";", vbCrLf)
+     MRevRev = Me.Rev.Value
+     MRevDrawn = Me.Drawn.Value
+     MRevChecked = Me.Checked.Value
+     MRevApproved = Me.Approved.Value
+     MRevDescription = Me.Description.Value
+     Revisioteksti = Replace(Me.Lista.RowSource, ";", vbCrLf)
    End If
  End If
  DoCmd.Close
@@ -68,20 +77,21 @@ End Sub
 Private Sub AddNew_Click()
 Dim UusiRev As String
   Alku = ""
-  Loppu = Lista.RowSource
+  Loppu = Me.Lista.RowSource
+ ' Lasketaan uuden revision kirjain edellisen perusteella
   If Loppu <> "" Then
-    MRevRev = Left$(Lista.RowSource, InStr(Lista.RowSource, " ") - 1)
+    MRevRev = Left$(Me.Lista.RowSource, InStr(Me.Lista.RowSource, " ") - 1)
       MRevRev = Chr(Asc(MRevRev) + 1)
   Else
     MRevRev = "0"
   End If
   
   UusiRev = MRevRev & " " & Date & "/" & MRevDrawn & "/" & MRevChecked & "/" & MRevApproved & "/" & MRevDescription
-  Lista.RowSource = UusiRev & ";" & Lista.RowSource
-  TOtsikko.Caption = "New Revision"
-  Lista.SetFocus
-  Lista.ListIndex = 0
-  AddNew.Enabled = False
+  Me.Lista.RowSource = UusiRev & ";" & Me.Lista.RowSource
+  Me.TOtsikko.Caption = "New Revision"
+  Me.Lista.SetFocus
+  Me.Lista.ListIndex = 0
+  Me.AddNew.Enabled = False
   NaytaRev UusiRev, 0
 End Sub
 Private Sub Sulje_Click()
@@ -93,49 +103,45 @@ Dim i As Integer
 Tyhjenna
 Alku = ""
 Loppu = ""
+' Rakennetaan Alku-merkkijono valitun rivin yläpuolisista riveistä
 For i = 0 To Indeksi - 1
-  Alku = Alku & Lista.Column(0, i) & ";"
+  Alku = Alku & Me.Lista.Column(0, i) & ";"
 Next i
-For i = Indeksi + 1 To Lista.ListCount
-  Loppu = Loppu & ";" & Lista.Column(0, i)
+' Rakennetaan Loppu-merkkijono valitun rivin alapuolisista riveistä
+For i = Indeksi + 1 To Me.Lista.ListCount
+  Loppu = Loppu & ";" & Me.Lista.Column(0, i)
 Next i
-'Revisio
+' Revisio
 Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
-Rev.Value = Left$(Tieto, Osoitin - 1)
+Me.Rev.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Päivämäärä
+' Päivämäärä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-DateFld.Value = Left$(Tieto, Osoitin - 1)
+Me.DateFld.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Tekijä
+' Tekijä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Drawn.Value = Left$(Tieto, Osoitin - 1)
+Me.Drawn.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Tarkastaja
+' Tarkastaja
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Checked.Value = Left$(Tieto, Osoitin - 1)
+Me.Checked.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Hyväksyjä
+' Hyväksyjä
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
-Approved.Value = Left$(Tieto, Osoitin - 1)
-'Tieto = Mid(Tieto, Osoitin + 1)
-'Kohde
-'Osoitin = InStr(Tieto, "/")
-'If Osoitin = 0 Then Exit Sub
-'Kohde.VALUE = Left(Tieto, Osoitin - 1)
-'Selitys
-Description.Value = Mid$(Tieto, Osoitin + 1)
+Me.Approved.Value = Left$(Tieto, Osoitin - 1)
+' Selitys
+Me.Description.Value = Mid$(Tieto, Osoitin + 1)
 End Sub
 Private Sub Tyhjenna()
-  Rev.Value = ""
-  'DateFld.VALUE = ""
-  Drawn.Value = ""
-  Checked.Value = ""
-  Approved.Value = ""
-  Description.Value = ""
+  Me.Rev.Value = ""
+  Me.Drawn.Value = ""
+  Me.Checked.Value = ""
+  Me.Approved.Value = ""
+  Me.Description.Value = ""
 End Sub

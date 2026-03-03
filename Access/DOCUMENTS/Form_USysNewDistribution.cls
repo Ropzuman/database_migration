@@ -1,5 +1,13 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysNewDistribution
+' SOVELLUS : DOCUMENTS — Uuden distribuution luonti
+' KUVAUS   : Käyttäjä valitsee vastaanottajat ja syöttää distribuution
+'            perustiedot. Tallennuksessa luodaan merkinnät tauluihin
+'            UsysDISTRIBUTION ja USysRecipByDistr.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 Private Sub BExit_Click()
   DoCmd.Close
 End Sub
@@ -15,7 +23,7 @@ Private Sub Form_Load()
   
   Set DB = CurrentDb
   DB.Execute "UPDATE USysRecipients SET USysRecipients.[To Distribution] = No;"
-  TDate.Value = Date
+  Me.TDate.Value = Date
   
   DB.Close
   Set DB = Nothing
@@ -30,9 +38,9 @@ ErrorHandler:
 End Sub
 
 Private Sub Lisaa_Click()
-'Lisää uusi vastaanottaja
+' Avataan uuden vastaanottajan lisäyslomake
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
-   Lista.Requery
+   Me.Lista.Requery
 End Sub
 
 '''
@@ -49,9 +57,9 @@ Private Sub Lista_DblClick(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  SQL = "SELECT * FROM USysRecipients WHERE ID=" & Lista.ItemData(Lista.ItemsSelected(0))
+SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.ItemsSelected(0))
   Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset)
-  
+
   If Not taulu.EOF Then
     taulu.Edit
     If taulu.Fields("To Distribution") Then
@@ -66,8 +74,8 @@ Private Sub Lista_DblClick(Cancel As Integer)
     End If
     taulu.Update
   End If
-  
-  Lista.Requery
+
+  Me.Lista.Requery
   
 Cleanup:
   If Not taulu Is Nothing Then
@@ -108,30 +116,30 @@ SQL = "SELECT USysRecipients.*, USysRecipients.[To Distribution] FROM USysRecipi
 Set taulu = DB.OpenRecordset(SQL)
 If taulu.EOF Then
  MsgBox "You have to select recipients for Distribution!", vbCritical, "Error!"
-ElseIf IsNull(DistrNo) Then
+ElseIf IsNull(Me.DistrNo) Then
  MsgBox "You have to give number for distribution!", vbCritical, "Error!"
-ElseIf IsNull(TDate) Then
+ElseIf IsNull(Me.TDate) Then
  MsgBox "You have to select date!", vbCritical, "Error!"
-ElseIf IsNull(Desc) Then
+ElseIf IsNull(Me.Desc) Then
  MsgBox "You have to put description!", vbCritical, "Error!"
-ElseIf IsNull(TReason) Then
+ElseIf IsNull(Me.TReason) Then
  MsgBox "Distribution must have reason! Select reason and try again", vbCritical, "Error!"
 Else
-  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & DistrNo & "'"
+  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & Me.DistrNo & "'"
   Set taulu = DB.OpenRecordset(SQL)
   If taulu.EOF Then 'Ei vielä yhtään saman ID:n omaavaa Distribuutiota
-    Hakemisto = aReplace(DistrNo) & "\"
+    Hakemisto = aReplace(Me.DistrNo) & "\"
 '    If FSO.FolderExists(OutboxPath & Hakemisto) = False Then
 '      FSO.CreateFolder (OutboxPath & Hakemisto)
 '    End If
     With taulu
       .AddNew
-      .Fields("No") = DistrNo
-      .Fields("Description") = Desc
-      .Fields("Date") = TDate
-      .Fields("Sender") = TSender
-      .Fields("Reason") = TReason
-      .Fields("Note") = Note
+      .Fields("No") = Me.DistrNo
+      .Fields("Description") = Me.Desc
+      .Fields("Date") = Me.TDate
+      .Fields("Sender") = Me.TSender
+      .Fields("Reason") = Me.TReason
+      .Fields("Note") = Me.Note
       DistrID = .Fields("ID")
       .Update
       .Close
@@ -157,7 +165,7 @@ Else
     Common = OutboxPath & Hakemisto
 '    DoCmd.OpenForm "UsysAddedDistr", acNormal, , , , acDialog
   Else
-    MsgBox "Distirubution number """ & DistrNo & """ were already selected! Please select another number.", vbCritical, "Error!"
+    MsgBox "Distirubution number """ & Me.DistrNo & """ were already selected! Please select another number.", vbCritical, "Error!"
   End If
   taulu.Close
   DoCmd.Close

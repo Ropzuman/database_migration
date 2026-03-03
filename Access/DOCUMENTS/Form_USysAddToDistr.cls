@@ -1,5 +1,13 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_USysAddToDistr
+' SOVELLUS : DOCUMENTS — Lisää dokumentti distribuutioon
+' KUVAUS   : Tarkistaa onko dokumentti jo lisätty valittuun distribuutioon
+'            ja lisää sen, jos ei. Käyttää transaktioita atomaarisuuden
+'            takaamiseksi.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 '''
 ' Add Document to Distribution
@@ -12,15 +20,15 @@ Private Sub Add_Click()
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurRecord & " AND TDistr=" & Distribution.Value, dbOpenDynaset)
-  
+Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurRecord & " AND TDistr=" & Me.Distribution.Value, dbOpenDynaset)
+
   If taulu.RecordCount <> 0 Then
     MsgBox "Document were already on selected distribution!", vbCritical, "Add document to distribution"
   Else
     DB.BeginTrans
     taulu.AddNew
     taulu.Fields(0) = CurRecord
-    taulu.Fields(1) = Distribution.Value
+    taulu.Fields(1) = Me.Distribution.Value
     taulu.Fields(2) = IIf(Common = "", Null, Common)
     If DocStatus <> "" Then taulu.Fields(3) = DocStatus
     taulu.Update
@@ -53,5 +61,6 @@ Private Sub Command14_Click()
 End Sub
 
 Private Sub Form_Load()
-  Distribution.Value = Distribution.ItemData(1)
+  ' Valitaan oletuksena ensimmäinen distribuutiovaihtoehto
+  Me.Distribution.Value = Me.Distribution.ItemData(1)
 End Sub
