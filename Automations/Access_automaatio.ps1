@@ -14,7 +14,8 @@
 # - Tämä skripti KORVAA komponenttien sisällön suoraan CodeModule-rajapinnan kautta.
 # - EI käytetä VBComponents.Import()-funktiota, koska se lisää näkymättömiä metatietoja.
 # - Import() aiheuttaa komponenttien toimintahäiriöitä (käyttäytyy eri tavalla kuin manuaalisesti kopioidut).
-# - Nykyinen toteutus: lue .bas/.cls-tiedosto -> poista headerit -> kirjoita puhdas koodi AddFromString()-funktiolla.
+# - Nykyinen toteutus: lue .bas/.cls-tiedosto -> poista headerit -> kirjoita puhdas koodi InsertLines(1, ...)-funktiolla.
+# - EI käytetä AddFromString() - se tuottaa tyhjiä sulkeita () moduulin loppuun DeleteLines-ajon jälkeen.
 # - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
@@ -224,7 +225,19 @@ try {
 
                     # Ota vain VBA-koodi (ilman header-rivejä)
                     # KRIITTINEN: ÄLÄ käytä Trim() - se poistaa trailing newlinen ja aiheuttaa syntax-virheen!
-                    $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n")
+                    # KORJAUS: Tarkistetaan että $codeStartIndex on validi (estää PowerShellin käänteisen taulukon)
+                    if ($codeStartIndex -gt ($lines.Count - 1)) {
+                        $cleanCode = ""
+                    }
+                    else {
+                        $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n")
+                    }
+
+                    # KRIITTINEN: AddFromString liittää koodin moduulin loppuun implisiittiseen
+                    # "tyhjään tilaan", mikä tuottaa tyhjiä sulkeita () DeleteLines-ajon jälkeen.
+                    # Korjaus: käytetään InsertLines(1, ...) joka KIRJOITTAA riville 1 liittämisen sijaan.
+                    # Varmistetaan silti, että cleanCode päättyy CRLF-rivinvaihtoon.
+                    $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
                     
                     if ([string]::IsNullOrWhiteSpace($cleanCode)) {
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ⚠ VAROITUS: Tiedosto $name on tyhjä tai sisältää vain headerit. Ohitetaan." -ForegroundColor Yellow
@@ -259,8 +272,9 @@ try {
                         $codeModule.DeleteLines(1, $oldLineCount)
                     }
                     
-                    # Lisää uusi koodi yhtenä stringinä (AddFromString säilyttää line breaks oikein)
-                    $codeModule.AddFromString($cleanCode)
+                    # Lisää uusi koodi InsertLines-menetelmällä riville 1.
+                    # EI käytetä AddFromString() - se tuottaa tyhjiä sulkeita () moduulin loppuun.
+                    $codeModule.InsertLines(1, $cleanCode)
                     
                     $newLineCount = $codeModule.CountOfLines
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)" -ForegroundColor Green
