@@ -7,47 +7,47 @@ Option Explicit
 ' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
 '             2026-03-03 — Me.-etuliite lomakeohjaimille; SelStart-suojaukset
 '
-' Description:
-'   Main editing and generation form for creating function descriptions.
-'   Generates both Word (.docx) and HTML documents from database templates.
-'   Handles loops (PIIRIT) and equipment (MOOTTORIT) descriptions.
+' Kuvaus:
+'   Päälomake toimintakuvausten muokkaukseen ja luontiin.
+'   Luo sekä Word- (.docx) että HTML-tiedostoja tietokantapohjaisista malleista.
+'   Käsittelee piirit (PIIRIT) sekä laitteiston (MOOTTORIT).
 '
-' Document Generation Process:
-'   1. User selects template type (loops/motors) and output format (Word/HTML)
-'   2. Form reads data from TIEDOT_PIIRIT or TIEDOT_MOOTTORIT tables
-'   3. Text fields support special syntax:
-'      - {LOOPTAG} inserts hyperlinked loop references
-'      - {Equipment references} insert equipment tags
-'      - Lines starting with "-" create indented lists
-'      - Lines starting with "--" create double-indented lists
-'   4. For Word: Opens template, replaces bookmarks, saves as new document
-'   5. For HTML: Generates HTML file with CSS styling and hyperlinks
+' Luontiprosessi:
+'   1. Käyttäjä valitsee mallin tyypin (piirit/moottorit) ja tulostusmuodon (Word/HTML)
+'   2. Lomake lukee tiedot TIEDOT_PIIRIT- tai TIEDOT_MOOTTORIT-taulusta
+'   3. Tekstikentät tukevat erikoissyntaksia:
+'      - {LOOPTAG} lisää hyperlinkatun piiriviittauksen
+'      - {Laiteviittaukset} lisäävät laitetagit
+'      - "-"-alkuiset rivit sisennetään listaan
+'      - "--"-alkuiset rivit sisennetään kaksinkertaisesti
+'   4. Word-muoto: avaa mallin, korvaa kirjanmerkit, tallentaa uutena dokumenttina
+'   5. HTML-muoto: luo HTML-tiedoston CSS-tyyleillä ja hyperlinkillä
 '
-' Template Bookmarks (Word):
-'   - _REV, _STAT, _AUTH, _DOCNO, _PL1, _PL2 (header fields)
-'   - _LTAG, _DESCR, _FUNCT, _INTERL, _ALARMS, _CROSS, _REV1 (content fields)
-'   - Alarm levels: _HH, _H, _LL, _L with _ALARMDESCR
+' Word-mallin kirjanmerkit:
+'   - _REV, _STAT, _AUTH, _DOCNO, _PL1, _PL2 (otsikkokentät)
+'   - _LTAG, _DESCR, _FUNCT, _INTERL, _ALARMS, _CROSS, _REV1 (sisältökentät)
+'   - Hälytysehdot: _HH, _H, _LL, _L sekä _ALARMDESCR
 '
-' Dependencies:
-'   - Word Automation (Microsoft Word Object Library)
+' Riippuvuudet:
+'   - Word-automaatio (Microsoft Word Object Library)
 '   - FileSystemObject (Microsoft Scripting Runtime)
 '   - DAO.Recordset
-'   - Forms: MOTORS subform, PIIRIT subform
-'   - Tables: TIEDOT_PIIRIT, TIEDOT_MOOTTORIT, SELOSTUKSET
-'   - Queries: LUOPIIRIT (creates new loop descriptions)
-'   - Module: USysCheck (SniffUser function)
-'   - Public variables: KohdeTextBox As TextBox, Kursori As Long
-'   - Controls: LOOPTAG, CLoppuun, FKieli, LomakePohja, FTyyppi
+'   - Lomakkeet: MOTORS subform, PIIRIT subform
+'   - Taulut: TIEDOT_PIIRIT, TIEDOT_MOOTTORIT, SELOSTUKSET
+'   - Kyselyt: LUOPIIRIT (luo uudet piirikuvaukset)
+'   - Moduuli: USysCheck (SniffUser-funktio)
+'   - Julkiset muuttujat: KohdeTextBox As TextBox, Kursori As Long
+'   - Ohjaimet: LOOPTAG, CLoppuun, FKieli, LomakePohja, FTyyppi
 '             Alarms, Function, Interlocks, Crossref, RevHistoria
 '================================================================================
 
 ' Module-level variables
-Dim POHJA As String            ' Template file path
-Dim POLKU As String            ' Output directory path
-Dim REV As String              ' Revision number
-Dim STATUS As String           ' Document status
-Dim AUTHOR As String           ' Document author
-Dim DOCNO As String            ' Document number
+Dim POHJA As String            ' Mallitiedoston polku
+Dim POLKU As String            ' Tulostushakemiston polku
+Dim REV As String              ' Revisionumero
+Dim STATUS As String           ' Dokumentin tila
+Dim AUTHOR As String           ' Dokumentin tekijä
+Dim DOCNO As String            ' Dokumenttinumero
 Dim PROJECT_L1 As String       ' Project line 1
 Dim PROJECT_L2 As String       ' Project line 2
 Dim oWord As Word.Application  ' Word application object
@@ -219,8 +219,8 @@ Private Sub TeeSelostus(Kaikki As Boolean)
                 Set TOUT = FS.CreateTextFile(POLKU & sTagiEnnen & ".html")
                 TeeHTML
                 TOUT.Close
-                ' Turvasilmukka: jos TeeHTML ei edennyt (virhe keskeyt\u00e4nyt MoveNext-kutsun),
-                ' hyp\u00e4t\u00e4\u00e4n k\u00e4sin t\u00e4m\u00e4n piirin kaikki j\u00e4ljell\u00e4 olevat rivit
+                ' Turvasilmukka: jos TeeHTML ei edennyt (virhe keskeyttänyt MoveNext-kutsun),
+                ' hypätään käsin tämän piirin kaikki jäljellä olevat rivit
                 Do While Not Tiedot.EOF
                     If Tiedot.Fields("LoopTAG") <> sTagiEnnen Then Exit Do
                     Tiedot.MoveNext
@@ -240,16 +240,16 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: TeeHTML (Generate HTML)
-' Purpose: Generate HTML function description file
+' Aliohjelma: TeeHTML
+' Tarkoitus: Luo HTML-muotoinen toimintakuvaus
 '
-' Description:
-'   Creates HTML file with loop/motor function description, including:
-'   - Document header with title and CSS link
-'   - Function, Interlocks, Alarms sections
-'   - Cross-references to other loops
-'   - Revision history
-'   Special formatting: {LOOPTAG} becomes hyperlink, "-" lines become indented
+' Kuvaus:
+'   Luo HTML-tiedoston piirin tai laitteen toimintakuvauksesta:
+'   - Dokumentin otsikko-osa, otsikko ja CSS-linkki
+'   - Toiminta-, lukitukset- ja hälytykset-osiot
+'   - Ristiviittaukset muihin piireihin
+'   - Muutoshistoria
+'   Erikoismuotoilu: {LOOPTAG} muuttuu hyperlinkiksi, "-"-rivit sisennetään
 '================================================================================
 Private Sub TeeHTML()
     'Luodaan html muotoinen selostus. TOUT on tiedosto-objekti, joka on jo määritelty
@@ -466,14 +466,14 @@ End Sub
 '================================================================================
 ' Funktio: MuutaLinkit
 ' Tarkoitus: Muuntaa {LOOPTAG}-viittaukset HTML-hyperlinkeiksi
-' Parameters:
-'   Tieto - Text containing {LOOPTAG} references
-' Returns:
-'   Text with {LOOPTAG} converted to <a href="LOOPTAG.html">LOOPTAG</a>
+' Parametrit:
+'   Tieto — {LOOPTAG}-viittauksia sisältävä teksti
+' Palauttaa:
+'   Teksti, jossa {LOOPTAG} on muutettu muotoon <a href="LOOPTAG.html">LOOPTAG</a>
 '
-' Description:
-'   Searches for {POS Description} patterns and converts to hyperlinks
-'   where POS is loop tag. Supports both {POS} and {POS Description} formats.
+' Kuvaus:
+'   Etsii {POS Kuvaus}-muotoiset rakenteet ja muuntaa ne hyperlinkeiksi,
+'   missä POS on piirin tagi. Tukee sekä {POS}- että {POS Kuvaus}-muotoja.
 '================================================================================
 Private Function MuutaLinkit(Tieto As String) As String
     Dim OS As Long, OS2 As Long, OS3 As Long
@@ -501,16 +501,16 @@ Private Function MuutaLinkit(Tieto As String) As String
     Exit Function
     
 ErrorHandler:
-    MuutaLinkit = Tieto  ' Return original on error
+    MuutaLinkit = Tieto  ' Palautetaan alkuperäinen virhetilanteessa
 End Function
 
 '================================================================================
 ' Aliohjelma: PoimiAsetukset
 ' Tarkoitus: Lataa luontiasetukset SETTINGS-taulusta
 '
-' Description:
-'   Reads configuration from SETTINGS table including template paths,
-'   output directory, and project information for document headers.
+' Kuvaus:
+'   Lukee SETTINGS-taulusta konfiguraation: mallipolut, hakemistot ja
+'   projektin otsikkotiedot dokumenttien ylätunnistetta varten.
 '================================================================================
 Private Sub PoimiAsetukset()
     Dim Taul As DAO.Recordset
@@ -556,10 +556,10 @@ End Sub
 ' Aliohjelma: MuutaTiedot
 ' Tarkoitus: Täyttää Word-mallin kirjanmerkit piirin/laitteen tiedoilla
 '
-' Description:
-'   Replaces Word template bookmarks with data from current record.
-'   Handles headers (_REV, _STAT, _AUTH, etc.) and content fields
-'   (_LTAG, _DESCR, _FUNCT, etc.). Generates alarm lists and equipment lists.
+' Kuvaus:
+'   Korvaa Word-mallin kirjanmerkit nykyisen tietueen tiedoilla.
+'   Käsittelee otsikkokentät (_REV, _STAT, _AUTH jne.) ja sisältökentät
+'   (_LTAG, _DESCR, _FUNCT jne.). Rakentaa hälytyslistan ja laitelistan.
 '================================================================================
 Private Sub MuutaTiedot()
     Dim Tagi As String
@@ -734,14 +734,14 @@ End Sub
 '================================================================================
 ' Aliohjelma: KorvaaOts
 ' Tarkoitus: Korvaa teksti Word-dokumentin otsikossa
-' Parameters:
-'   VanhaTeksti - Old text to find
-'   UusiTeksti - New text to replace with
+' Parametrit:
+'   VanhaTeksti — Korvattava teksti
+'   UusiTeksti  — Uusi teksti
 '================================================================================
 Private Sub KorvaaOts(VanhaTeksti As String, UusiTeksti As String)
     Dim rngStory As Variant
     
-    On Error Resume Next  ' Header may not exist
+    On Error Resume Next  ' Otsikko saattaa puuttua — jatketaan hiljaisesti
     
     UusiTeksti = Replace(UusiTeksti, "{", "")
     UusiTeksti = Replace(UusiTeksti, "}", "")
@@ -767,18 +767,18 @@ End Sub
 '================================================================================
 ' Aliohjelma: Korvaa
 ' Tarkoitus: Korvaa teksti Word-dokumentin päätekstissä
-' Parameters:
-'   VanhaTeksti - Old text to find (bookmark)
-'   UusiTeksti - New text to replace with
+' Parametrit:
+'   VanhaTeksti — Korvattava teksti (kirjanmerkki)
+'   UusiTeksti  — Uusi teksti
 '
-' Description:
-'   Replaces bookmark text in document. Handles long text (>255 chars) separately
-'   due to Word limitations. Strips {braces} from replacement text.
+' Kuvaus:
+'   Korvaa kirjanmerkin tekstin dokumentissa. Pitkä teksti (>255 merkkiä)
+'   käsitellään erikseen Word-rajoituksen vuoksi. Poistaa {aaltosulkeet}.
 '================================================================================
 Private Sub Korvaa(VanhaTeksti As String, UusiTeksti As String)
     Dim rngStory As Variant
     
-    On Error Resume Next  ' Continue if bookmark not found
+    On Error Resume Next  ' Kirjanmerkki saattaa puuttua — jatketaan hiljaisesti
     
     UusiTeksti = Replace(UusiTeksti, "{", "")
     UusiTeksti = Replace(UusiTeksti, "}", "")
@@ -827,20 +827,20 @@ End Sub
 '================================================================================
 ' Aliohjelma: Korvaa2
 ' Tarkoitus: Korvaa teksti Word-dokumentissa säilyttäen kappaleiden vaihdot
-' Parameters:
-'   VanhaTeksti - Old text to find (bookmark)
-'   UusiTeksti - New text with vbCrLf paragraph separators
+' Parametrit:
+'   VanhaTeksti — Korvattava teksti (kirjanmerkki)
+'   UusiTeksti  — Uusi teksti, kappaleet erotettu vbCrLf-merkillä
 '
-' Description:
-'   Replaces bookmark text and converts vbCrLf to Word paragraphs.
-'   Strips {braces} from replacement text.
+' Kuvaus:
+'   Korvaa kirjanmerkin tekstin ja muuntaa vbCrLf-erottimet Word-kappaleiksi.
+'   Poistaa {aaltosulkeet} tekstistä.
 '================================================================================
 Private Sub Korvaa2(VanhaTeksti As String, ByVal UusiTeksti As String)
     Dim rngStory As Variant
     Dim Tekstit As Variant
     Dim i As Integer
     
-    On Error Resume Next  ' Continue if bookmark not found
+    On Error Resume Next  ' Kirjanmerkki saattaa puuttua — jatketaan hiljaisesti
     
     UusiTeksti = Replace(UusiTeksti, "{", "")
     UusiTeksti = Replace(UusiTeksti, "}", "")
@@ -874,14 +874,14 @@ End Sub
 '================================================================================
 ' Aliohjelma: POISTA
 ' Tarkoitus: Poistaa kirjanmerkin tekstin Word-dokumentista
-' Parameters:
-'   TEKSTI - Bookmark text to find and delete
+' Parametrit:
+'   TEKSTI — Poistettava kirjanmerkkiteksti
 '================================================================================
 Private Sub POISTA(TEKSTI As String)
     Dim rngStory As Variant
     Dim i As Integer
     
-    On Error Resume Next  ' Continue if bookmark not found
+    On Error Resume Next  ' Kirjanmerkki saattaa puuttua — jatketaan hiljaisesti
     
     oWord.Activate
     oTemplate.StoryRanges(wdMainTextStory).Select
@@ -905,10 +905,10 @@ End Sub
 '================================================================================
 ' Aliohjelma: LisaaHaly
 ' Tarkoitus: Lisää hälytystasorivi hälytyksien tekstimerkkijonoon (Word-tulostus)
-' Parameters:
-'   Tieto - Alarm level value
-'   Haly - Current alarm text
-'   Alku - Alarm prefix text (e.g., "HH: > ")
+' Parametrit:
+'   Tieto — Hälytystason arvo
+'   Haly  — Nykyinen hälytysmerkijono
+'   Alku  — Hälytyksen etuliiteteksti (esim. "HH: > ")
 '================================================================================
 Private Sub LisaaHaly(Tieto As Variant, Haly As String, Alku As String)
     On Error Resume Next
@@ -920,9 +920,9 @@ End Sub
 '================================================================================
 ' Aliohjelma: LisaaHalyHTML
 ' Tarkoitus: Kirjoittaa hälytystasorivi suoraan HTML-tulostiedostoon
-' Parameters:
-'   Tieto - Alarm level value
-'   Alku - Alarm prefix text (e.g., "HH: > ")
+' Parametrit:
+'   Tieto — Hälytystason arvo
+'   Alku  — Hälytyksen etuliiteteksti (esim. "HH: > ")
 '================================================================================
 Private Sub LisaaHalyHTML(Tieto As Variant, Alku As String)
     On Error Resume Next
@@ -1011,7 +1011,7 @@ Private Sub Command40_Click()
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error creating motor descriptions: " & Err.Description, vbExclamation
+    MsgBox "Virhe moottorikuvausten luonnissa: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub Command60_Click()
@@ -1081,10 +1081,6 @@ Private Sub Command76_Click()
 LisaaTeksti "Ei lukituksia" & vbCrLf & vbCrLf
 End Sub
 
-Private Sub Command81_Click()
-
-End Sub
-
 Private Sub Command99_Click()
 If KohdeTextBox.Name = "TFunction" Then
     LisaaTeksti vbCrLf & "-Odotusaika: 0 s" & vbCrLf & _
@@ -1129,15 +1125,8 @@ End If
 End Sub
 
 
-Private Sub Form_AfterUpdate()
-    On Error Resume Next
-'  cUI.Requery
-    'Me.Refresh
-End Sub
-
 Private Sub Form_Load()
-    On Error Resume Next
-'  CLoppuun.Value = False
+    ' Lomakkeen alustus — ei toimenpiteitä
 End Sub
 
 '================================================================================

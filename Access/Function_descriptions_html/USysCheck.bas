@@ -89,7 +89,7 @@ Function SniffUser()
     Exit Function
     
 ErrorHandler:
-    ' Hiljainen virheenk\u00e4sittely \u2014 ei keskeytet\u00e4 sovelluksen toimintaa
+    ' Hiljainen virheenkäsittely — ei keskeytetä sovelluksen toimintaa
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
