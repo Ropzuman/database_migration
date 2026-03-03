@@ -51,7 +51,7 @@ End Sub
 Private Sub Lisaa_Click()
 'Lisää uusi vastaanottaja
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
-   Lista.Requery
+   Me.Lista.Requery
 End Sub
 '''
 ' Lista Double Click - Add selected recipient to distribution

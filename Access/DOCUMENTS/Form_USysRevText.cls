@@ -61,7 +61,7 @@ Dim koe As String
  If Me.Lista.RowSource <> "" Then
    koe = Me.Rev.Value & Me.Drawn.Value & Me.Checked.Value & Me.Approved.Value & Me.Description.Value
    If InStr(koe, "/") Then
-     MsgBox "Letter \"/\" is not allowed!", vbCritical, "Save revision"
+     MsgBox "Letter ""/""  is not allowed!", vbCritical, "Save revision"
      Exit Sub
    Else
      MRevRev = Me.Rev.Value
