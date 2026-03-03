@@ -75,7 +75,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
   Kopioita = InputBox("How many copies are been sent? E.g. 4 paper copies and e-mail are usually marked as ""4+e"".", "Copies", Oletus)
   
   If Kopioita <> "" Then
-    DB.BeginTrans
+    DBEngine.BeginTrans
     Set Taulu2 = DB.OpenRecordset("USysRecipByDistr", dbOpenTable)
     With Taulu2
       .AddNew
@@ -89,7 +89,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
       .Fields("email") = Nz(taulu.Fields("email"), "")
       .Update
     End With
-    DB.CommitTrans
+    DBEngine.CommitTrans
   End If
   
   Me.Vastaanottajat.Requery
@@ -110,7 +110,7 @@ Cleanup:
 ErrorHandler:
   If Not DB Is Nothing Then
     On Error Resume Next
-    DB.Rollback
+    DBEngine.Rollback
   End If
   MsgBox "Error adding recipient: " & Err.Description, vbExclamation, "Add Error"
   Resume Cleanup
@@ -165,7 +165,7 @@ Private Sub Valmis_Click()
   End If
   
   Set DB = CurrentDb
-  DB.BeginTrans
+  DBEngine.BeginTrans
   
   SQL = "SELECT * FROM UsysDISTRIBUTION WHERE ID=" & Common
   Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset)
@@ -180,7 +180,7 @@ Private Sub Valmis_Click()
     .Update
   End With
   
-  DB.CommitTrans
+  DBEngine.CommitTrans
   
 Cleanup:
   If Not taulu Is Nothing Then
@@ -196,7 +196,7 @@ Cleanup:
 ErrorHandler:
   If Not DB Is Nothing Then
     On Error Resume Next
-    DB.Rollback
+    DBEngine.Rollback
   End If
   MsgBox "Error updating distribution: " & Err.Description, vbCritical, "Update Error"
   Resume Cleanup

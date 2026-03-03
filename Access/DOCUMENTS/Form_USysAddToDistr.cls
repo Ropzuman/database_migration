@@ -25,14 +25,14 @@ Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurReco
   If taulu.RecordCount <> 0 Then
     MsgBox "Document were already on selected distribution!", vbCritical, "Add document to distribution"
   Else
-    DB.BeginTrans
+    DBEngine.BeginTrans
     taulu.AddNew
     taulu.Fields(0) = CurRecord
     taulu.Fields(1) = Me.Distribution.Value
     taulu.Fields(2) = IIf(Common = "", Null, Common)
     If DocStatus <> "" Then taulu.Fields(3) = DocStatus
     taulu.Update
-    DB.CommitTrans
+    DBEngine.CommitTrans
     DoCmd.Close
   End If
   
@@ -49,7 +49,7 @@ Cleanup:
 ErrorHandler:
   If Not DB Is Nothing Then
     On Error Resume Next
-    DB.Rollback
+    DBEngine.Rollback
   End If
   MsgBox "Error adding document to distribution: " & Err.Description, vbCritical, "Add Error"
   Resume Cleanup

@@ -69,7 +69,7 @@ Private Sub Valmis_Click()
   End If
   
   Set DB = CurrentDb
-  DB.BeginTrans
+  DBEngine.BeginTrans
   
   Set taulu = DB.OpenRecordset("USysRecipients", dbOpenTable)
   With taulu
@@ -87,7 +87,7 @@ Private Sub Valmis_Click()
     .Update
   End With
   
-  DB.CommitTrans
+  DBEngine.CommitTrans
   
 Cleanup:
   If Not taulu Is Nothing Then
@@ -103,7 +103,7 @@ Cleanup:
 ErrorHandler:
   If Not DB Is Nothing Then
     On Error Resume Next
-    DB.Rollback
+    DBEngine.Rollback
   End If
   MsgBox "Error saving recipient: " & Err.Description, vbCritical, "Save Error"
   Resume Cleanup
