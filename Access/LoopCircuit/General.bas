@@ -2,79 +2,65 @@ Option Compare Database
 Option Explicit
 
 '---------------------------------------------
-' VG 2001 - User tracking module
-' Updated 2025-10-22: 64-bit compatibility, explicit DAO, transactions
+' VG 2001 - Käyttäjäseurantamoduuli
+' Päivitetty 2025-10-22: 64-bit-yhteensopivuus, eksplisiittinen DAO, tapahtumat
 '---------------------------------------------
 
 #If VBA7 Then
+  ' KORJATTU: nSize on DWORD (32-bit) — ByRef Long on oikea tyyppi, ei LongPtr
   Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
-    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
   Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" _
-    (ByVal lpBuffer As String, nSize As LongPtr) As Long
+    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
   Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
-    (ByVal lpBuffer As String, nSize As Long) As Long
+    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
   Private Declare Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" _
-    (ByVal lpBuffer As String, nSize As Long) As Long
+    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 
-' Logs current user and computer name to UsysUsers table
+' Kirjaa nykyisen käyttäjän ja tietokoneen nimen UsysUsers-tauluun
 Function SniffUser()
   Dim db As DAO.Database
   Dim Taulu As DAO.Recordset
   Dim NWUserName As String
   Dim CName As String
   
-  ' KORJATTU RATKAISU:
-  ' Tarvitsemme ERI muuttujat Space$-funktiota varten (joka vaatii Long)
-  ' ja API-kutsun nSize-parametria varten (joka vaatii LongPtr VBA7:ssa).
-  
-  Dim BufferSize_Long As Long
-  
-  #If VBA7 Then
-    Dim BufferSize_Ptr As LongPtr
-  #Else
-    Dim BufferSize_Ptr As Long
-  #End If
-  
+  ' Puskurikoko DWORD-yhteensopivana Long-muuttujana (riittää molemmille, Space$- ja API-kutsulle)
+  Dim BufferSize As Long
   Dim NBuffer As String
     
   On Error GoTo ErrHandler
   
-  ' Get network username
-  BufferSize_Long = 256
-  NBuffer = Space$(BufferSize_Long)  ' 1. Käytä Long-muuttujaa Space$-funktiolle
-  BufferSize_Ptr = BufferSize_Long   ' 2. Kopioi arvo LongPtr-muuttujaan
-  
-  ' 3. Käytä LongPtr-muuttujaa API-kutsussa. Nyt tyypit täsmäävät (LongPtr -> LongPtr)
-  If api_GetUserName(NBuffer, BufferSize_Ptr) Then
+  ' Haetaan verkkokäyttäjänimi
+  BufferSize = 256
+  NBuffer = Space$(BufferSize)
+  If api_GetUserName(NBuffer, BufferSize) Then
      NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else
     NWUserName = "Unknown"
   End If
   
-  ' Get computer name (toista sama kuvio)
-  BufferSize_Long = 256
-  NBuffer = Space$(BufferSize_Long)
-  BufferSize_Ptr = BufferSize_Long
-  
-  If api_GetComputerName(NBuffer, BufferSize_Ptr) Then
+  ' Haetaan tietokoneen nimi
+  BufferSize = 256
+  NBuffer = Space$(BufferSize)
+  If api_GetComputerName(NBuffer, BufferSize) Then
     CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
   Else
     CName = "Unknown"
   End If
   
-  ' Insert record with transaction
+  ' Kirjataan sisäänkirjautuminen tietokantaan tapahtumana
   Set db = CurrentDb
   DBEngine.BeginTrans
   
   Set Taulu = db.OpenRecordset("UsysUsers", dbOpenDynaset)
         With Taulu
             .AddNew
-            .Fields(0) = Nz(NWUserName, "Unknown")      ' Network username (null-safe)
-            .Fields(1) = Nz(CurrentUser(), "Unknown")   ' Database username (null-safe)
-            .Fields(2) = Nz(CName, "Unknown")           ' Computer name (null-safe)
-            .Fields(3) = Now             ' Timestamp
+            .Fields(0) = Nz(NWUserName, "Unknown")      ' Verkkokäyttäjänimi (null-turvallinen)
+            .Fields(1) = Nz(CurrentUser(), "Unknown")   ' Tietokannan käyttäjänimi (null-turvallinen)
+            .Fields(2) = Nz(CName, "Unknown")           ' Tietokoneen nimi (null-turvallinen)
+            .Fields(3) = Now             ' Aikaleima
             .Update
         End With  
             DBEngine.CommitTrans
@@ -92,7 +78,7 @@ Cleanup:
 ErrHandler:
   On Error Resume Next
   DBEngine.Rollback
-  ' Log error or handle silently
+  ' Virhe kirjataan hiljaisesti — tapahtuma perääntyy tietokannan eheyden suojaamiseksi
   Resume Cleanup
 End Function
 

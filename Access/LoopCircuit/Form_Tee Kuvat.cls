@@ -1,17 +1,17 @@
 Option Compare Database
 Option Explicit
 
-' Updated 2025-10-22: Explicit DAO, better error handling, removed dead code, optimized
+' Päivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenkäsittely, poistettu kuollut koodi
 
 Private Ajastin As Long
 Private min As Long
 Private sec As Long
 Private OSMODE As Long
 Private LokiPituus As Long
-Private oAcad As Object ' AcadApplication (late binding for compatibility)
-Public oDoc As Object ' AcadDocument
+Private oAcad As Object ' AcadApplication (myöhäinen sidonta yhteensopivuuden vuoksi)
+Public oDoc As Object ' AcadDocument-objekti
 
-' Wait for specified time (hundredths of a second)
+' Odottaa annetun ajan (sadasosasekunteina) — käytössä AutoCAD-operaatioiden välille
 Private Sub Odota(Aika As Integer)
     Dim odotus As Double
     odotus = CDbl(Timer) + CDbl((Aika / 100))
@@ -20,7 +20,7 @@ Private Sub Odota(Aika As Integer)
     Loop
 End Sub
 
-' Update status bar with current file and elapsed time
+' Päivittää Accessin tilapalkin tiedostonnimellä ja kuluneella ajalla
 Private Sub Tila(Tiedosto As String)
     sec = CLng(Timer - Ajastin)
     min = sec \ 60
@@ -29,11 +29,11 @@ Private Sub Tila(Tiedosto As String)
 End Sub
 
 Private Sub Form_Load()
-    ' Initialize log textbox
+    ' Alustetaan lokitekstiboksi lomakkeen avautuessa
     On Error Resume Next
-    Loki.Value = ""
-    Loki.Locked = False
-    Loki.Enabled = True
+    Me.Loki.Value = ""
+    Me.Loki.Locked = False
+    Me.Loki.Enabled = True
     On Error GoTo 0
 End Sub
 
@@ -46,13 +46,13 @@ Private Sub FormClose_Click()
     DoCmd.Close
 End Sub
 
-' Extract text attributes from DWG blocks
+' Poimii tekstiattribuutit kaikista DWG-piirustusten blokeista ja tallentaa ne Blokit-tauluun
 Private Sub HaeTekstit_Click()
     Dim Tied As String
     Dim Polku As String
     Dim Nimi As String
     Dim Taulu As DAO.Recordset
-    Dim oEnt As Object ' AcadEntity
+    Dim oEnt As Object ' AcadEntity-objekti
     Dim db As DAO.Database
     
     On Error GoTo ErrHandler
@@ -60,20 +60,20 @@ Private Sub HaeTekstit_Click()
     Ajastin = Timer
     Set oAcad = CreateObject("AutoCAD.Application")
     
-    Polku = PohjaHakem.Value
+    Polku = Me.PohjaHakem.Value
     If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
     
     Tied = Dir(Polku & "*.dwg")
     
     Set db = CurrentDb
-    db.Execute "DELETE * FROM Blokit WHERE PATH='" & Replace(PohjaHakem.Value, "'", "''") & "'"
+    db.Execute "DELETE * FROM Blokit WHERE PATH='" & Replace(Me.PohjaHakem.Value, "'", "''") & "'"
     
     Set Taulu = db.OpenRecordset("Blokit", dbOpenDynaset)
     
     Do While Tied <> ""
         Nimi = Left$(Tied, Len(Tied) - 4)
         
-        ' Skip BASE* and BLOCKMAP* files
+        ' Ohitetaan BASE*- ja BLOCKMAP*-tiedostot (eivät sisällä käsiteltaviä blokkeja)
         If UCase$(Left$(Tied, 4)) <> "BASE" And UCase$(Left$(Tied, 8)) <> "BLOCKMAP" Then
             Set oDoc = oAcad.Documents.Open(Polku & Tied)
             Tila Tied
@@ -116,20 +116,16 @@ ErrHandler:
     Resume Cleanup
 End Sub
 
-' Extract text from selected blocks in active AutoCAD document
+' Poimii tekstiattribuutit aktiivisen AutoCAD-piirustuksen valituista blokeista
 Private Sub HaeValitutTekstit_Click()
-    Dim Tied As String
-    Dim Polku As String
-    Dim Nimi As String
     Dim Taulu As DAO.Recordset
-    Dim Blokki As Object ' AcadBlockReference
-    Dim Joukko As Object ' AcadSelectionSet
+    Dim Blokki As Object ' AcadBlockReference (blokki-instanssi)
+    Dim Joukko As Object ' AcadSelectionSet (valintajoukko)
     Dim BlockArray As Variant
     Dim i As Long
     Dim j As Long
     Dim FilterType(0) As Integer
     Dim FilterData(0) As Variant
-    Dim DWGName As String
     Dim Hakemisto As String
     Dim Rivi As Long
     Dim db As DAO.Database
@@ -142,11 +138,8 @@ Private Sub HaeValitutTekstit_Click()
     Ajastin = Timer
     
     Set oAcad = GetObject(, "AutoCAD.Application")
-    Polku = PohjaHakem.Value
-    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
     
     Set oDoc = oAcad.ActiveDocument
-    DWGName = Left$(oDoc.Name, Len(oDoc.Name) - 4)
     Hakemisto = oDoc.Path
     
     Set Joukko = oDoc.ActiveSelectionSet
@@ -201,7 +194,7 @@ ErrHandler:
     Resume Cleanup
 End Sub
 
-' Generate DWG files from database data
+' Luo DWG-piirustukset tietokannasta haettujen tietojen perusteella
 Private Sub TeeKuvat_Click()
     Dim db As DAO.Database
     Dim Kuvat As DAO.Recordset
@@ -230,10 +223,10 @@ Private Sub TeeKuvat_Click()
     Set db = CurrentDb
     Ajastin = Timer
     LokiPituus = 0
-    OtsTaulukko = TOtsTaulukko.Value
-    Burst = TBurst.Value
-    BlockTaulukko = TBlockTaulukko.Value
-    BlockTaulukkoTyhjennys = TBlockTaulukko.Value
+    OtsTaulukko = Me.TOtsTaulukko.Value
+    Burst = Me.TBurst.Value
+    BlockTaulukko = Me.TBlockTaulukko.Value
+    BlockTaulukkoTyhjennys = Me.TBlockTaulukko.Value
 
     Vastaus = MsgBox("Päivitetäänkö " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
 
@@ -246,14 +239,14 @@ Private Sub TeeKuvat_Click()
         ' Execute multiple queries from TKyselyt field
         Os = 1
         Do
-            Os2 = InStr(Os, TKyselyt.Value, vbCrLf)
+            Os2 = InStr(Os, Me.TKyselyt.Value, vbCrLf)
             If Os2 = 0 Then
-                Kysely = Mid$(TKyselyt.Value, Os)
+                Kysely = Mid$(Me.TKyselyt.Value, Os)
                 db.Execute Kysely
                 LisaaLokiin "- Ajettiin kysely " & Kysely
                 Exit Do
             Else
-                Kysely = Mid$(TKyselyt.Value, Os, Os2 - Os)
+                Kysely = Mid$(Me.TKyselyt.Value, Os, Os2 - Os)
                 db.Execute Kysely
                 LisaaLokiin "- Ajettiin kysely '" & Kysely & "'"
                 Os = Os2 + 2
@@ -263,29 +256,29 @@ Private Sub TeeKuvat_Click()
         LisaaLokiin "- Päivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
     End If
     
-    ' Validate folders
+    ' Tarkistetaan hakemistopolkujen olemassaolo ennen käsittelyn aloittamista
     Set FSO = CreateObject("Scripting.FileSystemObject")
     
-    If IsNull(KuvaHakem.Value) Then
-        KuvaHakem.Value = PohjaHakem.Value
+    If IsNull(Me.KuvaHakem.Value) Then
+        Me.KuvaHakem.Value = Me.PohjaHakem.Value
         LisaaLokiin "- Kuvahakemistoa ei määritelty, käytetään pohjahakemistoa"
     End If
     
-    If Not FSO.FolderExists(PohjaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & PohjaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & PohjaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
+    If Not FSO.FolderExists(Me.PohjaHakem.Value) Then
+        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & Me.PohjaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & Me.PohjaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
-    If Not FSO.FolderExists(KuvaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & KuvaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & KuvaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
+    If Not FSO.FolderExists(Me.KuvaHakem.Value) Then
+        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & Me.KuvaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & Me.KuvaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
-    ' Ensure paths end with backslash
-    If Right$(PohjaHakem.Value, 1) <> "\" Then PohjaHakem.Value = PohjaHakem.Value & "\"
-    If Right$(KuvaHakem.Value, 1) <> "\" Then KuvaHakem.Value = KuvaHakem.Value & "\"
+    ' Varmistetaan, että polku päättyy kenoviivaan
+    If Right$(Me.PohjaHakem.Value, 1) <> "\" Then Me.PohjaHakem.Value = Me.PohjaHakem.Value & "\"
+    If Right$(Me.KuvaHakem.Value, 1) <> "\" Then Me.KuvaHakem.Value = Me.KuvaHakem.Value & "\"
     
     Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko)
     
@@ -299,7 +292,7 @@ Private Sub TeeKuvat_Click()
     
     Do While Not Kuvat.EOF
         LisaaLokiin "=== Käsitellään: " & Kuvat.Fields("FileID").Value & " ==="
-        Tiedosto = PohjaHakem.Value & Kuvat.Fields("BaseDWG").Value
+        Tiedosto = Me.PohjaHakem.Value & Kuvat.Fields("BaseDWG").Value
         If LCase(Right(Tiedosto, 4)) <> ".dwg" Then
             Tiedosto = Tiedosto & ".dwg"
         End If
@@ -324,7 +317,7 @@ Private Sub TeeKuvat_Click()
                     
                     Do While Not DbBlokit.EOF
                         ' LisaaLokiin "  - Insertoitava blokki: " & DbBlokit.Fields("Block").Value & " paikkaan #" & DbBlokit.Fields("Blocknumber").Value
-                        If FSO.FileExists(PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then
+                        If FSO.FileExists(Me.PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg") Then
                             Sql = "SELECT * FROM " & BlockTaulukko & _
                                   " WHERE FileID='" & Replace(Kuvat.Fields("FileID").Value, "'", "''") & _
                                   "' AND Block='" & Replace(DbBlokit.Fields("Block").Value, "'", "''") & _
@@ -333,7 +326,7 @@ Private Sub TeeKuvat_Click()
                             Set Tiedot = db.OpenRecordset(Sql)
                             
                             Paikka = CLng(DbBlokit.Fields("Blocknumber").Value)
-                            BNimi = PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg"
+                            BNimi = Me.PohjaHakem.Value & DbBlokit.Fields("Block").Value & ".dwg"
                             
                             ' LisaaLokiin "    Inserting block: " & DbBlokit.Fields("Block").Value & " at position " & Paikka
                             Set Blokki = oDoc.ModelSpace.InsertBlock(Paikat(Paikka).Pisteet, BNimi, 1, 1, 1, 0)
@@ -370,7 +363,7 @@ Private Sub TeeKuvat_Click()
             '     LisaaLokiin "VIRHE: HaeIPoints epäonnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
             End If
             
-            KuvaNimi = KuvaHakem.Value & Kuvat.Fields("FileID").Value
+            KuvaNimi = Me.KuvaHakem.Value & Kuvat.Fields("FileID").Value
             If Right(LCase(KuvaNimi), 4) <> ".dwg" Then KuvaNimi = KuvaNimi & ".dwg"
             
             If FSO.FileExists(KuvaNimi) Then
@@ -416,7 +409,7 @@ ErrHandler:
     Resume Cleanup
 End Sub
 
-' Extract insertion points from placement block
+' Poimii blokin insertointipisteet sijoittajablokilta ja tallentaa ne Paikat()-taulukkoon
 Private Function HaeIPoints(ByVal Kuva As String) As Boolean
     Dim Virhe As Boolean
     Dim Blokki As Object
@@ -434,7 +427,7 @@ Private Function HaeIPoints(ByVal Kuva As String) As Boolean
     Virhe = False
     ReDim Paikat(1 To 1)
     
-    Paikkablokki = TPaikkaBlokki.Value
+    Paikkablokki = Me.TPaikkaBlokki.Value
     FilterType(0) = 2
     FilterData(0) = Paikkablokki
     
@@ -481,7 +474,7 @@ ErrHandler:
     HaeIPoints = False
 End Function
 
-' Update title block attributes from database record
+' Päivittää otsikkoblokin attribuutit tietueelta saaduilla arvoilla
 Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
     Dim Attribuutit As Variant
     Dim Virhe As Boolean
@@ -500,7 +493,7 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
     On Error GoTo ErrHandler
     
     Virhe = False
-    Titleblokki = TTitleBlokki.Value
+    Titleblokki = Me.TTitleBlokki.Value
     FilterType(0) = 2
     FilterData(0) = Titleblokki
     
@@ -524,7 +517,7 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
                         Loytyi = False
                         
                         For j = 0 To Taulu.Fields.Count - 1
-                            ' Match either by tag value or tag name
+                            ' Etsitään vastaavuus joko tagin arvolla tai tagin nimellä
                             If Taulu.Fields(j).Name = tagiValue Or Taulu.Fields(j).Name = tagi Then
                                 Attribuutit(i).TextString = IIf(IsNull(Taulu.Fields(j).Value), "", Taulu.Fields(j).Value)
                                 Loytyi = True
@@ -562,11 +555,12 @@ End Function
 
 ' Add entry to log
 Private Sub LisaaLokiin(Tieto As String)
+    ' Lisätään rivi lokitekstiboksiin — virhe sivuutetaan, jos kontrolli ei ole saatavilla
     On Error Resume Next
     If LokiPituus > 0 Then
-        Loki.Value = Loki.Value & vbCrLf & Tieto
+        Me.Loki.Value = Me.Loki.Value & vbCrLf & Tieto
     Else
-        Loki.Value = Tieto
+        Me.Loki.Value = Tieto
         LokiPituus = 1
     End If
     On Error GoTo 0
@@ -574,18 +568,20 @@ End Sub
 
 ' Browse for folder
 Private Sub ValHakem_Click()
+    ' Avataan tiedostovalintaikkuna pohjahakemiston valitsemiseksi
     Dim Hakemisto As String
-    Hakemisto = PoimiHakemisto(IIf(IsNull(PohjaHakem.Value), "", PohjaHakem.Value))
-    If Hakemisto <> "" Then PohjaHakem.Value = Hakemisto
+    Hakemisto = PoimiHakemisto(IIf(IsNull(Me.PohjaHakem.Value), "", Me.PohjaHakem.Value))
+    If Hakemisto <> "" Then Me.PohjaHakem.Value = Hakemisto
 End Sub
 
 Private Sub ValHakem2_Click()
+    ' Avataan tiedostovalintaikkuna kuvahakemiston valitsemiseksi
     Dim Hakemisto As String
-    Hakemisto = PoimiHakemisto(IIf(IsNull(KuvaHakem.Value), "", KuvaHakem.Value))
-    If Hakemisto <> "" Then KuvaHakem.Value = Hakemisto
+    Hakemisto = PoimiHakemisto(IIf(IsNull(Me.KuvaHakem.Value), "", Me.KuvaHakem.Value))
+    If Hakemisto <> "" Then Me.KuvaHakem.Value = Hakemisto
 End Sub
 
-' Extract directory from file selection dialog
+' Avaa tiedostovalintaikkunan ja palauttaa valitun hakemiston polun
 Private Function PoimiHakemisto(AHakem As String) As String
     Dim OpenFile As OPENFILENAME
     #If VBA7 Then

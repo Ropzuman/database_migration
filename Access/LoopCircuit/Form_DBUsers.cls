@@ -1,11 +1,11 @@
 Option Compare Database
 Option Explicit
 
-' Updated 2025-10-22: Explicit DAO, better error handling, cleaned up logic
+' Päivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenkäsittely, siivottu logiikka
 
 Private Type UserRec
-   bMach(1 To 32) As Byte  ' Machine name bytes
-   bUser(1 To 32) As Byte  ' User name bytes
+   bMach(1 To 32) As Byte  ' Tietokoneen nimen tavut
+   bUser(1 To 32) As Byte  ' Käyttäjänimen tavut
 End Type
 
 Private Sub Form_Open(Cancel As Integer)
@@ -23,7 +23,7 @@ Private Sub Form_Open(Cancel As Integer)
    Exit Sub
    
 ErrHandler:
-   ' Don't cancel form open, just show error
+   ' Lomakkeen avaaminen ei peruunnu — virhe näytetään käyttäjälle
    MsgBox "Error opening form: " & Err.Number & " - " & Err.Description, vbExclamation, "Form Error"
    Me.LoggedOn.RowSource = ""
 End Sub
@@ -66,16 +66,16 @@ Private Function WhosOn() As String
    Dim rUser As UserRec
    Dim i As Long
 
-   ' Get current database path and construct lock file path
+   ' Haetaan tietokannan polku lukitustiedostoa varten
    SPath = CurrentDb.Name
    
-   ' For Access 2007+ the lock file extension is .laccdb (not .ldb)
+   ' Access 2007+ käyttää .laccdb-tiedostopäätettä (ei enää .ldb)
    SPath = Left$(SPath, InStr(1, SPath, ".")) & "laccdb"
 
-   ' Test for valid file
+   ' Tarkistetaan, löytykö lukitustiedosto
    X = Dir(SPath)
    If X = "" Then
-      ' Try legacy .ldb extension for older Access versions
+      ' Kokeillaan vanhaa .ldb-päätettä yhteensopivuuden varmistamiseksi
       SPath = Left$(SPath, InStr(1, SPath, ".")) & "ldb"
       X = Dir(SPath)
       If X = "" Then
@@ -86,12 +86,12 @@ Private Function WhosOn() As String
    iLDBFile = FreeFile
    Open SPath For Binary Access Read Shared As iLDBFile
 
-   ' Read 64-byte records until EOF
+   ' Luetaan 64-tavuisia tietueita tiedoston loppuun asti
    Do While Not EOF(iLDBFile)
       Get iLDBFile, , rUser
       
       With rUser
-         ' Extract machine name (null-terminated)
+         ' Poimitaan null-merkkiin päättyvä tietokoneen nimi
          i = 1
          sMach = ""
          Do While i <= 32 And .bMach(i) <> 0
@@ -99,7 +99,7 @@ Private Function WhosOn() As String
             i = i + 1
          Loop
          
-         ' Extract user name (null-terminated)
+         ' Poimitaan null-merkkiin päättyvä käyttäjänimi
          i = 1
          sUser = ""
          Do While i <= 32 And .bUser(i) <> 0
@@ -108,7 +108,7 @@ Private Function WhosOn() As String
          Loop
       End With
       
-      ' Build unique login string
+      ' Rakennetaan yksikäsitteinen kirjautumismerkkijono
       sLogStr = sMach & " -- " & sUser
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
@@ -117,7 +117,7 @@ Private Function WhosOn() As String
    
    Close iLDBFile
    
-   ' Remove trailing semicolon if present
+   ' Poistetaan mahdollinen loppupuolipiste
    If Len(sLogins) > 0 And Right$(sLogins, 1) = ";" Then
       sLogins = Left$(sLogins, Len(sLogins) - 1)
    End If

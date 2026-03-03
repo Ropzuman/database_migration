@@ -1,14 +1,14 @@
 Option Compare Database
 Option Explicit
 
-' 64-bit compatible point structure
+' 64-bit-yhteensopiva pisteiden tallennusrakenne
 Public Type iPoint
   Pisteet(2) As Double
 End Type
 
 Public Paikat() As iPoint
 
-' Mouse cursor position API - 64-bit compatible
+' Hiiren kursorin sijainnin API — 64-bit-yhteensopiva
 Type POINTAPI
     X As Long
     Y As Long
