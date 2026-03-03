@@ -15,7 +15,7 @@ Private Sub Command4_Click()
 End Sub
 Private Sub Command52_Click()
   If fso.FolderExists(Hakem) Then
-    Call Shell("C:\WINNT\EXPLORER.EXE /e, " & Hakem, vbNormalFocus)
+    Call Shell("C:\Windows\explorer.exe /e, " & Hakem, vbNormalFocus)
   Else 'Hakemistoa ei ole
     MsgBox "Invalid path! " & Hakem, vbCritical, "Open Path"
   End If

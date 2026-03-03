@@ -2,8 +2,8 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysShowCommon
-' SOVELLUS : DOCUMENTS — Yleiskkäyttöinen tekstin näyttö/muokkauksest
-' KUVAUS   : Pidättää järjestelmän yleisen teksti-ikkunan.
+' SOVELLUS : DOCUMENTS — Yleiskäyttöinen tekstin näyttö/muokkaus
+' KUVAUS   : Yleiskäyttöinen teksti-ikkuna lomakkeiden väliseen tiedonsiirtoon.
 '            CommonType 0 = näytä ainoastaan (Locked), 1 = muokkaa.
 '            SetFocus-kutsu on kosmeettinen — kaatumattomuuden vuoksi
 '            suojattu On Error Resume Next -lohkolla.

@@ -1,4 +1,4 @@
-Option Explicit
+﻿Option Explicit
 '==========================================================================
 ' MODUULI  : GlobalVBAs
 ' SOVELLUS : DOCUMENTS — Yleiset apufunktiot
@@ -48,8 +48,10 @@ Function SetStartup()
       .Fields(3) = Now            ' Kirjautumishetki
       .Update
     End With
-    Set DB = Nothing
+    taulu.Close
     Set taulu = Nothing
+    DB.Close
+    Set DB = Nothing
 End Function
 Public Function Yhdista(T1 As String, T2 As String, T3 As String) As String
 ' Yhdistää dokumentin nimikenttä yhdeksi sarakkeeksi.
@@ -86,7 +88,8 @@ End Function
 '***************************************************************************
 Public Function aReplace(Source As String) As String
 '***************************************************************************
-'* This function replaces all unsuitable characters in the given string    *
+'* Korvaa merkkijonosta kaikki tiedostonimeen sopimattomat erikoismerkit  *
+'* väliviivalla ("-").                                                     *
 '***************************************************************************
 Dim Tmp As String
 Dim Lahde As String
@@ -106,35 +109,27 @@ Tmp = ""
     aReplace = Tmp
 End Function
 '---------------------------------------------------------
-' Functions for parsing revisions
-' The following functions are given a revision notation as input and they return the desired part of the input.
-' HaeTekija: Returns the creator (i.e., the very first author)
-' HaeRevisioija: Returns the latest author (if there is only one line of data, both the creator and reviser are the same)
-' HaeRevisio: Returns the notation of the latest revision
-' HaeViimPaiva: Returns the date of the latest noted revision
-' HaePaiva: Returns the date of the first revision
+' Revisiotekstin parsintafunktiot
+' Kukin funktio ottaa syötteeksi revisionotaation ja palauttaa halutun osan.
+'   HaeTekija      : palauttaa alkuperäisen tekijän (vanhin revisio)
+'   HaeRevisioija  : palauttaa uusimman tarkistajan (jos vain yksi rivi, sama kuin tekijä)
+'   HaeRevisio     : palauttaa uusimman revision tunnusmerkin (esim. "A", "B")
+'   HaeViimPaiva   : palauttaa vanhimman revision päivämäärän
+'   HaePaiva       : palauttaa uusimman revision päivämäärän
 '
 ' - VG/22.3.2002
-' - Updated: November 8, 2025 - Removed unused variables for code clarity
+' - Päivitetty: 8.11.2025 — poistettu käyttämättömät muuttujat
 '---------------------------------------------------------
 Function HaeTekija(Revisio As Variant) As String
-'''
-' Extracts the original author name from a multi-line revision string.
-' Parses backward to find the first (oldest) revision entry.
-' @param Revisio: Revision string with format "Rev Date/Author/Checker/..." separated by vbCrLf
-' @return Author name from the first revision, or empty string if Null
-'''
+' Etsii alkuperäisen tekijän monirivisen revisiojonon vanhimmasta riviltä.
+' Parsii merkkijonon takaperinjuurin löytääkseen ensimmäisen revision.
 On Error GoTo ErrorHandler
 Dim i As Long
-  
-  Debug.Print "HaeTekija: Parsing author from revision string"
-  
   If IsNull(Revisio) Then
-    Debug.Print "  Revisio is Null, returning empty string"
     HaeTekija = ""
   Else
     i = 2
-    'Look for the first revision (parse from end to find oldest entry)
+    ' Etsitään ensimmäinen (vanhin) revisiorivi parsimalla merkkijonoa lopusta alkuun
     If InStr(Revisio, vbCrLf) Then
       Do
         i = i + 1
@@ -143,37 +138,25 @@ Dim i As Long
     End If
     Revisio = Mid$(Revisio, InStr(Revisio, "/") + 1)
     HaeTekija = Left$(Revisio, InStr(Revisio, "/") - 1)
-    Debug.Print "  Found author: " & HaeTekija
   End If
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaeTekija: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & CStr(Revisio)
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaeTekija = ""
 End Function
 Function HaeRevisioija(Revisio As String) As String
 On Error GoTo ErrorHandler
 Dim Teksti As String
-  
-  Debug.Print "HaeRevisioija: Parsing reviser from revision string"
-  
   Teksti = Revisio
-  If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
+  If InStr(Teksti, vbCrLf) Then ' Syöte sisältää rivinvaihdon: on useampi revisio
     Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
     HaeRevisioija = Left$(Teksti, InStr(Teksti, "/") - 1)
-    Debug.Print "  Found reviser: " & HaeRevisioija
-  Else 'Since the input has only one revision, a reviser is not needed
-    Debug.Print "  No multi-line revision, returning empty string"
+  Else ' Vain yksi revisiorivi — tarkistajaa ei tarvita
     HaeRevisioija = ""
   End If
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaeRevisioija: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & Revisio
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaeRevisioija = ""
 End Function
 Function HaeRevisioijaPvm(Revisio As String) As String
@@ -181,92 +164,58 @@ On Error GoTo ErrorHandler
 Dim Teksti As String
 Dim Tekija As String
 Dim Pvm As String
-  
-  Debug.Print "HaeRevisioijaPvm: Parsing reviser and date from revision string"
-  
   Teksti = Revisio
-  If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
+  If InStr(Teksti, vbCrLf) Then ' Syöte sisältää rivinvaihdon: on useampi revisio
     Pvm = Mid$(Teksti, InStr(Teksti, " ") + 1)
     Pvm = Left$(Pvm, InStr(Pvm, "/") - 1)
     Teksti = Mid$(Teksti, InStr(Teksti, "/") + 1)
     Tekija = Left$(Teksti, InStr(Teksti, "/") - 1)
     HaeRevisioijaPvm = Tekija & ": " & Pvm
-    Debug.Print "  Found: " & HaeRevisioijaPvm
-  Else 'Since the input has only one revision, a reviser is not needed
-    Debug.Print "  No multi-line revision, returning empty string"
+  Else ' Vain yksi revisiorivi — tarkistajaa ei tarvita
     HaeRevisioijaPvm = ""
   End If
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaeRevisioijaPvm: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & Revisio
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaeRevisioijaPvm = ""
 End Function
 Public Function EkaRevRivi(Revisio As String) As String
+' Palauttaa ensimmäisen (uusimman) revisioner rivin monirivisen revisiojonosta.
 On Error GoTo ErrorHandler
-  
-  Debug.Print "EkaRevRivi: Extracting first revision line"
-  
   If InStr(Revisio, vbCrLf) Then
     EkaRevRivi = Left$(Revisio, InStr(Revisio, vbCrLf) - 1)
   Else
     EkaRevRivi = Revisio
   End If
   
-  Debug.Print "  Result: " & EkaRevRivi
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in EkaRevRivi: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & Revisio
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   EkaRevRivi = ""
 End Function
 Public Function HaeRevisio(Revisio As Variant) As String
-'''
-' Extracts the revision mark (e.g., "A", "B", "0") from revision string.
-' @param Revisio: Revision string with format "Rev Date/Author/..."
-' @return Revision mark before the first space, or empty string if Null
-'''
+' Palauttaa revision tunnusmerkin (esim. "A", "B", "0") revisiojonosta.
 On Error GoTo ErrorHandler
-  
-  Debug.Print "HaeRevisio: Extracting revision mark"
-  
   If IsNull(Revisio) Then
-    Debug.Print "  Revisio is Null, returning empty string"
     HaeRevisio = ""
   Else
     HaeRevisio = Left$(Revisio, InStr(Revisio, " ") - 1)
-    Debug.Print "  Found mark: " & HaeRevisio
   End If
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaeRevisio: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & CStr(Revisio)
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaeRevisio = ""
 End Function
 
 Function HaeViimPaiva(Revisio As String) As String
-'''
-' Extracts the date from the first (oldest) revision entry.
-' Parses backward through multi-line revision string to find original date.
-' @param Revisio: Revision string with format "Rev Date/Author/..." separated by vbCrLf
-' @return Date string from the first revision
-'''
+' Palauttaa vanhimman revision päivämäärän parsimalla monirivinen revisijono lopusta alkuun.
 On Error GoTo ErrorHandler
 Dim i As Long
 Dim Teksti As String
-  
-  Debug.Print "HaeViimPaiva: Extracting first revision date"
-  
   Teksti = Revisio
   i = 2
-  'Look for the first revision (parse from end to find oldest entry)
-  If InStr(Teksti, vbCrLf) Then 'If the input contains a line break
+  ' Etsitään ensimmäinen (vanhin) revisiorivi parsimalla takaperinjuurin
+  If InStr(Teksti, vbCrLf) Then ' Syöte sisältää rivinvaihdon
     Do
       i = i + 1
     Loop Until InStr(Right$(Teksti, i), vbCrLf) = 1 Or i = Len(Teksti)
@@ -275,31 +224,21 @@ Dim Teksti As String
   Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
   HaeViimPaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
   
-  Debug.Print "  Found date: " & HaeViimPaiva
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaeViimPaiva: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & Revisio
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaeViimPaiva = ""
 End Function
 Function HaePaiva(Revisio As String) As String
+' Palauttaa uusimman (viimeisimmän) revision päivämäärän.
 On Error GoTo ErrorHandler
 Dim Teksti As String
-  
-  Debug.Print "HaePaiva: Extracting latest revision date"
-  
   Teksti = Revisio
   Teksti = Mid$(Teksti, InStr(Teksti, " ") + 1)
   HaePaiva = Left$(Teksti, InStr(Teksti, "/") - 1)
   
-  Debug.Print "  Found date: " & HaePaiva
   Exit Function
 
 ErrorHandler:
-  Debug.Print "*** ERROR in HaePaiva: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Revisio parameter: " & Revisio
-  Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
   HaePaiva = ""
 End Function

@@ -11,7 +11,6 @@ Option Explicit
 Public Alku As String
 Public Loppu As String
 Private Sub Form_Resize()
-  Dim Rivit As String
   If Revisioteksti <> "" Then
     Me.Lista.RowSource = Replace(CStr(Revisioteksti), vbCrLf, ";")
     Me.Lista.SetFocus
