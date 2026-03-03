@@ -1,4 +1,17 @@
 Option Compare Database
+Option Explicit
+'==========================================================================
+' LOMAKE   : Form_FuncBlock
+' SOVELLUS : FunctionDiagrams — Funktiolohkon attribuuttien muokkaus
+' KUVAUS   : Alilomake funktiopiirien yksittäisten lohkoattribuuttien
+'            käsittelyyn. NEWVALUE_DblClick tallentaa käyttäjän syöttämän
+'            uuden arvon FunBlockAttr-tauluun. NEWVALUE_Enter ja
+'            SelectValue_Enter päivittävät listalaatikon lähteen attribuutin
+'            tyypin mukaan (FTAGI, REFFROM, REFTO tai yleinen arvo).
+' DIPLE    : Option Explicit; Set Taulu/DB = Nothing muistivuodon ehkäisyyn.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
+
 Private Sub NEWVALUE_DblClick(Cancel As Integer)
 Dim DB As DAO.Database
 Dim Taulu As DAO.Recordset
@@ -32,6 +45,10 @@ Taulu.Fields("value") = taginarvo
 Taulu.Fields("TagID") = tagiid
 Taulu.Update
 
+' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
+Set Taulu = Nothing
+Set DB = Nothing
+
 MsgBox "Uusi arvo lisätty"
 
 End Sub
@@ -61,7 +78,7 @@ Dim Sfx As String
   If UCase$(Atag) = "RANGE" Then
       ALUE = Me.Parent.Parent.AreaCode
       looppi = Me.Parent.Parent.LoopNo
-      tagi = "T" 'Right$(Me.Parent.LoopSymb, 1)
+      tagi = "T" ' Käytetään kiinteää T-tunnistetyyppiä alueeseen sidotuissa hauissa
       Sfx = Me.Parent.Suffix
       
       SelectValue.BoundColumn = 1

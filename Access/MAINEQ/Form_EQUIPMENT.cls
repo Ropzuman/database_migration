@@ -120,17 +120,6 @@ Private Sub ExtData_Click()
 
 End Sub
 
-'Private Sub Form_Current()
-'Dim stDocName As String
-'Dim stDocNamePu As String
-
-'    stDocName = "zMotorsBeltDrives"
-'    If IsLoaded(stDocName) Then
-'    Forms!zMotorsBeltDrives.Visible = False
-'    End If
-
-'End Sub
-
 Private Sub Pos_AfterUpdate()
 suffix_afterupdate
 

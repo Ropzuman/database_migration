@@ -1,4 +1,16 @@
 Option Compare Database
+Option Explicit
+'==========================================================================
+' LOMAKE   : Form_LukituskaavioLinkit
+' SOVELLUS : FunctionDiagrams — Lukituskaaviolinkkien sivutieto
+' KUVAUS   : Lukee InterlockingLinkPage-kyselyn tulokset ja päivittää
+'            IntLinkPage-taulun page1-sarakkeen pilkulla erotettuun
+'            muotoon "See Page X, Y". Tämän avulla lukituskaavion ristii
+'            viittaukset saavat oikeat sivuviitteet piirustuksiin.
+' DIPLE    : Option Explicit; Set tbl/qry/DB = Nothing muistivuodon ehkäisyyn.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
+
 Private Sub Command0_Click()
 
 DoCmd.Hourglass True
@@ -37,5 +49,10 @@ DoCmd.Hourglass False
 
 tbl.Close
 qry.Close
+
+' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
+Set tbl = Nothing
+Set qry = Nothing
+Set DB = Nothing
 
 End Sub

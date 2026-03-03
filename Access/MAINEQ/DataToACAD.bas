@@ -732,23 +732,3 @@ ErrorHandler:
     Close #2
 End Sub
 
-Function test()
-Dim Tied As Integer
-
-Tied = FreeFile
-Open "twroska.txt" For Output As Tied
-Print #Tied, "dfssg"
-Debug.Print FileAttr(Tied, 1); FileAttr(Tied, 2)
-'Close
-Tied = FreeFile
-Open "twroska1.txt" For Append As Tied
-Print #Tied, "ljfdl"
-Debug.Print FileAttr(Tied, 1); FileAttr(Tied, 2)
-Close
-
-
-
-End Function
-
-
-

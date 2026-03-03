@@ -131,8 +131,8 @@ End Sub
 '--------------------------------------------------------------------------------
 Sub AvaaKuvasta(Polku As String, Nimi As String, Handle As String, Info As String)
 On Error GoTo ErrorHandler
-    Dim oACAD As AcadApplication  ' AutoCAD application object
-    Dim Entity As AcadEntity  ' Block entity
+    Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
+    Dim Entity As Object  ' AcadEntity - muutettu late binding (64-bit)
     Dim MinPoint As Variant  ' Bounding box minimum point
     Dim MaxPoint As Variant  ' Bounding box maximum point
     Dim i As Integer  ' Loop counter
@@ -213,25 +213,26 @@ ErrorHandler:
 End Sub
 '--------------------------------------------------------------------------------
 ' Function: NetworkUserName
-' Purpose: Get Windows network username (DEPRECATED - Not currently used)
+' Purpose: Get Windows network username for DOCUMENTS database forms
 '
 ' Returns: String - Network username or "Unknown"
 '
 ' Notes:
-'   - Function currently commented out (not in use)
-'   - Reference implementation for network username retrieval
-'   - Use SetStartup function instead for actual username logging
+'   - Called by DOCUMENTS\Form_USysReserve and Form_USysAddDocument
+'   - Uses api_GetUserName (advapi32.dll) declared in this module
+'   - Updated 2026-03-03: Implemented - was previously a broken stub
 '--------------------------------------------------------------------------------
 Public Function NetworkUserName() As String
-   Dim lngStringLength As Long
-   Dim sString As String * 255
-   lngStringLength = Len(sString)
-   sString = String$(lngStringLength, 0)
-'   If wu_GetUserName(sString, lngStringLength) Then
-'       NetworkUserName = Left$(sString, lngStringLength - 1)
-'   Else
-'       NetworkUserName = "Unknown"
-'   End If
+    ' Haetaan Windows-verkkokäyttäjänimi (käytetään DOCUMENTS-kannan lomakkeissa)
+    Dim BuffSize As Long
+    Dim NBuffer As String
+    BuffSize = 256
+    NBuffer = Space$(BuffSize)
+    If api_GetUserName(NBuffer, BuffSize) Then
+        NetworkUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+    Else
+        NetworkUserName = "Unknown"
+    End If
 End Function
 
 '--------------------------------------------------------------------------------

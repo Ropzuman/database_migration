@@ -33,5 +33,4 @@ node_modules/
 *.bak
 
 # Agent files
-*.github
 tmpclaude-4d47-cwd

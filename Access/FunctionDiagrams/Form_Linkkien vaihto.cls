@@ -1,5 +1,16 @@
 Option Compare Database
 Option Explicit
+'==========================================================================
+' LOMAKE   : Form_Linkkien vaihto
+' SOVELLUS : FunctionDiagrams — Tietokantaydistämien päivitys
+' KUVAUS   : Päivittää kaikki linkitetyt taulut nykyiseen hakemistoon.
+'            Lukee MSysObjects-järjestelmätaulusta linkitettyjen taulujen
+'            polut, vertaa nykyiseen kannan sijaintiin ja uudelleenlinkittää
+'            poikkeamat TransferDatabase-komennolla. Tarvitaan kun kanta
+'            siirretään uuteen hakemistoon.
+' DIPLE    : Option Explicit; Set Taul = Nothing muistivuodon ehkäisyyn.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
 Private Sub Command0_Click()
 On Error GoTo ErrorHandler
@@ -43,6 +54,9 @@ Do While Not Taul.EOF
 Loop
 Debug.Print "Command0_Click: COMPLETED successfully - All table links updated"
 MsgBox "Valmis"
+
+' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
+Set Taul = Nothing
 Exit Sub
 
 ErrorHandler:
@@ -50,5 +64,6 @@ ErrorHandler:
     Debug.Print "    Current Path: " & Polku
     Debug.Print "    Table: " & Taulu
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Error updating links: " & Err.Description, vbCritical
+    Set Taul = Nothing
+    MsgBox "Virhe tauluyhteyksien päivityksessä: " & Err.Description, vbCritical
 End Sub

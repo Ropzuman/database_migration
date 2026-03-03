@@ -5,7 +5,7 @@ Public BaseDWG2 As String
 Public BasePath As String
 Public SavePath As String
 Public OldText As String
-Public oBlock As AcadBlockReference
+Public oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
 
 Private Sub Blokki_BeforeUpdate(Cancel As Integer)
 Dim TAttrib As String
@@ -110,7 +110,7 @@ ErrorHandler:
 End Sub
 Private Function LueAttribuutit() As Boolean
 'Luetaan attibuutit blokista formiin
-Dim Valinta As AcadObject
+Dim Valinta As Object  ' AcadObject - muutettu late binding (64-bit)
 Dim Point(0 To 2) As Double
 Dim BlockNimi As String
 Dim Oikea As Boolean
@@ -223,7 +223,7 @@ Dim i As Long, j As Long
 Dim Blokit As String
 Dim Attribuutti As String
 Dim ATTRIB As Variant
-Dim Joukko As AcadSelectionSet
+Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 Dim FileCount As Long
 Dim BlockCount As Long
 On Error GoTo ErrorHandler
@@ -436,7 +436,7 @@ Dim gPoint As Variant
 Dim iPoint(2) As Double
 Dim BName As String
 Dim Piste As String
-Dim PointBlock As AcadBlockReference
+Dim PointBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
 On Error GoTo Virhe 'Täytyy olla, jos GetPoint ei toimikaan
   
   AppActivate oACAD.Caption
@@ -469,8 +469,8 @@ Private Sub Ctl__Click()
 End Sub
 
 Private Sub CViivanPiirto_Click()
-Dim EkaViiva As AcadLine
-Dim ViimViiva As AcadLine
+Dim EkaViiva As Object   ' AcadLine - muutettu late binding (64-bit)
+Dim ViimViiva As Object  ' AcadLine - muutettu late binding (64-bit)
 Const Pi = 3.14159265358979
 
 Dim LyhennysA As Double

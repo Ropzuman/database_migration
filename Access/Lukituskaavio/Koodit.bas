@@ -1,7 +1,8 @@
 Option Compare Database
 Option Explicit
-Public oACAD As AcadApplication    'AutoCad objekti
-Public oDOC As AcadDocument
+' AutoCAD-objektit muutettu late binding -tyypiksi 64-bit yhteensopivuuden vuoksi
+Public oACAD As Object    ' AcadApplication - muutettu late binding (64-bit)
+Public oDOC As Object     ' AcadDocument - muutettu late binding (64-bit)
 Public BlockPath As String
 Sub KillLinks()
 Dim T As DAO.TableDef
@@ -34,7 +35,7 @@ Dim Handle As String
 Dim i As Integer
 Dim Doku As String
 Dim OK As Boolean
-Dim Entity As AcadEntity
+Dim Entity As Object  ' AcadEntity - muutettu late binding (64-bit)
 Dim MinPoint As Variant
 Dim MaxPoint As Variant
 Dim TAULUKKO As String

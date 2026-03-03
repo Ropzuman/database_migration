@@ -28,10 +28,10 @@ Option Explicit
 '   - BSulje: Close form button
 '================================================================================
 
-Dim oACAD As AcadApplication  ' AutoCAD application object
-Dim oDOC As AcadDocument  ' Active AutoCAD document
-Dim oAttrib As AcadAttributeReference  ' Current block's pipeline attribute
-Dim Joukko As AcadSelectionSet  ' Selection set of all flow blocks
+Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
+Dim oDOC As Object   ' AcadDocument - muutettu late binding (64-bit)
+Dim oAttrib As Object  ' AcadAttributeReference - muutettu late binding (64-bit)
+Dim Joukko As Object   ' AcadSelectionSet - muutettu late binding (64-bit)
 Dim j As Integer  ' Current block index
 Dim EiLinjaa As Boolean  ' Flag if pipeline not found during auto-search
 
@@ -157,7 +157,7 @@ Private Sub BPoimi_Click()
 On Error GoTo ErrorHandler
 Dim Kohde As Object
 Dim Piste As Variant
-Dim oBlock As AcadBlockReference
+Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
 Dim Attrib As Variant
 
 AppActivate oACAD.Caption, True
@@ -431,7 +431,7 @@ End Function
 '--------------------------------------------------------------------------------
 Private Sub EtsiLinja()
 On Error GoTo ErrorHandler
-Dim Poiminta As AcadSelectionSet
+Dim Poiminta As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 Dim i As Integer
 Dim aPiste(2) As Double
 Dim lPiste(2) As Double

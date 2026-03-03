@@ -45,13 +45,13 @@ Private Sub Command0_Click()
   Dim DWG As String
   Dim Handle As String
   Dim Polku As String
-  Dim oACAD As AcadApplication
-  Dim oEntity As AcadEntity
-  Dim oBlock As AcadBlockReference
-  Dim UusiBlock As AcadBlockReference
+  Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
+  Dim oEntity As Object  ' AcadEntity - muutettu late binding (64-bit)
+  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
+  Dim UusiBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
   Dim Attribuutit As Variant
   Dim UAttrib As Variant
-  Dim Attrib As AcadAttributeReference
+  Dim Attrib As Object  ' AcadAttributeReference - muutettu late binding (64-bit)
   Dim OK As Boolean
   Dim i As Integer, j As Integer
   Dim BPolku As String

@@ -29,11 +29,11 @@ Option Explicit
 '   - BPickPipeline: Pick pipeline from drawing button
 '================================================================================
 
-Dim oACAD As AcadApplication  ' AutoCAD application object
-Dim oDOC As AcadDocument  ' Active AutoCAD document
-Dim PipeAttrib As AcadAttributeReference  ' Current block's PIPELINE attribute
-Dim oBlock As AcadBlockReference  ' Current equipment block
-Dim Joukko As AcadSelectionSet  ' Selection set of equipment blocks
+Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
+Dim oDOC As Object   ' AcadDocument - muutettu late binding (64-bit)
+Dim PipeAttrib As Object  ' AcadAttributeReference - muutettu late binding (64-bit)
+Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
+Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 Dim i As Integer  ' Current block index
 
 '================================================================================
@@ -51,7 +51,7 @@ End Sub
 Private Sub OpenPipeline()
   Dim Kohde As Object
   Dim Piste As Variant
-  Dim oPipeBlock As AcadBlockReference
+  Dim oPipeBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
   Dim Attrib As Variant
   Dim Putkilinja As String
   Dim OK As Boolean
@@ -192,7 +192,7 @@ End Sub
 '   Teksti - Text to write
 '   oAttrib - Attribute reference to update
 '================================================================================
-Private Sub KirjoitaAtt(Teksti As String, oAttrib As AcadAttributeReference)
+Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
   
   If oAttrib Is Nothing Then
@@ -277,7 +277,7 @@ End Sub
 Private Sub Form_Load()
   Dim FT(0) As Integer
   Dim FD(0) As Variant
-  Dim Poista() As AcadEntity
+  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
   Dim j As Integer, L As Integer
   Dim Nimi As String
   
@@ -332,7 +332,7 @@ End Sub
 '   Nimi - Name of selection set
 '   VJoukko - Selection set object to create
 '================================================================================
-Private Sub TeeJoukko(Nimi As String, VJoukko As AcadSelectionSet)
+Private Sub TeeJoukko(Nimi As String, VJoukko As Object)  ' AcadSelectionSet - muutettu late binding (64-bit)
   Dim i As Integer
   
   On Error GoTo ErrorHandler

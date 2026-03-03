@@ -39,10 +39,10 @@ Option Explicit
 '   - BPipelineToManval: Link pipelines to manual valves
 '================================================================================
 
-Dim oACAD As AcadApplication  ' AutoCAD application object
-Dim oDOC As AcadDocument  ' Current AutoCAD document being processed
+Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
+Dim oDOC As Object  ' AcadDocument - muutettu late binding (64-bit)
 Dim Tied As String  ' Current .DWG filename during batch processing
-Dim Joukko As AcadSelectionSet  ' Selection set for filtered blocks
+Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 
 '===== Pipeline to Manual Valve =====
 '================================================================================
@@ -406,7 +406,7 @@ End Function
 '================================================================================
 Private Sub LueTiedot(Taulukko As String, Blokki As String)
   Dim i As Integer, j As Integer
-  Dim oBlock As AcadBlockReference
+  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
   Dim fld As DAO.Field
@@ -469,7 +469,7 @@ End Sub
 '================================================================================
 Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   Dim i As Integer, j As Integer
-  Dim oBlock As AcadBlockReference
+  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
   Dim fld As DAO.Field
@@ -534,7 +534,7 @@ End Sub
 '================================================================================
 Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
   Dim i As Integer, j As Integer
-  Dim oBlock As AcadBlockReference
+  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
   Dim Attrib As Variant
   Dim Tiedot As DAO.Recordset
   Dim fld As DAO.Field
@@ -667,7 +667,7 @@ Private Sub PoimiJoukko(Nimet As String)
   Dim i As Integer
   Dim j As Integer
   Dim Blokit As Variant
-  Dim Poista() As AcadEntity
+  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
   Dim L As Integer
   Dim EiPoisteta As Boolean
   
@@ -733,7 +733,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Dim k As Integer
   Dim Attribs As Variant
   Dim AttribList As Variant
-  Dim Poista() As AcadEntity
+  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
   Dim L As Integer
   Dim HasAttribute As Boolean
   
@@ -812,7 +812,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   Dim i As Integer
   Dim j As Integer
   Dim Attribs As Variant
-  Dim Poista() As AcadEntity
+  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
   Dim L As Integer
   Dim HasMatch As Boolean
   Dim AttribValue As String

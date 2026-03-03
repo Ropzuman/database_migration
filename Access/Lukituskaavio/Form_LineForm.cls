@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
-Dim EkaViiva As AcadLine
-Dim ViimViiva As AcadLine
+Dim EkaViiva As Object  ' AcadLine - muutettu late binding (64-bit)
+Dim ViimViiva As Object  ' AcadLine - muutettu late binding (64-bit)
 Dim Valmis As Boolean
 Dim Sulje As Boolean
 Const Pi = 3.14159265358979

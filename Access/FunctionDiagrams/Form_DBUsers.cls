@@ -1,14 +1,26 @@
 Option Compare Database
+Option Explicit
+'==========================================================================
+' LOMAKE   : Form_DBUsers
+' SOVELLUS : FunctionDiagrams — Käyttäjäseuranta
+' KUVAUS   : Näyttää kaikki aktiiviset käyttäjät lukemalla .LACCDB-
+'            tiedoston WhosOn()-funktiolla. Tiedosto on 64-tavuinen
+'            binaaritietue: koneen nimi tavuissa 1–32, käyttäjänimi 33–64.
+'            Lomake mahdollistaa myös viestin lähettämisen yksittäiselle
+'            käyttäjälle Shell-komennon kautta.
+' DIPLE    : InputBox-kirjoitusasun korjaus; dbCurrent.Close → Set = Nothing.
+' PÄIVITETTY: 2026-03-03
+'==========================================================================
 
-' Declare a record type to break down the user info
-
+' Tietuemääritys LACCDB-tiedoston 64-tavuisen tietueen lukemiseen
 Private Type UserRec
-   bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
-   bUser(1 To 32) As Byte  ' 2nd 32 bytes hold user name
+   bMach(1 To 32) As Byte  ' Koneen nimi (tavut 1–32)
+   bUser(1 To 32) As Byte  ' Käyttäjänimi (tavut 33–64)
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  ' Lähetetään viesti valitulle verkkokäyttäjälle net send -komennolla
+  Viesti = InputBox("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
   If Viesti <> "" Then
     Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
   End If
@@ -31,20 +43,11 @@ Private Sub UpdateBtn_Click()
     Me.Requery
 End Sub
 
-'-------------------------------------------------------------------------------------
-'   Subject : WhosOn()
-'   Purpose : Will read *.LDB file and read who's currently
-'             logged on and their station name.
-'
-'             The LDB file has a 64 byte record.
-'
-'             The station name starts at byte 1 and is null
-'             terminated.
-'
-'             Log-in names start at the 33rd byte and are
-'             also null terminated.
-'
-'-------------------------------------------------------------------------------------
+'--------------------------------------------------------------------------
+' WhosOn() — Lukee aktiivisen .LACCDB-tiedoston ja palauttaa
+' puolipisteellä eroteltujen "KoneNimi -- KäyttäjäNimi" -parien listan.
+' LACCDB-tietue on 64 tavua: koneen nimi tavuissa 1–32, käyttäjänimi 33–64.
+'--------------------------------------------------------------------------
 Private Function WhosOn() As String
 
 On Error GoTo Err_WhosOn
@@ -57,19 +60,15 @@ On Error GoTo Err_WhosOn
    Dim rUser As UserRec    ' Defined in General
    Dim dbCurrent As DAO.Database
 
-' Get Path of current database.  Should substitute this code
-' for an attached table path in a multi-user environment.
-
+   ' Nykyisen tietokannan polku LACCDB-tiedoston etsintään
    Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
-   dbCurrent.Close
+   Set dbCurrent = Nothing
 
-' Iterate thru dbCurrent.LDB file for login names.
-
+   ' Muodostetaan LACCDB-tiedostopolku (.accdb → .LACCDB)
    SPath = Left$(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-' Test for valid file, else Error
-
+   ' Tarkistetaan tiedoston olemassaolo ennen avaamista
    X = Dir(SPath)
    iStart = 1
    iLDBFile = FreeFile
@@ -96,7 +95,7 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 'increment to next record offset
+      iStart = iStart + 64 ' Siirrytään seuraavaan 64-tavun tietueeseen
    Loop
    Close iLDBFile
    WhosOn = sLogins
@@ -106,9 +105,9 @@ Exit_WhosOn:
 
 Err_WhosOn:
    If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LDB File"
+      MsgBox "LACCDB-tiedostoa ei löytynyt", 48, "Kirjautuneet käyttäjät"
    Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
+      MsgBox "Virhe " & Err.Number & vbCrLf & Err.Description
       Close iLDBFile
    End If
    Resume Exit_WhosOn
