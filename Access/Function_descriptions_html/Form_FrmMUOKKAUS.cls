@@ -147,6 +147,19 @@ Private Sub TeeSelostus(Kaikki As Boolean)
 '    End If
     End If
     
+    ' Varmistetaan, että tulostuspolku on määritelty ja hakemisto on olemassa
+    If POLKU = "" Then
+        MsgBox "OUTPUTPATH on tyhjä SETTINGS-taulussa. Tarkista taulun sisältö.", vbExclamation, "TeeSelostus"
+        Exit Sub
+    End If
+    If Me.FTyyppi <> 1 Then  ' HTML-polku: tarkistetaan hakemiston olemassaolo
+        If Not FS.FolderExists(POLKU) Then
+            MsgBox "Tulostushakemistoa ei löydy:" & vbCrLf & POLKU & vbCrLf & _
+                   "Luo hakemisto ensin tai korjaa SETTINGS.OUTPUTPATH.", vbExclamation, "TeeSelostus"
+            Exit Sub
+        End If
+    End If
+    
     ' Valitaan tietolähde lomakepohjan tyypin mukaan
     If Me.LomakePohja.Value = 1 Then
         TTIEDOT = "TIEDOT_PIIRIT"
@@ -189,16 +202,29 @@ Private Sub TeeSelostus(Kaikki As Boolean)
         Loop
     Else
         Do While Not Tiedot.EOF
+            Dim sTagiEnnen As String
+            sTagiEnnen = Tiedot.Fields("LoopTAG")
             If Me.FTyyppi = 1 Then 'Word versiot
                 Set oTemplate = oWord.Documents.Open(POHJA)
-                Nimi = POLKU & DOCNO & "_" & Tiedot.Fields("LoopTAG") & ".docx"
+                Nimi = POLKU & DOCNO & "_" & sTagiEnnen & ".docx"
                 MuutaTiedot
                 oTemplate.SaveAs Nimi
                 If Kaikki Then oTemplate.Close False
+                ' Turvasilmukka Word-polulle: varmistetaan eteneminen vaikka MuutaTiedot ei edistäisi
+                Do While Not Tiedot.EOF
+                    If Tiedot.Fields("LoopTAG") <> sTagiEnnen Then Exit Do
+                    Tiedot.MoveNext
+                Loop
             Else  'HTML versiot
-                Set TOUT = FS.CreateTextFile(POLKU & Tiedot.Fields("LoopTAG") & ".html")
+                Set TOUT = FS.CreateTextFile(POLKU & sTagiEnnen & ".html")
                 TeeHTML
                 TOUT.Close
+                ' Turvasilmukka: jos TeeHTML ei edennyt (virhe keskeyt\u00e4nyt MoveNext-kutsun),
+                ' hyp\u00e4t\u00e4\u00e4n k\u00e4sin t\u00e4m\u00e4n piirin kaikki j\u00e4ljell\u00e4 olevat rivit
+                Do While Not Tiedot.EOF
+                    If Tiedot.Fields("LoopTAG") <> sTagiEnnen Then Exit Do
+                    Tiedot.MoveNext
+                Loop
             End If
         Loop
     End If
@@ -334,21 +360,21 @@ TOUT.WriteLine "</html>"
   Exit Sub
   
 ErrorHandler:
-    MsgBox "Error generating HTML: " & Err.Description, vbExclamation
+    MsgBox "Virhe HTML-kuvauksen luonnissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Aliohjelma: MuutaTeksti
 ' Tarkoitus: Muuttaa pelkän tekstin HTML-muotoiseksi
-' Parameters:
-'   TEKSTI - Text to convert (supports {LOOPTAG} links and indentation)
+' Parametrit:
+'   TEKSTI — Muunnettava teksti ({LOOPTAG}-linkit ja sisennykset tuettu)
 '
-' Description:
-'   Converts text field content to HTML format:
-'   - {LOOPTAG} becomes hyperlink to loop description
-'   - Lines starting with "-" become indented (dd in dl)
-'   - Lines starting with "--" become double-indented
-'   - Empty lines before indents become headers (dt in dl)
+' Kuvaus:
+'   Muuntaa tekstiöntö HTML-muotoon:
+'   - {LOOPTAG} muuttuu hyperlinkiksi
+'   - "-"-alkuiset rivit sisennetään (dd dl:ssä)
+'   - "--"-alkuiset rivit sisennetään kaksinkertaisesti
+'   - Tyhjä rivi ennen sisennystä muuttuu otsikkoriviksi (dt dl:ssä)
 '================================================================================
 Private Sub MuutaTeksti(TEKSTI As String)
     Dim Rivit As Variant
@@ -492,26 +518,38 @@ Private Sub PoimiAsetukset()
     On Error GoTo ErrorHandler
     
     Set Taul = CurrentDb.OpenRecordset("SETTINGS")
-    If Suomeksi Then
-        POHJA = Taul.Fields("TEMPLATE_FI")
-    Else
-        POHJA = Taul.Fields("TEMPLATE")
+    
+    ' Tarkistetaan, että SETTINGS-taulussa on edes yksi rivi
+    If Taul.EOF Then
+        Taul.Close
+        Set Taul = Nothing
+        MsgBox "SETTINGS-taulukko on tyhjä. Asetusten hakeminen epäonnistui.", vbExclamation, "PoimiAsetukset"
+        Exit Sub
     End If
-    POLKU = Taul.Fields("OUTPUTPATH")
-    PROJECT_L1 = Taul.Fields("PROJECT_LINE1")
-    PROJECT_L2 = Taul.Fields("PROJECT_LINE2")
-  AUTHOR = Taul.Fields("AUTHOR")
-  REV = Taul.Fields("REV")
-  STATUS = Taul.Fields("STATUS")
-  DOCNO = Taul.Fields("DOCNO")
-  If Right$(POLKU, 1) <> "\" Then POLKU = POLKU & "\"
-  
-  Taul.Close
-  Exit Sub
+    Taul.MoveFirst
+    
+    If Suomeksi Then
+        POHJA = Nz(Taul.Fields("TEMPLATE_FI"), "")
+    Else
+        POHJA = Nz(Taul.Fields("TEMPLATE"), "")
+    End If
+    POLKU = Nz(Taul.Fields("OUTPUTPATH"), "")
+    PROJECT_L1 = Nz(Taul.Fields("PROJECT_LINE1"), "")
+    PROJECT_L2 = Nz(Taul.Fields("PROJECT_LINE2"), "")
+    AUTHOR = Nz(Taul.Fields("AUTHOR"), "")
+    REV = Nz(Taul.Fields("REV"), "")
+    STATUS = Nz(Taul.Fields("STATUS"), "")
+    DOCNO = Nz(Taul.Fields("DOCNO"), "")
+    If Right$(POLKU, 1) <> "\" Then POLKU = POLKU & "\"
+    
+    Taul.Close
+    Set Taul = Nothing
+    Exit Sub
   
 ErrorHandler:
-    MsgBox "Error loading settings: " & Err.Description, vbExclamation
+    MsgBox "Virhe asetusten latauksessa: " & Err.Description, vbExclamation
     If Not Taul Is Nothing Then Taul.Close
+    Set Taul = Nothing
 End Sub
 
 '================================================================================
@@ -554,9 +592,9 @@ Private Sub MuutaTiedot()
       End If
     Else
       If Suomeksi Then
-        ADescr = Tiedot.Fields("AlarmDescrBL")
+        ADescr = Nz(Tiedot.Fields("AlarmDescrBL"), "")
       Else
-        ADescr = Tiedot.Fields("AlarmDescrBL_FI")
+        ADescr = Nz(Tiedot.Fields("AlarmDescrBL_FI"), "")
       End If
       LisaaHaly Tiedot.Fields("HH"), Halyt, "HH: " & ADescr & " > "
       LisaaHaly Tiedot.Fields("H"), Halyt, "H: " & ADescr & " > "
@@ -656,7 +694,7 @@ Private Sub MuutaTiedot()
     End If
     Korvaa "[OTHER]", Tiedot.Fields("Other")
   End If
-  Controlmodes = Tiedot.Fields("ControlMode")
+  Controlmodes = Nz(Tiedot.Fields("ControlMode"), "")  ' Null kaataisi MuutaTiedot ilman Nz()
   Korvaa2 "[CONTROLMODES]", Controlmodes
   If Suomeksi Then
     Korvaa2 "[INTERLOCKS]", Nz(Tiedot.Fields("InterlocksFI"))
@@ -667,13 +705,14 @@ Private Sub MuutaTiedot()
   
   Korvaa2 "[ALARMS]", Halyt
   
+  ' Kerätään laitelistaus (TAGNAME) — Nz() välttää Invalid use of Null -virhen
   Do While Not Tiedot.EOF
     If Tiedot.Fields("LoopTAG") <> Tagi Then Exit Do
     If Laitteet <> "" Then Laitteet = Laitteet & vbCrLf
     If Suomeksi Then
-      Laitteet = Laitteet & Tiedot.Fields("TAGNAME_FI")
+      Laitteet = Laitteet & Nz(Tiedot.Fields("TAGNAME_FI"), "")
     Else
-      Laitteet = Laitteet & Tiedot.Fields("TAGNAME")
+      Laitteet = Laitteet & Nz(Tiedot.Fields("TAGNAME"), "")
     End If
 '    If Tiedot.Fields("suffix") <> "-" Then Laitteet = Laitteet & " (" & Tiedot.Fields("suffix") & ")"
 '    Laitteet = Laitteet & Tiedot.Fields("maara")
@@ -689,7 +728,7 @@ Private Sub MuutaTiedot()
   Exit Sub
   
 ErrorHandler:
-    MsgBox "Error modifying Word document data: " & Err.Description, vbExclamation
+    MsgBox "Virhe Word-dokumentin tietojen muokkauksessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
