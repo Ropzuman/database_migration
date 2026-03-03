@@ -41,12 +41,12 @@ End Type
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 #If VBA7 Then
     Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
-        (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
     Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
-        (ByVal lpBuffer As String, nSize As Long) As Long
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If

@@ -1,6 +1,7 @@
 Option Compare Database
+Option Explicit
 
-' Declare a record type to break down the user info
+' Käyttäjätietojen purkamiseen käytettytävä tietue
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
@@ -8,9 +9,9 @@ Private Type UserRec
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Viesti = InputBox("Lähetä viesti käyttäjälle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "Lähetä viesti")
   If Viesti <> "" Then
-    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
 

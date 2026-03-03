@@ -132,8 +132,6 @@ Do While Not Vert.EOF
       Vert.Fields(UTaulu & "." & Rev).Value = TRev & " " & TDate & "/" & TMaker & "/" & TComment & vbCrLf & Vert.Fields(UTaulu & "." & Rev).Value
     End If
     Vert.Update
-  Else
-    Debug.Print "EI MUUTTUNUT"
   End If
   Vert.MoveNext
 Loop

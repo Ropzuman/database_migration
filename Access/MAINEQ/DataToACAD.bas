@@ -1,5 +1,5 @@
-Option Compare Database   'Use database order for string comparisons
-Option Explicit           'Require variable declaration
+Option Compare Database   ' Käytä tietokantajärjestystä merkkijonovertailuissa
+Option Explicit           ' Muuttujaesittely pakollinen
 '==============================================================================
 ' Module: DataToACAD
 ' Purpose: Generate AutoCAD LISP files from database data for circuit diagrams
@@ -25,8 +25,6 @@ On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database      ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim tble As DAO.Recordset   ' Updated 2025-11-11: Added DAO prefix for early binding
-
-Debug.Print "CrsRefLink: Starting lookup for table='" & tblnimi & "', text='" & teksti & "'"
 Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
 
 If tblnimi = "CRSREF" Then
@@ -51,9 +49,8 @@ End If
 Set tble = Nothing
 Exit Function
 
-ErrorHandler:    Debug.Print "*** ERROR in CrsRefLink: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Table: " & tblnimi & ", Text: " & teksti
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl    MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
+ErrorHandler:
+    MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
     CrsRefLink = teksti  ' Return original text on error
     If Not tble Is Nothing Then
         tble.Close
@@ -75,8 +72,6 @@ On Error GoTo ErrorHandler
 
 Dim ast As Integer
 
-Debug.Print "get_filename: Processing table name '" & taulnimi & "'"
-
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
     ' No asterisk, take first 8 characters
@@ -89,9 +84,6 @@ End If
 Exit Function
 
 ErrorHandler:
-    Debug.Print "*** ERROR in get_filename: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Table name: " & taulnimi
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error in get_filename: " & Err.Description, vbCritical, "Filename Extraction Error"
     get_filename = "ERROR"
 End Function
@@ -114,8 +106,6 @@ Dim b As Integer    ' Position of quote
 Dim c As String     ' String before quote
 Dim D As String     ' String after quote
 
-Debug.Print "inch: Escaping quotes in string (length: " & Len(a) & ")"
-
 L = Chr(34)  ' Double quote character
 E = a
 
@@ -123,7 +113,6 @@ Do
     b = InStr(1, E, L)
     If b = 0 Then
         ' No more quotes found, return result
-        Debug.Print "  Escaping complete"
         inch = E
         Exit Function
     End If
@@ -137,9 +126,6 @@ Loop
 Exit Function
 
 ErrorHandler:
-    Debug.Print "*** ERROR in inch: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Input string: " & a
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error in inch: " & Err.Description, vbCritical, "LISP Quote Escaping Error"
     inch = a  ' Return original string on error
 End Function
@@ -167,11 +153,6 @@ Dim L As String             ' Double quote character
 Dim suod As Variant         ' Filter value
 Dim direc As String         ' Output directory path
 
-Debug.Print "========================================"
-Debug.Print "makeFiles: Starting LISP file generation"
-Debug.Print "Common table: " & common
-Debug.Print "========================================"
-
 Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
 Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)  ' Updated 2025-11-11: Changed dbOpenDynaset to dbOpenDynaset
 
@@ -181,17 +162,12 @@ cmmn.MoveFirst
 suod = cmmn.Fields("Filter")
 direc = cmmn!AcadDirectory  ' Directory where LISP .txt files will be created
 
-Debug.Print "  Filter value: " & suod
-Debug.Print "  Output directory: " & direc
-
 ' If only generating script file, skip LISP file generation
 If cmmn!OnlyScript Then
-    Debug.Print "  OnlyScript=True, skipping LISP generation"
     GoTo scrtest
 End If
 
 '--- Reset/Initialize all output .txt files with opening parenthesis ---
-Debug.Print "  Initializing output files..."
 cmmn.MoveFirst
 Do Until cmmn.EOF
     ' Initialize non-loop-based files
@@ -213,7 +189,6 @@ cmmn.MoveFirst
 
 '--- Generate non-loop-based LISP lists ---
 ' These are simple lists without filtering by loop ID
-Debug.Print "  Generating non-loop-based lists..."
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         MakeListNoLoopID cmmn!TablesOrQueriesNoLoop.Value, direc
@@ -224,13 +199,11 @@ Loop
 cmmn.MoveFirst
 ' If no loop ID tables, skip to script generation
 If cmmn!NoLoopIDTables Then
-    Debug.Print "  NoLoopIDTables=True, skipping loop-based lists"
     GoTo scrtest
 End If
 
 '--- Generate loop-based LISP lists ---
 ' These lists are filtered by loop ID column
-Debug.Print "  Generating loop-based lists..."
 cmmn.MoveFirst
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
@@ -262,7 +235,6 @@ Loop
 
 scrtest:
 ' Generate AutoCAD script file for batch processing
-Debug.Print "  Generating AutoCAD script file..."
 cmmn.MoveFirst
 MakeScript common, suod, cmmn!LoopIDColumn
 
@@ -271,16 +243,9 @@ cmmn.Close
 Set cmmn = Nothing
 Set DB = Nothing
 
-Debug.Print "makeFiles: COMPLETED successfully"
-Debug.Print "========================================"
-
 Exit Function
 
 ErrorHandler:
-    Debug.Print "*** ERROR in makeFiles: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Common table: " & common
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    Debug.Print "========================================"
     MsgBox "Error in makeFiles: " & Err.Description & vbCrLf & _
            "Error occurred while generating LISP files.", vbCritical, "File Generation Error"
     ' Cleanup on error
@@ -312,9 +277,6 @@ Dim aster As Integer        ' Position of asterisk in table name
 Dim filenum As Integer      ' File handle number
 Dim i As Integer, ii As Integer  ' Loop counters
 Dim preref As String        ' Prefix reference for LISP variable names
-
-Debug.Print "MakeListNoLoopID: Processing table '" & tanimi & "'"
-Debug.Print "  Output directory: " & Hakem
 
 Set DB = CurrentDb          ' Updated 2025-11-11: Changed from CurrentDb
 
@@ -424,11 +386,6 @@ Dim ii As Integer
 Dim iii As Integer
 Dim preref As String
 
-Debug.Print "MakeListWithLoopID: Processing table '" & tblnimipre & "'"
-Debug.Print "  Output directory: " & Hakem
-Debug.Print "  Filter value: " & CStr(suoda)
-Debug.Print "  Loop ID field index: " & Looppid
-
 Set DB = CurrentDb
 L = Chr(34)
 
@@ -523,9 +480,6 @@ End If
 Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in MakeListWithLoopID: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Table: " & tblnimipre & ", Filter: " & CStr(suoda)
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error in MakeListWithLoopID: " & Err.Description, vbCritical, "Loop ID List Error"
     On Error Resume Next
     If Not tble Is Nothing Then tble.Close
@@ -557,17 +511,12 @@ Dim i As Integer
 Dim kentta1 As Variant
 Dim kentta2 As Variant
 
-Debug.Print "========================================"
-Debug.Print "MakeLocFiles: Generating installation location files"
-Debug.Print "========================================"
-
 Set DB = CurrentDb
 Set tble = DB.OpenRecordset("Loops", dbOpenDynaset)
 
 L = Chr(34)
 
 ' reset txt-files
-        Debug.Print "  Initializing instloc.txt file..."
         Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Output As #1
         Print #1, "(";
         Close
@@ -576,7 +525,6 @@ L = Chr(34)
  For i = 0 To DB.TableDefs.Count - 1
   Set Taulukko = DB.TableDefs(i)
   If Left$(Taulukko.Name, 6) = "devTbl" Then 'valitaan taulukot
-   Debug.Print "  Processing device table: " & Taulukko.Name
    If Right$(Taulukko.Name, 6) <> "Common" Then
     If Right$(Taulukko.Name, 12) <> "Positioner01" Then
      Set Taul = DB.OpenRecordset(DB.TableDefs(i).Name)
@@ -617,19 +565,13 @@ L = Chr(34)
 Next
 
 ' print last ')'-mark to file
-        Debug.Print "  Finalizing instloc.txt file..."
         Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Append As #1
         Print #1, ")"
         Close
 
-Debug.Print "MakeLocFiles: COMPLETED successfully"
-Debug.Print "========================================"
-
 Exit Function
 
 ErrorHandler:
-    Debug.Print "*** ERROR in MakeLocFiles: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error in MakeLocFiles: " & Err.Description, vbCritical, "Location Files Error"
     On Error Resume Next
     Close #1
@@ -648,12 +590,6 @@ Dim tblmain As DAO.Recordset
 Dim L As String
 Dim iii As Integer
 
-Debug.Print "========================================"
-Debug.Print "MakeScript: Generating AutoCAD script"
-Debug.Print "  Common table: " & common
-Debug.Print "  Filter value: " & CStr(suod)
-Debug.Print "========================================"
-
 Set DB = CurrentDb
 Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
 
@@ -661,16 +597,12 @@ L = Chr(34)
 cmmn.MoveFirst
 Set tblmain = DB.OpenRecordset(cmmn.Fields(0).Value, dbOpenDynaset)
 
-Debug.Print "  Opening script file: " & cmmn!AcadDirectory.Value & cmmn!ScriptFileName.Value
-
 Open cmmn!AcadDirectory.Value & cmmn!ScriptFileName.Value For Output As #1
 
 tblmain.MoveFirst
 cmmn.MoveFirst
 
 If Not IsNull(cmmn.Fields("ScriptInTheBegining").Value) Then Print #1, cmmn.Fields("ScriptInTheBegining").Value
-
-Debug.Print "  Writing QMEM memory commands..."
 
 Print #1, "(QMEM " & L & "W" & L & " 1 " & L & "CRSREF.TXT" & L & ")'nil"
 Print #1, "(QMEM " & L & "W" & L & " 0 " & L & "QMEMLIST.TXT" & L & ")'nil"
@@ -696,8 +628,6 @@ Close #2
 tblmain.MoveFirst
 cmmn.MoveFirst
 
-Debug.Print "  Processing loop records..."
-
 Do Until tblmain.EOF
     If tblmain.Fields(0).Value = suod Then
         If Not IsNull(cmmn.Fields("ScriptBeforeLoop1").Value) Then Print #1, cmmn.Fields("ScriptBeforeLoop1").Value
@@ -717,15 +647,9 @@ If Not IsNull(cmmn.Fields("ScriptInTheEnd").Value) Then Print #1, cmmn.Fields("S
 
 Close
 
-Debug.Print "MakeScript: COMPLETED successfully"
-Debug.Print "========================================"
-
 Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in MakeScript: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Common table: " & common & ", Filter: " & CStr(suod)
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Error in MakeScript: " & Err.Description, vbCritical, "Script Generation Error"
     On Error Resume Next
     Close #1
