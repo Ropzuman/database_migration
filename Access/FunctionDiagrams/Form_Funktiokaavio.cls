@@ -227,17 +227,25 @@ Dim edPiir As String
 
 IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
 Debug.Print "  IndexBase: " & IndexBase
+' Pohjakuvien hakemisto (Y-asema, INT-kansio) ja tallennuspolku SETTINGS-taulusta
+BasePath = "Y:\base\int\"
+SavePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'SAVEPATH'"), "")
+Debug.Print "  BasePath: " & BasePath & "  SavePath: " & SavePath
+If SavePath = "" Then
+    MsgBox "SAVEPATH puuttuu SETTINGS-taulusta! Indeksisivuja ei voi tallentaa.", vbCritical
+    GoTo ErrorHandler
+End If
 Set oAcad = GetObject(, "AutoCAD.Application")
 Debug.Print "  AutoCAD connection established"
 Set Taul = CurrentDb.OpenRecordset("Funtitle_Func")
-Set oDoc = oAcad.Documents.Open("Y:\base\int\" & IndexBase & ".dwg")
-Debug.Print "  Base document opened: " & IndexBase & ".dwg"
+Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
+Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
 
 aX = 30        ' Aloituspiste X
-aY = 275       ' Aloituspiste Y
+aY = 285       ' Aloituspiste Y
 PosSivu = 40   ' Position ja sivun välinen etäisyys x-akselilla
 Seuraava = 90  ' Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40      ' Minimi Y-koordinaatti, johon asti tekstejä tehdään
+MinY = 35      ' Minimi Y-koordinaatti, johon asti tekstejä tehdään
 MaxX = 333     ' Maksimi X-koordinaatti, johon sarakkeet tehdään ennen sivunvaihtoa
 RiviVali = 5   ' Tekstien riviinjako
 TextSize = 2.5 ' Tekstien koko
@@ -278,7 +286,7 @@ Do While Not Taul.EOF
         oDoc.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         edPiir = Taul.Fields("Piir")
         oDoc.Close
-        Set oDoc = oAcad.Documents.Open("y:\BASE\INT\" & IndexBase & ".dwg")
+        Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
         Piste(0) = aX
         Piste2(0) = aX + PosSivu
       End If
@@ -296,8 +304,8 @@ Loop
   ind = ind + 1
   Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
   oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
-  ' Suljetaan piirustus tallennuksen jälkeen
-  oDoc.Close
+  ' Viimeinen indeksisivu jää auki AutoCAD:issa (alkuperäinen käyttäytyminen)
+  ' oDoc.Close
   Debug.Print "Command98_Click: COMPLETED successfully - Index pages created"
   MsgBox "Valmis"
 
@@ -571,6 +579,19 @@ Dim edPiir As String
 
 IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
 Debug.Print "  IndexBase: " & IndexBase
+' Varmistetaan AutoCAD-yhteys — CommandJANI voidaan ajaa itsenäisesti
+If oAcad Is Nothing Then
+    Set oAcad = GetObject(, "AutoCAD.Application")
+    Debug.Print "  AutoCAD connection established (CommandJANI)"
+End If
+' Pohjakuvien hakemisto ja tallennuspolku SETTINGS-taulusta
+BasePath = "Y:\base\int\"
+SavePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'SAVEPATH'"), "")
+Debug.Print "  BasePath: " & BasePath & "  SavePath: " & SavePath
+If SavePath = "" Then
+    MsgBox "SAVEPATH puuttuu SETTINGS-taulusta! Indeksisivuja ei voi tallentaa.", vbCritical
+    GoTo ErrorHandler
+End If
 Set Taul = CurrentDb.OpenRecordset("Intpage")
 Debug.Print "  Intpage recordset opened"
 Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
