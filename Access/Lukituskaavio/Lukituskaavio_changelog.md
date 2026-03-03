@@ -9,6 +9,7 @@
 ## Kriittiset muutokset
 
 ### APIKoodit.bas
+
 - `wu_GetUserName`: `nSize As LongPtr` → `ByRef nSize As Long` — Win32 DWORD on 32-bittinen, ei LongPtr
 - `GetOpenFileName`: paluuarvo `As Long` → `As LongPtr` — 64-bit osoitinyhteensopivuus
 - `OPENFILENAME`-rakenne: `hwndOwner`, `hInstance`, `lCustData`, `lpfnHook` kääritty `#If VBA7` ehtolausekkeeseen
@@ -16,10 +17,12 @@
 - Englanninkielinen kommentti `'Return value` → `'Palautusarvo`
 
 ### Form_Aloitus.cls
+
 - Lisätty `Option Explicit`
 - `Me.`-etuliite lisätty kaikkiin `Polku`-, `LMAINEQ`- ja `LINSTRU`-viittauksiin
 
 ### Form_FromTo.cls
+
 - Lisätty `Option Explicit`
 - Lisätty puuttuvat muuttujaesittelyt: `Dim L As String`, `Dim edel As String`
 - `AcadBlockReference` → `Object` (myöhäinen sidonta 64-bit-yhteensopivuuden vuoksi)
@@ -28,6 +31,7 @@
 - AutoCAD-kutsujen merkkijonot suomennettu (`"Set start point"` jne.)
 
 ### Form_Funktiokaavio.cls
+
 - Poistettu käytöstä poistunut `Private Declare api_GetUserName` (ei kutsuja jäljellä)
 - Lisätty `Option Explicit`
 - Korjattu yhteen kirjoitetut rivit (`DoCmd.SetWarnings TrueDebug.Print...` jm.)
@@ -37,10 +41,12 @@
 - `RECIPES.Form.ID` → `Me.RECIPES.Form.ID` (Command83\_Click, kaikki esiintymät)
 
 ### Form_Interlocking.cls
+
 - Poistettu kaikki `Debug.Print`-lauseet (ml. `If BlockNimi <> "" Then Debug.Print ...`)
 - `AcadObject`, `AcadBlockReference`, `AcadLine`, `AcadSelectionSet` → `Object`
 
 ### Form_LineForm.cls
+
 - `Tyyppi.VALUE` → `Me.Tyyppi.Value` (COK\_Click)
 - `Sijainti.VALUE` → `Me.Sijainti.Value` (COK\_Click)
 - AutoCAD GetPoint -kehotteet suomennettu
