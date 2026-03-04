@@ -27,15 +27,17 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
     Dim MinPoint As Variant
     Dim MaxPoint As Variant
     Dim i As Long ' Muutettu Integer → Long 64-bittistä yhteensopivuutta varten
+    Dim prevScreen As Boolean ' Tallennetaan alkutila – palautetaan aina, myös virhetilanteessa
     
     On Error GoTo ErrHandler
+    prevScreen = Application.ScreenUpdating
     Application.ScreenUpdating = False
     
     ' Tarkistetaan, että rivillä on dataa
     If Cells(Target.Row, 1).Value = "" Then
         MsgBox "Ei kuvaa valitulla rivillä", vbInformation, "Etsi blokki"
         Cancel = True
-        Application.ScreenUpdating = True
+        Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
     
@@ -47,7 +49,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
         On Error GoTo 0
         MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Etsi blokki"
         Cancel = True
-        Application.ScreenUpdating = True
+        Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
     On Error GoTo ErrHandler
@@ -121,11 +123,11 @@ Cleanup:
     Set Entity = Nothing
     Set oACAD = Nothing
     Cancel = True
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = prevScreen  ' Palautetaan alkutila (ei kovakoodattu True)
     Exit Sub
     
 ErrHandler:
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = prevScreen  ' Palautetaan alkutila aina, myös virhetilanteessa
     MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Etsi blokki"
     Resume Cleanup
 End Sub
