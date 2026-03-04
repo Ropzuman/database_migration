@@ -70,3 +70,60 @@ Function Show_last_criteria(criterias As Variant) As Variant
     Show_last_criteria = m_last_criteria
 End Function
 
+'------------------------------------------------------------------------------
+' Funktio: SniffUser
+' Tarkoitus: Kirjaa käyttäjän kirjautumistiedot UsysUsers-tauluun käynnistyksen yhteydessä
+' Parametrit: -
+' Palautusarvo: -
+' Huom: Kutsutaan AutoExec-makrosta. Virheet käsitellään hiljaisesti,
+'       jottei kirjautumiskirjaus keskeytä sovelluksen avautumista.
+'------------------------------------------------------------------------------
+Function SniffUser()
+On Error GoTo ErrorHandler
+    Dim DB As DAO.Database      ' Tietokantaviittaus
+    Dim Taulu As DAO.Recordset  ' UsysUsers-taulun tietue
+    Dim NWUserName As String    ' Verkkokäyttäjänimi Windowsista
+    Dim CName As String         ' Tietokoneen nimi
+    Dim BuffSize As Long        ' Puskurin koko API-kutsulle
+    Dim NBuffer As String       ' Merkkijonopuskuri API-kutsulle
+
+    ' Haetaan verkkokäyttäjänimi wu_GetUserName-API:lla
+    BuffSize = 256
+    NBuffer = Space$(BuffSize)
+    If wu_GetUserName(NBuffer, BuffSize) Then
+        NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+    Else
+        NWUserName = "Tuntematon"
+    End If
+
+    ' Haetaan tietokoneen nimi ympäristömuuttujasta
+    CName = Environ("COMPUTERNAME")
+    If CName = "" Then CName = "Tuntematon"
+
+    ' Kirjoitetaan kirjautumistietue UsysUsers-tauluun
+    Set DB = CurrentDb
+    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    With Taulu
+        .AddNew
+        .Fields(0) = NWUserName     ' Verkkokäyttäjänimi
+        .Fields(1) = CurrentUser()  ' Access-käyttäjänimi
+        .Fields(2) = CName          ' Tietokoneen nimi
+        .Fields(3) = Now            ' Kirjautumisaika
+        .Update
+    End With
+
+    ' Siivotaan objektit
+    Taulu.Close
+    Set Taulu = Nothing
+    Set DB = Nothing
+    Exit Function
+
+ErrorHandler:
+    ' Hiljainen virheenkäsittely — ei keskeytetä sovelluksen käynnistystä
+    On Error Resume Next
+    If Not Taulu Is Nothing Then Taulu.Close
+    Set Taulu = Nothing
+    Set DB = Nothing
+    On Error GoTo 0
+End Function
+
