@@ -263,9 +263,13 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                 Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
-                    revParts = Split(DIRevArr(r), "/")
-                    If UBound(revParts) >= 1 Then .Cells(Row, Column).Value = revParts(1)
+                    ' Erase estää vanhan arvon läpivuotamisen seuraavaan iteraatioon
+                    ' jos merkkijonossa ei ole kauttaviivaa (revParts jäisi edellisen arvoon)
+                    Erase revParts
+                    If InStr(DIRevArr(r), "/") > 0 Then
+                      revParts = Split(DIRevArr(r), "/")
+                      If UBound(revParts) >= 1 Then .Cells(Row, Column).Value = revParts(1)
+                    End If
                     Row = Row + 1
                   End If
                 Next r
@@ -283,9 +287,11 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                 Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
-                    revParts = Split(DIRevArr(r), "/")
-                    If UBound(revParts) >= 2 Then .Cells(Row, Column).Value = revParts(2)
+                    Erase revParts
+                    If InStr(DIRevArr(r), "/") > 0 Then
+                      revParts = Split(DIRevArr(r), "/")
+                      If UBound(revParts) >= 2 Then .Cells(Row, Column).Value = revParts(2)
+                    End If
                     Row = Row + 1
                   End If
                 Next r
@@ -303,9 +309,11 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                 Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
-                    revParts = Split(DIRevArr(r), "/")
-                    If UBound(revParts) >= 3 Then .Cells(Row, Column).Value = revParts(3)
+                    Erase revParts
+                    If InStr(DIRevArr(r), "/") > 0 Then
+                      revParts = Split(DIRevArr(r), "/")
+                      If UBound(revParts) >= 3 Then .Cells(Row, Column).Value = revParts(3)
+                    End If
                     Row = Row + 1
                   End If
                 Next r
@@ -323,9 +331,11 @@ Dim processedApprover As Boolean, processedDesc As Boolean
                 Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
-                    revParts = Split(DIRevArr(r), "/")
-                    If UBound(revParts) >= 4 Then .Cells(Row, Column).Value = revParts(4)
+                    Erase revParts
+                    If InStr(DIRevArr(r), "/") > 0 Then
+                      revParts = Split(DIRevArr(r), "/")
+                      If UBound(revParts) >= 4 Then .Cells(Row, Column).Value = revParts(4)
+                    End If
                     Row = Row + 1
                   End If
                 Next r

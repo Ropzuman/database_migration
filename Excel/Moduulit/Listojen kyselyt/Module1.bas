@@ -142,7 +142,7 @@ Dim fld As Object        ' ADODB.Field
   
   ' Varmistetaan että tietokantatiedosto on olemassa
   If Dir(Kanta) = "" Then
-    MsgBox "Database file not found: " & Kanta, vbCritical, "Database Error"
+    MsgBox "Tietokantatiedostoa ei löydy: " & Kanta, vbCritical, "Tietokantavirhe"
     EndFastMode
     Exit Sub
   End If
@@ -160,8 +160,8 @@ Dim fld As Object        ' ADODB.Field
   On Error GoTo ErrorHandler
   
   If dbDAO Is Nothing Then
-    MsgBox "Could not open database with DAO!" & vbCrLf & _
-           "Ensure Microsoft Access Database Engine is installed.", vbCritical, "DAO Error"
+    MsgBox "Tietokantaa ei voitu avata DAO:lla!" & vbCrLf & _
+           "Varmista että Microsoft Access Database Engine on asennettuna.", vbCritical, "DAO-virhe"
     EndFastMode
     Exit Sub
   End If
@@ -365,7 +365,7 @@ Dim fld As Object        ' ADODB.Field
   
   EndFastMode
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Valmis!"
-  MsgBox "Data brought successfully!", vbOKOnly, "Ready"
+  MsgBox "Data haettu onnistuneesti!", vbOKOnly, "Valmis"
   Sheets("Main").Select
   Exit Sub
   
@@ -396,7 +396,7 @@ Sub GenPrintout()
   Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout] Aloitetaan tulosteen generointi"
   
   If CheckOK = False Then
-    MsgBox "Check data first!", vbCritical, "Error!"
+    MsgBox "Tarkista data ensin!", vbCritical, "Virhe!"
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout ERROR] CheckOK=False - keskeytetään"
     Exit Sub
   End If
@@ -427,6 +427,9 @@ Sub GenPrintout()
   Dim lastCol As Long
   Dim c As Range
   Dim Riveja As Long
+  ' Siirretty Sub-alkuun yhtenäisyyden vuoksi (review v2: kaikki Dim-lauseet kuuluvat tähän)
+  Dim lastCell As Range
+  Dim templateRange As Range
   
   On Error GoTo GenPrintoutError
   BeginFastMode
@@ -457,7 +460,6 @@ Sub GenPrintout()
   Application.StatusBar = "Luetaan dataa DB1:stä..."
   
   ' Etsitään viimeinen käytetty rivi DB1:stä - null-tarkistuksella
-  Dim lastCell As Range
   Set lastCell = wsDB1.Cells.Find(What:="*", _
                                   After:=wsDB1.Range("A1"), _
                                   LookAt:=xlPart, _
@@ -469,7 +471,7 @@ Sub GenPrintout()
   If lastCell Is Nothing Then
     EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout ERROR] DB1 tyhjä"
-    MsgBox "DB1 sheet is empty! Please click 'Get Data' first to load data from database.", vbCritical, "No Data Error"
+    MsgBox "DB1-sheet on tyhjä! Klikkaa ensin 'Hae Data' ladataksesi tiedot tietokannasta.", vbCritical, "Ei dataa"
     Exit Sub
   End If
   
@@ -561,7 +563,6 @@ Sub GenPrintout()
   If RMAX <= 0 Then RMAX = 1
   
   ' Esikopioidaan TEMPLATE-lohko kohteeseen kerran (työkirjojen välinen kopiointi on hidasta)
-  Dim templateRange As Range
   Set templateRange = srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd)
   
   ' Iteroidaan DB1-datarivejä RMAX-ryhmissä, kopioidaan TEMPLATE-rivit joka kerralla
@@ -755,7 +756,8 @@ Dim wsErrors As Worksheet
   CheckOK = False
   RMAX = 0
   Virhe = False
-  Application.ScreenUpdating = False
+  ' Käytetään BeginFastMode/EndFastMode yhtenäisesti kuten muissakin makroissa
+  BeginFastMode
   
   Set wsErrors = Sheets("ERRORS")
   Set wsTemplate = Sheets("TEMPLATE")
@@ -783,9 +785,9 @@ Dim wsErrors As Worksheet
       wsErrors.Range("A1").Font.Bold = True
       wsErrors.Range("A1").Font.ColorIndex = 3
       wsErrors.Activate
-      Application.ScreenUpdating = True
+      EndFastMode
       Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] &&PAGE_HEADER_START puuttuu"
-      MsgBox "TEMPLATE is missing required markers! See ERRORS sheet.", vbCritical, "Template Error"
+      MsgBox "TEMPLATE-sheetistä puuttuu vaaditut merkit! Katso ERRORS-sheet.", vbCritical, "Template-virhe"
       Exit Sub
     End If
     PHStart = foundCell.Row + 1
@@ -870,7 +872,7 @@ Dim wsErrors As Worksheet
     wsErrors.Range("A3").Value = "- Et myöskään voi käyttää £1/2 ja £1/3 linkkejä samassa templatessa."
     wsErrors.Range("A4").Value = "- Korjaa nämä virheet ja yritä uudelleen!"
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] Ristiriitaiset rivimerkit"
     MsgBox "Templatessa oli virheitä, katso ERRORS-sheet!", vbCritical, "Virhe!"
     Exit Sub
@@ -885,6 +887,9 @@ Dim wsErrors As Worksheet
         If Left(Arvo, 2) = "££" Then
           If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
         ElseIf Left(Arvo, 1) = "£" Then
+          ' Merkkimuoto: "£D SARAKE" — £=1, numero=2, kaksoispiste=3, välilyönti=4, sarakenimi alkaen 5
+          ' Mid(Arvo, 2, 1) lukee rivinumeron D (korjattu RMAX-bugi), Mid(Arvo, 5) lukee sarakenimen
+          ' Molemmat offsetit ovat johdettu samasta dokumentoidusta formaatista.
           If EtsiOts(Mid(Arvo, 5), i, j, CInt(Mid(Arvo, 2, 1))) = False Then Virhe = True
         End If
       End If
@@ -893,12 +898,12 @@ Dim wsErrors As Worksheet
   
   If Virhe Then
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] Puuttuvia otsikkoita DB1:ssä"
     MsgBox "Templatessa oli virheitä! Katso ERRORS-sheet.", vbCritical, "Virhe!"
   Else
     Sheets("Main").Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     CheckOK = True
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout] VALMIS - CheckOK=True"
     MsgBox "Tarkistus OK!", vbOKOnly, "OK!"
@@ -906,7 +911,7 @@ Dim wsErrors As Worksheet
   Exit Sub
 
 CheckoutError:
-  Application.ScreenUpdating = True
+  EndFastMode
   
   Dim errMsg As String
   errMsg = "Error in Checkout: " & Err.Description & " (Error " & Err.Number & ")"
