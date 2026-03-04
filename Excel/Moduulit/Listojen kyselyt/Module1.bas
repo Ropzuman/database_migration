@@ -189,21 +189,36 @@ Dim fld As Object        ' ADODB.Field
         colData = colData + 1
       Next fldDAO
       
-      ' Kopioidaan data rivi riviltä (DAO ei tue CopyFromRecordset samalla tavalla)
-      Dim rowNum As Long
-      rowNum = 2
+      ' Fix3: Kerätään data 2D-taulukkoon ja kirjoitetaan yhdellä COM-kutsulla
+      ' (vähentää COM-silmukat 200rv*20kol=4000 → 1)
+      Dim dataArr() As Variant
+      Dim totalRows As Long
+      Dim fieldCount As Long
+      Dim arrRow As Long, arrCol As Long
+      fieldCount = rsDAO.Fields.Count
+
+      ' MoveLast/RecordCount on luotettava DAO dynaset- ja table-tyypeille
+      rsDAO.MoveLast
+      totalRows = rsDAO.RecordCount
       rsDAO.MoveFirst
-      Do While Not rsDAO.EOF
-        colData = 1
-        For Each fldDAO In rsDAO.Fields
-          ws.Cells(rowNum, colData).Value = fldDAO.Value
-          colData = colData + 1
-        Next fldDAO
-        rowNum = rowNum + 1
-        rsDAO.MoveNext
-      Loop
-      
-      Debug.Print "    DAO data kopioitu: " & (rowNum - 2) & " riviä, " & rsDAO.Fields.Count & " saraketta"
+
+      If totalRows > 0 Then
+        ReDim dataArr(1 To totalRows, 1 To fieldCount)
+        arrRow = 1
+        Do While Not rsDAO.EOF
+          arrCol = 1
+          For Each fldDAO In rsDAO.Fields
+            dataArr(arrRow, arrCol) = fldDAO.Value
+            arrCol = arrCol + 1
+          Next fldDAO
+          arrRow = arrRow + 1
+          rsDAO.MoveNext
+        Loop
+        ' Kirjoitetaan koko datasetti yhdellä COM-kutsulla
+        ws.Range("A2").Resize(totalRows, fieldCount).Value = dataArr
+      End If
+
+      Debug.Print "    DAO data kopioitu (array): " & totalRows & " riviä, " & fieldCount & " saraketta"
     Else
       Debug.Print "    VAROITUS: Kysely ei palauttanut rivejä (EOF=True)"
       ' Kirjoitetaan silti header
@@ -430,6 +445,7 @@ Sub GenPrintout()
   ' Siirretty Sub-alkuun yhtenäisyyden vuoksi (review v2: kaikki Dim-lauseet kuuluvat tähän)
   Dim lastCell As Range
   Dim templateRange As Range
+  Dim stagingSheet As Worksheet     ' Fix1: cross-WB staging (1 kopio loopille)
   
   On Error GoTo GenPrintoutError
   BeginFastMode
@@ -517,13 +533,18 @@ Sub GenPrintout()
   Application.CutCopyMode = False
   
   ' Asetetaan tulostuksen otsikkorivit ja jäädytetään paneelit
+  ' Fix2: PrintCommunication=False estää tulostinohjain-kyselyt per kirjoitus
+  Application.PrintCommunication = False
   destSheet.PageSetup.PrintTitleRows = "$" & ViimRivi & ":$" & ViimRivi + PHEnd - PHStart
+  Application.PrintCommunication = True
   destSheet.Activate
   destSheet.Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
   ActiveWindow.FreezePanes = True
   ViimRivi = ViimRivi + 1 + PHEnd - PHStart
   
   ' Asetetaan alatunnisteet kolmelle ensimmäiselle sheetille (Info, POSheet, Legend)
+  ' Fix2: PrintCommunication=False niputtaa kaikki 9 PageSetup-kirjoitusta yhteen tulostinohjain-pyyntöön
+  Application.PrintCommunication = False
   Application.StatusBar = "Asetetaan alatunnisteet..."
   Debug.Print "  Asennetaan alatunnisteet dokumenttitiedoilla"
   For i = 1 To 3
@@ -541,29 +562,45 @@ Sub GenPrintout()
                    & "&8Page &P(&N)"
     End With
   Next i
+  Application.PrintCommunication = True
   
   ' Luodaan LINKING-sheet ja kopioidaan DB1-data
   Application.StatusBar = "Luodaan LINKING-sheet..."
   Debug.Print "  Luodaan LINKING-sheet DB1-datalla"
   With destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
     .Name = "LINKING"
-    wsDB1.Cells.Copy Destination:=.Range("A1")
+    wsDB1.UsedRange.Copy Destination:=.Range("A1")  ' Fix5: Cells.Copy → UsedRange.Copy (vain data, ei 1M riviä)
   End With
   Application.CutCopyMode = False
   
   ' Alkuperäinen linkitys otsikkoalueelle
   Kerta = 0
-  VaihdaLinkit destSheet, 1, ViimRivi, Kerta
+  VaihdaLinkit destSheet, 1, ViimRivi, Kerta, srcWB
   
   ' Template-pohjainen täyttö: kopioidaan TEMPLATE-lohkoja ja kartoitetaan arvot VaihdaLinkit-funktiolla
-  ' OPTIMOITU: Vähennetään työkirjojen välisiä kopioita käyttämällä väliaikaista range-aluetta + batch clipboard clears
+  ' Fix1: TEMPLATE kopioidaan KERRAN paikalliseen __STAGING__-sheettiin destWB:ssä.
+  ' Looppi käyttää saman-WB kopiointia (5-10x nopeampi kuin cross-WB per iteraatio).
   Application.StatusBar = "Kopioidaan dataa tulosteeseen käyttäen template-lohkoja..."
   Debug.Print "  Aloitetaan template-lohkojen kopiointi (RMAX=" & RMAX & ")"
   Riveja = DocEnd - DocStart
   If RMAX <= 0 Then RMAX = 1
-  
-  ' Esikopioidaan TEMPLATE-lohko kohteeseen kerran (työkirjojen välinen kopiointi on hidasta)
-  Set templateRange = srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd)
+
+  ' Siivotaan mahdollinen aiemman kaatuneen ajon staging-sheet
+  Application.DisplayAlerts = False
+  On Error Resume Next
+  destWB.Sheets("__STAGING__").Delete
+  On Error GoTo GenPrintoutError
+  Application.DisplayAlerts = True
+
+  ' Yksi cross-WB kopio — kaikki loopin kopiot tapahtuvat tästä eteenpäin saman WB:n sisällä
+  Set stagingSheet = destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
+  stagingSheet.Name = "__STAGING__"
+  stagingSheet.Visible = xlSheetVeryHidden
+  srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd).Copy _
+      Destination:=stagingSheet.Rows("1:1")
+  Application.CutCopyMode = False
+  Set templateRange = stagingSheet.Rows("1:" & (DocEnd - DocStart + 1))
+  Debug.Print "  Staging-sheet luotu (__STAGING__) — loop käyttää saman-WB kopiointia"
   
   ' Iteroidaan DB1-datarivejä RMAX-ryhmissä, kopioidaan TEMPLATE-rivit joka kerralla
   Kerta = 0
@@ -587,9 +624,9 @@ Sub GenPrintout()
     End If
     perfShade = perfShade + (Timer - tShade)
     
-    ' Kartoitetaan arvot LINKINGistä template-alueelle kommenttimerkkien kautta
+    ' Kartoitetaan arvot DB1:stä template-alueelle kommenttimerkkien kautta (srcWB välitetään suoraa lukua varten)
     tLink = Timer
-    VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta
+    VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta, srcWB
     perfLink = perfLink + (Timer - tLink)
     
     ' Siirrytään seuraavaan lohkoon
@@ -597,8 +634,17 @@ Sub GenPrintout()
     Kerta = Kerta + 1
   Next i
   Debug.Print "  Kopioitu " & perfIterations & " template-lohkoa"
-  
-  ' OPTIMOINTI: Tyhjennetään leikepöytä kerran kaikkien kopioiden jälkeen (ei loopissa)
+
+  ' Fix1: Poistetaan staging-sheet loopin jälkeen
+  Application.DisplayAlerts = False
+  On Error Resume Next
+  stagingSheet.Delete
+  On Error GoTo GenPrintoutError
+  Application.DisplayAlerts = True
+  Set stagingSheet = Nothing
+  Debug.Print "  Staging-sheet poistettu"
+
+  ' Tyhjennetään leikepöytä kerran kaikkien kopioiden jälkeen (ei loopissa)
   Application.CutCopyMode = False
   
   ' Poistetaan ylimääräiset sarakkeet Sarakkeita-määrän jälkeen
@@ -625,10 +671,9 @@ Sub GenPrintout()
     Next c
   End If
   
-  ' Tyhjennetään kommentit ja lisätään LINKING-kommentit
+  ' Tyhjennetään kommentit — LINKING sisältää nyt staattiset arvot (ei kaavoja), TeeLinkingKommentit ohitetaan
   Application.StatusBar = "Viimeistellään..."
   destSheet.Cells.ClearComments
-  TeeLinkingKommentit
   
   ' Käsitellään LINKING-sheetin näkyvyys/poisto
   On Error Resume Next
@@ -700,6 +745,15 @@ Sub GenPrintout()
 
 GenPrintoutError:
   Application.StatusBar = False
+  ' Siivotaan staging-sheet jos se jäi kesken virheen sattuessa
+  On Error Resume Next
+  If Not stagingSheet Is Nothing Then
+    Application.DisplayAlerts = False
+    stagingSheet.Delete
+    Application.DisplayAlerts = True
+    Set stagingSheet = Nothing
+  End If
+  On Error GoTo 0
   EndFastMode
   
   ' Parannettu virhekäsittelijä kontekstispesifeillä viesteillä

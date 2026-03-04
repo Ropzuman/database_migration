@@ -9,9 +9,11 @@
 ## Kriittiset muutokset (Bugit)
 
 ### BUG 1 ✅ [HIGH] – Teksti/blokki-kirjoitusristiriita (`TuoDATA`) — `Koodit.bas`
+
 **Ongelma:** TEXT/MTEXT-entiteetit kirjoittivat suoraan `Cells(Rivi, ...)`:lle silmukan aikana, mutta lohkodatan `buf`-puskurin huuhtelu (`outRng.Value = buf`) alkoi samasta `DocStartRow`-pisteestä. Lohkohuuhtelu ylikirjoitti aiemmin kirjoitetut teksti-rivit hiljaisesti.
 
 **Korjaus:**
+
 - Lisätty erillinen `textBuf()`, `textBufRows`, `textBufCap`-puskuri teksti-entiteeteille.
 - Teksti-entiteetit kerätään `textBuf`-taulukkoon silmukan aikana (ei suoraan soluihin).
 - Lohkopuskuri huuhdellaan ensin (`outRng.Value = buf`).
@@ -21,9 +23,11 @@
 ---
 
 ### BUG 2 ✅ [HIGH] – VieDATA ei tallenna jo auki olevia piirustuksia — `Koodit.bas`
+
 **Ongelma:** Viimeisen käsitellyn piirustuksen tallennus oli ehdollinen `If Not OliAuki Then`. Jos piirustus oli jo auki (OliAuki = True), tehdyt attributtimuutokset jäivät tallentamatta levylle.
 
 **Korjaus:** `SaveAs` kutsutaan aina riippumatta `OliAuki`-lipusta. Sulkeminen (`Close False`) on edelleen ehdollinen – jo auki olleita piirustuksia ei suljeta:
+
 ```vba
 oDOC.SaveAs oDOC.FullName, Ver           ' Tallennetaan aina
 If Not OliAuki Then oDOC.Close False     ' Suljetaan vain, jos macro avasi
@@ -32,9 +36,11 @@ If Not OliAuki Then oDOC.Close False     ' Suljetaan vain, jos macro avasi
 ---
 
 ### BUG 3 ✅ [HIGH] – `PoistaBlokit` Kaydyt-merkkijono tuotti väärän täsmäyksen — `Koodit.bas`
+
 **Ongelma:** `InStr(Kaydyt, "|" & Rivi.Row & "|")` osui riville 1, mutta myös `"|10|"`, `"|21|"`, kaikille riveille joiden numero sisältää `"1"` merkkijonona. Rivejä ohitettiin virheellisesti.
 
 **Korjaus:** Korvattu `Kaydyt As String` + `InStr`-logiikka `Scripting.Dictionary`-rakenteella. Dictionary tarjoaa O(1) eksaktin täsmäyksen kokonaisluvulle:
+
 ```vba
 Dim Kaydyt As Object
 Set Kaydyt = CreateObject("Scripting.Dictionary")
@@ -46,6 +52,7 @@ If Not Kaydyt.Exists(Rivi.Row) Then
 ---
 
 ### BUG 4 ✅ [MED] – `ReDim Preserve Poista()` per kierros = O(n²) — `Koodit.bas`
+
 **Ongelma:** `ReDim Preserve Poista(L)` kutsuttiin jokaisella hylätyllä entiteetillä. Jokainen kutsu kopioi koko taulukon.
 
 **Korjaus:** Taulukko esiallokoitu ennen silmukkaa täyteen valintakokoon (`Joukko.Count`). Silmukan jälkeen siivottu todelliseen kokoon yhdellä `ReDim Preserve`:llä.
@@ -53,6 +60,7 @@ If Not Kaydyt.Exists(Rivi.Row) Then
 ---
 
 ### BUG 5 ✅ [MED] – `ScreenUpdating` ei palaudu virhetilanteessa – `DATA.bas`
+
 **Ongelma:** Virhetilanteessa (esim. COM-kutsussa) `Application.ScreenUpdating = False` jäi pysyväksi.
 
 **Korjaus:** Lisätty `prevScreen`-muuttuja tallentamaan alkutila; kaikki palautuskohdat (`Cleanup`, `ErrHandler`, varhaiset `Exit Sub` -haarat) käyttävät nyt `Application.ScreenUpdating = prevScreen`.
@@ -62,12 +70,15 @@ If Not Kaydyt.Exists(Rivi.Row) Then
 ## Suorituskykyoptimoint
 
 ### PERF 3 ✅ [MED] – `Cells.EntireColumn.AutoFit` → `UsedRange.Columns.AutoFit` — `Koodit.bas`
+
 Koko taulukon AutoFit pakottaa täyden layout-laskennan jokaiselle solulle. Rajattu käytettyyn alueeseen:
+
 ```vba
 If Not DATA.UsedRange Is Nothing Then DATA.UsedRange.Columns.AutoFit
 ```
 
 ### PERF 4 ✅ [LOW] – `Numerointi` kirjoitussilmukka ilman suorituskykysuojausta — `Koodit.bas`
+
 Lisätty `ScreenUpdating = False` + `Calculation = xlCalculationManual` ympäröimään rivittäinen kirjoitussilmukka. Lisätty `On Error GoTo NumCleanup` -merkki varmistaen palautus myös virhetilanteessa.
 
 ---
@@ -75,15 +86,19 @@ Lisätty `ScreenUpdating = False` + `Calculation = xlCalculationManual` ympärö
 ## Tyyli ja laatu
 
 ### STYLE 1 ✅ [LOW] – Loop-sisäiset `Dim`-lauseet siirretty proseduurin alkuun — `Koodit.bas`
+
 VBA nostaa kaikki `Dim`-lauseet proseduuritasolle käännösaikana. `entHandle`, `entType`, `isBlock`/`isText`/`isMText`, `tmp`, `effName`, `ip`, `ipT`, `ipM`, `tagName`, `colIdx` siirretty `TuoDATA`-proseduurin `Dim`-lohkoon. Loop-kohtaan lisätty nollauskommentit (`entType = "": isBlock = False` jne.).
 
 ### STYLE 2 ✅ [LOW] – `BuildTypeFilter` kutsumaton kuollut koodi → otettu käyttöön — `Koodit.bas`
+
 `BuildTypeFilter`-apufunktio oli määritelty mutta kutsumaton; `TuoDATA` toteutti saman logiikan inline-koodina. Inline-lohko korvattu `BuildTypeFilter`-kutsulla. `BuildTypeFilter` päivitetty käyttämään pilkkueroteltu-merkkijono-lähestymistapaa `<or>`-ryhmityksen sijaan (luotettavampi AutoCAD 2019 myöhäisessä sidonnassa).
 
 ### STYLE 4 ✅ [LOW] – `acModelSpace As Integer` → `As Long` — `Koodit.bas`
+
 Yhtenäistetty `DATA.bas`:ssa käytetyn `Long`-tyypin kanssa. 64-bittisessä ympäristössä `Long` on standardi kokonaisluvuille.
 
 ### STYLE 5 ✅ [LOW] – `Set BlockArray = Nothing` → `Erase BlockArray` — `Koodit.bas`
+
 `BlockArray` on `Variant`-muuttuja (sisältää `GetAttributes`-taulukon), ei `Object`. `Set ... = Nothing` Variant-muuttujalle aiheuttaisi runtime-virheen 91 `On Error Resume Next` -haarauksen ulkopuolella. Korvattu `Erase BlockArray`.
 
 ---

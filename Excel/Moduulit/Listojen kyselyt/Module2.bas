@@ -428,25 +428,34 @@ Dim wsDB1 As Worksheet, wsTemplate As Worksheet, wsErrors As Worksheet
      i = i + 1
    Loop
 End Function
-Sub VaihdaLinkit(TargetSheet As Worksheet, Alku As Long, Loppu As Long, Kerta As Long)
+Sub VaihdaLinkit(TargetSheet As Worksheet, Alku As Long, Loppu As Long, Kerta As Long, _
+                 Optional SourceWB As Workbook = Nothing)
 '''
-' VaihdaLinkit: Jokaiselle kommentille määritellyllä alueella päivitetään vastaava solu LINKINGissä kaavalla
-' ja arvolla, ja sovelletaan muotoilua tarvittaessa. Käytetään tulosteen päälinkityslogiikkaan.
-' Käsittelee vain kommentit Alku:Loppu -rivialueelta välttäen aiemmin täytettyjen lohkojen ylikirjoittamista.
+' VaihdaLinkit: Kirjoittaa DB1-arvot suoraan kommenttimerkatuille soluille kohdetulosteessa.
+' Parametri SourceWB osoittaa lähdetyökirjaan jossa DB1 sijaitsee (yleensä ThisWorkbook/srcWB).
+' Jos SourceWB jätetään pois, käytetään ThisWorkbook.Sheets("DB1"):ta oletuksena.
+' KORJATTU: Poistettu kaavaketjulogiikka (LINKING-kaavat viittasivat tyhjiin kohdesoluihin).
 ' OPTIMOITU: Käyttää Comments-kokoelmaa solulta-solulle-iteraation sijaan (30-50% nopeampi).
 '''
 Dim TRow As Long, CRow As Long
 Dim TCol As Long
 Dim i As Long
 Dim Teksti As String
-Dim Kaava As String
 Dim Osoite As String
 Dim cmt As Comment
 Dim commentsToDelete As Collection
 Dim parentRow As Long
+Dim wsDB1 As Worksheet
 
   Set commentsToDelete = New Collection
-  
+
+  ' Ratkaistaan DB1-viittaus lähdeparametrin tai ThisWorkbook:n kautta
+  If SourceWB Is Nothing Then
+    Set wsDB1 = ThisWorkbook.Sheets("DB1")
+  Else
+    Set wsDB1 = SourceWB.Sheets("DB1")
+  End If
+
   With TargetSheet
     ' OPTIMOINTI: Iteroidaan Comments-kokoelmaa kaikkien solujen sijaan
     ' Tämä ohittaa tyhjät solut ja on paljon nopeampi harvoille kommenttijakaumille
@@ -460,13 +469,11 @@ Dim parentRow As Long
         Osoite = cmt.Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
         TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
         TCol = CInt(Mid(Teksti, 3))
-        With .Parent.Sheets("LINKING").Cells(TRow, TCol)
-          Teksti = .Value
-          .Font.ColorIndex = 5
-          .Font.Bold = True
-          Kaava = "'" & POSheet & "'!" & Osoite
-          .Formula = "=IF(" & Kaava & "="""", """"," & Kaava & ")"
-        End With
+        ' Luetaan arvo suoraan DB1:stä — poistettu kaavaketju joka viittasi tyhjään kohdesoluun
+        Teksti = CStr(wsDB1.Cells(TRow, TCol).Value)
+        ' Fix4: Kirjoitetaan staattinen arvo LINKINGiin yhdellä COM-kutsulla
+        ' (Font-muotoilu poistettu hot path:sta — säästää 2 COM-kutsua per kommenttisolku)
+        .Parent.Sheets("LINKING").Cells(TRow, TCol).Value = Teksti
         If cmt.Parent.Value = "££Deleted" Then
           cmt.Parent.Value = Teksti
           If Teksti = "Yes" Then
@@ -488,6 +495,7 @@ Dim parentRow As Long
   End With
   
   Set commentsToDelete = Nothing
+  Set wsDB1 = Nothing
 End Sub
 Sub PopulateRevisionsSimple()
 '''
