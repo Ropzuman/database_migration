@@ -1,43 +1,43 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: USysFlowPickNo
-' Tarkoitus: Flow block pipeline number picker for AutoCAD drawings
+' Lomake: USysFlowPickNo
+' Tarkoitus: Virtausblokkien putkilinjanumerovalitsin AutoCAD-piirustuksille
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
 ' Kuvaus:
-'   Interactive form to assign pipeline numbers to flow balance blocks:
-'   - Connects to running AutoCAD instance
-'   - Finds all flow blocks (PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA)
-'   - Highlights each block in sequence
-'   - User can pick pipeline from drawing or enter manually
-'   - Updates block PIPEREF/PIPELINENO/PIPE_LINE attribute
+'   Interaktiivinen lomake tasearvoblokkien putkilinjanumeroiden asettamiseen:
+'   - Yhdistyy käynnissä olevaan AutoCAD-instanssiin
+'   - Etsii kaikki virtausblokit (PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA)
+'   - Korostaa jokaisen blokin järjestyksessä
+'   - Käyttäjä voi poimia putkilinjan piirustuksesta tai syöttää käsin
+'   - Päivittää blokin PIPEREF/PIPELINENO/PIPE_LINE-attribuutin
 '
 ' Riippuvuudet:
-'   - AutoCAD Application (COM automation)
-'   - Flow balance blocks with pipeline reference attributes
+'   - AutoCAD-sovellus (COM-automaatio)
+'   - Virtausblokit, joissa on putkilinjaviittausattribuutit
 '
-' Controls:
-'   - TRefNo: Pipeline reference number text box
-'   - BSeuraava: Next block button
-'   - BEdellinen: Previous block button
-'   - BSeurT: Find next empty button
-'   - BPoimi: Pick from drawing button
-'   - BAutohaku: Auto-find pipelines button
-'   - BSulje: Close form button
+' Kontrollit:
+'   - TRefNo: Putkilinjaviittauksen tekstikenttä
+'   - BSeuraava: Seuraava blokki -painike
+'   - BEdellinen: Edellinen blokki -painike
+'   - BSeurT: Etsi seuraava tyhjä -painike
+'   - BPoimi: Poimi piirustuksesta -painike
+'   - BAutohaku: Automaattinen haku -painike
+'   - BSulje: Sulje lomake -painike
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
 Dim oDOC As Object   ' AcadDocument - muutettu late binding (64-bit)
 Dim oAttrib As Object  ' AcadAttributeReference - muutettu late binding (64-bit)
 Dim Joukko As Object   ' AcadSelectionSet - muutettu late binding (64-bit)
-Dim j As Integer  ' Current block index
+Dim j As Integer  ' Nykyinen blokkiindeksi
 Dim EiLinjaa As Boolean  ' Flag if pipeline not found during auto-search
 
 '--------------------------------------------------------------------------------
-' Event: Form_Close
-' Tarkoitus: Cleanup AutoCAD selection set when form closes
+' Tapahtuma: Form_Close
+' Tarkoitus: Siivotaan AutoCAD-valintajoukko lomakkeen sulkeutuessa
 '--------------------------------------------------------------------------------
 Private Sub Form_Close()
 On Error Resume Next
@@ -49,19 +49,19 @@ On Error Resume Next
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Form_Load
-' Tarkoitus: Initialize form - connect to AutoCAD and create flow block selection set
+' Tapahtuma: Form_Load
+' Tarkoitus: Alustaa lomakkeen - yhdistää AutoCADiin ja luo virtausblokkien valintajoukko
 '
 ' Toiminta:
-'   1. Connect to running AutoCAD (Yhdista function)
-'   2. Delete any existing APUPICK selection set
-'   3. Create new selection set with flow block filter
-'   4. Display first block
+'   1. Yhdistetään käynnissä olevaan AutoCADiin (Yhdista-funktio)
+'   2. Poistetaan olemassa oleva APUPICK-valintajoukko
+'   3. Luodaan uusi valintajoukko virtausblokkiluodatilla
+'   4. Näytetään ensimmäinen blokki
 '
 ' Huom:
-'   - Closes form if AutoCAD not running
-'   - Closes form if no flow blocks found
-'   - Filter: PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA block types
+'   - Suljetaan lomake, jos AutoCAD ei ole käynnissä
+'   - Suljetaan lomake, jos virtausblokkeja ei löydy
+'   - Suodatin: PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA -blokit
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
 On Error GoTo ErrorHandler
@@ -69,13 +69,13 @@ Dim i As Integer
 Dim FilterType(0) As Integer
 Dim FilterData(0) As Variant
 
-' Connect to AutoCAD
+' Yhdistetään AutoCADiin
 If Yhdista = False Then
   DoCmd.Close acForm
   Exit Sub
 End If
 
-' Delete existing selection set if present
+' Poistetaan olemassa oleva valintajoukko tarvittaessa
 For i = 0 To oDOC.SelectionSets.Count - 1
   If oDOC.SelectionSets(i).Name = "APUPICK" Then
     oDOC.SelectionSets(i).Delete
@@ -83,8 +83,8 @@ For i = 0 To oDOC.SelectionSets.Count - 1
   End If
 Next i
 
-' Create selection set for flow blocks
-FilterType(0) = 2  ' Block name filter
+' Luodaan valintajoukko virtausblokeille
+FilterType(0) = 2  ' Blokin nimisuodatin
 FilterData(0) = "PDUFLOWDATA,ARAFLOW,FLOWBLOCK,BALANCE_DATA"
 Set Joukko = oDOC.SelectionSets.Add("APUPICK")
 Joukko.Select acSelectionSetAll, , , FilterType, FilterData
@@ -95,7 +95,7 @@ If Joukko.Count = 0 Then
   Exit Sub
 End If
 
-' Initialize with first block
+' Alustetaan ensimmäisellä blokilla
 j = 0
 AvaaBlokki
 Exit Sub
@@ -107,18 +107,18 @@ End Sub
 
 
 '--------------------------------------------------------------------------------
-' Event: BAutohaku_Click
-' Tarkoitus: Automatically find pipelines for all flow blocks
+' Tapahtuma: BAutohaku_Click
+' Tarkoitus: LÃ¶ytÃ¤Ã¤ automaattisesti kaikki putkilinjat virtausblokeille
 '
 ' Toiminta:
-'   1. For each flow block in selection set
-'   2. Call EtsiLinja to auto-find pipeline near block
-'   3. Track if any pipelines not found
-'   4. Display summary message
+'   1. Käydään läpi jokainen virtausblokki valintajoukossa
+'   2. Kutsutaan EtsiLinja etsimään läheisin putkilinja
+'   3. Seurataan, löytyikö kaikille blokeille putkilinja
+'   4. Näytetään yhteenviesti
 '
 ' Huom:
-'   - Iterates through all blocks automatically
-'   - Sets EiLinjaa flag if pipeline not found for any block
+'   - Käy automaattisesti läpi kaikki blokit
+'   - Asettaa EiLinjaa-lipun, jos jollekin blokille ei löydy putkilinjaa
 '--------------------------------------------------------------------------------
 Private Sub BAutohaku_Click()
 On Error GoTo ErrorHandler
@@ -139,19 +139,19 @@ ErrorHandler:
     MsgBox "Virhe automaattisessa haussa: " & Err.Description, vbCritical, "Auto-haku"
 End Sub
 '--------------------------------------------------------------------------------
-' Event: BPoimi_Click
-' Tarkoitus: Pick pipeline from AutoCAD drawing by clicking on block
+' Tapahtuma: BPoimi_Click
+' Tarkoitus: Poimii putkilinjan AutoCAD-piirustuksesta klikkaamalla blokkia
 '
 ' Toiminta:
-'   1. Activate AutoCAD window
-'   2. Prompt user to pick pipeline block
-'   3. Extract pipeline reference from block attributes
-'   4. Update current flow block's pipeline attribute
+'   1. Aktivoidaan AutoCAD-ikkuna
+'   2. Pyydetään käyttäjää poimiman putkilinjablokki
+'   3. Poimitaan putkilinjaviittaus blokin attribuuteista
+'   4. Päivitetään nykyisen virtausblokin putkilinja-attribuutti
 '
 ' Huom:
-'   - Works with PIPELINE, PIPELINE_F, ARAPIPEL, BAHPIPEL, METSO_PIPE blocks
-'   - Falls back to POS.NO, CUSTPOS, SDPOS attributes for other blocks
-'   - Uses AttribToPipeline helper for standard pipeline blocks
+'   - Toimii PIPELINE, PIPELINE_F, ARAPIPEL, BAHPIPEL, METSO_PIPE -blokkien kanssa
+'   - Käyttää POS.NO, CUSTPOS, SDPOS -attribuutteja muille blokeille
+'   - Käyttää AttribToPipeline-apufunktiota standardiputkilinjoille
 '--------------------------------------------------------------------------------
 Private Sub BPoimi_Click()
 On Error GoTo ErrorHandler
@@ -199,21 +199,21 @@ ErrorHandler:
     MsgBox "Virhe putkilinjan poiminnassa: " & Err.Description, vbCritical, "BPoimi"
 End Sub
 '--------------------------------------------------------------------------------
-' Function: AttribToPipeline
-' Tarkoitus: Extract pipeline reference from pipeline block attributes
+' Funktio: AttribToPipeline
+' Tarkoitus: Poimii putkilinjaviittauksen putkilinjablokin attribuuteista
 '
 ' Parametrit:
-'   Attrib - Array of block attributes from GetAttributes
+'   Attrib - GetAttributes-funktion palauttama taulukko
 '
-' Palautusarvo: String - Formatted pipeline reference (DEP & FSB & LINE)
+' Palautusarvo: Merkkijono - muotoiltu putkilinjaviittaus (DEP & FSB & LINE)
 '
 ' Toiminta:
-'   1. Scan attributes for DEP/DEPA, FSB, LINE tags
-'   2. Concatenate values without delimiters
+'   1. Skannataan attribuutit: DEP/DEPA, FSB, LINE -tagit
+'   2. Yhdistetään arvot ilman erotinmerkkejä
 '
 ' Huom:
-'   - Returns concatenated string (e.g., "AREA01L001")
-'   - Handles both DEP and DEPA attribute tags
+'   - Palauttaa yhdistetyn merkkijonon (esim. "AREA01L001")
+'   - Käsittelee sekä DEP- että DEPA-attribuuttitagit
 '--------------------------------------------------------------------------------
 Private Function AttribToPipeline(Attrib As Variant) As String
 On Error GoTo ErrorHandler
@@ -239,18 +239,18 @@ ErrorHandler:
     AttribToPipeline = ""
 End Function
 '--------------------------------------------------------------------------------
-' Event: BSeurT_Click
-' Tarkoitus: Find next flow block with empty pipeline reference
+' Tapahtuma: BSeurT_Click
+' Tarkoitus: Etsii seuraavan virtausblokin, jolla putkilinjaviittaus on tyhjÃ¤
 '
 ' Toiminta:
-'   1. Unhighlight current block
-'   2. Move to next block
-'   3. Check if pipeline reference is empty
-'   4. Repeat until empty found or all blocks checked
+'   1. Poistetaan nykyisen blokin korostus
+'   2. Siirrytään seuraavaan blokkiin
+'   3. Tarkistetaan, onko putkilinjaviittaus tyhjä
+'   4. Toistetaan, kunnes tyhjä löytyy tai kaikki blokit on käyty
 '
 ' Huom:
-'   - Skips blocks that already have pipeline reference
-'   - Stops at first empty block found
+'   - Ohitetaan blokit, joilla on jo putkilinjaviittaus
+'   - Pysähdytään ensimmäiseen tyhjään blokkiin
 '--------------------------------------------------------------------------------
 Private Sub BSeurT_Click()
 On Error GoTo ErrorHandler
@@ -273,11 +273,11 @@ ErrorHandler:
     MsgBox "Virhe seuraavan tyhjän etsimisessä: " & Err.Description, vbCritical, "Seur.Tyhjä"
 End Sub
 '--------------------------------------------------------------------------------
-' Event: BEdellinen_Click
-' Tarkoitus: Navigate to previous flow block
+' Tapahtuma: BEdellinen_Click
+' Tarkoitus: Navigoi edelliseen virtausblokkiin
 '
 ' Huom:
-'   - Wraps to last block if at beginning
+'   - Siirtyy viimeiseen blokkiin, jos ollaan alussa
 '--------------------------------------------------------------------------------
 Private Sub BEdellinen_Click()
 On Error GoTo ErrorHandler
@@ -295,11 +295,11 @@ ErrorHandler:
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: BSeuraava_Click
-' Tarkoitus: Navigate to next flow block
+' Tapahtuma: BSeuraava_Click
+' Tarkoitus: Navigoi seuraavaan virtausblokkiin
 '
 ' Huom:
-'   - Wraps to first block if at end
+'   - Siirtyy ensimmäiseen blokkiin, jos ollaan lopussa
 '--------------------------------------------------------------------------------
 Private Sub BSeuraava_Click()
 On Error GoTo ErrorHandler
@@ -317,28 +317,28 @@ ErrorHandler:
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: BSulje_Click
-' Tarkoitus: Close form
+' Tapahtuma: BSulje_Click
+' Tarkoitus: Sulkee lomakkeen
 '--------------------------------------------------------------------------------
 Private Sub BSulje_Click()
   DoCmd.Close acForm, "USysFlowPickNo"
 End Sub
 
 '--------------------------------------------------------------------------------
-' Sub: AvaaBlokki
-' Tarkoitus: Display and zoom to current flow block in AutoCAD
+' Aliohjelma: AvaaBlokki
+' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja zoomaa nykyisen virtausblokin AutoCADissa
 '
 ' Toiminta:
-'   1. Highlight current block in selection set
-'   2. Update form caption with block count
-'   3. Zoom to block location
-'   4. Find and set pipeline attribute reference
-'   5. Display current pipeline value in TRefNo
+'   1. Korostetaan nykyinen blokki valintajoukossa
+'   2. Päivitetään lomakkeen otsikko blokkimäärällä
+'   3. Zoomataan blokin sijaintiin
+'   4. Etsitään ja asetetaan putkilinja-attribuuttiviittaus
+'   5. Näytetään nykyinen putkilinja-arvo TRefNo-kentässä
 '
 ' Huom:
-'   - Searches for PIPEREF, PIPELINENO, or PIPE_LINE attribute
-'   - Shows error if attribute not found
-'   - Updates form caption with "BlockName: X/Total"
+'   - Etsii PIPEREF-, PIPELINENO- tai PIPE_LINE-attribuutin
+'   - Näyttää virheen, jos attribuuttia ei löydy
+'   - Päivittää otsikon muodossa "BlockName: X/Total"
 '--------------------------------------------------------------------------------
 Sub AvaaBlokki()
 On Error GoTo ErrorHandler
@@ -348,19 +348,19 @@ Dim MaxPoint As Variant
 Dim Loytyi As Boolean
 Dim ii As Integer
 
-' Ensure index is valid
+' Tarkistetaan, että indeksi on kelvollinen
 If j >= Joukko.Count Or j < 0 Then j = 0
 
 Joukko(j).Highlight True
 
-' Update form caption
+' Päivitetään lomakkeen otsikko
 Me.Caption = Joukko(j).Name & ":  " & j + 1 & "/" & Joukko.Count
 
-' Zoom to block
+' Zoomataan blokkiin
 Joukko(j).GetBoundingBox MinPoint, MaxPoint
 oACAD.ZoomCenter Joukko(j).InsertionPoint, 200
 
-' Find pipeline attribute
+' Etsitään putkilinja-attribuutti
 Attrib = Joukko(j).GetAttributes
 Loytyi = False
 For ii = 0 To UBound(Attrib)
@@ -385,19 +385,19 @@ ErrorHandler:
     DoCmd.Close acForm
 End Sub
 '--------------------------------------------------------------------------------
-' Function: Yhdista
-' Tarkoitus: Connect to running AutoCAD instance
+' Funktio: Yhdista
+' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
 '
-' Palautusarvo: Boolean - True if connected, False if AutoCAD not running
+' Palautusarvo: Boolean - True jos yhteys onnistui, False jos AutoCAD ei käynnissä
 '
 ' Toiminta:
-'   1. Try GetObject to connect to running AutoCAD
-'   2. If successful, set oDOC to active document
-'   3. Return connection status
+'   1. Kokeillaan GetObject-yhteys käynnissä olevaan AutoCADiin
+'   2. Jos onnistui, asetetaan oDOC aktiiviseen piirustukseen
+'   3. Palautetaan yhteystila
 '
 ' Huom:
-'   - Called from Form_Load
-'   - Sets module-level oACAD and oDOC variables
+'   - Kutsutaan Form_Load-tapahtumasta
+'   - Asettaa moduulitason oACAD- ja oDOC-muuttujat
 '--------------------------------------------------------------------------------
 Private Function Yhdista() As Boolean
 On Error Resume Next
@@ -413,21 +413,21 @@ On Error Resume Next
   On Error GoTo 0
 End Function
 '--------------------------------------------------------------------------------
-' Sub: EtsiLinja
-' Tarkoitus: Automatically find pipeline near current flow block
+' Aliohjelma: EtsiLinja
+' Tarkoitus: Etsii automaattisesti putkilinjan lÃ¤hellÃ¤ nykyistÃ¤ virtausblokkia
 '
 ' Toiminta:
-'   1. Get current flow block insertion point
-'   2. Define search window (56 units right, 13 units up from block)
-'   3. Create selection set with pipeline block filter
-'   4. If pipeline found, extract reference and update flow block
-'   5. If not found, clear attribute and set EiLinjaa flag
+'   1. Haetaan nykyisen virtausblokin sijainti
+'   2. Määritetään hakuikkuna (56 yks. oikealle, 13 yks. ylös)
+'   3. Luodaan valintajoukko putkilinjablokkiluodatilla
+'   4. Jos putkilinja löytyy, poimitaan viittaus ja päivitetään blokki
+'   5. Jos ei löydy, tyhjennetään attribuutti ja asetetaan EiLinjaa
 '
 ' Huom:
-'   - Searches for PIPELINE, BAHPIPEL, ARAPIPEL blocks
-'   - Uses crossing window selection
-'   - Deletes temporary selection set after use
-'   - Sets EiLinjaa=True if no pipeline found
+'   - Etsii PIPELINE, BAHPIPEL, ARAPIPEL -blokkeja
+'   - Käyttää leikkausikkunavalintaa
+'   - Poistaa tilapäisen valintajoukon käytön jälkeen
+'   - Asettaa EiLinjaa=True, jos putkilinjaa ei löydy
 '--------------------------------------------------------------------------------
 Private Sub EtsiLinja()
 On Error GoTo ErrorHandler
@@ -440,16 +440,16 @@ Dim FilterType(0) As Integer
 Dim FilterData(0) As Variant
 Dim Attrib As Variant
 
-' Get flow block position
+' Haetaan tasearvoblokin sijainti
 Piste = Joukko(j).InsertionPoint
 aPiste(0) = Piste(0)
 aPiste(1) = Piste(1)
 
-' Define search window
+' Määritetään hakuikkuna
 lPiste(0) = aPiste(0) + 56
 lPiste(1) = aPiste(1) + 13
 
-' Delete existing temp selection set
+' Poistetaan tilapäinen valintajoukko
 For i = 0 To oDOC.SelectionSets.Count - 1
   If oDOC.SelectionSets(i).Name = "APUPICK2" Then
     oDOC.SelectionSets(i).Delete
@@ -457,7 +457,7 @@ For i = 0 To oDOC.SelectionSets.Count - 1
   End If
 Next i
 
-' Create selection set for pipelines
+' Luodaan valintajoukko putkilinjoille
 FilterType(0) = 2
 FilterData(0) = "PIPELINE,BAHPIPEL,ARAPIPEL"
 
@@ -486,11 +486,11 @@ ErrorHandler:
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: TRefNo_AfterUpdate
-' Tarkoitus: Update AutoCAD block attribute when user edits pipeline reference
+' Tapahtuma: TRefNo_AfterUpdate
+' Tarkoitus: Päivittää AutoCAD-blokin attribuutin, kun käyttäjä muokkaa viittausta
 '
 ' Huom:
-'   - Uses Nz to handle null values
+'   - Käyttää Nz-funktiota Null-arvojen käsittelyyn
 '--------------------------------------------------------------------------------
 Private Sub TRefNo_AfterUpdate()
 On Error GoTo ErrorHandler
@@ -500,6 +500,6 @@ End If
 Exit Sub
 
 ErrorHandler:
-    ' Silent error - don't interrupt user
+    ' Hiljainen virhe - ei keskeytä käyttäjää
 End Sub
 

@@ -1,4 +1,4 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
@@ -81,7 +81,7 @@ On Error GoTo ErrorHandler
             End If
           Next i
           
-          ' Check if link path differs from current database path
+          ' Tarkistetaan, eroaako linkkipolku nykyisestÃ¤ tietokantapolusta
           If Polku2 <> LowerPolku Then
             Taulu = Taul.Fields("Name")
             

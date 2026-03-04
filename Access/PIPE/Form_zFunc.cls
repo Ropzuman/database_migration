@@ -1,29 +1,29 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: zFunc
+' Lomake: zFunc
 ' Tarkoitus: Utility functions for zDetails table management and batch operations
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki lisätty
 '
 ' Kuvaus:
-'   Collection of utility functions for:
-'   - zDetails table maintenance (adding, updating, clearing records)
-'   - Batch query execution for instrument loops
-'   - Empty string to Null conversion across all tables
-'   - Block placement numbering
-'   - Finding next record functionality
+'   Kokoelma apufunktioita zDetails-hallintatoiminnoille:
+'   - zDetails-taulun ylläpito (lisäys, päivitys, tyhjennys)
+'   - Eräajokyselyt instrumenttipiireille
+'   - Tyhjien merkkijonojen muunto Nulliksi kaikissa tauluissa
+'   - Blokkisijoitusten numerointi
+'   - Seuraavan tietueen etsintä
 '
 ' Riippuvuudet:
-'   - zDetails table (instrument details)
-'   - Function_zdetails* queries
-'   - InstrumentIndex table
-'   - Multiple Tag* queries
-'   - KaikkiTaulukot combo box (populated with table names)
+'   - zDetails-taulu (instrumenttitiedot)
+'   - Function_zdetails*-kyselyt
+'   - InstrumentIndex-taulu
+'   - Useat Tag*-kyselyt
+'   - KaikkiTaulukot-yhdistelmäruutu (täytetty taulunimillä)
 '
-' Controls:
-'   - KaikkiTaulukot: ComboBox for table selection
-'   - Multiple command buttons for different operations
+' Kontrollit:
+'   - KaikkiTaulukot: yhdistelmäruutu taulun valintaan
+'   - Useita komentopainikkeita eri toiminnoille
 '================================================================================
 
 Private Sub Command1_Click()
@@ -48,37 +48,37 @@ DoCmd.OpenQuery "Function_zdetails15_loopsprintselect", acNormal, acEdit
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Command11_Click
+' Tapahtuma: Command11_Click
 ' Tarkoitus: Convert empty strings to Null across selected table
 '
 ' Toiminta:
-'   1. Open selected table from KaikkiTaulukot combo
-'   2. Iterate through all records
-'   3. For each field, if value is empty string, set to Null
-'   4. Update record with transaction support
+'   1. Avataan valittu taulu KaikkiTaulukot-yhdistelmäruudusta
+'   2. Käydään läpi kaikki tietueet
+'   3. Jos kentän arvo on tyhjä merkkijono, asetetaan se Nulliksi
+'   4. Päivitetään tietue tapahtumatuen kanssa
 '
 ' Huom:
-'   - Improves database normalization
-'   - Prevents empty strings in database
-'   - Can be time-consuming for large tables
-'   - Optimized: Uses Edit once per record, transaction support
+'   - Parantaa tietokannan normalisointia
+'   - Estää tyhjien merkkijonojen tallentumisen
+'   - Voi olla aikaa vievä suurilla tauluilla
+'   - Optimoitu: Edit-kutsu vain kerran tietuetta kohden, tapahtumatuki
 '--------------------------------------------------------------------------------
 Private Sub Command11_Click()
 On Error GoTo ErrorHandler
-    Dim DB As DAO.Database  ' Current database
-    Dim WS As DAO.Workspace  ' Workspace for transaction support
-    Dim Taulu As DAO.Recordset  ' Selected table
-    Dim i As Integer  ' Field counter
-    Dim RecordsProcessed As Long  ' Counter for processed records
-    Dim RecordsUpdated As Long  ' Counter for updated records
-    Dim NeedsUpdate As Boolean  ' Flag if current record needs update
+    Dim DB As DAO.Database      ' Tietokantaviittaus
+    Dim WS As DAO.Workspace     ' Työtila tapahtumatukea varten
+    Dim Taulu As DAO.Recordset  ' Valittu taulu
+    Dim i As Integer            ' Kenttälaskuri
+    Dim RecordsProcessed As Long ' Käsiteltyjen tietueiden laskuri
+    Dim RecordsUpdated As Long  ' Päivitettyjen tietueiden laskuri
+    Dim NeedsUpdate As Boolean  ' Lippu: tarvitaanko tietueen päivitys
     
     Set DB = CurrentDb
-    Set WS = DBEngine.Workspaces(0)  ' Get default workspace
+    Set WS = DBEngine.Workspaces(0)  ' Haetaan oletustyötila
     Set Taulu = DB.OpenRecordset(KaikkiTaulukot.Value, dbOpenDynaset)
     
     If Taulu.EOF Then
-        MsgBox "Taulu on tyhjä", vbInformation, "Empty to Null"
+        MsgBox "Taulu on tyhjä", vbInformation, "Tyhjennetään"
         Taulu.Close
         Set Taulu = Nothing
         DB.Close
@@ -86,14 +86,14 @@ On Error GoTo ErrorHandler
         Exit Sub
     End If
     
-    ' Begin transaction for better performance
+    ' Aloitetaan tapahtuma suorituskyvyn parantamiseksi
     WS.BeginTrans
     
     Do While Not Taulu.EOF
       NeedsUpdate = False
       RecordsProcessed = RecordsProcessed + 1
       
-      ' Check all fields first before editing
+      ' Tarkistetaan kaikki kentät ennen muokkausta
       For i = 0 To Taulu.Fields.Count - 1
         If Taulu.Fields(i) = "" Then
           If Not NeedsUpdate Then
@@ -104,7 +104,7 @@ On Error GoTo ErrorHandler
         End If
       Next i
       
-      ' Only update if changes were made
+      ' Päivitetään vain jos muutoksia tehtiin
       If NeedsUpdate Then
         Taulu.Update
         RecordsUpdated = RecordsUpdated + 1
@@ -113,12 +113,12 @@ On Error GoTo ErrorHandler
       Taulu.MoveNext
     Loop
     
-    ' Commit transaction
+    ' Vahvistetaan tapahtuma
     WS.CommitTrans
     
-    MsgBox "Valmis: " & RecordsProcessed & " riviä käyty, " & RecordsUpdated & " päivitetty", vbInformation, "Empty to Null"  ' "Ready"
+    MsgBox "Valmis: " & RecordsProcessed & " riviä käyty, " & RecordsUpdated & " päivitetty", vbInformation, "Tyhjennetään"
     
-    ' Cleanup
+    ' Siivotaan objektit
     Taulu.Close
     Set Taulu = Nothing
     Set WS = Nothing
@@ -127,7 +127,7 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
-    ' Rollback transaction on error
+    ' Peruutetaan tapahtuma virhetilanteessa
     On Error Resume Next
     If Not WS Is Nothing Then WS.Rollback
     If Not Taulu Is Nothing Then Taulu.Close
@@ -140,34 +140,34 @@ ErrorHandler:
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Command3_Click
+' Tapahtuma: Command3_Click
 ' Tarkoitus: Assign block placement numbers to zDetails records
 '
 ' Toiminta:
-'   1. Open sorted recordset (by Loop, then AllDevTag)
-'   2. For each loop group, assign sequential block placement numbers (14, 15, 16...)
-'   3. Reset counter for each new loop
+'   1. Avataan lajiteltu tietuejoukko (Luupin, sitten AllDevTagin mukaan)
+'   2. Jokaiselle luuppiryhmälle annetaan peräkkäiset sijoitusnumerot (14, 15, 16...)
+'   3. Nollataan laskuri jokaisen uuden luupin alussa
 '
 ' Huom:
-'   - Starts block placement at 14
-'   - Groups by Loop identifier ([AreaCode] & [Loopno] & [pageno])
-'   - Used for AutoCAD block positioning
+'   - Blokkisijoitus alkaa 14:stä
+'   - Ryhmittely luuppi-tunnisteen mukaan ([AreaCode] & [Loopno] & [pageno])
+'   - Käytetään AutoCAD-blokkien sijoitteluun
 '--------------------------------------------------------------------------------
 Private Sub Command3_Click()
 On Error GoTo Err_Command3_Click
-    Dim tbl As DAO.Recordset  ' zDetails table recordset
-    Dim q As String  ' Current loop identifier
-    Dim q1 As String  ' Previous loop (unused)
-    Dim qq As String  ' Next loop identifier
-    Dim qq1 As String  ' Next loop comparison (unused)
-    Dim i As Integer  ' Block placement counter
+    Dim tbl As DAO.Recordset  ' zDetails-taulun tietuejoukko
+    Dim q As String            ' Nykyinen luuppitunniste
+    Dim q1 As String           ' Edellinen luuppi (käyttämätön)
+    Dim qq As String           ' Seuraava luuppitunniste
+    Dim qq1 As String          ' Seuraavan luupin vertailu (käyttämätön)
+    Dim i As Integer           ' Blokkisijoituslaskuri
     
-    ' Open sorted recordset
+    ' Avataan lajiteltu tietuejoukko
     Set tbl = CurrentDb.OpenRecordset("SELECT [AreaCode] & [Loopno] & [pageno] AS Loop, zDetails.Blockplace, zDetails.AllDevTag FROM zDetails ORDER BY [AreaCode] & [Loopno] & [pageno], zDetails.AllDevTag;")
   
     tbl.MoveFirst
     Do
-      i = 14  ' Start block placement at 14
+      i = 14  ' Blokkisijoitus alkaa 14:stä
       Do
         q = tbl!Loop
         tbl.Edit
@@ -177,13 +177,13 @@ On Error GoTo Err_Command3_Click
         tbl.MoveNext
         If tbl.EOF Then Exit Do
         qq = tbl!Loop
-        If q <> qq Then Exit Do  ' New loop group, reset counter
+        If q <> qq Then Exit Do  ' Uusi luuppiryhmä, nollataan laskuri
       Loop
     Loop Until tbl.EOF
   
-    MsgBox "Homma hoidettu", vbInformation, "Block Placement"  ' "Job done"
+    MsgBox "Homma hoidettu", vbInformation, "Sijoitukset"
     
-    ' Cleanup
+    ' Siivotaan objektit
     tbl.Close
     Set tbl = Nothing
     Exit Sub
@@ -205,45 +205,45 @@ End Sub
 
 
 '--------------------------------------------------------------------------------
-' Event: Command5_Click
-' Tarkoitus: Delete zDetails records that no longer exist in InstrumentIndex
+' Tapahtuma: Command5_Click
+' Tarkoitus: Poistaa zDetails-tietueet, joita ei enää löydy InstrumentIndex-taulukosta
 '
 ' Toiminta:
-'   1. Find zDetails records with no matching record in Function_zdetails01
-'   2. For each orphaned record, delete it from zDetails
-'   3. Use hourglass cursor to indicate progress
-'   4. Transaction support for data integrity
+'   1. Etsitään zDetails-tietueet, joilla ei ole vastaavaa Function_zdetails01-tietuetta
+'   2. Poistetaan jokainen orpo tietue zDetails-taulusta
+'   3. Käytetään tiimalasikursoria edistymisen osoittamiseen
+'   4. Tapahtumatuki tietojen eheyden varmistamiseksi
 '
 ' Huom:
-'   - Cleans up obsolete instrument detail records
-'   - Uses LEFT JOIN to find unmatched records
-'   - L = Chr(34) for quote character in SQL
-'   - Optimized: Hourglass only shown during processing
+'   - Siivoaa vanhentuneet instrumenttitiedot
+'   - Käyttää LEFT JOIN -kyselyä löytämään vastaattomat tietueet
+'   - L = Chr(34) SQL-merkkijonoja varten
+'   - Optimoitu: tiimalasi näytetään vain käsittelyn aikana
 '--------------------------------------------------------------------------------
 Private Sub Command5_Click()
 On Error GoTo ErrorHandler
-    ' Clean up orphaned zDetails records
-    Dim DB As DAO.Database  ' Current database
-    Dim WS As DAO.Workspace  ' Workspace for transaction support
-    Dim tbl As DAO.Recordset  ' Query results (orphaned records)
-    Dim tbl2 As DAO.Recordset  ' zDetails deletion target
-    Dim qry As DAO.Recordset  ' Query recordset (unused)
-    Dim sSQL As String  ' Main query SQL
-    Dim ssSQL As String  ' Deletion SQL
-    Dim acode As String  ' Area code
-    Dim LoopNo As String  ' Loop number
-    Dim LoopSymb As String  ' Loop symbol
-    Dim Suffix As String  ' Tag suffix
-    Dim L As String  ' Quote character
-    Dim DeleteCount As Long  ' Count of deleted records
+    ' Siivotaan orpot zDetails-tietueet
+    Dim DB As DAO.Database      ' Tietokantaviittaus
+    Dim WS As DAO.Workspace     ' Työtila tapahtumatukea varten
+    Dim tbl As DAO.Recordset    ' Kyselyn tulokset (orpot tietueet)
+    Dim tbl2 As DAO.Recordset   ' zDetails-poistokohde
+    Dim qry As DAO.Recordset    ' Kyselyn tietuejoukko (käyttämätön)
+    Dim sSQL As String          ' Pääkyselyn SQL
+    Dim ssSQL As String         ' Poistokyselun SQL
+    Dim acode As String         ' Aluekoodi
+    Dim LoopNo As String        ' Luuppinumero
+    Dim LoopSymb As String      ' Luuppimerkki
+    Dim Suffix As String        ' Tägisuffiksi
+    Dim L As String             ' Lainausmerkki SQL-merkkijonoja varten
+    Dim DeleteCount As Long     ' Poistettujen tietueiden lukumäärä
 
-    L = Chr$(34)  ' Double quote for SQL strings
+    L = Chr$(34)  ' Lainausmerkki SQL-merkkijonoja varten
     DeleteCount = 0
 
     Set DB = CurrentDb
-    Set WS = DBEngine.Workspaces(0)  ' Get default workspace
+    Set WS = DBEngine.Workspaces(0)  ' Haetaan oletustyötila
 
-    ' Build query to find orphaned zDetails records
+    ' Rakennetaan kysely orpojen zDetails-tietueiden löytämiseksi
     sSQL = ""
     sSQL = sSQL & "SELECT zDetails.AreaCode, zDetails.LoopNo, zDetails.LoopSymb, zDetails.Suffix"
     sSQL = sSQL & " FROM zDetails LEFT JOIN Function_zdetails01 ON (zDetails.Suffix = Function_zdetails01.Suffix) AND (zDetails.LoopSymb = Function_zdetails01.LoopSymb) AND (zDetails.LoopNo = Function_zdetails01.LoopNo) AND (zDetails.AreaCode = Function_zdetails01.AreaCode)"
@@ -253,7 +253,7 @@ On Error GoTo ErrorHandler
 
     If Not tbl.EOF Then
       DoCmd.Hourglass True
-      WS.BeginTrans  ' Start transaction
+      WS.BeginTrans  ' Aloitetaan tapahtuma
       
       tbl.MoveFirst
       Do Until tbl.EOF
@@ -262,7 +262,7 @@ On Error GoTo ErrorHandler
           Suffix = tbl!Suffix
           LoopSymb = tbl!LoopSymb
 
-          ' Build SQL to delete matching record
+          ' Rakennetaan SQL vastaavan tietueen poistamiseksi
           ssSQL = ""
           ssSQL = ssSQL & "SELECT zDetails.AreaCode, zDetails.LoopNo, zDetails.LoopSymb, zDetails.Suffix, zDetails.CirDWG, zDetails.Pageno, zDetails.AllDevTag, zDetails.Name, zDetails.Manufacturer, zDetails.Type, zDetails.ProcConn, zDetails.Faixatotal, zDetails.Faixa, zDetails.Blockname, zDetails.Blockplace, zDetails.[Select]"
           ssSQL = ssSQL & " FROM zDetails"
@@ -279,17 +279,17 @@ On Error GoTo ErrorHandler
           tbl.MoveNext
       Loop
       
-      WS.CommitTrans  ' Commit transaction
+      WS.CommitTrans  ' Vahvistetaan tapahtuma
       DoCmd.Hourglass False
       
       tbl.Close
       Set tbl = Nothing
-      MsgBox "Poistettu " & DeleteCount & " vanhentunutta tietuetta", vbInformation, "Cleanup Complete"  ' "Deleted X orphaned records"
+      MsgBox "Poistettu " & DeleteCount & " vanhentunutta tietuetta", vbInformation, "Siivous valmis"
     Else
-      MsgBox "Ei vanhentuneita tietueita", vbInformation, "Cleanup Complete"  ' "No orphaned records found"
+      MsgBox "Ei vanhentuneita tietueita", vbInformation, "Siivous valmis"
     End If
     
-    ' Cleanup
+    ' Siivotaan objektit
     Set tbl2 = Nothing
     Set WS = Nothing
     Set DB = Nothing
@@ -331,36 +331,36 @@ DoCmd.OpenQuery "TAG1_FC10-11", acNormal, acEdit
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Form_Load
-' Tarkoitus: Populate KaikkiTaulukot combo box with user table names
+' Tapahtuma: Form_Load
+' Tarkoitus: Täyttää KaikkiTaulukot-yhdistelmäruudun käyttäjätaulukoiden nimillä
 '
 ' Toiminta:
-'   1. Iterate through all TableDefs in database
-'   2. Exclude system tables (USys*, MSys*, Dev*) and old tables
-'   3. Build semicolon-delimited list for combo box
-'   4. Set default selection to first table
+'   1. Käydään läpi kaikki TableDef-objektit tietokannasta
+'   2. Jätetään pois järjestelmätaulukot (USys*, MSys*, Dev*) ja vanhat taulukot
+'   3. Rakennetaan puolipisteeroteltu luettelo yhdistelmäruutua varten
+'   4. Asetetaan oletusvalinta ensimmäiseen taulukkoon
 '
 ' Huom:
-'   - Filters out: USys*, MSys*, Dev*, tables containing "old"
-'   - Populates KaikkiTaulukot combo box RowSource
+'   - Suodattaa pois: USys*, MSys*, Dev*, "old"-tekstin sisältävät taulut
+'   - Täyttää KaikkiTaulukot-yhdistelmäruudun RowSource-ominaisuuden
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
 On Error GoTo ErrorHandler
-    Dim DB As DAO.Database  ' Current database
-    Dim i As Long  ' Loop counter
-    Dim Taulukko As String  ' Current table name
-    Dim TJoukko As String  ' Semicolon-delimited table list
+    Dim DB As DAO.Database  ' Tietokantaviittaus
+    Dim i As Long           ' Silmukkalasku
+    Dim Taulukko As String  ' Nykyinen taulun nimi
+    Dim TJoukko As String   ' Puolipisteeroteltu taulukkoluettelo
     
     Set DB = CurrentDb
     For i = 0 To DB.TableDefs.Count - 1
       Taulukko = DB.TableDefs(i).Name
-      ' Filter system tables and old tables
+      ' Suodatetaan järjestelmätaulukot ja vanhat taulukot
       If Left$(Taulukko, 4) <> "USys" And Left$(Taulukko, 4) <> "MSys" And Left$(Taulukko, 3) <> "Dev" And InStr(Taulukko, "old") = 0 Then
         TJoukko = TJoukko & Taulukko & ";"
       End If
     Next i
     
-    ' Set combo box row source and default value
+    ' Asetetaan yhdistelmäruudun tietolähde ja oletusarvo
     KaikkiTaulukot.RowSource = TJoukko
     KaikkiTaulukot.Value = Left$(TJoukko, InStr(TJoukko, ";") - 1)
     

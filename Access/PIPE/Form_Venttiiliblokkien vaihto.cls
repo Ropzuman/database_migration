@@ -1,44 +1,44 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: Venttiiliblokkien vaihto
-' Tarkoitus: Replace manual valve blocks in P&I drawings with Araucon standard blocks
+' Lomake: Venttiiliblokkien vaihto
+' Tarkoitus: Korvaa käsiventtiiliblokit P&I-piirustuksissa Araucon standardiblokeilla
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
 ' Kuvaus:
-'   Batch replaces manual valve blocks in AutoCAD P&I drawings:
-'   - Reads valve records from MANUALVALVES table
-'   - Opens each .DWG file containing valves
-'   - Replaces old valve blocks with new standardized blocks
-'   - Preserves attributes, layer, rotation (handles mirroring)
-'   - Updates database with new Handle and block name
+'   Korvaa käsiventtiiliblokit eräajona AutoCAD P&I -piirustuksissa:
+'   - Lukee venttiilirecordit MANUALVALVES-taulukosta
+'   - Avaa jokaisen venttiilitä sisältävän .DWG-tiedoston
+'   - Korvaa vanhat venttiiliblokit uusilla standardiblokeilla
+'   - Säilyttää attribuutit, tason ja kiertymän (huomioi peilauksen)
+'   - Päivittää tietokantaan uuden Handle- ja blokin nimen
 '
 ' Riippuvuudet:
-'   - AutoCAD Application (COM automation)
-'   - DAO.Recordset for database operations
-'   - MANUALVALVES table with DwgFileID, DwgHandle, Code fields
-'   - Standard valve blocks in L:\Projekti\ITATA\Process\Flowsheets\BLOCKS\
+'   - AutoCAD-sovellus (COM-automaatio)
+'   - DAO.Recordset tietokantaoperaatioihin
+'   - MANUALVALVES-taulukko, jossa DwgFileID, DwgHandle, Code -kentät
+'   - Standardiventtiiliblokit hakemistossa L:\Projekti\ITATA\Process\Flowsheets\BLOCKS\
 '
-' Valve Code Mapping:
-'   Code 2 → V11 (Globe valve)
-'   Code 3 → V05/V06 (Ball valve, depends on source block)
-'   Code 4 → V22/V23 (3-way valve, depends on source block)
-'   Code 5,6 → V09 (Check valve)
-'   Code 12 → V17 (Control valve)
-'   Code 1,8,11 → Not replaced
+' Venttiilikoodi-kuvaus:
+'   Koodi 2 → V11 (sulkuventtiili)
+'   Koodi 3 → V05/V06 (palloventtiili, riippuu lähdeblokista)
+'   Koodi 4 → V22/V23 (3-tieventtiili, riippuu lähdeblokista)
+'   Koodi 5,6 → V09 (takaiskuventtiili)
+'   Koodi 12 → V17 (säätöventtiili)
+'   Koodi 1,8,11 → Ei korvata
 '
-' Drawing Paths:
+' Piirustuspolut:
 '   - POR1050970, POR1051314, POR1050965-69 → PINE MACHINE 1
 '   - POR1051315, POR1050976-81 → EUCA MACHINE 2
 '
-' Controls:
-'   - Command0: Execute valve replacement batch process
+' Kontrollit:
+'   - Command0: Käynnistää venttiilienvaihdon eräajon
 '================================================================================
 
 '================================================================================
-' Event: Command0_Click
-' Tarkoitus: Execute batch valve block replacement
+' Tapahtuma: Command0_Click
+' Tarkoitus: KÃ¤ynnistÃ¤Ã¤ venttiilienvaihdon erÃ¤ajon
 '================================================================================
 Private Sub Command0_Click()
   Dim Taulukko As DAO.Recordset
@@ -63,7 +63,7 @@ Private Sub Command0_Click()
 
   BPolku = "L:\Projekti\ITATA\Process\Flowsheets\BLOCKS\"
   
-  ' Connect to AutoCAD
+  ' Yhdistetään AutoCADiin
   On Error Resume Next
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
@@ -73,11 +73,11 @@ Private Sub Command0_Click()
   End If
   On Error GoTo ErrorHandler
   
-  ' Process all valves
+  ' Käsitellään kaikki venttiilit
   Set Taulukko = CurrentDb.OpenRecordset("SELECT * FROM MANUALVALVES WHERE (DwgFileID Is Not Null AND DwgHandle Is Not Null AND Deleted = False) Order by DwgFileID")
   
   Do While Not Taulukko.EOF
-    ' Open new drawing if changed
+    ' Avataan uusi piirustus, jos DWG-tiedosto muuttuu
     If UCase$(Nz(Taulukko.Fields("DwgFileID").Value)) <> DWG Then
       DWG = UCase$(Nz(Taulukko.Fields("DwgFileID").Value))
       OK = False
@@ -98,14 +98,14 @@ Private Sub Command0_Click()
       End If
     End If
     
-    ' Process valve if valid
+    ' Käsitellään venttiili, jos tiedot ovat kelvolliset
     Handle = UCase$(Nz(Taulukko.Fields("DwgHandle").Value))
     If Handle <> "" And OK And Nz(Taulukko.Fields("Code").Value) <> "" Then
       Set oBlock = oACAD.ActiveDocument.HandleToObject(Handle)
       Attribuutit = oBlock.GetAttributes
       
       If UBound(Attribuutit) > 1 Then
-        ' Map valve code to new block name
+        ' Tallennetaan venttiilikoodi uuteen blokin nimeen
         Koodi = CInt(Val(Nz(Taulukko.Fields("Code").Value)))
         Select Case Koodi
           Case 2
@@ -132,9 +132,9 @@ Private Sub Command0_Click()
             BNimi = ""
         End Select
         
-        ' Replace block if mapping exists
+        ' Korvataan blokki, jos kuvaus löytyi
         If BNimi <> "" Then
-          ' Handle rotation (account for mirroring)
+          ' Käsitellään kiertymä (huomioidaan peilaus)
           Rotation = oBlock.Rotation
           If oBlock.XScaleFactor <> 1 Then
             If Rotation > 3 Then
@@ -144,11 +144,11 @@ Private Sub Command0_Click()
             End If
           End If
           
-          ' Insert new block
+          ' Sijoitetaan uusi blokki
           Set UusiBlock = oACAD.ActiveDocument.ModelSpace.InsertBlock(oBlock.InsertionPoint, BPolku & BNimi & ".dwg", 1, 1, 1, Rotation)
           UusiBlock.Layer = oBlock.Layer
           
-          ' Copy attributes
+          ' Kopioidaan attribuutit
           UAttrib = UusiBlock.GetAttributes
           For i = LBound(Attribuutit) To UBound(Attribuutit)
             For j = LBound(UAttrib) To UBound(UAttrib)
@@ -162,13 +162,13 @@ Private Sub Command0_Click()
             Next j
           Next i
           
-          ' Update database with new handle and block name
+          ' Päivitetään tietokantaan uusi handle ja blokin nimi
           Taulukko.Edit
           Taulukko.Fields("DwgHandle").Value = UusiBlock.Handle
           Taulukko.Fields("DwgBlock").Value = BNimi
           Taulukko.Update
           
-          ' Delete old block
+          ' Poistetaan vanha blokki
           oBlock.Delete
         End If
       End If

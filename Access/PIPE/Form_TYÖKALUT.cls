@@ -1,42 +1,42 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: TYÖKALUT
-' Tarkoitus: Main AutoCAD P&I import/update toolbox for PIPE database
+' Lomake: TYÖKALUT
+' Tarkoitus: AutoCAD P&I -tietojen tuonti- ja päivitystyökalupakki PIPE-tietokantaan
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
 ' Kuvaus:
-'   Central form for importing and updating P&I diagram data from AutoCAD:
-'   - Batch processes .DWG files from specified folder
-'   - Imports pipeline, valve, field instrument, and loop data
-'   - Three-step workflow per data type:
-'     1. Read from AutoCAD (Command1x_Click)
-'     2. Append to staging table (Command2x_Click)
-'     3. Update database (Command3x_Click)
-'   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
+'   Keskuslomake P&I-kaaviotietojen tuontiin ja päivitykseen AutoCADista:
+'   - Käsittelee .DWG-tiedostot eräajona valitusta kansiosta
+'   - Tuo putkilinja-, venttiili-, kenttälaite- ja instrumenttisilmukkatiedot
+'   - Kolmivaiheinen työnkulku per tietotyyppi:
+'     1. Lue AutoCADista (Command1x_Click)
+'     2. Lisää väliaikaistaulukkoon (Command2x_Click)
+'     3. Päivitä tietokantaan (Command3x_Click)
+'   - Avaa erikoiseditorilomakkeet (FlowPickNo, PipeFromTo, PipeToOther)
 '
 ' Riippuvuudet:
-'   - AutoCAD Application (COM automation)
-'   - DAO.Recordset for database operations
-'   - Query actions: *_APPEND, *_UPDATE, DELETE queries
-'   - LPolku label control: Specifies subfolder for .DWG files
+'   - AutoCAD-sovellus (COM-automaatio)
+'   - DAO.Recordset tietokantaoperaatioihin
+'   - Kyselytoiminnot: *_APPEND, *_UPDATE, DELETE-kyselyt
+'   - LPolku-otsikkoruutu: Määrittelee .DWG-tiedostojen alakansion
 '
-' Data Types:
-'   - PIPELINEDATA: Pipeline blocks (PIPELINE_DATA)
-'   - MANVALVEDATA: Manual valves (MANUALVALVE_DATA)
-'   - INSTVALVEDATA: Instrument valves (INSTVALVE_DATA)
-'   - FIELDINSTDATA: Field instruments (FIELDINST_DATA)
-'   - INSTLOOPDATA: Instrument loops (UP079D, UP008C, UP085D, UP08C)
+' Tietotyypit:
+'   - PIPELINEDATA: Putkilinjablokit (PIPELINE_DATA)
+'   - MANVALVEDATA: Käsiventtiilit (MANUALVALVE_DATA)
+'   - INSTVALVEDATA: Instrumenttiventtiilit (INSTVALVE_DATA)
+'   - FIELDINSTDATA: Kenttälaitteet (FIELDINST_DATA)
+'   - INSTLOOPDATA: Instrumenttisilmukat (UP079D, UP008C, UP085D, UP08C)
 '
-' Controls:
-'   - Command11-13: Pipeline workflow
-'   - Command21-23: Manual valve workflow
-'   - Command31-33: Instrument valve workflow
-'   - Command41-43: Field instrument workflow
-'   - Command51-53: Instrument loop workflow
-'   - Command18, 19, 40: Open editor forms
-'   - BPipelineToManval: Link pipelines to manual valves
+' Kontrollit:
+'   - Command11-13: Putkilinjatyönkulku
+'   - Command21-23: Käsiventtiilityönkulku
+'   - Command31-33: Instrumenttiventtiilityönkulku
+'   - Command41-43: Kenttälaitetyönkulku
+'   - Command51-53: Instrumenttisilmukkatyönkulku
+'   - Command18, 19, 40: Avaa editorilomakkeet
+'   - BPipelineToManval: Linkitä putkilinjat käsiventtiileihin
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
@@ -44,10 +44,10 @@ Dim oDOC As Object  ' AcadDocument - muutettu late binding (64-bit)
 Dim Tied As String  ' Current .DWG filename during batch processing
 Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 
-'===== Pipeline to Manual Valve =====
+'===== Putkilinja käsiventtiileihin =====
 '================================================================================
-' Event: BPipelineToManval_Click
-' Tarkoitus: Open form to link pipeline references to manual valves
+' Tapahtuma: BPipelineToManval_Click
+' Tarkoitus: Avaa lomake putkilinjaviittausten linkittämiseen käsiventtiileihin
 '================================================================================
 Private Sub BPipelineToManval_Click()
   On Error GoTo ErrorHandler
@@ -61,10 +61,10 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (käsiventtiilit): " & Err.Description, vbExclamation
 End Sub
 
-'===== Pipeline Workflow (Commands 11-13) =====
+'===== Putkilinjatyönkulku (Commands 11-13) =====
 '================================================================================
-' Event: Command11_Click
-' Tarkoitus: Read pipeline data from AutoCAD drawings
+' Tapahtuma: Command11_Click
+' Tarkoitus: Lukee putkilinjatiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command11_Click()
   On Error GoTo ErrorHandler
@@ -81,7 +81,7 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command12_Click
+' Tapahtuma: Command12_Click
 ' Tarkoitus: Append pipeline data to staging table
 '================================================================================
 Private Sub Command12_Click()
@@ -97,7 +97,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command13_Click
-' Tarkoitus: Update database with pipeline data from staging table
+' Tarkoitus: Päivittää tietokantaan putkilinjatiedot väliaikaistaulukosta
 '================================================================================
 Private Sub Command13_Click()
   On Error GoTo ErrorHandler
@@ -114,10 +114,10 @@ ErrorHandler:
   MsgBox "Virhe putkilinjojen päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Editor Forms (Commands 18-19, 40) =====
+'===== Editorilomakkeet (Commands 18-19, 40) =====
 '================================================================================
-' Event: Command18_Click
-' Tarkoitus: Open FlowPickNo editor form
+' Tapahtuma: Command18_Click
+' Tarkoitus: Avaa FlowPickNo-editorilomake
 '================================================================================
 Private Sub Command18_Click()
   On Error GoTo ErrorHandler
@@ -132,8 +132,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command19_Click
-' Tarkoitus: Open Pipeline FROM/TO editor form
+' Tapahtuma: Command19_Click
+' Tarkoitus: Avaa putkilinjan FROM/TO-editorilomake
 '================================================================================
 Private Sub Command19_Click()
   On Error GoTo ErrorHandler
@@ -147,10 +147,10 @@ ErrorHandler:
   MsgBox "Virhe PipeFromTo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Manual Valve Workflow (Commands 21-23) =====
+'===== Käsiventtiilityönkulku (Commands 21-23) =====
 '================================================================================
-' Event: Command21_Click
-' Tarkoitus: Read manual valve data from AutoCAD drawings
+' Tapahtuma: Command21_Click
+' Tarkoitus: Lukee käsiventtiilitiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command21_Click()
   On Error GoTo ErrorHandler
@@ -167,7 +167,7 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command22_Click
+' Tapahtuma: Command22_Click
 ' Tarkoitus: Append manual valve data to staging table
 '================================================================================
 Private Sub Command22_Click()
@@ -182,8 +182,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command23_Click
-' Tarkoitus: Update database with manual valve data from staging table
+' Tapahtuma: Command23_Click
+' Tarkoitus: Päivittää tietokantaan käsiventtiilidata väliaikaistaulukosta
 '================================================================================
 Private Sub Command23_Click()
   On Error GoTo ErrorHandler
@@ -201,11 +201,11 @@ ErrorHandler:
   MsgBox "Virhe käsiventtiilien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrument Valve Workflow (Commands 31-33) =====
+'===== Instrumenttiventtiilityönkulku (Commands 31-33) =====
 '================================================================================
-' Event: Command31_Click
-' Tarkoitus: Read instrument valve data from AutoCAD drawings
-' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+' Tapahtuma: Command31_Click
+' Tarkoitus: Lukee instrumenttiventtiilitiedot AutoCAD-piirustuksista
+' Huom: Searches for UP079D blocks where LOOPNO attribute contains "AA"
 '================================================================================
 Private Sub Command31_Click()
   On Error GoTo ErrorHandler
@@ -222,7 +222,7 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command32_Click
+' Tapahtuma: Command32_Click
 ' Tarkoitus: Append instrument valve data to staging table
 '================================================================================
 Private Sub Command32_Click()
@@ -237,8 +237,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command33_Click
-' Tarkoitus: Update database with instrument valve data from staging table
+' Tapahtuma: Command33_Click
+' Tarkoitus: Päivittää tietokantaan instrumenttiventtiilidata väliaikaistaulukosta
 '================================================================================
 Private Sub Command33_Click()
   On Error GoTo ErrorHandler
@@ -257,8 +257,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command40_Click
-' Tarkoitus: Open form to link pipeline references to instrument loops
+' Tapahtuma: Command40_Click
+' Tarkoitus: Avaa lomake putkilinjaviittausten linkittämiseen instrumenttisilmukoihin
 '================================================================================
 Private Sub Command40_Click()
   On Error GoTo ErrorHandler
@@ -272,10 +272,10 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-instrumenttipiirilomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Field Instrument Workflow (Commands 41-43) =====
+'===== Kenttälaitetyönkulku (Commands 41-43) =====
 '================================================================================
-' Event: Command41_Click
-' Tarkoitus: Read field instrument data from AutoCAD drawings (UP080D blocks)
+' Tapahtuma: Command41_Click
+' Tarkoitus: Lukee kenttälaitetiedot AutoCAD-piirustuksista (UP080D-blokit)
 '================================================================================
 Private Sub Command41_Click()
   On Error GoTo ErrorHandler
@@ -292,7 +292,7 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command42_Click
+' Tapahtuma: Command42_Click
 ' Tarkoitus: Append field instrument data to staging table
 '================================================================================
 Private Sub Command42_Click()
@@ -307,8 +307,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command43_Click
-' Tarkoitus: Update database with field instrument data from staging table
+' Tapahtuma: Command43_Click
+' Tarkoitus: Päivittää tietokantaan kenttälaitteen data väliaikaistaulukosta
 '================================================================================
 Private Sub Command43_Click()
   On Error GoTo ErrorHandler
@@ -326,10 +326,10 @@ ErrorHandler:
   MsgBox "Virhe kenttäinstrumenttien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrument Loop Workflow (Commands 51-53) =====
+'===== Instrumenttisilmukkatyönkulku (Commands 51-53) =====
 '================================================================================
-' Event: Command51_Click
-' Tarkoitus: Read instrument loop data from AutoCAD drawings
+' Tapahtuma: Command51_Click
+' Tarkoitus: Lukee instrumenttisilmukkatiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command51_Click()
   On Error GoTo ErrorHandler
@@ -346,7 +346,7 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command52_Click
+' Tapahtuma: Command52_Click
 ' Tarkoitus: Append instrument loop data to staging table
 '================================================================================
 Private Sub Command52_Click()
@@ -361,8 +361,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Command53_Click
-' Tarkoitus: Update database with instrument loop data from staging table
+' Tapahtuma: Command53_Click
+' Tarkoitus: Päivittää tietokantaan instrumenttisilmukkata väliaikaistaulukosta
 '================================================================================
 Private Sub Command53_Click()
   On Error GoTo ErrorHandler
@@ -380,14 +380,14 @@ ErrorHandler:
   MsgBox "Virhe instrumenttipiirien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Helper Functions =====
+'===== Apufunktiot =====
 '================================================================================
-' Function: FieldExists
-' Tarkoitus: Check if a field exists in a recordset
+' Funktio: FieldExists
+' Tarkoitus: Tarkistaa, onko kenttä olemassa recordsetissä
 ' Parametrit:
-'   RS - Recordset to check
-'   FieldName - Field name to look for
-' Palautusarvo: True if field exists, False otherwise
+'   RS - Tarkistettava recordset
+'   KentänNimi - Kenttänimi, jota etsitään
+' Palautusarvo: True jos kenttä löytyy, False muuten
 '================================================================================
 Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
   Dim fld As DAO.Field
@@ -398,11 +398,11 @@ Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolea
 End Function
 
 '================================================================================
-' Sub: LueTiedot
-' Tarkoitus: Read block data from AutoCAD drawings and store in Access table
+' Aliohjelma: LueTiedot
+' Tarkoitus: Lukee blokkitiedot AutoCAD-piirustuksista ja tallentaa Access-taulukkoon
 ' Parametrit:
-'   Taulukko - Target Access table name
-'   Blokki - Block type(s) to extract (comma-separated for multiple)
+'   Taulukko - Access-kohdontaulukon nimi
+'   Blokki - Blokkityyppi/tyypit, jotka poimitaan (pilkuilla erotettu)
 '================================================================================
 Private Sub LueTiedot(Taulukko As String, Blokki As String)
   Dim i As Integer, j As Integer
@@ -461,11 +461,11 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: LueTiedotByAttribute
-' Tarkoitus: Read block data from AutoCAD drawings filtered by attribute names
+' Aliohjelma: LueTiedotByAttribute
+' Tarkoitus: Lukee blokkitiedot AutoCAD-piirustuksista, suodatettuna attribuuttinimien mukaan
 ' Parametrit:
-'   Taulukko - Target Access table name
-'   AttribNames - Attribute tag name(s) to filter by (comma-separated)
+'   Taulukko - Access-kohdontaulukon nimi
+'   AttribNames - Attribuuttitagi/tagit, joiden mukaan suodatetaan (pilkuilla erotettu)
 '================================================================================
 Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   Dim i As Integer, j As Integer
@@ -524,13 +524,13 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: LueTiedotByBlockAndAttribute
-' Tarkoitus: Read blocks with specific name and attribute value
+' Aliohjelma: LueTiedotByBlockAndAttribute
+' Tarkoitus: Lukee blokit tietyllä nimellä ja attribuuttiarvolla
 ' Parametrit:
-'   Taulukko - Target Access table name
-'   BlockName - Block name to search for
-'   AttribName - Attribute tag to check
-'   ContainsValue - Value that attribute must start with
+'   Taulukko - Access-kohdontaulukon nimi
+'   BlockName - Etsittävän blokin nimi
+'   AttribName - Tarkistettavan attribuutin tagi
+'   ContainsValue - Arvo, jolla attribuutin arvon täytyy alkaa
 '================================================================================
 Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
   Dim i As Integer, j As Integer
@@ -589,14 +589,14 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Function: Yhdista
-' Tarkoitus: Connect to running AutoCAD instance
-' Palautusarvo: True if connection successful, False otherwise
+' Funktio: Yhdista
+' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Try to connect to running AutoCAD
+  ' Yhdistetään käynnissä olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
     MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
@@ -610,9 +610,9 @@ Private Function Yhdista() As Boolean
 End Function
 
 '================================================================================
-' Function: SeuraavaKuva
-' Tarkoitus: Open next .DWG file from specified folder for batch processing
-' Palautusarvo: True if file opened, False if no more files
+' Funktio: SeuraavaKuva
+' Tarkoitus: Avaa seuraava .DWG-tiedosto määritetystä kansiosta eräajoa varten
+' Palautusarvo: True jos tiedosto avattu, False jos ei enää tiedostoja
 '================================================================================
 Private Function SeuraavaKuva() As Boolean
   Dim Polku As String
@@ -640,12 +640,12 @@ Private Function SeuraavaKuva() As Boolean
     Exit Function
   End If
   
-  ' Close previous document
+  ' Suljetaan edellinen piirustus
   If Not oDOC Is Nothing Then
     oDOC.Close False
   End If
   
-  ' Open next document
+  ' Avataan seuraava piirustus
   Set oDOC = oACAD.Documents.Open(Polku & Tied)
   SeuraavaKuva = True
   Exit Function
@@ -656,10 +656,10 @@ ErrorHandler:
 End Function
 
 '================================================================================
-' Sub: PoimiJoukko
-' Tarkoitus: Create filtered selection set of specified block types
+' Aliohjelma: PoimiJoukko
+' Tarkoitus: Luo suodatettu valintajoukko määritetyistä blokkityypeistä
 ' Parametrit:
-'   Nimet - Block name(s), comma-separated for multiple types
+'   Nimet - Blokin nimi/nimet, pilkuilla erotettu useampaa tyyppiä varten
 '================================================================================
 Private Sub PoimiJoukko(Nimet As String)
   Dim FilterType(0) As Integer
@@ -673,13 +673,13 @@ Private Sub PoimiJoukko(Nimet As String)
   
   On Error GoTo ErrorHandler
   
-  ' Parse block names
+  ' Jäsennetään blokkinimet
   Blokit = Split(Nimet, ",")
   For i = 0 To UBound(Blokit)
     Blokit(i) = UCase$(Trim$(Blokit(i)))
   Next i
   
-  ' Create selection set
+  ' Luodaan valintajoukko
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
@@ -693,7 +693,7 @@ Private Sub PoimiJoukko(Nimet As String)
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Remove blocks not in list
+  ' Suodatus: poistetaan blokit, jotka eivät ole listalla
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
@@ -720,10 +720,10 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: PoimiJoukkoByAttribute
-' Tarkoitus: Create selection set of blocks containing specific attributes
+' Aliohjelma: PoimiJoukkoByAttribute
+' Tarkoitus: Luo valintajoukko blokeista, joilla on tietyt attribuutit
 ' Parametrit:
-'   AttribNames - Attribute tag name(s) to look for, comma-separated
+'   AttribNames - Etsittävä attribuuttitagi/tagit, pilkuilla erotettu
 '================================================================================
 Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Dim FilterType(0) As Integer
@@ -739,13 +739,13 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   
   On Error GoTo ErrorHandler
   
-  ' Parse attribute names to search for
+  ' Jäsennetään etsittävät attribuuttinimet
   AttribList = Split(AttribNames, ",")
   For i = 0 To UBound(AttribList)
     AttribList(i) = UCase$(Trim$(AttribList(i)))
   Next i
   
-  ' Create selection set of all blocks
+  ' Luodaan valintajoukko kaikista blokeista
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
@@ -759,19 +759,19 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Keep only blocks that have the specified attributes
+  ' Suodatus: pidetään vain blokit, joilla on määritetyt attribuutit
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       HasAttribute = False
       
-      ' Check if block has attributes
+      ' Tarkistetaan, onko blokilla attribuutteja
       If Joukko(j).HasAttributes Then
         Attribs = Joukko(j).GetAttributes
         
-        ' Check each attribute in the block
+        ' Käydään läpi kaikki blokin attribuutit
         For k = 0 To UBound(Attribs)
-          ' Check if this attribute matches any in our search list
+          ' Tarkistetaan, täsmääkö attribuutti hakuun
           For i = 0 To UBound(AttribList)
             If UCase$(Attribs(k).TagString) = AttribList(i) Then
               HasAttribute = True
@@ -782,7 +782,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
         Next k
       End If
       
-      ' If block doesn't have the attribute, mark for removal
+      ' Jos blokilla ei ole attribuuttia, merkitään poistettavaksi
       If Not HasAttribute Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)
@@ -799,12 +799,12 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: PoimiJoukkoByBlockAndAttributeValue
-' Tarkoitus: Create selection set of specific blocks with attribute containing value
+' Aliohjelma: PoimiJoukkoByBlockAndAttributeValue
+' Tarkoitus: Luo valintajoukko tietyistä blokeista, joiden attribuutti sisältää arvon
 ' Parametrit:
-'   BlockName - Block name to search for
-'   AttribName - Attribute tag name to check
-'   ContainsValue - Value that attribute must contain (case-insensitive)
+'   BlockName - Etsittävän blokin nimi
+'   AttribName - Tarkistettavan attribuutin tagi
+'   ContainsValue - Arvo, jonka attribuutin täytyy sisältää (ei kirjainkokoherkkä)
 '================================================================================
 Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, ContainsValue As String)
   Dim FilterType(0) As Integer
@@ -823,7 +823,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   AttribName = UCase$(Trim$(AttribName))
   ContainsValue = UCase$(Trim$(ContainsValue))
   
-  ' Create selection set of all blocks
+  ' Luodaan valintajoukko kaikista blokeista
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
@@ -837,23 +837,23 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Filter: Keep only matching blocks with matching attribute value
+  ' Suodatus: pidetään vain vastaavat blokit, joiden attribuuttiarvo täsmää
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       HasMatch = False
       
-      ' Check block name
+      ' Tarkistetaan blokin nimi
       If UCase$(Joukko(j).EffectiveName) = BlockName Then
-        ' Check if block has attributes
+        ' Tarkistetaan, onko blokilla attribuutteja
         If Joukko(j).HasAttributes Then
           Attribs = Joukko(j).GetAttributes
           
-          ' Check each attribute
+          ' Käydään läpi kaikki attribuutit
           For i = 0 To UBound(Attribs)
             If UCase$(Attribs(i).TagString) = AttribName Then
               AttribValue = UCase$(Attribs(i).TextString)
-              ' Check if attribute value starts with the specified value
+              ' Tarkistetaan, alkaako attribuutin arvo määritetyllä arvolla
               If Left$(AttribValue, Len(ContainsValue)) = ContainsValue Then
                 HasMatch = True
                 Exit For
@@ -863,7 +863,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
         End If
       End If
       
-      ' If block doesn't match criteria, mark for removal
+      ' Jos blokki ei täsmää kriteereihin, merkitään poistettavaksi
       If Not HasMatch Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)

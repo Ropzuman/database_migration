@@ -69,3 +69,36 @@ Kaikki englanninkieliset kommentit käännetty suomeksi kaikissa kymmenessä PIP
 | `Form_frmOpenPIPELINE.cls` | — | ✅ | — |
 | `Form_zFunc.cls` | — | ✅ | — |
 | `Form_Venttiiliblokkien vaihto.cls` | — | ✅ | — |
+
+---
+
+## Täydennys: Vaihe 3 uusintaskannaus (2025-11-13)
+
+Toinen kierros Vaihe 3 -skannauksesta löysi ja korjasi seuraavat jäljellä olevat englanninkieliset kommentit:
+
+### Form_TYÖKALUT.cls
+
+- Ryhmäotsikot `'===== ... =====` käännetty suomeksi (9 kpl):
+  - `Pipeline to Manual Valve` → `Putkilinja käsiventtiileihin`
+  - `Pipeline Workflow (Commands 11-13)` → `Putkilinjatyönkulku (Commands 11-13)`
+  - `Editor Forms (Commands 18-19, 40)` → `Editorilomakkeet (Commands 18-19, 40)`
+  - `Manual Valve Workflow (Commands 21-23)` → `Käsiventtiilityönkulku (Commands 21-23)`
+  - `Instrument Valve Workflow (Commands 31-33)` → `Instrumenttiventtiilityönkulku (Commands 31-33)`
+  - `Field Instrument Workflow (Commands 41-43)` → `Kenttälaitetyönkulku (Commands 41-43)`
+  - `Instrument Loop Workflow (Commands 51-53)` → `Instrumenttisilmukkatyönkulku (Commands 51-53)`
+  - `Helper Functions` → `Apufunktiot`
+- `' Tarkoitus:` -rivit (22 kpl) käännetty suomeksi
+
+### Form_frmOpenPIPELINE.cls
+
+- `' Controls:` → `' Kontrollit:`
+
+### Form_USysPipeFromTo.cls
+
+- `' Tarkoitus: Pick TO reference from AutoCAD drawing` → `' Tarkoitus: Poimii TO-viittauksen AutoCAD-piirustuksesta`
+
+### Form_zFunc.cls
+
+- `' Tarkoitus: Delete zDetails records that no longer exist in InstrumentIndex` → `' Tarkoitus: Poistaa zDetails-tietueet, joita ei enää löydy InstrumentIndex-taulukosta`
+
+Lopputulos: 0 englanninkielistä kommenttirakennetta kaikissa kymmenessä PIPE-tiedostossa.

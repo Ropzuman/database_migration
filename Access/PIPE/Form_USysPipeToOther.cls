@@ -1,32 +1,32 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: USysPipeToOther
-' Tarkoitus: Link pipeline blocks to other equipment via PIPELINE attribute
+' Lomake: USysPipeToOther
+' Tarkoitus: Linkitä laiteblokit putkilinjoihin PIPELINE-attribuutin kautta
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
 ' Kuvaus:
-'   Interactive form to assign pipeline references to equipment blocks:
-'   - Connects to running AutoCAD instance
-'   - Filters blocks by type (via OpenArgs parameter)
-'   - Allows navigation through blocks (Next, Previous, Find Next Empty)
-'   - Pick pipeline from drawing or enter manually
-'   - Updates PIPELINE/PIPELINENO attribute in real-time
+'   Interaktiivinen lomake putkilinjaviittausten asettamiseen laiteblokeille:
+'   - Yhdistyy käynnissä olevaan AutoCAD-instanssiin
+'   - Suodattaa blokit tyypin mukaan (OpenArgs-parametrin avulla)
+'   - Mahdollistaa navigoinnin blokkien välillä (Seuraava, Edellinen, Etsi tyhjä)
+'   - Poimi putkilinja piirustuksesta tai syötä käsin
+'   - Päivittää PIPELINE/PIPELINENO-attribuutin reaaliajassa
 '
 ' Riippuvuudet:
-'   - AutoCAD Application (COM automation)
-'   - Equipment blocks with PIPELINE or PIPELINENO attribute
+'   - AutoCAD-sovellus (COM-automaatio)
+'   - Laiteblokit, joissa on PIPELINE- tai PIPELINENO-attribuutti
 '
 ' OpenArgs:
-'   - Block name (e.g., "VALVE") - filters to single block type
-'   - Comma-separated list (e.g., "VALVE,PUMP") - filters to multiple types
+'   - Blokin nimi (esim. "VALVE") - suodattaa yhteen blokkityyppiin
+'   - Pilkuilla erotettu lista (esim. "VALVE,PUMP") - suodattaa useampaan tyyppiin
 '
-' Controls:
-'   - TPipeline: Pipeline reference text box
-'   - BNext, BPrev: Navigation buttons
-'   - BFind: Find next empty button
-'   - BPickPipeline: Pick pipeline from drawing button
+' Kontrollit:
+'   - TPipeline: Putkilinjaviittauksen tekstikenttä
+'   - BNext, BPrev: Navigointipainikkeet
+'   - BFind: Etsi seuraava tyhjä -painike
+'   - BPickPipeline: Poimi putkilinja piirustuksesta -painike
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
@@ -34,19 +34,19 @@ Dim oDOC As Object   ' AcadDocument - muutettu late binding (64-bit)
 Dim PipeAttrib As Object  ' AcadAttributeReference - muutettu late binding (64-bit)
 Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
 Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
-Dim i As Integer  ' Current block index
+Dim i As Integer  ' Nykyinen blokkiindeksi
 
 '================================================================================
-' Event: BClose_Click
-' Tarkoitus: Close the form
+' Tapahtuma: BClose_Click
+' Tarkoitus: Sulkee lomakkeen
 '================================================================================
 Private Sub BClose_Click()
   DoCmd.Close acForm, "UsysPipeToOther"
 End Sub
 
 '================================================================================
-' Sub: OpenPipeline
-' Tarkoitus: Pick pipeline or plate block from drawing and extract reference
+' Aliohjelma: OpenPipeline
+' Tarkoitus: Poimii putkilinja- tai levyblokin piirroksesta ja palauttaa viittauksen
 '================================================================================
 Private Sub OpenPipeline()
   Dim Kohde As Object
@@ -103,11 +103,11 @@ Private Sub OpenPipeline()
 End Sub
 
 '================================================================================
-' Function: AttribToPipeline
-' Tarkoitus: Extract pipeline reference from block attributes (DEP+FSB+LINE)
+' Funktio: AttribToPipeline
+' Tarkoitus: Poimii putkilinjaviittauksen blokin attribuuteista (DEP+FSB+LINE)
 ' Parametrit:
-'   Attrib - Array of block attributes
-' Palautusarvo: Concatenated pipeline reference string
+'   Attrib - Blokin attribuuttitaulukko
+' Palautusarvo: Yhdistetty putkilinjaviittausmerkkijono
 '================================================================================
 Private Function AttribToPipeline(Attrib As Variant) As String
   Dim j As Integer
@@ -131,8 +131,8 @@ Private Function AttribToPipeline(Attrib As Variant) As String
 End Function
 
 '================================================================================
-' Event: BFind_Click
-' Tarkoitus: Find next equipment block with empty PIPELINE attribute
+' Tapahtuma: BFind_Click
+' Tarkoitus: Etsii seuraavan laiteblokin, jolla PIPELINE-attribuutti on tyhjÃ¤
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -156,8 +156,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BNext_Click
-' Tarkoitus: Navigate to next equipment block
+' Tapahtuma: BNext_Click
+' Tarkoitus: Navigoi seuraavaan laitteen blokkiin
 '================================================================================
 Private Sub BNext_Click()
   On Error GoTo ErrorHandler
@@ -168,8 +168,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: NextBlock
-' Tarkoitus: Move to next block in selection set (wraps to first)
+' Aliohjelma: NextBlock
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertÃ¤Ã¤ alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -186,11 +186,11 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: KirjoitaAtt
-' Tarkoitus: Write text to attribute reference
+' Aliohjelma: KirjoitaAtt
+' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - Attribute reference to update
+'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -207,8 +207,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BPickPipeline_Click
-' Tarkoitus: Pick pipeline reference from AutoCAD drawing
+' Tapahtuma: BPickPipeline_Click
+' Tarkoitus: Poimii putkilinjaviittauksen AutoCAD-piirustuksesta
 '================================================================================
 Private Sub BPickPipeline_Click()
   On Error GoTo ErrorHandler
@@ -221,8 +221,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BPrev_Click
-' Tarkoitus: Navigate to previous equipment block
+' Tapahtuma: BPrev_Click
+' Tarkoitus: Navigoi edelliseen laitteen blokkiin
 '================================================================================
 Private Sub BPrev_Click()
   On Error GoTo ErrorHandler
@@ -233,8 +233,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: PrevBlock
-' Tarkoitus: Move to previous block in selection set (wraps to last)
+' Aliohjelma: PrevBlock
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertÃ¤Ã¤ loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -251,19 +251,19 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Form_Close
-' Tarkoitus: Clean up AutoCAD objects when form closes
+' Tapahtuma: Form_Close
+' Tarkoitus: Siivotaan AutoCAD-objektit lomakkeen sulkeutuessa
 '================================================================================
 Private Sub Form_Close()
   On Error Resume Next
   
-  ' Clean up selection set
+  ' Siivotaan valintajoukko
   If Not Joukko Is Nothing Then
     Joukko.Delete
     Set Joukko = Nothing
   End If
   
-  ' Clean up AutoCAD objects
+  ' Siivotaan AutoCAD-objektit
   Set PipeAttrib = Nothing
   Set oBlock = Nothing
   Set oDOC = Nothing
@@ -271,8 +271,8 @@ Private Sub Form_Close()
 End Sub
 
 '================================================================================
-' Event: Form_Load
-' Tarkoitus: Initialize form, connect to AutoCAD, filter equipment blocks
+' Tapahtuma: Form_Load
+' Tarkoitus: Alustetaan lomake, yhdistetÃ¤Ã¤n AutoCADiin, suodatetaan laiteblokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -290,7 +290,7 @@ Private Sub Form_Load()
     If Err = 0 Then
        TeeJoukko "APUVALINTA", Joukko
        
-       ' Filter by OpenArgs: comma-separated list or single block type
+       ' Suodatus OpenArgs-parametrin mukaan: pilkuilla erotettu lista tai yksittäinen blokkityyppi
        If InStr(OpenArgs, ",") Then
           FT(0) = 2
           FD(0) = OpenArgs
@@ -326,18 +326,18 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: TeeJoukko
-' Tarkoitus: Create or recreate a named selection set
+' Aliohjelma: TeeJoukko
+' Tarkoitus: Luo tai uudelleenluo nimetty valintajoukko
 ' Parametrit:
-'   Nimi - Name of selection set
-'   VJoukko - Selection set object to create
+'   Nimi - Valintajoukon nimi
+'   VJoukko - Luotava valintajoukko-objekti
 '================================================================================
 Private Sub TeeJoukko(Nimi As String, VJoukko As Object)  ' AcadSelectionSet - muutettu late binding (64-bit)
   Dim i As Integer
   
   On Error GoTo ErrorHandler
   
-  ' Delete if already exists
+  ' Poistetaan, jos on jo olemassa
   For i = 0 To ActiveDocument.SelectionSets.Count - 1
     If ActiveDocument.SelectionSets(i).Name = Nimi Then
       ActiveDocument.SelectionSets(i).Delete
@@ -353,8 +353,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: AvaaBlokki
-' Tarkoitus: Display and highlight current equipment block, load PIPELINE attribute
+' Aliohjelma: AvaaBlokki
+' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja korostaa nykyisen laiteblokin ja lataa PIPELINE-attribuutin
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -366,19 +366,19 @@ Private Sub AvaaBlokki()
   
   Me.Caption = i + 1 & "/" & Joukko.Count
   
-  ' Un-highlight previous block
+  ' Poistetaan edellinen korostus
   If Not oBlock Is Nothing Then
     oBlock.Highlight False
   End If
   
-  ' Get and display current block
+  ' Haetaan ja näytetään nykyinen blokki
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
   oACAD.ZoomWindow MinPoint, MaxPoint
   oACAD.ZoomScaled 0.2, acZoomScaledRelative
   oBlock.Highlight True
   
-  ' Extract PIPELINE attribute
+  ' Haetaan PIPELINE-attribuutti
   Attrib = oBlock.GetAttributes
   Set PipeAttrib = Nothing
   For j = 0 To UBound(Attrib)
@@ -398,14 +398,14 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Function: Yhdista
-' Tarkoitus: Connect to running AutoCAD instance
-' Palautusarvo: True if connection successful, False otherwise
+' Funktio: Yhdista
+' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Try to connect to running AutoCAD
+  ' Yhdistetään käynnissä olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
     MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
@@ -420,8 +420,8 @@ Private Function Yhdista() As Boolean
 End Function
 
 '================================================================================
-' Event: TPipeline_AfterUpdate
-' Tarkoitus: Update PIPELINE attribute when text box value changes
+' Tapahtuma: TPipeline_AfterUpdate
+' Tarkoitus: PÃ¤ivittÃ¤Ã¤ PIPELINE-attribuutin tekstikentÃ¤n arvon muuttuessa
 '================================================================================
 Private Sub TPipeline_AfterUpdate()
   On Error GoTo ErrorHandler

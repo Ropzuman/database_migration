@@ -1,30 +1,30 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: USysPipeFromTo
-' Tarkoitus: Pipeline FROM/TO attribute editor for AutoCAD
+' Lomake: USysPipeFromTo
+' Tarkoitus: AutoCAD-putkilinjablokkien FROM/TO-attribuuttien muokkaustyökalu
 ' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
 ' Kuvaus:
-'   Interactive form to edit pipeline block FROM/TO attributes:
-'   - Connects to running AutoCAD instance
-'   - Filters and displays only pipeline blocks (PIPELINE, PIPELINE_DATA, METSO_PIPE)
-'   - Allows navigation through blocks (Next, Previous, Find Next Empty)
-'   - Pick FROM/TO from drawing or enter manually
-'   - Updates block attributes in real-time
+'   Interaktiivinen lomake putkilinjablokkien FROM/TO-attribuuttien muokkaamiseen:
+'   - Yhdistyy käynnissä olevaan AutoCAD-instanssiin
+'   - Suodattaa ja näyttää vain putkilinjablokit (PIPELINE, PIPELINE_DATA, METSO_PIPE)
+'   - Mahdollistaa navigoinnin blokkien välillä (Seuraava, Edellinen, Etsi tyhjä)
+'   - Poimi FROM/TO piirustuksesta tai syötä käsin
+'   - Päivittää blokin attribuutit reaaliajassa
 '
 ' Riippuvuudet:
-'   - AutoCAD Application (COM automation)
-'   - Pipeline blocks with FROM/TO attributes
+'   - AutoCAD-sovellus (COM-automaatio)
+'   - Putkilinjablokit, joissa on FROM/TO-attribuutit
 '
-' Controls:
-'   - TFrom, TTo: FROM/TO text boxes
-'   - BNext, BPrev: Navigation buttons
-'   - BFind: Find next empty button
-'   - BPickFrom, BPickTo: Pick from drawing buttons
-'   - BClearFrom, BClearTo: Clear attribute buttons
-'   - LPipeLine: Display current pipeline reference
+' Kontrollit:
+'   - TFrom, TTo: FROM/TO-tekstikentät
+'   - BNext, BPrev: Navigointipainikkeet
+'   - BFind: Etsi seuraava tyhjä -painike
+'   - BPickFrom, BPickTo: Poimi piirustuksesta -painikkeet
+'   - BClearFrom, BClearTo: Tyhjennetty attribuutti -painikkeet
+'   - LPipeLine: Näyttää nykyisen putkilinjaviittauksen
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
@@ -33,11 +33,11 @@ Dim AttribFrom As Object  ' AcadAttributeReference - muutettu late binding (64-b
 Dim AttribTo As Object    ' AcadAttributeReference - muutettu late binding (64-bit)
 Dim oBlock As Object   ' AcadBlockReference - muutettu late binding (64-bit)
 Dim Joukko As Object   ' AcadSelectionSet - muutettu late binding (64-bit)
-Dim i As Integer  ' Current block index
+Dim i As Integer  ' Nykyinen blokkiindeksi
 
 '================================================================================
-' Event: BClearFrom_Click
-' Tarkoitus: Clear FROM attribute of current pipeline block
+' Tapahtuma: BClearFrom_Click
+' Tarkoitus: TyhjentÃ¤Ã¤ nykyisen putkilinjablokin FROM-attribuutin
 '================================================================================
 Private Sub BClearFrom_Click()
   On Error GoTo ErrorHandler
@@ -51,8 +51,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BClearTo_Click
-' Tarkoitus: Clear TO attribute of current pipeline block
+' Tapahtuma: BClearTo_Click
+' Tarkoitus: TyhjentÃ¤Ã¤ nykyisen putkilinjablokin TO-attribuutin
 '================================================================================
 Private Sub BClearTo_Click()
   On Error GoTo ErrorHandler
@@ -66,19 +66,19 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BClose_Click
-' Tarkoitus: Close the form
+' Tapahtuma: BClose_Click
+' Tarkoitus: Sulkee lomakkeen
 '================================================================================
 Private Sub BClose_Click()
   DoCmd.Close acForm, "UsysPipeFromTo"
 End Sub
 
 '================================================================================
-' Sub: OpenSource
-' Tarkoitus: Pick a pipeline, tank, pump, or equipment from drawing and extract reference
+' Aliohjelma: OpenSource
+' Tarkoitus: Poimii putkilinjan, sÃ¤iliÃ¶n, pumpun tai laitteen piirroksesta ja palauttaa viittauksen
 ' Parametrit:
-'   Teksti - TextBox to populate with reference value
-'   oAttrib - Attribute reference to update
+'   Teksti - TekstikenttÃ¤, johon viittaus asetetaan
+'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
 '================================================================================
 Private Sub OpenSource(Teksti As TextBox, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   Dim Kohde As Object
@@ -127,11 +127,11 @@ Private Sub OpenSource(Teksti As TextBox, oAttrib As Object)  ' AcadAttributeRef
 End Sub
 
 '================================================================================
-' Function: AttribToPipeline
-' Tarkoitus: Extract pipeline reference from block attributes (DEP+FSB+LINE)
+' Funktio: AttribToPipeline
+' Tarkoitus: Poimii putkilinjaviittauksen blokin attribuuteista (DEP+FSB+LINE)
 ' Parametrit:
-'   Attrib - Array of block attributes
-' Palautusarvo: Concatenated pipeline reference string
+'   Attrib - Blokin attribuuttitaulukko
+' Palautusarvo: Yhdistetty putkilinjaviittausmerkkijono
 '================================================================================
 Private Function AttribToPipeline(Attrib As Variant) As String
   Dim j As Integer
@@ -155,8 +155,8 @@ Private Function AttribToPipeline(Attrib As Variant) As String
 End Function
 
 '================================================================================
-' Event: BFind_Click
-' Tarkoitus: Find next pipeline block with empty FROM or TO attribute
+' Tapahtuma: BFind_Click
+' Tarkoitus: Etsii seuraavan putkilinjablokin, jolla FROM tai TO on tyhjÃ¤
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -180,8 +180,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BNext_Click
-' Tarkoitus: Navigate to next pipeline block
+' Tapahtuma: BNext_Click
+' Tarkoitus: Navigoi seuraavaan putkilinjan blokkiin
 '================================================================================
 Private Sub BNext_Click()
   On Error GoTo ErrorHandler
@@ -192,8 +192,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: NextBlock
-' Tarkoitus: Move to next block in selection set (wraps to first)
+' Aliohjelma: NextBlock
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertÃ¤Ã¤ alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -210,11 +210,11 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: KirjoitaAtt
-' Tarkoitus: Write text to attribute reference
+' Aliohjelma: KirjoitaAtt
+' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - Attribute reference to update
+'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -231,8 +231,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BPickFrom_Click
-' Tarkoitus: Pick FROM reference from AutoCAD drawing
+' Tapahtuma: BPickFrom_Click
+' Tarkoitus: Poimii FROM-viittauksen AutoCAD-piirustuksesta
 '================================================================================
 Private Sub BPickFrom_Click()
   On Error GoTo ErrorHandler
@@ -246,8 +246,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BPickTo_Click
-' Tarkoitus: Pick TO reference from AutoCAD drawing
+' Tapahtuma: BPickTo_Click
+' Tarkoitus: Poimii TO-viittauksen AutoCAD-piirustuksesta
 '================================================================================
 Private Sub BPickTo_Click()
   On Error GoTo ErrorHandler
@@ -261,8 +261,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: BPrev_Click
-' Tarkoitus: Navigate to previous pipeline block
+' Tapahtuma: BPrev_Click
+' Tarkoitus: Navigoi edelliseen putkilinjan blokkiin
 '================================================================================
 Private Sub BPrev_Click()
   On Error GoTo ErrorHandler
@@ -273,8 +273,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: PrevBlock
-' Tarkoitus: Move to previous block in selection set (wraps to last)
+' Aliohjelma: PrevBlock
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertÃ¤Ã¤ loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -291,19 +291,19 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: Form_Close
-' Tarkoitus: Clean up AutoCAD objects when form closes
+' Tapahtuma: Form_Close
+' Tarkoitus: Siivotaan AutoCAD-objektit lomakkeen sulkeutuessa
 '================================================================================
 Private Sub Form_Close()
   On Error Resume Next
   
-  ' Clean up selection set
+  ' Siivotaan valintajoukko
   If Not Joukko Is Nothing Then
     Joukko.Delete
     Set Joukko = Nothing
   End If
   
-  ' Clean up AutoCAD objects
+  ' Siivotaan AutoCAD-objektit
   Set AttribFrom = Nothing
   Set AttribTo = Nothing
   Set oBlock = Nothing
@@ -312,8 +312,8 @@ Private Sub Form_Close()
 End Sub
 
 '================================================================================
-' Event: Form_Load
-' Tarkoitus: Initialize form, connect to AutoCAD, filter pipeline blocks
+' Tapahtuma: Form_Load
+' Tarkoitus: Alustetaan lomake, yhdistetÃ¤Ã¤n AutoCADiin, suodatetaan putkilinjablokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -334,7 +334,7 @@ Private Sub Form_Load()
        TeeJoukko "APUVALINTA", Joukko
        Joukko.Select acSelectionSetAll, , , FT, FD
        
-       ' Filter: Keep only pipeline blocks
+       ' Suodatus: pidetään vain putkilinjablokit
        For j = 0 To Joukko.Count - 1
          Nimi = UCase$(Joukko(j).EffectiveName)
          If Nimi <> "PIPELINE" And Nimi <> "PIPELINE_DATA" And Nimi <> "METSO_PIPE" Then
@@ -362,18 +362,18 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: TeeJoukko
-' Tarkoitus: Create or recreate a named selection set
+' Aliohjelma: TeeJoukko
+' Tarkoitus: Luo tai uudelleenluo nimetty valintajoukko
 ' Parametrit:
-'   Nimi - Name of selection set
-'   VJoukko - Selection set object to create
+'   Nimi - Valintajoukon nimi
+'   VJoukko - Luotava valintajoukko-objekti
 '================================================================================
 Private Sub TeeJoukko(Nimi As String, VJoukko As Object)  ' AcadSelectionSet - muutettu late binding (64-bit)
   Dim i As Integer
   
   On Error GoTo ErrorHandler
   
-  ' Delete if already exists
+  ' Poistetaan, jos on jo olemassa
   For i = 0 To oDOC.SelectionSets.Count - 1
     If oDOC.SelectionSets(i).Name = Nimi Then
       oDOC.SelectionSets(i).Delete
@@ -389,8 +389,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Sub: AvaaBlokki
-' Tarkoitus: Display and highlight current pipeline block, load attributes
+' Aliohjelma: AvaaBlokki
+' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja korostaa nykyisen putkilinjablokin ja lataa attribuutit
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -402,12 +402,12 @@ Private Sub AvaaBlokki()
   
   Me.Caption = i + 1 & "/" & Joukko.Count
   
-  ' Un-highlight previous block
+  ' Poistetaan edellinen korostus
   If Not oBlock Is Nothing Then
     oBlock.Highlight False
   End If
   
-  ' Get and display current block
+  ' Haetaan ja näytetään nykyinen blokki
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
 oACAD.ZoomWindow MinPoint, MaxPoint
@@ -431,14 +431,14 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Function: Yhdista
-' Tarkoitus: Connect to running AutoCAD instance
-' Palautusarvo: True if connection successful, False otherwise
+' Funktio: Yhdista
+' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Try to connect to running AutoCAD
+  ' Yhdistetään käynnissä olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
     MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
@@ -453,8 +453,8 @@ Private Function Yhdista() As Boolean
 End Function
 
 '================================================================================
-' Event: TFrom_AfterUpdate
-' Tarkoitus: Update FROM attribute when text box value changes
+' Tapahtuma: TFrom_AfterUpdate
+' Tarkoitus: PÃ¤ivittÃ¤Ã¤ FROM-attribuutin tekstikentÃ¤n arvon muuttuessa
 '================================================================================
 Private Sub TFrom_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -467,8 +467,8 @@ ErrorHandler:
 End Sub
 
 '================================================================================
-' Event: TTo_AfterUpdate
-' Tarkoitus: Update TO attribute when text box value changes
+' Tapahtuma: TTo_AfterUpdate
+' Tarkoitus: PÃ¤ivittÃ¤Ã¤ TO-attribuutin tekstikentÃ¤n arvon muuttuessa
 '================================================================================
 Private Sub TTo_AfterUpdate()
   On Error GoTo ErrorHandler
