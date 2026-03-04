@@ -20,63 +20,6 @@ Public TRevHist As String
 Public TRevDesc As String
 
 '------------------------------------------------------------------------------
-' Funktio: SetStartup
-' Tarkoitus: Kirjaa käyttäjän kirjautumistiedot UsysUsers-tauluun sovelluksen käynnistyessä
-' Parametrit: -
-' Palautusarvo: -
-' Huom: Kutsutaan AutoExec-makrosta. Virheet käsitellään hiljaisesti,
-'       jottei kirjautumistulostus keskeytä sovelluksen avautumista.
-'------------------------------------------------------------------------------
-Function SetStartup()
-On Error GoTo ErrorHandler
-    Dim DB As DAO.Database      ' Nykyinen tietokanta
-    Dim Taulu As DAO.Recordset  ' UsysUsers-taulu kirjautumistietuetta varten
-    Dim NWUserName As String    ' Verkkokäyttäjänimi Windows-API:sta
-    Dim CName As String         ' Tietokoneen nimi ympäristömuuttujasta
-    Dim BuffSize As Long        ' Puskurin koko API-kutsulle
-    Dim NBuffer As String       ' Puskurimerkkijono API-kutsulle
-
-    ' Haetaan verkkokäyttäjänimi Windows-API:lla (wu_GetUserName USysCheck.bas:ssa)
-    BuffSize = 256
-    NBuffer = Space$(BuffSize)
-    If wu_GetUserName(NBuffer, BuffSize) Then
-        NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
-    Else
-        NWUserName = "Unknown"
-    End If
-
-    ' Haetaan tietokoneen nimi ympäristömuuttujasta (ei vaadi lisä-API:a)
-    CName = Environ("COMPUTERNAME")
-    If CName = "" Then CName = "Unknown"
-
-    ' Kirjoitetaan kirjautumistietue UsysUsers-tauluun
-    Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
-    With Taulu
-        .AddNew
-        .Fields(0) = NWUserName     ' Verkkokäyttäjänimi
-        .Fields(1) = CurrentUser()  ' Access-käyttäjänimi
-        .Fields(2) = CName          ' Tietokoneen nimi
-        .Fields(3) = Now            ' Kirjautumisaika
-        .Update
-    End With
-
-    ' Siivotaan objektit
-    Taulu.Close
-    Set Taulu = Nothing
-    Set DB = Nothing
-    Exit Function
-
-ErrorHandler:
-    ' Hiljainen virheenkäsittely — ei keskeytetä sovelluksen käynnistystä
-    On Error Resume Next
-    If Not Taulu Is Nothing Then Taulu.Close
-    Set Taulu = Nothing
-    Set DB = Nothing
-    On Error GoTo 0
-End Function
-
-'------------------------------------------------------------------------------
 ' Funktio: IsLoaded
 ' Tarkoitus: Tarkistaa, onko lomake auki lomake- tai taulukkonäkymässä
 ' Parametrit:
