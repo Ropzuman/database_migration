@@ -3,10 +3,10 @@ Option Explicit
 
 '================================================================================
 ' Form: TYÖKALUT
-' Purpose: Main AutoCAD P&I import/update toolbox for PIPE database
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Tarkoitus: Main AutoCAD P&I import/update toolbox for PIPE database
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
-' Description:
+' Kuvaus:
 '   Central form for importing and updating P&I diagram data from AutoCAD:
 '   - Batch processes .DWG files from specified folder
 '   - Imports pipeline, valve, field instrument, and loop data
@@ -16,7 +16,7 @@ Option Explicit
 '     3. Update database (Command3x_Click)
 '   - Opens specialized editor forms (FlowPickNo, PipeFromTo, PipeToOther)
 '
-' Dependencies:
+' Riippuvuudet:
 '   - AutoCAD Application (COM automation)
 '   - DAO.Recordset for database operations
 '   - Query actions: *_APPEND, *_UPDATE, DELETE queries
@@ -47,7 +47,7 @@ Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 '===== Pipeline to Manual Valve =====
 '================================================================================
 ' Event: BPipelineToManval_Click
-' Purpose: Open form to link pipeline references to manual valves
+' Tarkoitus: Open form to link pipeline references to manual valves
 '================================================================================
 Private Sub BPipelineToManval_Click()
   On Error GoTo ErrorHandler
@@ -58,13 +58,13 @@ Private Sub BPipelineToManval_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error opening PipeToOther form: " & Err.Description, vbExclamation
+  MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (käsiventtiilit): " & Err.Description, vbExclamation
 End Sub
 
 '===== Pipeline Workflow (Commands 11-13) =====
 '================================================================================
 ' Event: Command11_Click
-' Purpose: Read pipeline data from AutoCAD drawings
+' Tarkoitus: Read pipeline data from AutoCAD drawings
 '================================================================================
 Private Sub Command11_Click()
   On Error GoTo ErrorHandler
@@ -77,12 +77,12 @@ Private Sub Command11_Click()
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Error reading pipeline data: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjojen tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command12_Click
-' Purpose: Append pipeline data to staging table
+' Tarkoitus: Append pipeline data to staging table
 '================================================================================
 Private Sub Command12_Click()
   On Error GoTo ErrorHandler
@@ -92,12 +92,12 @@ Private Sub Command12_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error appending pipeline data: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjojen lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Event: Command13_Click
-' Purpose: Update database with pipeline data from staging table
+' Tapahtuma: Command13_Click
+' Tarkoitus: Update database with pipeline data from staging table
 '================================================================================
 Private Sub Command13_Click()
   On Error GoTo ErrorHandler
@@ -111,13 +111,13 @@ Private Sub Command13_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating pipeline data: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjojen päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '===== Editor Forms (Commands 18-19, 40) =====
 '================================================================================
 ' Event: Command18_Click
-' Purpose: Open FlowPickNo editor form
+' Tarkoitus: Open FlowPickNo editor form
 '================================================================================
 Private Sub Command18_Click()
   On Error GoTo ErrorHandler
@@ -128,12 +128,12 @@ Private Sub Command18_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error opening FlowPickNo form: " & Err.Description, vbExclamation
+  MsgBox "Virhe FlowPickNo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command19_Click
-' Purpose: Open Pipeline FROM/TO editor form
+' Tarkoitus: Open Pipeline FROM/TO editor form
 '================================================================================
 Private Sub Command19_Click()
   On Error GoTo ErrorHandler
@@ -144,13 +144,13 @@ Private Sub Command19_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error opening PipeFromTo form: " & Err.Description, vbExclamation
+  MsgBox "Virhe PipeFromTo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
 '===== Manual Valve Workflow (Commands 21-23) =====
 '================================================================================
 ' Event: Command21_Click
-' Purpose: Read manual valve data from AutoCAD drawings
+' Tarkoitus: Read manual valve data from AutoCAD drawings
 '================================================================================
 Private Sub Command21_Click()
   On Error GoTo ErrorHandler
@@ -163,12 +163,12 @@ Private Sub Command21_Click()
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Error reading manual valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe käsiventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command22_Click
-' Purpose: Append manual valve data to staging table
+' Tarkoitus: Append manual valve data to staging table
 '================================================================================
 Private Sub Command22_Click()
   On Error GoTo ErrorHandler
@@ -178,12 +178,12 @@ Private Sub Command22_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error appending manual valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe käsiventtiilien lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command23_Click
-' Purpose: Update database with manual valve data from staging table
+' Tarkoitus: Update database with manual valve data from staging table
 '================================================================================
 Private Sub Command23_Click()
   On Error GoTo ErrorHandler
@@ -198,13 +198,13 @@ Private Sub Command23_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating manual valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe käsiventtiilien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '===== Instrument Valve Workflow (Commands 31-33) =====
 '================================================================================
 ' Event: Command31_Click
-' Purpose: Read instrument valve data from AutoCAD drawings
+' Tarkoitus: Read instrument valve data from AutoCAD drawings
 ' Note: Searches for UP079D blocks where LOOPNO attribute contains "AA"
 '================================================================================
 Private Sub Command31_Click()
@@ -218,12 +218,12 @@ Private Sub Command31_Click()
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Error reading instrument valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttiventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command32_Click
-' Purpose: Append instrument valve data to staging table
+' Tarkoitus: Append instrument valve data to staging table
 '================================================================================
 Private Sub Command32_Click()
   On Error GoTo ErrorHandler
@@ -233,12 +233,12 @@ Private Sub Command32_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error appending instrument valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttiventtiilien lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command33_Click
-' Purpose: Update database with instrument valve data from staging table
+' Tarkoitus: Update database with instrument valve data from staging table
 '================================================================================
 Private Sub Command33_Click()
   On Error GoTo ErrorHandler
@@ -253,12 +253,12 @@ Private Sub Command33_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating instrument valve data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttiventtiilien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command40_Click
-' Purpose: Open form to link pipeline references to instrument loops
+' Tarkoitus: Open form to link pipeline references to instrument loops
 '================================================================================
 Private Sub Command40_Click()
   On Error GoTo ErrorHandler
@@ -269,13 +269,13 @@ Private Sub Command40_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error opening PipeToOther form: " & Err.Description, vbExclamation
+  MsgBox "Virhe PipeToOther-instrumenttipiirilomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
 '===== Field Instrument Workflow (Commands 41-43) =====
 '================================================================================
 ' Event: Command41_Click
-' Purpose: Read field instrument data from AutoCAD drawings (UP080D blocks)
+' Tarkoitus: Read field instrument data from AutoCAD drawings (UP080D blocks)
 '================================================================================
 Private Sub Command41_Click()
   On Error GoTo ErrorHandler
@@ -288,12 +288,12 @@ Private Sub Command41_Click()
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Error reading field instrument data: " & Err.Description, vbExclamation
+  MsgBox "Virhe kenttäinstrumenttien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command42_Click
-' Purpose: Append field instrument data to staging table
+' Tarkoitus: Append field instrument data to staging table
 '================================================================================
 Private Sub Command42_Click()
   On Error GoTo ErrorHandler
@@ -303,12 +303,12 @@ Private Sub Command42_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error appending field instrument data: " & Err.Description, vbExclamation
+  MsgBox "Virhe kenttäinstrumenttien lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command43_Click
-' Purpose: Update database with field instrument data from staging table
+' Tarkoitus: Update database with field instrument data from staging table
 '================================================================================
 Private Sub Command43_Click()
   On Error GoTo ErrorHandler
@@ -323,13 +323,13 @@ Private Sub Command43_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating field instrument data: " & Err.Description, vbExclamation
+  MsgBox "Virhe kenttäinstrumenttien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '===== Instrument Loop Workflow (Commands 51-53) =====
 '================================================================================
 ' Event: Command51_Click
-' Purpose: Read instrument loop data from AutoCAD drawings
+' Tarkoitus: Read instrument loop data from AutoCAD drawings
 '================================================================================
 Private Sub Command51_Click()
   On Error GoTo ErrorHandler
@@ -342,12 +342,12 @@ Private Sub Command51_Click()
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Error reading instrument loop data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttipiirien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command52_Click
-' Purpose: Append instrument loop data to staging table
+' Tarkoitus: Append instrument loop data to staging table
 '================================================================================
 Private Sub Command52_Click()
   On Error GoTo ErrorHandler
@@ -357,12 +357,12 @@ Private Sub Command52_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error appending instrument loop data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttipiirien lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Command53_Click
-' Purpose: Update database with instrument loop data from staging table
+' Tarkoitus: Update database with instrument loop data from staging table
 '================================================================================
 Private Sub Command53_Click()
   On Error GoTo ErrorHandler
@@ -377,17 +377,17 @@ Private Sub Command53_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating instrument loop data: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttipiirien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '===== Helper Functions =====
 '================================================================================
 ' Function: FieldExists
-' Purpose: Check if a field exists in a recordset
-' Parameters:
+' Tarkoitus: Check if a field exists in a recordset
+' Parametrit:
 '   RS - Recordset to check
 '   FieldName - Field name to look for
-' Returns: True if field exists, False otherwise
+' Palautusarvo: True if field exists, False otherwise
 '================================================================================
 Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
   Dim fld As DAO.Field
@@ -399,8 +399,8 @@ End Function
 
 '================================================================================
 ' Sub: LueTiedot
-' Purpose: Read block data from AutoCAD drawings and store in Access table
-' Parameters:
+' Tarkoitus: Read block data from AutoCAD drawings and store in Access table
+' Parametrit:
 '   Taulukko - Target Access table name
 '   Blokki - Block type(s) to extract (comma-separated for multiple)
 '================================================================================
@@ -457,13 +457,13 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  MsgBox "Error reading data: " & Err.Description, vbExclamation
+  MsgBox "Virhe tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: LueTiedotByAttribute
-' Purpose: Read block data from AutoCAD drawings filtered by attribute names
-' Parameters:
+' Tarkoitus: Read block data from AutoCAD drawings filtered by attribute names
+' Parametrit:
 '   Taulukko - Target Access table name
 '   AttribNames - Attribute tag name(s) to filter by (comma-separated)
 '================================================================================
@@ -520,13 +520,13 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  MsgBox "Error reading data by attribute: " & Err.Description, vbExclamation
+  MsgBox "Virhe tietojen lukemisessa attribuuteilla: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: LueTiedotByBlockAndAttribute
-' Purpose: Read blocks with specific name and attribute value
-' Parameters:
+' Tarkoitus: Read blocks with specific name and attribute value
+' Parametrit:
 '   Taulukko - Target Access table name
 '   BlockName - Block name to search for
 '   AttribName - Attribute tag to check
@@ -585,13 +585,13 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  MsgBox "Error reading filtered data: " & Err.Description, vbExclamation
+  MsgBox "Virhe suodatettujen tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Function: Yhdista
-' Purpose: Connect to running AutoCAD instance
-' Returns: True if connection successful, False otherwise
+' Tarkoitus: Connect to running AutoCAD instance
+' Palautusarvo: True if connection successful, False otherwise
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
@@ -611,8 +611,8 @@ End Function
 
 '================================================================================
 ' Function: SeuraavaKuva
-' Purpose: Open next .DWG file from specified folder for batch processing
-' Returns: True if file opened, False if no more files
+' Tarkoitus: Open next .DWG file from specified folder for batch processing
+' Palautusarvo: True if file opened, False if no more files
 '================================================================================
 Private Function SeuraavaKuva() As Boolean
   Dim Polku As String
@@ -651,14 +651,14 @@ Private Function SeuraavaKuva() As Boolean
   Exit Function
   
 ErrorHandler:
-  MsgBox "Error opening drawing: " & Err.Description, vbExclamation
+  MsgBox "Virhe piirustuksen avaamisessa: " & Err.Description, vbExclamation
   SeuraavaKuva = False
 End Function
 
 '================================================================================
 ' Sub: PoimiJoukko
-' Purpose: Create filtered selection set of specified block types
-' Parameters:
+' Tarkoitus: Create filtered selection set of specified block types
+' Parametrit:
 '   Nimet - Block name(s), comma-separated for multiple types
 '================================================================================
 Private Sub PoimiJoukko(Nimet As String)
@@ -716,13 +716,13 @@ Private Sub PoimiJoukko(Nimet As String)
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Error creating selection set: " & Err.Description, vbExclamation
+  MsgBox "Virhe valintajoukon luomisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: PoimiJoukkoByAttribute
-' Purpose: Create selection set of blocks containing specific attributes
-' Parameters:
+' Tarkoitus: Create selection set of blocks containing specific attributes
+' Parametrit:
 '   AttribNames - Attribute tag name(s) to look for, comma-separated
 '================================================================================
 Private Sub PoimiJoukkoByAttribute(AttribNames As String)
@@ -795,13 +795,13 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Error creating attribute-filtered selection set: " & Err.Description, vbExclamation
+  MsgBox "Virhe attribuuttisuodatetun valintajoukon luomisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: PoimiJoukkoByBlockAndAttributeValue
-' Purpose: Create selection set of specific blocks with attribute containing value
-' Parameters:
+' Tarkoitus: Create selection set of specific blocks with attribute containing value
+' Parametrit:
 '   BlockName - Block name to search for
 '   AttribName - Attribute tag name to check
 '   ContainsValue - Value that attribute must contain (case-insensitive)
@@ -876,5 +876,5 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Error creating filtered selection set: " & Err.Description, vbExclamation
+MsgBox "Virhe suodatetun valintajoukon luomisessa: " & Err.Description, vbExclamation
 End Sub

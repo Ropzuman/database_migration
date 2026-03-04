@@ -3,10 +3,10 @@ Option Explicit
 
 '================================================================================
 ' Form: USysPipeToOther
-' Purpose: Link pipeline blocks to other equipment via PIPELINE attribute
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Tarkoitus: Link pipeline blocks to other equipment via PIPELINE attribute
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
-' Description:
+' Kuvaus:
 '   Interactive form to assign pipeline references to equipment blocks:
 '   - Connects to running AutoCAD instance
 '   - Filters blocks by type (via OpenArgs parameter)
@@ -14,7 +14,7 @@ Option Explicit
 '   - Pick pipeline from drawing or enter manually
 '   - Updates PIPELINE/PIPELINENO attribute in real-time
 '
-' Dependencies:
+' Riippuvuudet:
 '   - AutoCAD Application (COM automation)
 '   - Equipment blocks with PIPELINE or PIPELINENO attribute
 '
@@ -38,7 +38,7 @@ Dim i As Integer  ' Current block index
 
 '================================================================================
 ' Event: BClose_Click
-' Purpose: Close the form
+' Tarkoitus: Close the form
 '================================================================================
 Private Sub BClose_Click()
   DoCmd.Close acForm, "UsysPipeToOther"
@@ -46,7 +46,7 @@ End Sub
 
 '================================================================================
 ' Sub: OpenPipeline
-' Purpose: Pick pipeline or plate block from drawing and extract reference
+' Tarkoitus: Pick pipeline or plate block from drawing and extract reference
 '================================================================================
 Private Sub OpenPipeline()
   Dim Kohde As Object
@@ -61,14 +61,14 @@ Private Sub OpenPipeline()
   On Error Resume Next
   AppActivate oACAD.Caption, True
   If Err <> 0 Then
-    MsgBox "Cannot activate AutoCAD: " & Err.Description, vbExclamation
+    MsgBox "AutoCAD-ikkunaa ei voitu aktivoida: " & Err.Description, vbExclamation
     Err.Clear
     Exit Sub
   End If
   
   OK = False
   Do
-    oDOC.Utility.GetEntity Kohde, Piste, "Pick pipeline: "
+    oDOC.Utility.GetEntity Kohde, Piste, "Poimi putkilinja: "
     If Err <> 0 Then
       Err.Clear
       Exit Do
@@ -104,10 +104,10 @@ End Sub
 
 '================================================================================
 ' Function: AttribToPipeline
-' Purpose: Extract pipeline reference from block attributes (DEP+FSB+LINE)
-' Parameters:
+' Tarkoitus: Extract pipeline reference from block attributes (DEP+FSB+LINE)
+' Parametrit:
 '   Attrib - Array of block attributes
-' Returns: Concatenated pipeline reference string
+' Palautusarvo: Concatenated pipeline reference string
 '================================================================================
 Private Function AttribToPipeline(Attrib As Variant) As String
   Dim j As Integer
@@ -132,7 +132,7 @@ End Function
 
 '================================================================================
 ' Event: BFind_Click
-' Purpose: Find next equipment block with empty PIPELINE attribute
+' Tarkoitus: Find next equipment block with empty PIPELINE attribute
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -140,7 +140,7 @@ Private Sub BFind_Click()
   Do
     i = i + 1
     If i > Joukko.Count - 1 Then
-      If MsgBox("Last block!" & vbCrLf & "Start from first?", vbYesNo, "Find next empty") = vbYes Then
+      If MsgBox("Viimeinen blokki!" & vbCrLf & "Aloitetaanko alusta?", vbYesNo, "Etsi seuraava tyhjä") = vbYes Then
          i = 0
       Else
         Exit Do
@@ -152,24 +152,24 @@ Private Sub BFind_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error finding next empty block: " & Err.Description, vbExclamation
+  MsgBox "Virhe seuraavan tyhjän blokin etsimisessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: BNext_Click
-' Purpose: Navigate to next equipment block
+' Tarkoitus: Navigate to next equipment block
 '================================================================================
 Private Sub BNext_Click()
   On Error GoTo ErrorHandler
   NextBlock
   Exit Sub
 ErrorHandler:
-  MsgBox "Error navigating to next block: " & Err.Description, vbExclamation
+  MsgBox "Virhe seuraavaan blokkiin navigoitaessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: NextBlock
-' Purpose: Move to next block in selection set (wraps to first)
+' Tarkoitus: Move to next block in selection set (wraps to first)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -182,13 +182,13 @@ Private Sub NextBlock()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error in NextBlock: " & Err.Description, vbExclamation
+  MsgBox "Virhe NextBlock-rutiinissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: KirjoitaAtt
-' Purpose: Write text to attribute reference
-' Parameters:
+' Tarkoitus: Write text to attribute reference
+' Parametrit:
 '   Teksti - Text to write
 '   oAttrib - Attribute reference to update
 '================================================================================
@@ -203,12 +203,12 @@ Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeRef
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error writing attribute: " & Err.Description, vbExclamation
+  MsgBox "Virhe attribuutin kirjoittamisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: BPickPipeline_Click
-' Purpose: Pick pipeline reference from AutoCAD drawing
+' Tarkoitus: Pick pipeline reference from AutoCAD drawing
 '================================================================================
 Private Sub BPickPipeline_Click()
   On Error GoTo ErrorHandler
@@ -217,24 +217,24 @@ Private Sub BPickPipeline_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error picking pipeline: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjan poiminnassa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: BPrev_Click
-' Purpose: Navigate to previous equipment block
+' Tarkoitus: Navigate to previous equipment block
 '================================================================================
 Private Sub BPrev_Click()
   On Error GoTo ErrorHandler
   PrevBlock
   Exit Sub
 ErrorHandler:
-  MsgBox "Error navigating to previous block: " & Err.Description, vbExclamation
+  MsgBox "Virhe edelliseen blokkiin navigoitaessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: PrevBlock
-' Purpose: Move to previous block in selection set (wraps to last)
+' Tarkoitus: Move to previous block in selection set (wraps to last)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -247,12 +247,12 @@ Private Sub PrevBlock()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error in PrevBlock: " & Err.Description, vbExclamation
+  MsgBox "Virhe PrevBlock-rutiinissa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Event: Form_Close
-' Purpose: Clean up AutoCAD objects when form closes
+' Tarkoitus: Clean up AutoCAD objects when form closes
 '================================================================================
 Private Sub Form_Close()
   On Error Resume Next
@@ -272,7 +272,7 @@ End Sub
 
 '================================================================================
 ' Event: Form_Load
-' Purpose: Initialize form, connect to AutoCAD, filter equipment blocks
+' Tarkoitus: Initialize form, connect to AutoCAD, filter equipment blocks
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -311,7 +311,7 @@ Private Sub Form_Load()
        End If
        
        If Joukko.Count = 0 Then
-         MsgBox "No pipeline blocks found.", vbExclamation
+         MsgBox "Putkilinjojen blokkeja ei löytynyt.", vbExclamation
          Err.Raise vbObjectError + 1000
        Else
          AvaaBlokki
@@ -321,14 +321,14 @@ Private Sub Form_Load()
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Error loading form: " & Err.Description, vbExclamation
+  MsgBox "Virhe lomakkeen latauksessa: " & Err.Description, vbExclamation
   BClose_Click
 End Sub
 
 '================================================================================
 ' Sub: TeeJoukko
-' Purpose: Create or recreate a named selection set
-' Parameters:
+' Tarkoitus: Create or recreate a named selection set
+' Parametrit:
 '   Nimi - Name of selection set
 '   VJoukko - Selection set object to create
 '================================================================================
@@ -349,12 +349,12 @@ Private Sub TeeJoukko(Nimi As String, VJoukko As Object)  ' AcadSelectionSet - m
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Error creating selection set: " & Err.Description, vbExclamation
+  MsgBox "Virhe valintajoukon luomisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Sub: AvaaBlokki
-' Purpose: Display and highlight current equipment block, load PIPELINE attribute
+' Tarkoitus: Display and highlight current equipment block, load PIPELINE attribute
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -394,13 +394,13 @@ Private Sub AvaaBlokki()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error displaying block: " & Err.Description, vbExclamation
+  MsgBox "Virhe blokin näyttämisessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Function: Yhdista
-' Purpose: Connect to running AutoCAD instance
-' Returns: True if connection successful, False otherwise
+' Tarkoitus: Connect to running AutoCAD instance
+' Palautusarvo: True if connection successful, False otherwise
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
@@ -421,7 +421,7 @@ End Function
 
 '================================================================================
 ' Event: TPipeline_AfterUpdate
-' Purpose: Update PIPELINE attribute when text box value changes
+' Tarkoitus: Update PIPELINE attribute when text box value changes
 '================================================================================
 Private Sub TPipeline_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -430,5 +430,5 @@ Private Sub TPipeline_AfterUpdate()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Error updating PIPELINE: " & Err.Description, vbExclamation
+  MsgBox "Virhe PIPELINE-attribuutin päivityksessä: " & Err.Description, vbExclamation
 End Sub

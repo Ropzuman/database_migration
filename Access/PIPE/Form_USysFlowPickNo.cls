@@ -3,10 +3,10 @@ Option Explicit
 
 '================================================================================
 ' Form: USysFlowPickNo
-' Purpose: Flow block pipeline number picker for AutoCAD drawings
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Tarkoitus: Flow block pipeline number picker for AutoCAD drawings
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
-' Description:
+' Kuvaus:
 '   Interactive form to assign pipeline numbers to flow balance blocks:
 '   - Connects to running AutoCAD instance
 '   - Finds all flow blocks (PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA)
@@ -14,7 +14,7 @@ Option Explicit
 '   - User can pick pipeline from drawing or enter manually
 '   - Updates block PIPEREF/PIPELINENO/PIPE_LINE attribute
 '
-' Dependencies:
+' Riippuvuudet:
 '   - AutoCAD Application (COM automation)
 '   - Flow balance blocks with pipeline reference attributes
 '
@@ -37,7 +37,7 @@ Dim EiLinjaa As Boolean  ' Flag if pipeline not found during auto-search
 
 '--------------------------------------------------------------------------------
 ' Event: Form_Close
-' Purpose: Cleanup AutoCAD selection set when form closes
+' Tarkoitus: Cleanup AutoCAD selection set when form closes
 '--------------------------------------------------------------------------------
 Private Sub Form_Close()
 On Error Resume Next
@@ -50,15 +50,15 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Form_Load
-' Purpose: Initialize form - connect to AutoCAD and create flow block selection set
+' Tarkoitus: Initialize form - connect to AutoCAD and create flow block selection set
 '
-' Process:
+' Toiminta:
 '   1. Connect to running AutoCAD (Yhdista function)
 '   2. Delete any existing APUPICK selection set
 '   3. Create new selection set with flow block filter
 '   4. Display first block
 '
-' Notes:
+' Huom:
 '   - Closes form if AutoCAD not running
 '   - Closes form if no flow blocks found
 '   - Filter: PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA block types
@@ -101,22 +101,22 @@ AvaaBlokki
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error initializing form: " & Err.Description, vbCritical, "FlowPickNo"
+    MsgBox "Virhe lomakkeen alustuksessa: " & Err.Description, vbCritical, "FlowPickNo"
     DoCmd.Close acForm
 End Sub
 
 
 '--------------------------------------------------------------------------------
 ' Event: BAutohaku_Click
-' Purpose: Automatically find pipelines for all flow blocks
+' Tarkoitus: Automatically find pipelines for all flow blocks
 '
-' Process:
+' Toiminta:
 '   1. For each flow block in selection set
 '   2. Call EtsiLinja to auto-find pipeline near block
 '   3. Track if any pipelines not found
 '   4. Display summary message
 '
-' Notes:
+' Huom:
 '   - Iterates through all blocks automatically
 '   - Sets EiLinjaa flag if pipeline not found for any block
 '--------------------------------------------------------------------------------
@@ -136,19 +136,19 @@ End If
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error in auto-search: " & Err.Description, vbCritical, "Auto-haku"
+    MsgBox "Virhe automaattisessa haussa: " & Err.Description, vbCritical, "Auto-haku"
 End Sub
 '--------------------------------------------------------------------------------
 ' Event: BPoimi_Click
-' Purpose: Pick pipeline from AutoCAD drawing by clicking on block
+' Tarkoitus: Pick pipeline from AutoCAD drawing by clicking on block
 '
-' Process:
+' Toiminta:
 '   1. Activate AutoCAD window
 '   2. Prompt user to pick pipeline block
 '   3. Extract pipeline reference from block attributes
 '   4. Update current flow block's pipeline attribute
 '
-' Notes:
+' Huom:
 '   - Works with PIPELINE, PIPELINE_F, ARAPIPEL, BAHPIPEL, METSO_PIPE blocks
 '   - Falls back to POS.NO, CUSTPOS, SDPOS attributes for other blocks
 '   - Uses AttribToPipeline helper for standard pipeline blocks
@@ -196,22 +196,22 @@ ErrorHandler:
     On Error Resume Next
     AppActivate CurrentDb.Properties("AppTitle").Value, True
     On Error GoTo 0
-    MsgBox "Error picking pipeline: " & Err.Description, vbCritical, "BPoimi"
+    MsgBox "Virhe putkilinjan poiminnassa: " & Err.Description, vbCritical, "BPoimi"
 End Sub
 '--------------------------------------------------------------------------------
 ' Function: AttribToPipeline
-' Purpose: Extract pipeline reference from pipeline block attributes
+' Tarkoitus: Extract pipeline reference from pipeline block attributes
 '
-' Parameters:
+' Parametrit:
 '   Attrib - Array of block attributes from GetAttributes
 '
-' Returns: String - Formatted pipeline reference (DEP & FSB & LINE)
+' Palautusarvo: String - Formatted pipeline reference (DEP & FSB & LINE)
 '
-' Process:
+' Toiminta:
 '   1. Scan attributes for DEP/DEPA, FSB, LINE tags
 '   2. Concatenate values without delimiters
 '
-' Notes:
+' Huom:
 '   - Returns concatenated string (e.g., "AREA01L001")
 '   - Handles both DEP and DEPA attribute tags
 '--------------------------------------------------------------------------------
@@ -240,15 +240,15 @@ ErrorHandler:
 End Function
 '--------------------------------------------------------------------------------
 ' Event: BSeurT_Click
-' Purpose: Find next flow block with empty pipeline reference
+' Tarkoitus: Find next flow block with empty pipeline reference
 '
-' Process:
+' Toiminta:
 '   1. Unhighlight current block
 '   2. Move to next block
 '   3. Check if pipeline reference is empty
 '   4. Repeat until empty found or all blocks checked
 '
-' Notes:
+' Huom:
 '   - Skips blocks that already have pipeline reference
 '   - Stops at first empty block found
 '--------------------------------------------------------------------------------
@@ -270,13 +270,13 @@ Dim i As Integer
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error finding next empty: " & Err.Description, vbCritical, "Seur.Tyhjä"
+    MsgBox "Virhe seuraavan tyhjän etsimisessä: " & Err.Description, vbCritical, "Seur.Tyhjä"
 End Sub
 '--------------------------------------------------------------------------------
 ' Event: BEdellinen_Click
-' Purpose: Navigate to previous flow block
+' Tarkoitus: Navigate to previous flow block
 '
-' Notes:
+' Huom:
 '   - Wraps to last block if at beginning
 '--------------------------------------------------------------------------------
 Private Sub BEdellinen_Click()
@@ -291,14 +291,14 @@ On Error GoTo ErrorHandler
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error navigating to previous: " & Err.Description, vbCritical, "Edellinen"
+    MsgBox "Virhe edelliseen navigoitaessa: " & Err.Description, vbCritical, "Edellinen"
 End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: BSeuraava_Click
-' Purpose: Navigate to next flow block
+' Tarkoitus: Navigate to next flow block
 '
-' Notes:
+' Huom:
 '   - Wraps to first block if at end
 '--------------------------------------------------------------------------------
 Private Sub BSeuraava_Click()
@@ -313,12 +313,12 @@ On Error GoTo ErrorHandler
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error navigating to next: " & Err.Description, vbCritical, "Seuraava"
+    MsgBox "Virhe seuraavaan navigoitaessa: " & Err.Description, vbCritical, "Seuraava"
 End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: BSulje_Click
-' Purpose: Close form
+' Tarkoitus: Close form
 '--------------------------------------------------------------------------------
 Private Sub BSulje_Click()
   DoCmd.Close acForm, "USysFlowPickNo"
@@ -326,16 +326,16 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Sub: AvaaBlokki
-' Purpose: Display and zoom to current flow block in AutoCAD
+' Tarkoitus: Display and zoom to current flow block in AutoCAD
 '
-' Process:
+' Toiminta:
 '   1. Highlight current block in selection set
 '   2. Update form caption with block count
 '   3. Zoom to block location
 '   4. Find and set pipeline attribute reference
 '   5. Display current pipeline value in TRefNo
 '
-' Notes:
+' Huom:
 '   - Searches for PIPEREF, PIPELINENO, or PIPE_LINE attribute
 '   - Shows error if attribute not found
 '   - Updates form caption with "BlockName: X/Total"
@@ -381,21 +381,21 @@ TRefNo.Value = oAttrib.TextString
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error opening block: " & Err.Description, vbCritical, "AvaaBlokki"
+    MsgBox "Virhe blokin avaamisessa: " & Err.Description, vbCritical, "AvaaBlokki"
     DoCmd.Close acForm
 End Sub
 '--------------------------------------------------------------------------------
 ' Function: Yhdista
-' Purpose: Connect to running AutoCAD instance
+' Tarkoitus: Connect to running AutoCAD instance
 '
-' Returns: Boolean - True if connected, False if AutoCAD not running
+' Palautusarvo: Boolean - True if connected, False if AutoCAD not running
 '
-' Process:
+' Toiminta:
 '   1. Try GetObject to connect to running AutoCAD
 '   2. If successful, set oDOC to active document
 '   3. Return connection status
 '
-' Notes:
+' Huom:
 '   - Called from Form_Load
 '   - Sets module-level oACAD and oDOC variables
 '--------------------------------------------------------------------------------
@@ -414,16 +414,16 @@ On Error Resume Next
 End Function
 '--------------------------------------------------------------------------------
 ' Sub: EtsiLinja
-' Purpose: Automatically find pipeline near current flow block
+' Tarkoitus: Automatically find pipeline near current flow block
 '
-' Process:
+' Toiminta:
 '   1. Get current flow block insertion point
 '   2. Define search window (56 units right, 13 units up from block)
 '   3. Create selection set with pipeline block filter
 '   4. If pipeline found, extract reference and update flow block
 '   5. If not found, clear attribute and set EiLinjaa flag
 '
-' Notes:
+' Huom:
 '   - Searches for PIPELINE, BAHPIPEL, ARAPIPEL blocks
 '   - Uses crossing window selection
 '   - Deletes temporary selection set after use
@@ -482,14 +482,14 @@ ErrorHandler:
     If Not Poiminta Is Nothing Then Poiminta.Delete
     Set Poiminta = Nothing
     On Error GoTo 0
-    MsgBox "Error finding pipeline: " & Err.Description, vbCritical, "EtsiLinja"
+    MsgBox "Virhe putkilinjan etsimisessä: " & Err.Description, vbCritical, "EtsiLinja"
 End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: TRefNo_AfterUpdate
-' Purpose: Update AutoCAD block attribute when user edits pipeline reference
+' Tarkoitus: Update AutoCAD block attribute when user edits pipeline reference
 '
-' Notes:
+' Huom:
 '   - Uses Nz to handle null values
 '--------------------------------------------------------------------------------
 Private Sub TRefNo_AfterUpdate()

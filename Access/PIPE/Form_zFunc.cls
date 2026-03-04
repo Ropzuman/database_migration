@@ -3,10 +3,10 @@ Option Explicit
 
 '================================================================================
 ' Form: zFunc
-' Purpose: Utility functions for zDetails table management and batch operations
-' Updated: 2025-11-12 - Added VBA7/64-bit support
+' Tarkoitus: Utility functions for zDetails table management and batch operations
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki lisätty
 '
-' Description:
+' Kuvaus:
 '   Collection of utility functions for:
 '   - zDetails table maintenance (adding, updating, clearing records)
 '   - Batch query execution for instrument loops
@@ -14,7 +14,7 @@ Option Explicit
 '   - Block placement numbering
 '   - Finding next record functionality
 '
-' Dependencies:
+' Riippuvuudet:
 '   - zDetails table (instrument details)
 '   - Function_zdetails* queries
 '   - InstrumentIndex table
@@ -49,15 +49,15 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Command11_Click
-' Purpose: Convert empty strings to Null across selected table
+' Tarkoitus: Convert empty strings to Null across selected table
 '
-' Process:
+' Toiminta:
 '   1. Open selected table from KaikkiTaulukot combo
 '   2. Iterate through all records
 '   3. For each field, if value is empty string, set to Null
 '   4. Update record with transaction support
 '
-' Notes:
+' Huom:
 '   - Improves database normalization
 '   - Prevents empty strings in database
 '   - Can be time-consuming for large tables
@@ -136,19 +136,19 @@ ErrorHandler:
     If Not DB Is Nothing Then DB.Close
     Set DB = Nothing
     On Error GoTo 0
-    MsgBox "Error converting empty strings: " & Err.Description, vbCritical, "Error"
+    MsgBox "Virhe tyhjiä merkkijonoja muunnettaessa: " & Err.Description, vbCritical, "Virhe"
 End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Command3_Click
-' Purpose: Assign block placement numbers to zDetails records
+' Tarkoitus: Assign block placement numbers to zDetails records
 '
-' Process:
+' Toiminta:
 '   1. Open sorted recordset (by Loop, then AllDevTag)
 '   2. For each loop group, assign sequential block placement numbers (14, 15, 16...)
 '   3. Reset counter for each new loop
 '
-' Notes:
+' Huom:
 '   - Starts block placement at 14
 '   - Groups by Loop identifier ([AreaCode] & [Loopno] & [pageno])
 '   - Used for AutoCAD block positioning
@@ -189,7 +189,7 @@ On Error GoTo Err_Command3_Click
     Exit Sub
 
 Err_Command3_Click:
-    MsgBox "Error assigning block placements: " & Err.Description, vbCritical, "Error"
+    MsgBox "Virhe blokkisijoitusten määrittämisessä: " & Err.Description, vbCritical, "Virhe"
     On Error Resume Next
     If Not tbl Is Nothing Then tbl.Close
     Set tbl = Nothing
@@ -206,15 +206,15 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Command5_Click
-' Purpose: Delete zDetails records that no longer exist in InstrumentIndex
+' Tarkoitus: Delete zDetails records that no longer exist in InstrumentIndex
 '
-' Process:
+' Toiminta:
 '   1. Find zDetails records with no matching record in Function_zdetails01
 '   2. For each orphaned record, delete it from zDetails
 '   3. Use hourglass cursor to indicate progress
 '   4. Transaction support for data integrity
 '
-' Notes:
+' Huom:
 '   - Cleans up obsolete instrument detail records
 '   - Uses LEFT JOIN to find unmatched records
 '   - L = Chr(34) for quote character in SQL
@@ -304,7 +304,7 @@ ErrorHandler:
     Set tbl2 = Nothing
     Set DB = Nothing
     On Error GoTo 0
-    MsgBox "Error deleting orphaned records: " & Err.Description, vbCritical, "Error"
+    MsgBox "Virhe vanhentuneita tietueita poistettaessa: " & Err.Description, vbCritical, "Virhe"
 End Sub
 
 Private Sub Command6_Click()
@@ -332,15 +332,15 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Form_Load
-' Purpose: Populate KaikkiTaulukot combo box with user table names
+' Tarkoitus: Populate KaikkiTaulukot combo box with user table names
 '
-' Process:
+' Toiminta:
 '   1. Iterate through all TableDefs in database
 '   2. Exclude system tables (USys*, MSys*, Dev*) and old tables
 '   3. Build semicolon-delimited list for combo box
 '   4. Set default selection to first table
 '
-' Notes:
+' Huom:
 '   - Filters out: USys*, MSys*, Dev*, tables containing "old"
 '   - Populates KaikkiTaulukot combo box RowSource
 '--------------------------------------------------------------------------------
@@ -368,7 +368,7 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error loading form: " & Err.Description, vbCritical, "Error"
+    MsgBox "Virhe lomakkeen latauksessa: " & Err.Description, vbCritical, "Virhe"
     On Error Resume Next
     Set DB = Nothing
     On Error GoTo 0

@@ -3,17 +3,17 @@ Option Explicit
 
 '================================================================================
 ' Form: frmOpenPIPELINE
-' Purpose: Pipeline segment selector for multi-segment pipelines
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Tarkoitus: Pipeline segment selector for multi-segment pipelines
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki lisätty
 '
-' Description:
+' Kuvaus:
 '   When a pipeline spans multiple drawings, this form allows selection:
 '   - Displays list of pipeline segments from PIPELINEDATA
 '   - Shows path, drawing, area, line, FROM, TO for each segment
 '   - Opens selected drawing and zooms to pipeline block
 '   - Auto-opens if only 2 segments (one is header row)
 '
-' Dependencies:
+' Riippuvuudet:
 '   - PIPELINEDATA table (imported pipeline data)
 '   - AvaaKuvasta function from Koodit module
 '
@@ -28,7 +28,7 @@ Option Explicit
 
 '--------------------------------------------------------------------------------
 ' Event: Command3_Click
-' Purpose: Open selected pipeline segment
+' Tarkoitus: Open selected pipeline segment
 '--------------------------------------------------------------------------------
 Private Sub Command3_Click()
   AvaaValittu False
@@ -36,7 +36,7 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Command4_Click
-' Purpose: Close form
+' Tarkoitus: Close form
 '--------------------------------------------------------------------------------
 Private Sub Command4_Click()
   DoCmd.Close
@@ -44,16 +44,16 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Event: Form_Load
-' Purpose: Initialize form and populate pipeline segment list
+' Tarkoitus: Initialize form and populate pipeline segment list
 '
-' Process:
+' Toiminta:
 '   1. Parse OpenArgs for AreaCode and LineNo
 '   2. Build SQL to query PIPELINEDATA for matching segments
 '   3. Populate Lista listbox with results
 '   4. If only 2 rows (header + 1 segment), auto-open and close
 '   5. If no data found, show error and close
 '
-' Notes:
+' Huom:
 '   - Must be opened via OpenArgs with "Area,LineNo" format
 '   - Auto-selects first segment (row 1)
 '   - Shows error if opened incorrectly
@@ -102,23 +102,23 @@ Dim Parametrit As Variant
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error loading form: " & Err.Description, vbCritical, "Virhe"
+    MsgBox "Virhe lomakkeen latauksessa: " & Err.Description, vbCritical, "Virhe"
     DoCmd.Close acForm, "frmOpenPIPELINE", acSaveNo
 End Sub
 '--------------------------------------------------------------------------------
 ' Sub: AvaaValittu
-' Purpose: Open selected pipeline segment in AutoCAD
+' Tarkoitus: Open selected pipeline segment in AutoCAD
 '
-' Parameters:
+' Parametrit:
 '   Sulje - Boolean, True = close form after opening
 '
-' Process:
+' Toiminta:
 '   1. Extract selected row data from Lista listbox
 '   2. Get PATH, ImpFileID (drawing), Handles, identification info
 '   3. Call AvaaKuvasta to open drawing and zoom to block
 '   4. Optionally close form
 '
-' Notes:
+' Huom:
 '   - Lista.ListIndex is 0-based, so add 1 to skip header
 '   - Column indices: 0=PATH, 1=ImpFileID, 2=Handles, 3=DEP, 5=LINENO
 '--------------------------------------------------------------------------------
@@ -142,5 +142,5 @@ Dim Info As String
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error opening pipeline: " & Err.Description, vbCritical, "Virhe"
+    MsgBox "Virhe putkilinjan avaamisessa: " & Err.Description, vbCritical, "Virhe"
 End Sub

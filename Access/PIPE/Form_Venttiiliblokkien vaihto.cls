@@ -3,10 +3,10 @@ Option Explicit
 
 '================================================================================
 ' Form: Venttiiliblokkien vaihto
-' Purpose: Replace manual valve blocks in P&I drawings with Araucon standard blocks
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Tarkoitus: Replace manual valve blocks in P&I drawings with Araucon standard blocks
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
 '
-' Description:
+' Kuvaus:
 '   Batch replaces manual valve blocks in AutoCAD P&I drawings:
 '   - Reads valve records from MANUALVALVES table
 '   - Opens each .DWG file containing valves
@@ -14,7 +14,7 @@ Option Explicit
 '   - Preserves attributes, layer, rotation (handles mirroring)
 '   - Updates database with new Handle and block name
 '
-' Dependencies:
+' Riippuvuudet:
 '   - AutoCAD Application (COM automation)
 '   - DAO.Recordset for database operations
 '   - MANUALVALVES table with DwgFileID, DwgHandle, Code fields
@@ -38,7 +38,7 @@ Option Explicit
 
 '================================================================================
 ' Event: Command0_Click
-' Purpose: Execute batch valve block replacement
+' Tarkoitus: Execute batch valve block replacement
 '================================================================================
 Private Sub Command0_Click()
   Dim Taulukko As DAO.Recordset
@@ -181,7 +181,7 @@ Private Sub Command0_Click()
   GoTo Loppu
   
 ErrorHandler:
-  MsgBox "Error replacing valves: " & Err.Description, vbExclamation
+  MsgBox "Virhe venttiilien vaihdossa: " & Err.Description, vbExclamation
   
 Loppu:
   ' Cleanup
