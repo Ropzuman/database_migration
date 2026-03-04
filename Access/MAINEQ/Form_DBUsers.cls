@@ -1,6 +1,7 @@
 Option Compare Database
+Option Explicit
 
-' Declare a record type to break down the user info
+' Käyttäjätietojen purkamiseen käytettytävä tietue
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
@@ -8,9 +9,9 @@ Private Type UserRec
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Viesti = InputBox("Lähetä viesti käyttäjälle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "Lähetä viesti")
   If Viesti <> "" Then
-    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
 
@@ -54,24 +55,18 @@ On Error GoTo Err_WhosOn
    Dim SPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
+   Dim rUser As UserRec    ' Käyttäjätietue (määritelty yläpuolella)
+   Dim dbCurrent As DAO.Database
 
-' Get Path of current database.  Should substitute this code
-' for an attached table path in a multi-user environment.
-
-   ' Updated 2025-11-11: Changed from CurrentDB to CurrentDb (standard capitalization)
-   ' Removed dbCurrent.Close - CurrentDb returns a new instance each time,
-   ' closing it causes Error 0 crash. Object auto-closes when out of scope.
+' Haetaan nykyisen tietokannan polku
    Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
-   ' REMOVED: dbCurrent.Close  ' This line causes Error 0 - CurrentDb should not be closed
 
-' Iterate thru dbCurrent.LDB file for login names.
+' Muodostetaan kirjautumistiedostopolku (.laccdb)
 
    SPath = Left(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-' Test for valid file, else Error
+' Tarkistetaan tiedoston olemassaolo
 
    X = Dir(SPath)
    iStart = 1
@@ -99,7 +94,7 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 'increment to next record offset
+      iStart = iStart + 64 ' Siirrytään seuraavaan tietueeseen (64 tavua / tietue)
    Loop
    Close iLDBFile
    WhosOn = sLogins
@@ -109,9 +104,9 @@ Exit_WhosOn:
 
 Err_WhosOn:
    If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LDB File"
+      MsgBox "Tiedostoa ei löytynyt.", 48, "Ei laccdb-tiedostoa"
    Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
+      MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description
       Close iLDBFile
    End If
    Resume Exit_WhosOn

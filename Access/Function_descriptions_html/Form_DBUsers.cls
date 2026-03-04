@@ -2,57 +2,59 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: DBUsers
-' Purpose: Display currently logged-in database users
-' Updated: 2025-11-13 - Added VBA7/64-bit support and optimization
+' Lomake: DBUsers
+' Tarkoitus: Näyttää tietokantaan tällä hetkellä kirjautuneet käyttäjät
+' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
+'             2026-03-03 — Korjattu dbCurrent.Close-virhe; poistettu orvokoodi
 '
-' Description:
-'   Reads the .LACCDB lock file to show who is currently using the database.
-'   Displays station name and login name for each active connection.
+' Kuvaus:
+'   Lukee .LACCDB-lukitustiedoston, jotta nähdään ketkä käyttävät tietokantaa.
+'   Näyttää aseman nimen ja kirjautuneen käyttäjän jokaisesta aktiivisesta
+'   yhteydestä.
 '
-' Dependencies:
-'   - .LACCDB lock file (Access 2007+)
-'   - LoggedOn control (list/combo box)
+' Riippuvuudet:
+'   - .LACCDB-lukitustiedosto (Access 2007+)
+'   - LoggedOn-ohjain (lista-/yhdistelmäruutu)
 '
-' Lock File Format:
-'   - 64-byte records
-'   - Bytes 1-32: Machine/station name (null-terminated)
-'   - Bytes 33-64: User login name (null-terminated)
+' Lukitustiedoston rakenne:
+'   - 64 bitin tietueet
+'   - Tavut 1–32: Tietokoneen nimi (null-päätetty merkkijono)
+'   - Tavut 33–64: Käyttäjän kirjautumisnimi (null-päätetty merkkijono)
 '================================================================================
 
-' User record structure for reading lock file
+' Käyttäjätietue lukitustiedoston lukemiseen
 Private Type UserRec
-    bMach(1 To 32) As Byte  ' Machine name (1st 32 bytes)
-    bUser(1 To 32) As Byte  ' User name (2nd 32 bytes)
+    bMach(1 To 32) As Byte  ' Tietokoneen nimi (ensimmäiset 32 tavua)
+    bUser(1 To 32) As Byte  ' Käyttäjänimi (jälkimmäiset 32 tavua)
 End Type
 
 '================================================================================
-' Event: Form_Open
-' Purpose: Initialize form with current user list
+' Tapahtuma: Form_Open
+' Tarkoitus: Alustaa lomake nykyisellä käyttäjälistalla lomakkeen avautuessa
 '================================================================================
 Private Sub Form_Open(Cancel As Integer)
     On Error GoTo ErrorHandler
     Me.LoggedOn.RowSource = WhosOn()
     Exit Sub
 ErrorHandler:
-    MsgBox "Error loading user list: " & Err.Description, vbExclamation
+    MsgBox "Virhe käyttäjälistan latauksessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Event: OKBtn_Click
-' Purpose: Close the form
+' Tapahtuma: OKBtn_Click
+' Tarkoitus: Sulkee lomakkeen
 '================================================================================
 Private Sub OKBtn_Click()
     On Error GoTo ErrorHandler
     DoCmd.Close
     Exit Sub
 ErrorHandler:
-    ' Silent error - form likely already closing
+    ' Hiljainen virhe — lomake suljetaan jo todennäköisesti muualta
 End Sub
 
 '================================================================================
-' Event: UpdateBtn_Click
-' Purpose: Refresh the user list
+' Tapahtuma: UpdateBtn_Click
+' Tarkoitus: Päivittää käyttäjälistan
 '================================================================================
 Private Sub UpdateBtn_Click()
     On Error GoTo ErrorHandler
@@ -60,25 +62,24 @@ Private Sub UpdateBtn_Click()
     Me.Requery
     Exit Sub
 ErrorHandler:
-    MsgBox "Error updating user list: " & Err.Description, vbExclamation
+    MsgBox "Virhe käyttäjälistan päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
-' Function: WhosOn
-' Purpose: Read lock file and build list of logged-in users
-' Returns: Semicolon-separated list of "Machine;User" pairs for RowSource
+' Funktio: WhosOn
+' Tarkoitus: Lukee lukitustiedoston ja koostaa kirjautuneiden käyttäjien listan
+' Palauttaa: Puolipisteellä eroteltu "Kone;Käyttäjä"-lista (RowSource-arvo)
 '
-' Description:
-'   Opens the .LACCDB lock file and reads all 64-byte user records.
-'   Extracts machine name and user name from each record, building
-'   a value list suitable for a list box RowSource property.
+' Kuvaus:
+'   Avaa .LACCDB-lukitustiedoston ja lukee kaikki 64 tavun käyttäjätietueet.
+'   Poimii tietokoneen nimen ja käyttäjänimen kustakin tietueesta sekä
+'   rakentaa arvoluettelon, joka sopii listalaatikon RowSource-ominaisuudeksi.
 '
-' Lock File Location:
-'   Same directory as database, same name but .LACCDB extension
+' Tiedoston sijainti:
+'   Sama hakemisto kuin tietokanta, sama nimi mutta .LACCDB-pääte
 '================================================================================
 Private Function WhosOn() As String
     Dim iLDBFile As Integer
-    Dim iLOF As Integer
     Dim i As Integer
     Dim SPath As String
     Dim X As String
@@ -86,36 +87,31 @@ Private Function WhosOn() As String
     Dim sMach As String
     Dim sUser As String
     Dim rUser As UserRec
-    Dim dbCurrent As DAO.Database
 
     On Error GoTo Err_WhosOn
 
-    ' Get current database path
-    Set dbCurrent = DBEngine.Workspaces(0).Databases(0)
-    SPath = dbCurrent.Name
-    dbCurrent.Close
-    Set dbCurrent = Nothing
+    ' Haetaan tietokannan polku — DBEngine-viittausta EI suljeta (.Close kaataisi kannan)
+    SPath = DBEngine.Workspaces(0).Databases(0).Name
 
-    ' Build lock file path (.LACCDB extension)
+    ' Muodostetaan lukitustiedoston polku (.LACCDB-pääte)
     SPath = Left$(SPath, InStr(1, SPath, ".")) & "LACCDB"
 
-    ' Verify lock file exists
+    ' Tarkistetaan, onko lukitustiedosto olemassa
     X = Dir$(SPath)
     If X = "" Then
-        WhosOn = "No users currently logged in"
+        WhosOn = "Ei aktiivisia käyttäjiä"
         Exit Function
     End If
 
-    ' Open lock file for binary reading
+    ' Avataan lukitustiedosto binäärilukua varten
     iLDBFile = FreeFile
     Open SPath For Binary Access Read Shared As iLDBFile
-    iLOF = LOF(iLDBFile)
 
-    ' Read all user records
+    ' Luetaan kaikki käyttäjätietueet
     Do While Not EOF(iLDBFile)
         Get iLDBFile, , rUser
-        
-        ' Extract machine name (null-terminated string)
+
+        ' Poimitaan tietokoneen nimi (null-päätetty merkkijono)
         With rUser
             i = 1
             sMach = ""
@@ -124,7 +120,7 @@ Private Function WhosOn() As String
                 i = i + 1
             Wend
 
-            ' Extract user name (null-terminated string)
+            ' Poimitaan käyttäjänimi (null-päätetty merkkijono)
             i = 1
             sUser = ""
             While .bUser(i) <> 0 And i <= 32
@@ -133,7 +129,7 @@ Private Function WhosOn() As String
             Wend
         End With
 
-        ' Add to results (semicolon-separated for RowSource)
+        ' Lisätään tuloksiin (puolipisteellä eroteltu RowSource-arvo)
         If sLogins <> "" Then sLogins = sLogins & ";"
         sLogins = sLogins & sMach & ";" & sUser
     Loop
@@ -145,36 +141,6 @@ Private Function WhosOn() As String
 Err_WhosOn:
     On Error Resume Next
     Close iLDBFile
-    WhosOn = "Error reading user list: " & Err.Description
-End Function
-         Wend
-         i = 1
-         sUser = ""
-         While .bUser(i) <> 0
-            sUser = sUser & Chr(.bUser(i))
-            i = i + 1
-         Wend
-      End With
-      sLogStr = sMach & " -- " & sUser
-      If InStr(sLogins, sLogStr) = 0 Then
-         sLogins = sLogins & sLogStr & ";"
-      End If
-      iStart = iStart + 64 'increment to next record offset
-   Loop
-   Close iLDBFile
-   WhosOn = sLogins
-
-Exit_WhosOn:
-   Exit Function
-
-Err_WhosOn:
-   If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LDB File"
-   Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
-      Close iLDBFile
-   End If
-   Resume Exit_WhosOn
-
+    WhosOn = "Virhe käyttäjälistan luvussa: " & Err.Description
 End Function
 

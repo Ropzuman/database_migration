@@ -12,19 +12,19 @@ Dim iPoint(2) As Double
 Dim LoppuPiste(2) As Double
 Dim Rotation As Double
 Dim BName As String
-If Tyyppi.VALUE = 1 Then 'Nuoli
+If Me.Tyyppi.Value = 1 Then 'Nuoli
   BName = BlockPath & "ARROW.DWG"
   Lyhennys = 7.5
-ElseIf Tyyppi.VALUE = 2 Then 'Nuoli ja Not merkki
+ElseIf Me.Tyyppi.Value = 2 Then 'Nuoli ja Not merkki
   BName = BlockPath & "NOTARROW.DWG"
   Lyhennys = 7.5
 Else 'Piste
   BName = BlockPath & "POINT.DWG"
   Lyhennys = 0
 End If
-If Sijainti.VALUE = 1 Then
+If Me.Sijainti.Value = 1 Then
   'Ei piirretä viivaa
-ElseIf Sijainti.VALUE = 2 Then 'Piirretään nuoli alkuun
+ElseIf Me.Sijainti.Value = 2 Then 'Piirretään nuoli alkuun
   With EkaViiva
     iPoint(0) = .StartPoint(0)
     iPoint(1) = .StartPoint(1)
@@ -71,12 +71,12 @@ If Valmis = False Then
 '      Exit For
 '    End If
 '  Next i
-  iPoint = oDOC.Utility.GetPoint(, "Set start point")
+  iPoint = oDOC.Utility.GetPoint(, "Määritä aloituspiste")
   If Err = 0 Then
     sPoint(0) = iPoint(0)
     sPoint(1) = iPoint(1)
     Do
-      iPoint = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
+      iPoint = oDOC.Utility.GetPoint(sPoint, "Määritä lopetuspiste tai lopeta")
       If Err <> 0 Then
         If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yhtäkään viiva oli piirretty
           DoCmd.Close acForm
