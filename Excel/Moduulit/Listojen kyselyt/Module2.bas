@@ -143,16 +143,19 @@ Dim Row As Long
 Dim Column As Long
 Dim r As Long
 Dim ws As Worksheet
+Dim cmt As Comment          ' For Each -iteraattori kommenttikokoelmalle (nopeampi kuin indeksiviittaus)
+Dim revParts() As String    ' Tilapäistaulukko Split()-rajojen tarkistukseen
 Dim processedRevId As Boolean, processedRevDate As Boolean
 Dim processedDesigner As Boolean, processedChecker As Boolean
 Dim processedApprover As Boolean, processedDesc As Boolean
 
   Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Käsitellään sheet: " & SheetName
 
-  On Error GoTo ErrHandler
-  
+  ' Korjattu: Sheets()-kutsu ei palauta Nothing vaan nostaa Error 9 jos sheettiä ei löydy.
+  ' On Error Resume Next ennen Set-lausetta mahdollistaa oikean Nothing-tarkistuksen.
+  On Error Resume Next
   Set ws = Sheets(SheetName)
-  
+  On Error GoTo ErrHandler
   If ws Is Nothing Then
     Debug.Print "  VAROITUS: Sheet '" & SheetName & "' puuttuu!"
     Exit Sub
@@ -173,50 +176,51 @@ Dim processedApprover As Boolean, processedDesc As Boolean
   processedDesc = False
   
   With ws
-    For i = 1 To .Comments.Count 'Käydään läpi kaikki kommentit
-        Select Case LCase(.Comments(i).Text) ' Muutetaan kommenttiteksti pieniksi kirjaimiksi
+    ' For Each on nopeampi kuin indeksipohjainen .Comments(i) — COM-kokoelman indeksointi on O(n)
+    For Each cmt In .Comments 'Käydään läpi kaikki kommentit
+        Select Case LCase(cmt.Text) ' Muutetaan kommenttiteksti pieniksi kirjaimiksi
         Case "unit"
-          .Comments(i).Parent.Value = "Metso Paper - " & DIMunit
+          cmt.Parent.Value = "Metso Paper - " & DIMunit
         Case "project"
-          .Comments(i).Parent.Value = DIProject
+          cmt.Parent.Value = DIProject
         Case "manager"
-          .Comments(i).Parent.Value = DIManager
+          cmt.Parent.Value = DIManager
         Case "contractno"
-          .Comments(i).Parent.Value = DIContract
+          cmt.Parent.Value = DIContract
         Case "projname"
-          .Comments(i).Parent.Value = DIProjName
+          cmt.Parent.Value = DIProjName
         Case "projno"
-          .Comments(i).Parent.Value = DIProjNo
+          cmt.Parent.Value = DIProjNo
         Case "date"
-          .Comments(i).Parent.Value = DIDate
+          cmt.Parent.Value = DIDate
         Case "status"
-          .Comments(i).Parent.Value = DIStatus
+          cmt.Parent.Value = DIStatus
         Case "mill"
-          .Comments(i).Parent.Value = DIMill
+          cmt.Parent.Value = DIMill
         Case "departname"
-          .Comments(i).Parent.Value = DIDepartName
+          cmt.Parent.Value = DIDepartName
         Case "customer"
-          .Comments(i).Parent.Value = DICustomer
+          cmt.Parent.Value = DICustomer
         Case "docname"
-          .Comments(i).Parent.Value = DIDocName
+          cmt.Parent.Value = DIDocName
         Case "docname1"
-          .Comments(i).Parent.Value = DIDocName1
+          cmt.Parent.Value = DIDocName1
         Case "docname2"
-          .Comments(i).Parent.Value = DIDocName2
+          cmt.Parent.Value = DIDocName2
         Case "docname3"          
-          .Comments(i).Parent.Value = DIDocName3
+          cmt.Parent.Value = DIDocName3
         Case "metsodocno"
-          .Comments(i).Parent.Value = DIMetsoDocNo
+          cmt.Parent.Value = DIMetsoDocNo
         Case "rev"
-          .Comments(i).Parent.Value = DIRev
+          cmt.Parent.Value = DIRev
         Case "revid"
           If SheetName <> "Info" Then
             If Not processedRevId Then
               On Error Resume Next
               ' Käsitellään vain jos DIRevArr:ssa on dataa
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                  If (DIRevArr(r) <> "") Then
                    .Cells(Row, Column).Value = Split(DIRevArr(r), " ")(0)
@@ -228,15 +232,15 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevId = True
             End If
           Else
-            .Comments(i).Parent.Value = "'" & DIRevID
+            cmt.Parent.Value = "'" & DIRevID
           End If
         Case "revdate"
           If SheetName <> "Info" Then
             If Not processedRevDate Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
                     .Cells(Row, Column).Value = Mid(DIRevArr(r), InStr(DIRevArr(r), " ") + 1, InStr(DIRevArr(r), "/") - 1 - InStr(DIRevArr(r), " "))
@@ -248,19 +252,21 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevDate = True
             End If
           Else
-            .Comments(i).Parent.Value = DIRevDate
+            cmt.Parent.Value = DIRevDate
           End If
         Case "designer"
           If SheetName <> "Info" Then
             If Not processedDesigner Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(1)
-                   Row = Row + 1
+                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
+                    revParts = Split(DIRevArr(r), "/")
+                    If UBound(revParts) >= 1 Then .Cells(Row, Column).Value = revParts(1)
+                    Row = Row + 1
                   End If
                 Next r
               End If
@@ -273,12 +279,14 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             If Not processedChecker Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(2)
-                   Row = Row + 1
+                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
+                    revParts = Split(DIRevArr(r), "/")
+                    If UBound(revParts) >= 2 Then .Cells(Row, Column).Value = revParts(2)
+                    Row = Row + 1
                   End If
                 Next r
               End If
@@ -291,12 +299,14 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             If Not processedApprover Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(3)
-                   Row = Row + 1
+                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
+                    revParts = Split(DIRevArr(r), "/")
+                    If UBound(revParts) >= 3 Then .Cells(Row, Column).Value = revParts(3)
+                    Row = Row + 1
                   End If
                 Next r
               End If
@@ -309,12 +319,14 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             If Not processedDesc Then
               On Error Resume Next
               If IsArray(DIRevArr) And UBound(DIRevArr) >= LBound(DIRevArr) Then
-                Row = .Comments(i).Parent.Row
-                Column = .Comments(i).Parent.Column
+                Row = cmt.Parent.Row
+                Column = cmt.Parent.Column
                 For r = UBound(DIRevArr) To LBound(DIRevArr) Step -1
                   If (DIRevArr(r) <> "") Then
-                   .Cells(Row, Column).Value = Split(DIRevArr(r), "/")(4)
-                   Row = Row + 1
+                    ' Rajatarkistus: Split() kaatuu indeksin ulkopuolella ilman OERN-suojausta
+                    revParts = Split(DIRevArr(r), "/")
+                    If UBound(revParts) >= 4 Then .Cells(Row, Column).Value = revParts(4)
+                    Row = Row + 1
                   End If
                 Next r
               End If
@@ -323,7 +335,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
             End If
           End If
         End Select
-      Next i
+      Next cmt
   End With
   
   Debug.Print Format(Now, "hh:mm:ss") & " [VaihdaInfo] Valmis"
@@ -618,11 +630,13 @@ Dim formulaCells As Range
   If Not formulaCells Is Nothing Then
     Application.StatusBar = "Asetetaan kommentit LINKING-sheettiin (" & formulaCells.Cells.Count & ")"
     Debug.Print "  Käsitellään " & formulaCells.Cells.Count & " kaavasolua"
-    For Each Solu in formulaCells.Cells
-      On Error Resume Next
+    ' OERN asetetaan kerran silmukan ulkopuolella — ei per-iteraatio overhead
+    ' (AddComment epäonnistuu jos kommentti jo on olemassa; tämä on odotettu tilanne)
+    On Error Resume Next
+    For Each Solu In formulaCells.Cells
       Solu.AddComment CStr(Solu.Value)
-      On Error GoTo 0
     Next
+    On Error GoTo 0
   End If
   
   Application.DisplayCommentIndicator = xlCommentIndicatorOnly

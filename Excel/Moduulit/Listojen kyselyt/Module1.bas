@@ -272,11 +272,18 @@ Dim fld As Object        ' ADODB.Field
   
   If Err.Number <> 0 Then
     Err.Clear
+    ' Nollataan yhteysobjekti ennen uutta yritystä — osittain avattu ADODB.Connection
+    ' voi jäädä virhetilaan ja uusi .Open sama objektille aiheuttaa virheen 3709.
+    Set conn = Nothing
+    Set conn = CreateObject("ADODB.Connection")
     Provider = "Microsoft.ACE.OLEDB.15.0"
     conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
     conn.Open
     If Err.Number <> 0 Then
       Err.Clear
+      ' Nollataan jälleen kolmatta yritystä varten
+      Set conn = Nothing
+      Set conn = CreateObject("ADODB.Connection")
       Provider = "Microsoft.ACE.OLEDB.12.0"
       conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
       conn.Open
@@ -398,6 +405,8 @@ Sub GenPrintout()
   Dim perfStart As Double, perfTotal As Double
   Dim perfCopy As Double, perfLink As Double, perfShade As Double
   Dim perfIterations As Long
+  ' Siirretty loopista: Dim-lauseet kuuluvat aliohjelman alkuun (VBA nostaa ne kääntöaikana)
+  Dim tCopy As Double, tShade As Double, tLink As Double
   perfStart = Timer
   perfCopy = 0
   perfLink = 0
@@ -470,8 +479,10 @@ Sub GenPrintout()
   Application.StatusBar = "Luodaan uusi työkirja..."
   
   ' Luodaan uusi työkirja kopioimalla Info-sheet
+  ' Korjattu: ActiveWorkbook voi pettää jos lisäosa aktivoi toisen työkirjan Copy-operaation jälkeen.
+  ' Workbooks(Workbooks.Count) viittaa aina juuri lisättyyn työkirjaan turvallisesti.
   srcWB.Sheets("Info").Copy
-  Set destWB = ActiveWorkbook
+  Set destWB = Workbooks(Workbooks.Count)
   destWB.Sheets(1).Cells.ClearComments
   
   ' Kopioidaan TEMPLATE, Legend ja Revisions uuteen työkirjaan
@@ -560,12 +571,12 @@ Sub GenPrintout()
     
     ' OPTIMOINTI: Kopioidaan lähdetyökirjasta
     ' (Huom: Ei voi täysin optimoida ilman array-lähestymistapaa koska tarvitaan muotoilua)
-    Dim tCopy As Double: tCopy = Timer
+    tCopy = Timer
     templateRange.Copy Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
     perfCopy = perfCopy + (Timer - tCopy)
     
     ' Lisätään vuorottelevatvarjostukset lohkoittain
-    Dim tShade As Double: tShade = Timer
+    tShade = Timer
     If ((i - 2) \ RMAX) Mod 2 = 1 Then
       With destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + Riveja, Sarakkeita)).Interior
         .ColorIndex = 19
@@ -576,7 +587,7 @@ Sub GenPrintout()
     perfShade = perfShade + (Timer - tShade)
     
     ' Kartoitetaan arvot LINKINGistä template-alueelle kommenttimerkkien kautta
-    Dim tLink As Double: tLink = Timer
+    tLink = Timer
     VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta
     perfLink = perfLink + (Timer - tLink)
     
@@ -841,8 +852,10 @@ Dim wsErrors As Worksheet
           If RMAX > 1 Then Virhe = True
           RMAX = 1
         ElseIf Left(Arvo, 1) = "£" Then
-          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 4, 1)) Then Virhe = True
-          RMAX = CInt(Mid(Arvo, 4, 1))
+          ' Korjattu: käytetään Mid(Arvo, 2, 1) joka lukee rivinumeron £-merkin jälkeen
+          ' (Mid(Arvo, 4, 1) luki välilyönnin "£1: "-muodossa ja antoi CInt(" ")=0)
+          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 2, 1)) Then Virhe = True
+          RMAX = CInt(Mid(Arvo, 2, 1))
         End If
       End If
     Next j
