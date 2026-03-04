@@ -66,8 +66,8 @@ try {
 
     # --- 3. Skannaa komponentit automaattisesti ---
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [KOMPONENTIT] Skannataan .bas ja .cls -tiedostot kansiosta: $componentPath" -ForegroundColor Cyan
-    $basFiles = Get-ChildItem -Path $componentPath -Filter "*.bas"
-    $clsFiles = Get-ChildItem -Path $componentPath -Filter "*.cls"
+    $basFiles = @(Get-ChildItem -Path $componentPath -Filter "*.bas")
+    $clsFiles = @(Get-ChildItem -Path $componentPath -Filter "*.cls")
     $allComponentFiles = $basFiles + $clsFiles
     
     if ($allComponentFiles.Count -eq 0) {
