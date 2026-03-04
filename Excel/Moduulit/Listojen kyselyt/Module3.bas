@@ -1,3 +1,5 @@
+Option Explicit
+
 '''
 ' Module3.vba - Apumakro LINKING-sheetin näkyvyyden vaihtamiseen
 ' Käytetään LINKING-sheetin näyttämiseen/piilottamiseen työkirjassa debuggausta tai käyttäjän mieltymyksiä varten.

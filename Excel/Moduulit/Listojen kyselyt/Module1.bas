@@ -1,4 +1,6 @@
-﻿Public CheckOK As Boolean
+﻿Option Explicit
+
+Public CheckOK As Boolean
 Public PHStart As Long
 Public PHEnd As Long
 Public PFStart As Long
@@ -644,7 +646,7 @@ Sub GenPrintout()
   On Error GoTo GenPrintoutError
   
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
-  If Right$(defPath, 1) <> "\\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
+  If Right$(defPath, 1) <> "\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
   
   ' Vaatimuksen mukaan: tiedostonimi tulee DB2 "File"-sarakkeesta
   If defName = "" Then defName = POSheet ' varatieto vain jos DB2 ei tarjonnut nimeä

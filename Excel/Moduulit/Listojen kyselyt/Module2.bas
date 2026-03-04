@@ -1,8 +1,10 @@
+Option Explicit
+
 '''
 ' Module2.vba - Metadata-, info- ja linkityslogiikka Kytkentälista Excel-makrojärjestelmälle
 ' Käsittelee dokumentin ominaisuuksien poiminnan, kommenttipohjaisen linkityksen ja virheraportoinnin.
 ' Huomiot:
-' - HaeDocTiedot lukee DB2-otsikot case-insensitively ja trimm aa whitespacet.
+' - HaeDocTiedot lukee DB2-otsikot case-insensitively ja trimmaa whitespacet.
 ' - WorkPath tunnistetaan useiden synonyymienhyvällä (workpath, path, work_path, listpath, lists_path, zlistspath, savepath, targetpath, outputpath)
 '   ja normalisoidaan backslasheilla ja varmistetaan loppuun tulevaksi backslash.
 ' - File otetaan DB2:sta (file/filename/file_name) ja käytetään oletuksena Save As -nimeen GenPrintoutissa.
@@ -22,6 +24,7 @@ Sub HaeDocTiedot()
 Dim i As Long
 Dim Arvo As String
 Dim wsDB2 As Worksheet
+Dim p As String
 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeDocTiedot] Poimitaan dokumentin metadata DB2:sta"
 
@@ -93,12 +96,12 @@ Dim wsDB2 As Worksheet
       Case "name"
         DIProjName = wsDB2.Cells(2, i).Value
       Case "workpath", "path", "work_path", "listpath", "lists_path", "zlistspath", "savepath", "targetpath", "outputpath"
-        Dim p As String
         p = CStr(wsDB2.Cells(2, i).Value)
         If Len(p) > 0 Then
           ' Normalisoidaan erottajat ja varmistetaan loppuun tulevaksi slash
-          p = Replace(p, "/", "\\")
-          DIPath = p & IIf(Right$(p, 1) = "\\", "", "\\")
+          ' Normalisoidaan erottajat: kauttaviivat kenoviivoiksi, varmistetaan loppukenoviiva
+          p = Replace(p, "/", "\")
+          DIPath = p & IIf(Right$(p, 1) = "\", "", "\")
         End If
       Case "manager"
         DIManager = wsDB2.Cells(2, i).Value
