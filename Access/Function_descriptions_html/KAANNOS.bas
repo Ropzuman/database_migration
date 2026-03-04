@@ -2,43 +2,45 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Module: KAANNOS (Translation)
-' Purpose: Translate equipment/loop references in text to descriptive names
-' Updated: 2025-11-13 - Added VBA7/64-bit support and optimization
+' Moduuli: KAANNOS (Käännös)
+' Tarkoitus: Kääntää laite- ja piiriviittaukset kuvaaviksi nimiksi
+' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
+'             2026-03-03 — Kommentit suomeksi
 '
-' Description:
-'   Processes text containing equipment references in braces {xx-xx-xx description}
-'   and translates them to actual equipment names from MAINEQ or Loops tables.
-'   Validates references and marks deleted or missing items with error tags.
+' Kuvaus:
+'   Käsittelee tekstiä, joka sisältää laiteviittauksia muodossa
+'   {xx-xx-xx kuvaus}, ja kääntää ne todellisiksi laite- tai piirinimiksi
+'   MAINEQ- tai Loops-taulusta. Merkitsee poistetut tai puuttuvat kohteet
+'   virhetagein.
 '
-' Dependencies:
-'   - Tables: MAINEQ, Loops
-'   - DLookup function
+' Riippuvuudet:
+'   - Taulut: MAINEQ, Loops
+'   - DLookup-funktio
 '
-' Format Examples:
-'   Input:  "{60-20-01 Motor description}"
-'   Output: "60-20-01 Actual Motor Name" (from MAINEQ table)
-'   Input:  "{10-TIC-001 Loop description}"
-'   Output: "10-TIC-001 Actual Loop Description" (from Loops table)
+' Esimerkkejä:
+'   Syöttö:  "{60-20-01 Moottorin kuvaus}"
+'   Tulos:   "60-20-01 Oikea moottorin nimi" (MAINEQ-taulusta)
+'   Syöttö:  "{10-TIC-001 Piirin kuvaus}"
+'   Tulos:   "10-TIC-001 Oikea piirin kuvaus" (Loops-taulusta)
 '================================================================================
 
 '================================================================================
-' Function: Kaanna
-' Purpose: Translate equipment/loop references to actual names
-' Parameters:
-'   Tieto - Text containing references in format {Area-Type-Seq Description}
-' Returns: Translated text with actual equipment names, or error markers
+' Funktio: Kaanna
+' Tarkoitus: Kääntää laite-/piiriviittaukset todellisiksi nimiksi
+' Parametrit:
+'   Tieto — Teksti, joka sisältää {Alue-Tyyppi-Nro kuvaus} -muotoisia viittauksia
+' Palauttaa: Käännetty teksti tai virheimärkität viittaukset
 '
-' Description:
-'   Parses text for {POS description} patterns where:
-'   - POS format: Area-Type-Seq (e.g., 60-20-01 or 10-TIC-001)
-'   - If Area = "60": Looks up in MAINEQ (motors/equipment)
-'   - Otherwise: Looks up in Loops table (process loops)
-'   
-'   Error handling:
-'   - [ERR: Not found]: Equipment doesn't exist in database
-'   - [DELETED!]: Equipment marked as deleted
-'   - [ERR: No translation]: Equipment exists but has no description
+' Kuvaus:
+'   Jäsentää tekstistä {POS kuvaus} -muodot, missä:
+'   - POS-osa: Alue-Tyyppi-Nro (esim. 60-20-01 tai 10-TIC-001)
+'   - Jos Alue = "60": Hakee MAINEQ-taulusta (moottoreiden laitedata)
+'   - Muuten: Hakee Loops-taulusta (prosessipiirejä)
+'
+'   Virheenkäsittely:
+'   - [ERR: Not found]: Laitetta ei löydy tietokannasta
+'   - [DELETED!]: Laite on merkitty poistetuksi
+'   - [ERR: No translation]: Laite löytyy, mutta nimike puuttuu
 '================================================================================
 Function Kaanna(Tieto As Variant) As Variant
     Dim OS As Long, OS2 As Long, OS3 As Long, OS4 As Long
@@ -57,36 +59,36 @@ Function Kaanna(Tieto As Variant) As Variant
     
     OS = InStr(Tieto, "{")
     If OS = 0 Then
-        ' No references to translate
+        ' Ei käännettäviä viittauksia
         Kaanna = Tieto
         Exit Function
     End If
     
-    ' Initialize output with text before first reference
+    ' Alustetaan tulos tekstillä ennen ensimmäistä viittausta
     Kaanna = Left$(Tieto, OS)
     
     Do While OS > 0
-        ' Find position markers: { POS } structure
-        OS2 = InStr(OS + 1, Tieto, " ")    ' Space after position
-        OS3 = InStr(OS + 1, Tieto, "}")    ' Closing brace
-        OS4 = InStr(OS3 + 1, Tieto, "{")   ' Next opening brace
+        ' Haetaan sijaintimerkit: { POS } -rakenne
+        OS2 = InStr(OS + 1, Tieto, " ")    ' Välilyönti position jälkeen
+        OS3 = InStr(OS + 1, Tieto, "}")    ' Sulkeva aaltosulku
+        OS4 = InStr(OS3 + 1, Tieto, "{")   ' Seuraava avautuva aaltosulku
         
-        ' Extract position code (e.g., "60-20-01" or "10-TIC-001")
+        ' Poimitaan positiokoodi (esim. "60-20-01" tai "10-TIC-001")
         tPOS = Mid$(Tieto, OS + 1, OS2 - OS - 1)
         Osat = Split(tPOS, "-")
         
-        ' Determine table based on area code
+        ' Valitaan taulu aluekoodin perusteella
         If Osat(0) = "60" Then
-            ' Motor/equipment from MAINEQ
+            ' Moottori/laite MAINEQ-taulusta
             Nimitys = DLookup("[EqNameSW20]", "MAINEQ", "[Department] = '" & Osat(1) & "' AND [EqSeq] = '" & Osat(2) & "'")
             Poistettu = DLookup("[Deleted]", "MAINEQ", "[Department] = '" & Osat(1) & "' AND [EqSeq] = '" & Osat(2) & "'")
         Else
-            ' Process loop from Loops table
+            ' Prosessipiiri Loops-taulusta
             Nimitys = DLookup("[Descr26_P]", "Loops", "[AreaCode] = '" & Osat(0) & "' AND [LoopSymb] = '" & Osat(1) & "' AND [LoopNo] = '" & Osat(2) & "'")
             Poistettu = DLookup("[DELETED]", "Loops", "[AreaCode] = '" & Osat(0) & "' AND [LoopSymb] = '" & Osat(1) & "' AND [LoopNo] = '" & Osat(2) & "'")
         End If
         
-        ' Check for errors and mark accordingly
+        ' Tarkistetaan virheet ja merkitään tuntemattomiksi tarvittaessa
         If IsNull(Poistettu) Then
             Nimitys = "[ERR: Not found] " & Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1)
             Virheet = Virheet + 1
@@ -98,28 +100,28 @@ Function Kaanna(Tieto As Variant) As Variant
             Virheet = Virheet + 1
         End If
         
-        ' Build output: position + translation
+        ' Rakennetaan tulos: positio + käännös
         Kaanna = Kaanna & tPOS & " " & Nimitys
         
-        ' Add text between this reference and next (or end)
+        ' Lisätään teksti tämän viittauksen jälkeen (tai loppuun)
         If OS4 <> 0 Then
             Kaanna = Kaanna & Mid$(Tieto, OS3, OS4 - OS3)
         Else
             Kaanna = Kaanna & Mid$(Tieto, OS3)
         End If
         
-        ' Move to next reference
+        ' Edetään seuraavaan viittaukseen
         OS = InStr(OS + 1, Tieto, "{")
     Loop
     
-    ' Log errors to Immediate window for debugging
+    ' Kirjataan virheet Immediate-ikkunaan debuggausta varten
     If Virheet > 0 Then
-        Debug.Print "Kaanna: " & Virheet & " error(s) in translation"
+        Debug.Print "Kaanna: " & Virheet & " virhe(ttä) käännöksessä"
     End If
     
     Exit Function
     
 ErrorHandler:
     Kaanna = "[ERR: " & Err.Description & "] " & Tieto
-    Debug.Print "Kaanna error: " & Err.Description
+    Debug.Print "Kaanna-virhe: " & Err.Description
 End Function

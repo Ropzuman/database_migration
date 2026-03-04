@@ -1,10 +1,11 @@
 Option Compare Database
+Option Explicit
 
 Private Sub RevMotList_Click()
-  Revisioteksti = Nz(RevMotList.Value)
+  Revisioteksti = Nz(Me.RevMotList.Value)
   DoCmd.OpenForm "USysRevText", , , , , acDialog
   If Revisioteksti <> "" Then
-      RevMotList.Value = Revisioteksti
+      Me.RevMotList.Value = Revisioteksti
   End If
   Me.Refresh
 End Sub

@@ -2,34 +2,36 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Module: GeneralCodes
-' Purpose: General utility functions and shared variables
-' Updated: 2025-11-13 - Added VBA7/64-bit support and optimization
+' Moduuli: GeneralCodes
+' Tarkoitus: Yleiset apufunktiot ja yhteiset muuttujat
+' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
+'             2026-03-03 — Kommentit suomeksi
 '
-' Description:
-'   Provides utility functions for equipment revision editing, table display,
-'   and mode/status translation. Contains public variables shared across forms.
+' Kuvaus:
+'   Tarjoaa apufunktiot laitteen revisiomuokkaukseen, taulunselaukseen
+'   sekä tila- ja moodi-käännöksiin. Sisältää lomakkeiden välistä
+'   kommunikaatiota varten julkisia muuttujia.
 '
-' Dependencies:
+' Riippuvuudet:
 '   - DAO.Recordset
-'   - Forms: USysRevision, frmTables
-'   - Tables: MAINEQ, DRIVES, PUMPS, GEARS, TANKS
+'   - Lomakkeet: USysRevision, frmTables
+'   - Taulut: MAINEQ, DRIVES, PUMPS, GEARS, TANKS
 '================================================================================
 
-' Public variables for inter-form communication
+' Julkiset muuttujat lomakkeiden välistä tiedonsiirtoa varten
 Public oTaulu As DAO.Recordset
 Public PaluuTaulu As Object
 Public KohdeTextBox As TextBox
 Public Kursori As Long
 
 '================================================================================
-' Function: MuutaRev
-' Purpose: Open revision editing form for equipment tables
-' Returns: Nothing (implicit)
+' Funktio: MuutaRev
+' Tarkoitus: Avaa revisiomuokkauslomake laitetauluille
+' Palauttaa: Ei paluuarvoa
 '
-' Description:
-'   Checks if active table is an equipment table, opens corresponding record
-'   in USysRevision form for editing.
+' Kuvaus:
+'   Tarkistaa, onko aktiivinen taulu laitetaulu, ja avaa vastaavan tietueen
+'   USysRevision-lomakkeessa muokkausta varten.
 '================================================================================
 Public Function MuutaRev()
     Dim Taul As String
@@ -47,33 +49,33 @@ Public Function MuutaRev()
     Exit Function
     
 ErrorHandler:
-    MsgBox "Error opening revision form: " & Err.Description, vbExclamation
+    MsgBox "Virhe revisiolomakkeen avauksessa: " & Err.Description, vbExclamation
 End Function
 
 '================================================================================
-' Function: NaytaTables
-' Purpose: Open table browser form
-' Returns: Nothing (implicit)
+' Funktio: NaytaTables
+' Tarkoitus: Avaa taulujenselauslomake
+' Palauttaa: Ei paluuarvoa
 '================================================================================
 Public Function NaytaTables()
     On Error GoTo ErrorHandler
     DoCmd.OpenForm "frmTables"
     Exit Function
 ErrorHandler:
-    MsgBox "Error opening tables form: " & Err.Description, vbExclamation
+    MsgBox "Virhe taulunselauslomakkeen avauksessa: " & Err.Description, vbExclamation
 End Function
 
 '================================================================================
-' Function: Moodit
-' Purpose: Translate comma-separated mode codes to descriptive text
-' Parameters:
-'   Tieto - Comma-separated mode codes (A, M, E, L)
-' Returns: Formatted mode descriptions, one per line
+' Funktio: Moodit
+' Tarkoitus: Kääntää pilkulla eroteltujen moodikolmien koodit kuvaavaksi tekstiksi
+' Parametrit:
+'   Tieto — Pilkulla eroteltu moodi-koodi lista (A, M, E, L)
+' Palauttaa: Moodi kuvaukset rivinvaihdolla eroteltuina, tai "-" jos Null
 '
-' Description:
-'   Translates mode codes:
+' Kuvaus:
+'   Kääntää moodikolmit:
 '     A = AUTO, M = MANUAL, E = EXTERNAL, L = LOCAL
-'   Other codes pass through unchanged. Returns "-" for Null input.
+'   Muut koodit pass-through-käännös. Palauttaa "-" Null-syötteen yhteydessä.
 '================================================================================
 Function Moodit(Tieto As Variant) As Variant
     Dim Tiedot As Variant

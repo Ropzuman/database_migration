@@ -1,4 +1,5 @@
 Option Compare Database
+Option Explicit
 
 Private Sub MuutaRevisio(Rev As Control)
   Revisioteksti = Nz(Rev.Value)
@@ -10,20 +11,20 @@ Private Sub MuutaRevisio(Rev As Control)
 End Sub
 
 Private Sub RevDataSheet_Click()
-  MuutaRevisio RevDataSheet
+  MuutaRevisio Me.RevDataSheet
 End Sub
 
 Private Sub RevConsumList_Click()
-  MuutaRevisio RevConsumList
+  MuutaRevisio Me.RevConsumList
 End Sub
 
 Private Sub RevDriveSpec_Click()
 If (IsNull(Me.SD_No)) Then
 Else
-  MuutaRevisio RevDriveSpec
+  MuutaRevisio Me.RevDriveSpec
 End If
 End Sub
 
 Private Sub RevMotList_Click()
-  MuutaRevisio RevMotList
+  MuutaRevisio Me.RevMotList
 End Sub

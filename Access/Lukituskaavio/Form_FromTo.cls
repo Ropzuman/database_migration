@@ -1,4 +1,5 @@
 Option Compare Database
+Option Explicit
 
 Private Sub Command0_Click()
 Dim DB As DAO.Database
@@ -9,6 +10,8 @@ Dim sSQL As String
 Dim ssSQL As String
 Dim qry2 As DAO.Recordset
 Dim MyString As String
+Dim L As String
+Dim edel As String
 
 DoCmd.Hourglass True
 Set DB = CurrentDb
@@ -164,10 +167,10 @@ DoCmd.OpenTable "DATA9"
 End Sub
 
 Private Sub Command12_Click()
-'Vie tiedot kuviin
+' Vie DATA9-taulun tiedot AutoCAD-piirustuksissa oleviin blokkeihin
 Dim EdTied As String
 Dim Taul As DAO.Recordset
-Dim oBlock As AcadBlockReference
+Dim oBlock As Object  ' AcadBlockReference — myöhäinen sidonta 64-bit-yhteensopivuuden vuoksi
 Dim ATTRIB As Variant
 Dim i As Integer
 Set Taul = CurrentDb.OpenRecordset("SELECT * FROM DATA9 order by Path, DWG")
@@ -205,22 +208,22 @@ Private Sub Command5_Click()
 Dim FS As New FileSystemObject
 Dim Tied As String
 Dim i As Integer
-If TPolku.VALUE <> "" Then
-  If Right$(TPolku.VALUE, 1) <> "\" Then
-   TPolku.VALUE = TPolku.VALUE & "\"
+If Me.TPolku.Value <> "" Then
+  If Right$(Me.TPolku.Value, 1) <> "\" Then
+   Me.TPolku.Value = Me.TPolku.Value & "\"
   End If
 Else
   MsgBox "Kirjoita ensin polku.", vbCritical, "Listaa tiedostot"
   Exit Sub
 End If
 
-If FS.FolderExists(TPolku.VALUE) Then
-  For i = 1 To Lista.ListCount
-    Lista.RemoveItem 1
+If FS.FolderExists(Me.TPolku.Value) Then
+  For i = 1 To Me.Lista.ListCount
+    Me.Lista.RemoveItem 1
   Next i
-  Tied = Dir(TPolku & "*.dwg")
+  Tied = Dir(Me.TPolku & "*.dwg")
   Do While Tied <> ""
-    Lista.AddItem Tied
+    Me.Lista.AddItem Tied
     Tied = Dir()
   Loop
 Else
@@ -247,11 +250,11 @@ Dim Tied As String
   On Error GoTo 0
   CurrentDb.Execute "DELETE * FROM DATA9"
   If Listalta Then
-    For i = 1 To Lista.ItemsSelected.Count
-        PoimiTiedot Lista.ItemData(Lista.ItemsSelected(i - 1))
+    For i = 1 To Me.Lista.ItemsSelected.Count
+        PoimiTiedot Me.Lista.ItemData(Me.Lista.ItemsSelected(i - 1))
     Next i
   Else
-    Tied = Dir(TPolku & "*.dwg")
+    Tied = Dir(Me.TPolku & "*.dwg")
     Do While Tied <> ""
       PoimiTiedot Tied
       Tied = Dir()
@@ -264,15 +267,15 @@ End Sub
 Private Sub PoimiTiedot(Tiedosto)
 Dim FT(0) As Integer
 Dim FD(0) As Variant
-Dim Joukko As AcadSelectionSet
+Dim Joukko As Object  ' AcadSelectionSet — myöhäinen sidonta 64-bit-yhteensopivuuden vuoksi
 Dim i As Integer, j As Integer
 Dim Taul As DAO.Recordset
 Dim ATTRIB As Variant
 Dim TNimi As String
   Set Taul = CurrentDb.OpenRecordset("DATA9")
   FT(0) = 2       'ObjecName
-  FD(0) = FROMTOBLOCKS.VALUE
-  Set oDOC = oACAD.Documents.Open(TPolku & Tiedosto)
+  FD(0) = Me.FROMTOBLOCKS.Value
+  Set oDOC = oACAD.Documents.Open(Me.TPolku & Tiedosto)
   Set Joukko = oDOC.SelectionSets.Add("APUFROMTO")
   Joukko.Select acSelectionSetAll, , , FT, FD
   TNimi = Left$(Tiedosto, Len(Tiedosto) - 4)
@@ -299,8 +302,8 @@ Private Sub Command7_Click()
 End Sub
 
 Private Sub Form_Load()
-  TPolku.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOPATH'")
-  FROMTOBLOCKS.VALUE = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOBLOCKS'")
+  Me.TPolku.Value = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOPATH'")
+  Me.FROMTOBLOCKS.Value = DLookup("[VALUE]", "SETTINGS", "SETTING = 'FROMTOBLOCKS'")
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -309,12 +312,12 @@ End Sub
 
 
 Private Sub FROMTOBLOCKS_AfterUpdate()
- CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & FROMTOBLOCKS.VALUE & "' WHERE (((SETTINGS.SETTING)='FROMTOBLOCKS'));"
+ CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & Me.FROMTOBLOCKS.Value & "' WHERE (((SETTINGS.SETTING)='FROMTOBLOCKS'));"
 End Sub
 
 Private Sub TPolku_AfterUpdate()
   PaivitaPolku
 End Sub
 Private Sub PaivitaPolku()
- CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & TPolku.VALUE & "' WHERE (((SETTINGS.SETTING)='FROMTOPATH'));"
+ CurrentDb.Execute "UPDATE SETTINGS SET SETTINGS.[VALUE] = '" & Me.TPolku.Value & "' WHERE (((SETTINGS.SETTING)='FROMTOPATH'));"
 End Sub

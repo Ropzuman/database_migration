@@ -2,130 +2,131 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: SizingOut
-' Purpose: Export query results to CSV file with Finnish number formatting
-' Updated: 2025-11-11 - Added VBA7/64-bit support
+' Lomake: SizingOut
+' Tarkoitus: Vie kyselytulokset CSV-tiedostoon suomalaisella lukumuotoilulla
+' Päivitetty: 2025-11-11 - VBA7/64-bit-tuki lisätty
+'             2026-03-03 - Me.-etuliitteet ja kommentit suomeksi
 '
-' Description:
-'   Exports database query or table to semicolon-delimited CSV file:
-'   - User selects query/table, output directory, and filename
-'   - Converts decimal commas to periods (Finnish → international format)
-'   - Wraps all values in quotes for proper CSV formatting
-'   - Opens output folder in Windows Explorer after export
-'   - Handles null values appropriately
+' Kuvaus:
+'   Vie tietokantakyselyn tai -taulun puolipisteeroitettuun CSV-tiedostoon:
+'   - Käyttäjä valitsee kyselyn/taulun, hakemiston ja tiedostonimen
+'   - Muuntaa desimaalipilkut pisteiksi (suomalainen → kansainvälinen muoto)
+'   - Ympy röi kaikki arvot lainausmerkeillä
+'   - Avaa kohdehakemiston Explorerissa viennin jälkeen
+'   - Käsittelee null-arvot tyhjinä merkkijonoina
 '
-' Dependencies:
+' Riippuvuudet:
 '   - FileSystemObject (Microsoft Scripting Runtime)
-'   - Query/table specified in Taulukko control
+'   - Taulukko-kontrollissa määritetty kysely tai taulu
 '
-' Controls:
-'   - Taulukko: TextBox for query/table name (default: qryValveSizingOut)
-'   - Hakem: TextBox for output directory path
-'   - FileName: TextBox for output filename (without .csv extension)
-'   - Command8: Button to execute export
+' Kontrollit:
+'   - Taulukko: TextBox kyselyn/taulun nimelle (oletus: qryValveSizingOut)
+'   - Hakem: TextBox kohdehakemiston polkua varten
+'   - FileName: TextBox tiedostonimelle (ilman .csv-päätettä)
+'   - Command8: Painike viennin käynnistämiseen
 '================================================================================
 
 '--------------------------------------------------------------------------------
-' Event: Command8_Click
-' Purpose: Export selected query/table to CSV file
+' Tapahtuma: Command8_Click
+' Tarkoitus: Vie valittu kysely/taulu CSV-tiedostoon
 '
-' Process:
-'   1. Validate output directory exists
-'   2. Open source query/table as recordset
-'   3. Create output CSV file
-'   4. Iterate through all records:
-'      - Write first field (quoted)
-'      - Write remaining fields with semicolon separator
-'      - Convert commas to periods in numeric values
-'      - Handle null values as empty strings
-'   5. Close file and open containing folder
+' Prosessi:
+'   1. Tarkistetaan, että kohdehakemisto on olemassa
+'   2. Avataan lähde-kysely/taulu recordset-muodossa
+'   3. Luodaan CSV-tiedosto kohdepolkuun
+'   4. Iteroidaan kaikki rivit:
+'      - Kirjoitetaan ensimmäinen kenttä (lainausmerkeissä)
+'      - Kirjoitetaan loput kentät puolipisteellä eroteltuina
+'      - Muunnetaan desimaalipilkut pisteiksi
+'      - Null-arvot kirjoitetaan tyhjinä merkkijonoina
+'   5. Suljetaan tiedosto ja avataan kohdehakemisto
 '
-' CSV Format:
-'   - Semicolon (;) delimited
-'   - All values quoted ("value")
-'   - Decimal separator: period (.) not comma (,)
-'   - Line ending: CRLF (Windows standard)
+' CSV-muoto:
+'   - Puolipisteerotteinen (;)
+'   - Kaikki arvot lainausmerkeissä ("arvo")
+'   - Desimaalierotin: piste (.) eikä pilkku (,)
+'   - Rivinloppu: CRLF (Windows-standardi)
 '
-' Notes:
-'   - Ensures directory path ends with backslash
-'   - Handles Finnish decimal format (comma) conversion
-'   - Opens output folder for user convenience
-'   - Comprehensive error handling with cleanup
+' Huomiot:
+'   - Varmistaa, että hakemistopolku päättyy kenoviivaan
+'   - Muuntaa suomalaisen desimaaliformaatin kansainväliseksi
+'   - Avaa hakemiston käyttäjän helpottamiseksi
+'   - Kattava virheenkäsittely siivouksineen
 '--------------------------------------------------------------------------------
 Private Sub Command8_Click()
 On Error GoTo ErrorHandler
-    Dim DB As DAO.Database  ' Current database
-    Dim Taulu As DAO.Recordset  ' Source data recordset
-    Dim FSO As New FileSystemObject  ' File system object for file creation
-    Dim Tiedosto As Object  ' Output CSV file handle
-    Dim Path As String  ' Output directory path
-    Dim i As Integer  ' Field counter
-    Dim Osoitin As Long  ' Position of comma in value string
-    Dim Arvo As String  ' Current field value
+    Dim DB As DAO.Database  ' Nykyinen tietokanta
+    Dim Taulu As DAO.Recordset  ' Lähdedata-recordset
+    Dim FSO As New FileSystemObject  ' Tiedostojärjestelmäobjekti tiedoston luomiseen
+    Dim Tiedosto As Object  ' CSV-tiedoston kahva
+    Dim Path As String  ' Kohdehakemiston polku
+    Dim i As Integer  ' Kenttälaskuri
+    Dim Osoitin As Long  ' Pilkun sijainti merkkijonossa
+    Dim Arvo As String  ' Nykyinen kenttäarvo
     
     Set DB = CurrentDb
-    Path = Hakem.Value
+    Path = Me.Hakem.Value
     
-    ' Ensure path ends with backslash
+    ' Varmistetaan, että polku päättyy kenoviivaan
     If Right$(Path, 1) <> "\" Then
         Path = Path & "\"
     End If
     
-    ' Validate output directory exists
+    ' Tarkistetaan, että kohdehakemisto on olemassa
     If Not FSO.FolderExists(Path) Then
-        MsgBox "Hakemistoa: " & Path & " ei ollut", vbCritical, "Export Error"  ' "Directory does not exist"
+        MsgBox "Hakemistoa: " & Path & " ei ollut", vbCritical, "Vientivirhe"
         Exit Sub
     End If
     
-    ' Open source query/table
-    Set Taulu = DB.OpenRecordset("SELECT * FROM " & Taulukko.Value)
+    ' Avataan lähde-kysely/taulu
+    Set Taulu = DB.OpenRecordset("SELECT * FROM " & Me.Taulukko.Value)
     
-    ' Create output CSV file
-    Set Tiedosto = FSO.CreateTextFile(Path & FileName.Value & ".csv")
+    ' Luodaan CSV-tiedosto kohdepolkuun
+    Set Tiedosto = FSO.CreateTextFile(Path & Me.FileName.Value & ".csv")
     
-    ' Export all records
+    ' Viedään kaikki rivit
     Do While Not Taulu.EOF
-        ' Write first field (quoted)
+        ' Kirjoitetaan ensimmäinen kenttä lainausmerkeissä
         Tiedosto.Write """" & Taulu.Fields(0).Value & """"
         
-        ' Write remaining fields with semicolon separator
+        ' Kirjoitetaan loput kentät puolipisteellä eroteltuina
         For i = 1 To Taulu.Fields.Count - 1
-            ' Handle null values
+            ' Käsitellään null-arvot tyhjinä
             If IsNull(Taulu.Fields(i).Value) Then
                 Arvo = ""
             Else
                 Arvo = Taulu.Fields(i).Value
                 
-                ' Convert decimal comma to period (Finnish → international format)
+                ' Muunnetaan desimaalipilkku pisteeksi (FI → kansainvälinen)
                 Osoitin = InStr(Arvo, ",")
                 If Osoitin <> 0 Then
                     Arvo = Left$(Arvo, Osoitin - 1) & "." & Mid$(Arvo, Osoitin + 1)
                 End If
             End If
             
-            ' Write field value (quoted, semicolon-separated)
+            ' Kirjoitetaan kenttäarvo lainausmerkeissä, puolipisteeroteltu
             Tiedosto.Write ";""" & Arvo & """"
         Next i
         
-        ' End record with line break
+        ' Rivinloppu
         Tiedosto.Write vbCrLf
         Taulu.MoveNext
     Loop
     
-    ' Cleanup resources
+    ' Siivotaan resurssit
     Taulu.Close
     Set Taulu = Nothing
     Set DB = Nothing
     Set Tiedosto = Nothing
     Set FSO = Nothing
     
-    ' Notify user and open output folder
-    MsgBox "Valmis", vbInformation, "Export Complete"  ' "Ready"
+    ' Ilmoitetaan käyttäjälle ja avataan hakemisto
+    MsgBox "Valmis", vbInformation, "Vienti valmis"
     Call Shell("EXPLORER " & Path, vbNormalFocus)
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error exporting data: " & Err.Description, vbCritical, "Export Error"
+    MsgBox "Virhe tiedon viennissä: " & Err.Description, vbCritical, "Vientivirhe"
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
@@ -136,18 +137,16 @@ ErrorHandler:
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Form_Load
-' Purpose: Initialize form with default values
+' Tapahtuma: Form_Load
+' Tarkoitus: Alustaa lomakkeen oletusarvoilla
 '
-' Defaults:
-'   - Taulukko (Query/Table): qryValveSizingOut
-'   - Hakem (Directory): User must specify (commented example: "d:\tilap\")
+' Oletukset:
+'   - Taulukko (Kysely/taulu): qryValveSizingOut
+'   - Hakem (Hakemisto): Käyttäjän määritettävä
 '
-' Notes:
-'   - Default query focuses on valve sizing export
-'   - Directory path intentionally left blank (was "d:\tilap\")
+' Huomiot:
+'   - Oletuskysely kohdistuu venttiilien mitoitusdatan vientiin
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
-  Taulukko.Value = "qryValveSizingOut"  ' Default query for valve sizing data
-  'Hakem.VALUE = "d:\tilap\"  ' Example directory (commented out - user specified)
+  Me.Taulukko.Value = "qryValveSizingOut"  ' Oletuskysely venttiilien mitoitusdatan vientiin
 End Sub

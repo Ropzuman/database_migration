@@ -2,28 +2,29 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: MOTORS subform
-' Purpose: Equipment reference insertion helper
-' Updated: 2025-11-13 - Added error handling and null safety
+' Lomake: MOTORS subform (Moottorit-alilomake)
+' Tarkoitus: Laiteviittauksen lisäämisapuri päälomakkeen tekstikenttiin
+' Päivitetty: 2025-11-13 — Virheenkäsittely ja null-suojaus lisätty
+'             2026-03-03 — Me.-etuliite, SelStart-suojaus (Virhe 2185)
 '
-' Description:
-'   Subform for inserting formatted equipment references into parent form
-'   text boxes. Uses {Department-Eqseq-EqType-Suffix} format for equipment
-'   references in generated documents.
+' Kuvaus:
+'   Alilomake laiteviittausten lisäämiseksi päälomakkeen tekstikenttiin.
+'   Käyttää {Osasto-Laitenro-Laitetyyppi-Liite}-muotoa.
 '
-' Dependencies:
-'   - Parent form with KohdeTextBox and CLoppuun controls
-'   - Public Kursori variable (cursor position)
-'   - Controls: TEKSTI, Department, Eqseq, EqType, Suffix
+' Riippuvuudet:
+'   - Päälomake, jossa KohdeTextBox ja CLoppuun-ohjaimet
+'   - Julkinen Kursori-muuttuja (kursorin sijainti)
+'   - Ohjaimet: TEKSTI, Department, Eqseq, EqType, Suffix
 '================================================================================
 
 '================================================================================
-' Sub: LisaaTeksti (Add Text)
-' Purpose: Insert equipment reference at cursor position
+' Aliohjelma: LisaaTeksti
+' Tarkoitus: Lisää laiteviittaus kursorin kohdalle tai kentän loppuun
 '
-' Description:
-'   Inserts text in {brackets} at current cursor position or end of field.
-'   Handles null values and maintains cursor position after insertion.
+' Kuvaus:
+'   Lisää tekstin {hakasulkeissa} nykyiseen kursorin sijaintiin tai kentän
+'   loppuun. Käsittelee null-arvot ja yllapitää kursorin sijainnin.
+' Huom: SelStart vaatii fokuksen — kietotaan virheensuojauksen sisään (Virhe 2185)
 '================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
@@ -33,11 +34,11 @@ Private Sub LisaaTeksti()
     
     If Not KohdeTextBox Is Nothing Then
         If Form.Parent.CLoppuun = True Then
-            ' Append to end
+            ' Lisätään kentän loppuun
             Alku = Nz(KohdeTextBox.Value, "")
             Loppu = ""
         Else
-            ' Insert at cursor position
+            ' Lisätään kursorin kohtaan
             If IsNull(KohdeTextBox.Value) Then
                 Alku = ""
                 Loppu = ""
@@ -47,17 +48,20 @@ Private Sub LisaaTeksti()
             End If
         End If
         
-        KohdeTextBox.Value = Alku & " {" & TEKSTI.Value & "}" & Loppu
+        KohdeTextBox.Value = Alku & " {" & Me.TEKSTI.Value & "}" & Loppu
         KohdeTextBox.SetFocus
-        KohdeTextBox.SelStart = Kursori + Len(TEKSTI.Value) + 3
+        ' SelStart ja SelLength vaativat fokuksen — estetään Virhe 2185
+        On Error Resume Next
+        KohdeTextBox.SelStart = Kursori + Len(Me.TEKSTI.Value) + 3
         KohdeTextBox.SelLength = 0
         Kursori = KohdeTextBox.SelStart
+        On Error GoTo ErrorHandler
     End If
     
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Error inserting text: " & Err.Description, vbExclamation
+    MsgBox "Virhe tekstin lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub Department_DblClick(Cancel As Integer)
