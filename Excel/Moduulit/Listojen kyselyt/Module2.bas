@@ -25,6 +25,9 @@ Dim i As Long
 Dim Arvo As String
 Dim wsDB2 As Worksheet
 Dim p As String
+Dim lastCol As Long    ' Viimeinen käytetty sarake DB2:n otsikkoriviltä
+Dim hdrArr As Variant  ' Otsikkorivi taulukossa (1 COM-kysely kaikkien sarakkeiden sijaan)
+Dim valArr As Variant  ' Datarivi taulukossa (1 COM-kysely kaikkien sarakkeiden sijaan)
 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeDocTiedot] Poimitaan dokumentin metadata DB2:sta"
 
@@ -58,73 +61,83 @@ Dim p As String
   
   If wsDB2 Is Nothing Then Exit Sub
   
-  i = 1
-  Do
+  ' Optimoitu: Luetaan koko otsikko- ja datarivi kerralla taulukkoon (2 COM-kutsua aiemman 2*N sijaan)
+  On Error Resume Next
+  lastCol = wsDB2.Cells(1, wsDB2.Columns.Count).End(xlToLeft).Column
+  On Error GoTo 0
+  If lastCol < 1 Or (lastCol = 1 And wsDB2.Cells(1, 1).Value = "") Then
+    Debug.Print "  VAROITUS: DB2 otsikkorivi on tyhjä"
+    Exit Sub
+  End If
+  hdrArr = wsDB2.Range(wsDB2.Cells(1, 1), wsDB2.Cells(1, lastCol)).Value
+  valArr = wsDB2.Range(wsDB2.Cells(2, 1), wsDB2.Cells(2, lastCol)).Value
+
+  For i = 1 To lastCol
     ' Normalisoidaan otsikko: pienet kirjaimet ja trimmaus extra-spacet pois
-    Arvo = LCase(Trim(wsDB2.Cells(1, i).Value & ""))
+    Arvo = LCase(Trim(CStr(hdrArr(1, i))))
     Select Case Arvo
       Case "rev"
-        DIRev = wsDB2.Cells(2, i).Value
+        ' Null-turvallinen split: tarkistetaan pituus ennen splittausta (Type Mismatch -esto)
+        DIRev = CStr(valArr(1, i) & "")
         Erase DIRevArr
-        DIRevArr() = Split(DIRev, Chr(10))
+        If Len(DIRev) > 0 Then
+          DIRevArr = Split(DIRev, Chr(10))
+        Else
+          ReDim DIRevArr(0): DIRevArr(0) = ""
+        End If
       Case "revid"
-        DIRevID = wsDB2.Cells(2, i).Value
+        DIRevID = valArr(1, i)
       Case "revdate"
-        DIRevDate = wsDB2.Cells(2, i).Value
+        DIRevDate = valArr(1, i)
       Case "date", "dateoriginal"
-        DIDate = wsDB2.Cells(2, i).Value
+        DIDate = valArr(1, i)
       Case "docno"
-        DIDocNo = wsDB2.Cells(2, i).Value
+        DIDocNo = valArr(1, i)
       Case "metsodocno"
-        DIMetsoDocNo = wsDB2.Cells(2, i).Value
+        DIMetsoDocNo = valArr(1, i)
       Case "project"
-        DIProject = wsDB2.Cells(2, i).Value
+        DIProject = valArr(1, i)
       Case "status"
-        DIStatus = wsDB2.Cells(2, i).Value
+        DIStatus = valArr(1, i)
       Case "docname"
-        DIDocName = wsDB2.Cells(2, i).Value
+        DIDocName = valArr(1, i)
       Case "docname1"
-        DIDocName1 = wsDB2.Cells(2, i).Value
+        DIDocName1 = valArr(1, i)
       Case "docname2"
-        DIDocName2 = wsDB2.Cells(2, i).Value
+        DIDocName2 = valArr(1, i)
       Case "docname3"
-        DIDocName3 = wsDB2.Cells(2, i).Value
+        DIDocName3 = valArr(1, i)
       Case "contractno"
-        DIContract = wsDB2.Cells(2, i).Value
+        DIContract = valArr(1, i)
       Case "projno"
-        DIProjNo = wsDB2.Cells(2, i).Value
+        DIProjNo = valArr(1, i)
       Case "name"
-        DIProjName = wsDB2.Cells(2, i).Value
+        DIProjName = valArr(1, i)
       Case "workpath", "path", "work_path", "listpath", "lists_path", "zlistspath", "savepath", "targetpath", "outputpath"
-        p = CStr(wsDB2.Cells(2, i).Value)
+        p = CStr(valArr(1, i) & "")
         If Len(p) > 0 Then
-          ' Normalisoidaan erottajat ja varmistetaan loppuun tulevaksi slash
           ' Normalisoidaan erottajat: kauttaviivat kenoviivoiksi, varmistetaan loppukenoviiva
           p = Replace(p, "/", "\")
           DIPath = p & IIf(Right$(p, 1) = "\", "", "\")
         End If
       Case "manager"
-        DIManager = wsDB2.Cells(2, i).Value
+        DIManager = valArr(1, i)
       Case "mill"
-        DIMill = wsDB2.Cells(2, i).Value
+        DIMill = valArr(1, i)
       Case "departname"
-        DIDepartName = wsDB2.Cells(2, i).Value
+        DIDepartName = valArr(1, i)
       Case "customer"
-        DICustomer = wsDB2.Cells(2, i).Value
+        DICustomer = valArr(1, i)
       Case "metsounitname"
-        DIMunit = wsDB2.Cells(2, i).Value
+        DIMunit = valArr(1, i)
       Case "file", "filename", "file_name"
-        DIFile = CStr(wsDB2.Cells(2, i).Value)
-      Case ""
-        Exit Do
+        DIFile = CStr(valArr(1, i) & "")
       Case Else
     End Select
-    i = i + 1
-    If i > MAX_EXCEL_COLUMNS Then Exit Do ' Turvatarkistus
-  Loop
+  Next i
   
   ' DEBUG: Raportoidaan mitä ladattiin
-  Debug.Print "  Ladattu " & (i - 1) & " saraketta DB2:sta"
+  Debug.Print "  Ladattu " & lastCol & " saraketta DB2:sta"
   Debug.Print "  DIProject: '" & DIProject & "'"
   Debug.Print "  DIManager: '" & DIManager & "'"
   Debug.Print "  DIDocNo: '" & DIDocNo & "'"

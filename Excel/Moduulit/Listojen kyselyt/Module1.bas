@@ -88,12 +88,58 @@ Private Sub EndFastMode()
 End Sub
 
 '''
+' LuoADODBYhteys: Hakee toimivan ADODB-yhteyden kokeilemalla ACE OLE DB -moottoriversiota prioriteettijärjestyksessä.
+' Palauttaa avatun ADODB.Connection-objektin tai Nothing jos kaikki yritykset epäonnistuvat.
+' DRY-apufunktio — korvaa kolminkertaisen yhteysyritysrakenteen kutsupaikoissa.
+'''
+Private Function LuoADODBYhteys(kantaPolku As String) As Object
+    Dim conn As Object
+    Dim providerVersions As Variant
+    Dim i As Integer
+    ' Kokeiltavat versiot prioriteettijärjestyksessä (64-bit / uudemmat ensin)
+    providerVersions = Array("16.0", "15.0", "12.0")
+    For i = LBound(providerVersions) To UBound(providerVersions)
+        Set conn = CreateObject("ADODB.Connection")
+        conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB." & providerVersions(i) & ";Data Source=" & kantaPolku
+        On Error Resume Next
+        conn.Open
+        If Err.Number = 0 Then
+            On Error GoTo 0
+            Set LuoADODBYhteys = conn  ' Yhteys onnistui — palautetaan se
+            Exit Function
+        End If
+        Err.Clear
+        On Error GoTo 0
+        Set conn = Nothing  ' Siivotaan epäonnistunut yritys
+    Next i
+    Set LuoADODBYhteys = Nothing  ' Kaikki versiot käyty läpi — yhteys ei onnistunut
+End Function
+
+'''
+' OnTurvallinenSQL: Validoi SQL-merkkijono tietoturvan kannalta (CWE-89 SQL-injektioesto).
+' Estää vaarallisten DML/DDL-komentojen (DROP, DELETE, UPDATE, INSERT, ALTER, EXEC) suorittamisen
+' soluista luetuille dynaamisille kyselyille. Sallii SELECT-kyselyt ja tallennettujen kyselyiden nimet.
+'''
+Private Function OnTurvallinenSQL(ByVal sqlText As String) As Boolean
+    Dim uSQL As String
+    uSQL = UCase(Trim(sqlText))
+    ' Estetään vaaralliset DML/DDL-komennot — sallitaan vain SELECT tai tallennetut kyselyt
+    If InStr(uSQL, "DROP ") > 0 Or InStr(uSQL, "DELETE ") > 0 Or _
+       InStr(uSQL, "UPDATE ") > 0 Or InStr(uSQL, "INSERT ") > 0 Or _
+       InStr(uSQL, "ALTER ") > 0 Or InStr(uSQL, "EXEC ") > 0 Then
+        OnTurvallinenSQL = False
+    Else
+        OnTurvallinenSQL = True
+    End If
+End Function
+
+'''
 ' HaeData: Hakee datan Access-tietokannasta käyttäen tallennettuja kyselyitä tai SQL-lauseita.
 ' Täyttää DB1 (pääasiallinen body-data) ja DB2 (dokumentin metadata) -sheetit.
 ' 
 ' DB1: Käyttää DAO:ta (Data Access Objects) joka tukee natiivisti Access-tallennettuja kyselyitä
 '      ja JET SQL -syntaksia (Like "pattern", Deleted=No, IIf, jne.)
-' DB2: Käyttää ADODB:ta yhteensopivuuden vuoksi
+' DB2: Käyttää ADODB:ta yhteensopivuuden vuoksi (LuoADODBYhteys-apufunktio)
 ' 
 ' Diagnostiikka: Rivimäärät näytetään StatusBarissa ja Immediate Windowissa jokaisen kyselyn jälkeen.
 '''
@@ -143,8 +189,7 @@ Dim fld As Object        ' ADODB.Field
   ' Varmistetaan että tietokantatiedosto on olemassa
   If Dir(Kanta) = "" Then
     MsgBox "Tietokantatiedostoa ei löydy: " & Kanta, vbCritical, "Tietokantavirhe"
-    EndFastMode
-    Exit Sub
+    GoTo SafeExit  ' Try-Finally: SafeExit siivoo aina
   End If
   
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB1: DAO (tallennetut kyselyt) ==="
@@ -162,8 +207,7 @@ Dim fld As Object        ' ADODB.Field
   If dbDAO Is Nothing Then
     MsgBox "Tietokantaa ei voitu avata DAO:lla!" & vbCrLf & _
            "Varmista että Microsoft Access Database Engine on asennettuna.", vbCritical, "DAO-virhe"
-    EndFastMode
-    Exit Sub
+    GoTo SafeExit  ' Try-Finally: SafeExit siivoo aina
   End If
   
   Debug.Print "  DAO Database avattu"
@@ -175,7 +219,13 @@ Dim fld As Object        ' ADODB.Field
   If sSQL(1) <> "" Then
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB1 dataa..."
     Debug.Print "    Kysely/SQL: " & sSQL(1)
-    
+
+    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
+    If Not OnTurvallinenSQL(sSQL(1)) Then
+      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB1): " & vbCrLf & sSQL(1), vbCritical, "SQL-tietoturvavirhe"
+      GoTo SafeExit
+    End If
+
     ' DAO.OpenRecordset voi ottaa joko tallenetun kyselyn nimen tai SQL-lauseen
     Set rsDAO = dbDAO.OpenRecordset(sSQL(1))
     
@@ -277,35 +327,17 @@ Dim fld As Object        ' ADODB.Field
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB2: ADODB (SQL-kyselyt) ==="
   
   ' DB2: Käytetään ADODB:ta (toimii hyvin SQL-kyselyiden kanssa)
-  ' OLE DB yhteys ACE provider-fallbackilla (16.0 → 15.0 → 12.0)
-  On Error Resume Next
-  Provider = "Microsoft.ACE.OLEDB.16.0"
-  
-  Set conn = CreateObject("ADODB.Connection")
-  conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-  conn.Open
-  
-  If Err.Number <> 0 Then
-    Err.Clear
-    ' Nollataan yhteysobjekti ennen uutta yritystä — osittain avattu ADODB.Connection
-    ' voi jäädä virhetilaan ja uusi .Open sama objektille aiheuttaa virheen 3709.
-    Set conn = Nothing
-    Set conn = CreateObject("ADODB.Connection")
-    Provider = "Microsoft.ACE.OLEDB.15.0"
-    conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-    conn.Open
-    If Err.Number <> 0 Then
-      Err.Clear
-      ' Nollataan jälleen kolmatta yritystä varten
-      Set conn = Nothing
-      Set conn = CreateObject("ADODB.Connection")
-      Provider = "Microsoft.ACE.OLEDB.12.0"
-      conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-      conn.Open
-    End If
-  End If
+  ' DRY-refaktorointi: provider-fallback (16.0→15.0→12.0) on eristetty LuoADODBYhteys-apufunktioon
+  Set conn = LuoADODBYhteys(Kanta)
   On Error GoTo ErrorHandler
-  
+
+  If conn Is Nothing Then
+    MsgBox "ADODB-tietokantayhteyttä ei voitu muodostaa!" & vbCrLf & _
+           "Tarkista että Microsoft Access Database Engine on asennettuna.", vbCritical, "ADODB-virhe"
+    GoTo SafeExit
+  End If
+  Provider = conn.Provider  ' Tallennetaan diagnostiikkaa varten
+
   Debug.Print "  ADODB Provider: " & Provider
   Debug.Print "  ADODB Connection avattu"
   
@@ -315,7 +347,13 @@ Dim fld As Object        ' ADODB.Field
   If sSQL(2) <> "" Then
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB2 dataa..."
     Debug.Print "    SQL: " & sSQL(2)
-    
+
+    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
+    If Not OnTurvallinenSQL(sSQL(2)) Then
+      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB2): " & vbCrLf & sSQL(2), vbCritical, "SQL-tietoturvavirhe"
+      GoTo SafeExit
+    End If
+
     ' Käytetään ADODB.Recordset
     Set rs = CreateObject("ADODB.Recordset")
     
@@ -378,28 +416,29 @@ Dim fld As Object        ' ADODB.Field
   End If
   On Error GoTo 0
   
-  EndFastMode
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Valmis!"
   MsgBox "Data haettu onnistuneesti!", vbOKOnly, "Valmis"
   Sheets("Main").Select
-  Exit Sub
-  
-ErrorHandler:
-  ' Cleanup
+
+SafeExit:
+  ' Try-Finally -malli VBA:ssa: siivoo resurssit ja palauttaa UI-tilan AINA
+  ' — oli suoritus onnistunut, varhainen poistuminen tai virhe.
   On Error Resume Next
   If Not rsDAO Is Nothing Then rsDAO.Close: Set rsDAO = Nothing
   If Not dbDAO Is Nothing Then dbDAO.Close: Set dbDAO = Nothing
   If Not rs Is Nothing Then rs.Close: Set rs = Nothing
   If Not conn Is Nothing Then conn.Close: Set conn = Nothing
   On Error GoTo 0
-  
   EndFastMode
+  Exit Sub
+
+ErrorHandler:
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData ERROR] " & Err.Number & ": " & Err.Description
   MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
          "Database: " & Kanta & vbCrLf & _
          "Provider: " & Provider, vbCritical, "Database Connection Error"
   Err.Clear
-  Sheets("Main").Select
+  Resume SafeExit  ' Hyppää aina SafeExit-lohkoon — EndFastMode laukeaa varmasti
 End Sub
 '''
 ' GenPrintout: Generoi uuden tuloste-työkirjan käyttäen TEMPLATEa ja DB1-dataa.
