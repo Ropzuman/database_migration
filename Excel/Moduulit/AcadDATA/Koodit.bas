@@ -335,7 +335,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         For i = 0 To UBound(Blokit)
             If Blokit(i) = "*" Then AllowAll = True: Exit For
         Next i
-        Dim haveNameFilter As Boolean: haveNameFilter = False
+        haveNameFilter = False  ' Dim poistettu: määritelty proseduurin alussa (kaksoismaarittelu korjattu)
         If Not AllowAll Then
             For i = 0 To UBound(Blokit)
                 If Len(Blokit(i)) > 0 Then haveNameFilter = True: Exit For
@@ -396,19 +396,19 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             MsgBox "Kuvasta tai valitulta alueelta ei löytynyt tietoja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
         End If
     selCount = Joukko.Count
-    ' Varataan massakirjoituspuskuri valintakoon mukaan (pieni lisikettähaarukka)
+    ' Varataan massakirjoituspuskuri valintakoon mukaan (pieni lisäkettähaarukka)
     rowCap = selCount + 8
     colCap = 40 ' 7 peruskenttää + tyypilliset attribuutit
     ReDim buf(1 To rowCap, 1 To colCap)
     rowUsed = 0
     maxColUsed = 7
-        ' Alustetaan erillinen teksti-puskuri (BUG 1 -korjaus)
-        textBufRows = 0
-        textBufCap = 16
-        ReDim textBuf(1 To textBufCap, 1 To 8)
-        ' Käsitellään valintajoukon entiteetit
-        FoundAny = False
-        DocStartRow = Rivi
+    ' Alustetaan teksti-puskuri asiakirjakohtaisesti (Issue 2 -korjaus: varmistaa nollauksen moniasiakir-
+    ' jaturonnissa sen sijaan että aiemman asiakirjan teksti-entiteetit kasautuisivat seuraavaan)
+    textBufRows = 0
+    textBufCap = 16
+    ReDim textBuf(1 To textBufCap, 1 To 8)
+    FoundAny = False
+    DocStartRow = Rivi
         For i = 0 To Joukko.Count - 1
             ' Haetaan entiteetti eksplisiittisesti Item-metodilla välttämään myöhäissidontaambiguiteetti
             StepMsg = "Haetaan entiteetti valinnasta: indeksi=" & i
@@ -620,14 +620,29 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                         On Error GoTo ErrHandler
                     End If
                 End If
-                ' Lisätään tekstidataa erilliseen puskuriin – huuhdellaan blokkien jälkeen
+                ' Lisätään tekstidata erilliseen puskuriin – huuhdellaan blokkien jälkeen
+                ' Issue 1 -korjaus: myös PATH, DWG, tyyppi, HANDLE ja Layer tallennetaan
+                ' jotta teksti-rivit ovat käytettäviä VieDATA:ssa (lukee sarakkeen 4 HANDLen)
                 textBufRows = textBufRows + 1
                 If textBufRows > textBufCap Then
                     textBufCap = textBufCap + 16
                     ReDim Preserve textBuf(1 To textBufCap, 1 To 8)
                 End If
+                textBuf(textBufRows, 1) = Hakemisto
+                textBuf(textBufRows, 2) = DWGName
+                textBuf(textBufRows, 3) = IIf(isText, "TEXT", "MTEXT")
+                textBuf(textBufRows, 4) = entHandle
                 textBuf(textBufRows, 5) = textX
                 textBuf(textBufRows, 6) = textY
+                ' Layer-kentän haku – virheenkäsittely, koska myöhäinen sidonta ei takaa ominaisuuden saatavuutta
+                On Error Resume Next
+                If isText Then
+                    textBuf(textBufRows, 7) = oText.Layer
+                Else
+                    textBuf(textBufRows, 7) = oMText.Layer
+                End If
+                If Err.Number <> 0 Then textBuf(textBufRows, 7) = "": Err.Clear
+                On Error GoTo ErrHandler
                 textBuf(textBufRows, 8) = textStr
                 FoundAny = True
             Else
@@ -654,9 +669,14 @@ ContinueEntities:
         If textBufRows > 0 Then
             textStartRow = Rivi
             For tIdx = 1 To textBufRows
-                Cells(textStartRow + tIdx - 1, 5).Value = textBuf(tIdx, 5)
-                Cells(textStartRow + tIdx - 1, 6).Value = textBuf(tIdx, 6)
-                Cells(textStartRow + tIdx - 1, 8).Value = textBuf(tIdx, 8)
+                Cells(textStartRow + tIdx - 1, 1).Value = textBuf(tIdx, 1)  ' PATH
+                Cells(textStartRow + tIdx - 1, 2).Value = textBuf(tIdx, 2)  ' DWG
+                Cells(textStartRow + tIdx - 1, 3).Value = textBuf(tIdx, 3)  ' Tyyppi (TEXT/MTEXT)
+                Cells(textStartRow + tIdx - 1, 4).Value = textBuf(tIdx, 4)  ' HANDLE
+                Cells(textStartRow + tIdx - 1, 5).Value = textBuf(tIdx, 5)  ' XCord
+                Cells(textStartRow + tIdx - 1, 6).Value = textBuf(tIdx, 6)  ' YCord
+                Cells(textStartRow + tIdx - 1, 7).Value = textBuf(tIdx, 7)  ' Layer
+                Cells(textStartRow + tIdx - 1, 8).Value = textBuf(tIdx, 8)  ' TextString
                 Range(Cells(textStartRow + tIdx - 1, 1), Cells(textStartRow + tIdx - 1, 8)).Interior.ColorIndex = 8
             Next tIdx
             Rivi = textStartRow + textBufRows
@@ -987,11 +1007,12 @@ Public Sub PoistaBlokit()
   
 Cleanup:
     On Error Resume Next
-    If Not OliAuki Then
-        If Not oDOC Is Nothing Then
-            If Ver = 0 Then Ver = acNative
-            oDOC.SaveAs oDOC.FullName, Ver
-        End If
+    ' Issue 5 -korjaus: tallennetaan aina riippumatta OliAuki-lipusta – sama logiikka kuin VieDATA:ssa.
+    ' Ilman tätä jo auki olleeseen piirustukseen tehdyt poistot jäivät tallentamatta levylle.
+    If Not oDOC Is Nothing Then
+        If Ver = 0 Then Ver = acNative
+        oDOC.SaveAs oDOC.FullName, Ver        ' Tallennetaan aina
+        If Not OliAuki Then oDOC.Close False  ' Suljetaan vain, jos macro avasi piirustuksen
     End If
     If Not oACAD Is Nothing Then
         oACAD.Preferences.System.SingleDocumentMode = Docmode
@@ -1151,8 +1172,9 @@ Private Function LNumero(No As Long, Alku As String) As String
 End Function
 
 Sub RefNumerointi()
-'' Viitenuerointi-työkalu
+'' Viitenumerointi-työkalu
 '' 26.10.2025 – Integer muutettu Longiksi
+'' 04.03.2026 – Issue 3 -korjaus: lisätty FastMode-suojaus kirjoitussilmukan ympärille
 
     Dim vSivu As Long '' Muutettu Integer → Long
     Dim Kirjain As String
@@ -1162,11 +1184,17 @@ Sub RefNumerointi()
     Aloitus.Nykyinen.Value = True
     Kirjain = "A"
     
-    '' Fetch from drawing
+    '' Haetaan data piirustuksesta
     TuoDATA True, "REFERENCE"
-    vSivu = CLng(Aloitus.Range("D17").Value) '' Changed from CInt to CLng
+    vSivu = CLng(Aloitus.Range("D17").Value)
   
     Cells.Sort Key1:=Range("F2"), Order1:=xlDescending, Header:=xlYes, OrderCustom:=1, MatchCase:=False, Orientation:=xlTopToBottom
+    
+    ' Suorituskykysuojaus: estetään uudelleenpiirrto ja -laskenta rivittäisen kirjoituksen ajaksi
+    ' (vastaa Numerointi-aliohjelman toteutusta)
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo RefNumCleanup
     
     i = 2
     Do
@@ -1176,6 +1204,15 @@ Sub RefNumerointi()
         i = i + 1
         Kirjain = Chr(Asc(Kirjain) + 1)
     Loop
+
+RefNumCleanup:
+    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+    If Err.Number <> 0 Then
+        MsgBox "Virhe RefNumeroinnissa: " & Err.Number & vbCrLf & Err.Description, vbCritical, "RefNumerointi"
+        Exit Sub
+    End If
     
     Aloitus.Range("D18").Value = vSivu + 1
     VieDATA
