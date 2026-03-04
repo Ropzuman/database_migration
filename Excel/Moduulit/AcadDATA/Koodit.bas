@@ -360,7 +360,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         For j = 0 To Joukko.Count - 1
             On Error Resume Next
             Set oEnt = Joukko.Item(j)
-            Dim preEntName As String: preEntName = ""
+            preEntName = ""  ' Dim poistettu: määritelty proseduurin alussa (kaksoismäärittely korjattu)
             preEntName = oEnt.EntityName
             If Err.Number <> 0 Then preEntName = "": Err.Clear
             On Error GoTo ErrHandler
@@ -368,7 +368,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                 EiPoisteta = AllowAll
                 If Not EiPoisteta Then
                     On Error Resume Next
-                    Dim preEffName As String: preEffName = ""
+                    preEffName = ""  ' Dim poistettu: määritelty proseduurin alussa (kaksoismäärittely korjattu)
                     preEffName = oEnt.EffectiveName
                     If Err.Number <> 0 Then preEffName = "": Err.Clear
                     On Error GoTo ErrHandler
