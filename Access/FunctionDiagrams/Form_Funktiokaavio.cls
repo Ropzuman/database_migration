@@ -30,7 +30,6 @@ Private Sub ADDNEWREV_Click()
 On Error GoTo ErrorHandler
 Debug.Print "ADDNEWREV_Click: Starting operation"
 Dim DB As DAO.Database
-Dim vrev As String
 Dim urev As String
 Dim Taulu As DAO.Recordset
 Dim ALUE As String
@@ -41,8 +40,6 @@ Dim kk As String
 Dim vuosi As String
 Dim revpaiva As String
 Dim revteki As String
-Dim BuffSize As LongPtr
-Dim NBuffer As String
 Set DB = CurrentDb
 Debug.Print "  Database connection established"
 
@@ -112,10 +109,6 @@ End Sub
 Private Sub Command50_Click()
 On Error GoTo ErrorHandler
 Debug.Print "Command50_Click: Starting control update operation"
-Dim qry As DAO.Recordset
-Dim sql As String
-Dim DB As Object ' Database
-Set DB = CurrentDb
 
 Debug.Print "  AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value & ", TagID: " & Me!Muokkaus3.Value
 DoCmd.SetWarnings False
@@ -148,7 +141,6 @@ Private Sub Command83_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 On Error GoTo ErrorHandler
 Debug.Print "Command83_Click: Starting recipe update operation"
-Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Debug.Print "  RecipeID: " & RECIPES.Form.ID
@@ -165,16 +157,12 @@ If Vastaus <> vbCancel Then
   Me.Refresh
 End If
 Debug.Print "Command83_Click: COMPLETED successfully"
-
-' Vapautetaan tietokantaviite
-Set DB = Nothing
 Exit Sub
 
 ErrorHandler:
     Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    RecipeID: " & RECIPES.Form.ID
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    Set DB = Nothing
     MsgBox "Virhe reseptin päivityksessä: " & Err.Description, vbCritical
 End Sub
 

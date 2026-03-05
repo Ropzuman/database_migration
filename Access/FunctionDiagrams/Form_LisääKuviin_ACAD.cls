@@ -962,12 +962,7 @@ Dim Valitallennus As Variant
 Dim TallennusNimi As String
 Dim NextPage As String
 Dim CurrPage As String
-Dim FirstLoopNo As String
-Dim Valiotsikkotallennus As Variant
-
 ReDim Paikat(1 To 1)
-
-FirstLoopNo = ""
 
 Set DB = CurrentDb
 Ajastin = Timer
@@ -1015,10 +1010,6 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto löytyi voidaan avata se AutoCADissä
     Set Kuvat = DB.OpenRecordset("SELECT * FROM " & OtsTaulukko & " WHERE DocumentID=" & Me.RefID.Value)
 
     Do While Not DbBlokit.EOF
-    If FirstLoopNo = "" Then
-        FirstLoopNo = DbBlokit.Fields("LoopNo").Value
-    End If
-
         If FSO.FileExists(Me.PohjaHakem.Value & "LoopDet.dwg") Then 'Blokki löytyi
             
 'Insertoitava blokki
@@ -1110,7 +1101,7 @@ If FSO.FileExists(Tiedosto) Then 'Tiedosto löytyi voidaan avata se AutoCADissä
                  
                  
                  
-                 Valiotsikkotallennus = VaihdaOtsikkotiedot(Kuvat, TallennusNimi & ".dwg", NextPage, CurrPage)
+                 Call VaihdaOtsikkotiedot(Kuvat, TallennusNimi & ".dwg", NextPage, CurrPage)
                  Valitallennus = TallennaUusiKuva(TallennusNimi, False, oAcad)
    
                 

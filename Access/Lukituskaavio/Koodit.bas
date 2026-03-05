@@ -7,6 +7,7 @@ Public BlockPath As String
 Sub KillLinks()
 Dim T As DAO.TableDef
 Dim LinkCount As Long
+
 On Error GoTo ErrorHandler
 
 LinkCount = 0
@@ -102,4 +103,11 @@ TAULUKKO = UCase$(Application.CurrentObjectName)
       Set oACAD = Nothing
     End If
   End If
+  Exit Function
+
+ErrorHandler:
+  ' Vapautetaan resurssit AutoCAD-virheen sattuessa
+  Set Entity = Nothing
+  Set oACAD = Nothing
+  MsgBox "Virhe: " & Err.Description, vbCritical, "AvaaBlock"
 End Function
