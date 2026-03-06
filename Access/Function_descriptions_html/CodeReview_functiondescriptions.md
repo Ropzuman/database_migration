@@ -1,4 +1,17 @@
 🕵️‍♂️ Code Review -raportti: Piirikohtaiset toimintakuvaukset ja apumoduulit
+
+---
+**Refaktoroitu: 2026-03-06**
+
+| Moduuli | Muutos |
+|---|---|
+| `KAANNOS.bas` | SQL-injektiosuojaus: `sPar0/1/2`-sanitointi kaikille `DLookup`-kutsuille |
+| `Form_MOTORS subform.cls` | `TurvallinenKursori`-rajaus `Left$`/`Mid$`:lle, `KohdeTeksti`-välimuistitus |
+| `Form_PIIRIT subform.cls` | `TurvallinenKursori`-rajaus `Left$`/`Mid$`:lle, `KohdeTeksti`-välimuistitus |
+| `USysCheck.bas` | Poistettu virheellinen `DB.Close` `CurrentDb`-viittaukselta |
+| `Form_FrmASETUKSET.cls` | `CurrentDb` välimuistitettu `db`-muuttujaan `Linkkaa`-aliohjelmassa |
+
+---
 Moduuli 1: KAANNOS.bas (Käännöslogiikka)
 📊 Yhteenveto
 

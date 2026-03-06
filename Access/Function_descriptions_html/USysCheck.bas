@@ -84,7 +84,7 @@ Function SniffUser()
     ' Suljetaan oikein — .Close ennen Set Nothing (DAO-sääntö)
     Taulu.Close
     Set Taulu = Nothing
-    DB.Close
+    ' CurrentDb-viittausta EI suljeta .Close-kutsulla — vain Set Nothing
     Set DB = Nothing
     Exit Function
     
@@ -93,6 +93,6 @@ ErrorHandler:
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
-    If Not DB Is Nothing Then DB.Close
+    ' CurrentDb-viittausta EI suljeta .Close-kutsulla — vain Set Nothing
     Set DB = Nothing
 End Function
