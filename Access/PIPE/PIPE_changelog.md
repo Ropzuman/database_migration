@@ -102,3 +102,63 @@ Toinen kierros Vaihe 3 -skannauksesta löysi ja korjasi seuraavat jäljellä ole
 - `' Tarkoitus: Delete zDetails records that no longer exist in InstrumentIndex` → `' Tarkoitus: Poistaa zDetails-tietueet, joita ei enää löydy InstrumentIndex-taulukosta`
 
 Lopputulos: 0 englanninkielistä kommenttirakennetta kaikissa kymmenessä PIPE-tiedostossa.
+
+---
+
+## Code Review -kierros: Vakaus- ja tietoturvakorjaukset (2026-03-07)
+
+### Kriittiset korjaukset
+
+#### Form_zFunc.cls — SQL-injektiovulneraabiliteetti poistettu
+
+- **Command5_Click:** Korvattu vaarallinen SQL-merkkijonoketjutus (`L & acode & L`) parametrisoidulla `DAO.QueryDef`-kyselyllä (`[pArea]`, `[pLoop]`, `[pSymb]`, `[pSuffix]`)
+- Poistettu käyttämättömät muuttujat: `Dim tbl2`, `Dim qry`, `Dim ssSQL`, `Dim L` — kuollut koodi siivottu
+- Virheenkäsittelijä päivitetty: `Set tbl2 = Nothing` → `Set qdf = Nothing`
+
+#### Form_TYÖKALUT.cls — Kriittinen logiikkabugi + COM-muistivuodot
+
+- **Command43_Click:** Korjattu kriittinen bugi `= vbYesNo` → `= vbYes` — kenttälaitteiden päivitys ei ennen koskaan ajanut (vertailu palauttaa aina `False`)
+- **Command13, 23, 33, 43, 53:** Lisätty `vbExclamation + vbDefaultButton2` kaikkiin tuhoisia tietokantapäivityksiä vahvistaviin dialogeihin — "Ei" on nyt oletuspainike vahingon estämiseksi
+- **LueTiedot, LueTiedotByAttribute, LueTiedotByBlockAndAttribute — ErrorHandler:** Lisätty COM-objektien siivous (`Joukko.Delete`, `Set Joukko = Nothing`, `Set oDOC = Nothing`, `Set oACAD = Nothing`) — muistivuoto estettiin suurten DWG-eräajojen aikana
+
+#### Koodit.bas — API-parametrien tarkkuus
+
+- `api_GetUserName` ja `api_GetComputerName`: Lisätty eksplisiittinen `ByRef nSize As Long` molempiin haruihin (`#If VBA7 Then` ja `#Else`) — poistaa implisiittisyyden, joka voi aiheuttaa muistivirheitä 64-bit-ympäristössä
+
+#### Form_USysPipeToOther.cls — Luettavuus ja Me.-etuliite
+
+- **OpenPipeline:** Pitkä `If/Or`-ehtolauseke (`PIPELINE_F Or PIPELINE Or ...`) refaktoroitu `Select Case` -rakenteeksi — DRY-periaate, helpompi laajentaa uusilla blokkityypeillä
+- **TPipeline.Value** → **Me.TPipeline.Value** kolmessa kohdassa (OpenPipeline, AvaaBlokki, BFind_Click) — eksplisiittinen lomakeviittaus, parempi Option Explicit -yhteensopivuus
+
+#### Form_DBUsers.cls — Virheenkäsittely ja vanhentuneet komennot
+
+- **WhosOn — Err_WhosOn:** Tallennetaan `Err.Number`/`Err.Description` muuttujiin ennen `Close`-kutsua — alkuperäinen virhetieto ei enää katoa `On Error Resume Next` -kontekstin takia; `If Err = 68` toimi aina väärin (0 = 68 on False)
+- **WhosOn:** Lisätty `iLDBFile > 0` -vartiointi (`If iLDBFile > 0 Then Close #iLDBFile`) — sulkee tiedostokahvan turvallisesti vain jos se on avattu
+- **sPath-muodostus:** `+`-operaattori → `&`-operaattori merkkijonoketjutuksessa (VBA-standardikäytäntö)
+- **Command27_Click:** `net send` → `msg.exe` — vanha Windows-komento poistettu käytöstä Vistasta alkaen; päivitetty nykyiseen vastineeseen
+
+### Päivitetty tiedostoyhteenveto
+
+| Tiedosto | Korjaukset 2026-03-07 |
+|---|---|
+| `Form_zFunc.cls` | SQL-injektio, kuollut koodi |
+| `Form_TYÖKALUT.cls` | Kriittinen bugi, COM-vuodot, MsgBox-oletukset |
+| `Koodit.bas` | API ByRef-tarkkuus |
+| `Form_USysPipeToOther.cls` | Select Case, Me.-etuliite |
+| `Form_DBUsers.cls` | Err-tallennus, tiedostokahva, net send |
+
+---
+
+## Code Review -päivitys: Toinen kierros (2026-03-07)
+
+### Form_DBUsers.cls — VBA And-operaattorin oikosuljemattomuus
+
+- **WhosOn — bMach/bUser-silmukat:** `While .bMach(i) <> 0 And i <= 32` → `Do While i <= 32` + `If .bMach(i) = 0 Then Exit Do`
+  - VBA arvioi aina **molemmat** `And`-haarat — jos `i = 33`, ohjelma yrittää lukea `.bMach(33)` ennen rajakieltoa → "Subscript out of range" (Error 9)
+  - Sama korjaus tehty sekä tietokoneen nimen (`bMach`) että käyttäjänimen (`bUser`) silmukkaan
+
+### Form_TYÖKALUT.cls — Valintajoukkojen nimitörmäykset
+
+- **PoimiJoukko, PoimiJoukkoByAttribute, PoimiJoukkoByBlockAndAttributeValue:** `For i = 0 To ... SelectionSets.Count - 1` -poisto → `On Error Resume Next` / `oDOC.SelectionSets.Item("APUPICK").Delete` / `On Error GoTo ErrorHandler`
+  - Jos edellinen ajo kaatui ennen joukon tuhoamista, `"APUPICK"` jäi AutoCADin muistiin → `.Add("APUPICK")` heitti virheen ja koko skripti pysähtyi
+  - `.Item().Delete` on suorempi ja kutsu epäonnistuu hiljaisesti (On Error Resume Next) jos joukkoa ei enää ole
