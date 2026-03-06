@@ -1,188 +1,98 @@
- Code Review Agent
-Oma Gem
-Code Review Agent sanoi
-
-Tässä on kattava ja ammattimainen Code Review -raportti toimittamistasi instrumenttipiirikaavioiden (Loop Diagram) koodimoduuleista. Arvioinnissa on huomioitu VBA:n parhaat käytännöt, turvallisuus, tietokannan suorituskyky ja 64-bittisen Office-ympäristön vaatimukset.
-
-1. Form_LisääKuviin_ACAD.cls
-
-    📊 Yhteenveto: Kattava lomakeluokka AutoCAD-piirustusten generointiin ja attribuuttien poimintaan. Koodissa on tehty hyvää työtä siirtymisessä myöhäiseen sidontaan (late binding Object -tyyppeinä), mikä ehkäisee viiteongelmia ja parantaa 64-bit yhteensopivuutta.
-
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus):
-
-        Datan menetysriski: HaeTekstit_Click -aliohjelmassa suoritetaan komento CurrentDb.Execute "DELETE * FROM Blokit". Tämä tuhoaa kaiken datan Blokit-taulusta, riippumatta siitä mitä hakemistoa parhaillaan käsitellään. Jos tietokantaa käytetään monen eri projektin hallintaan samanaikaisesti, muiden projektien attribuuttitiedot nollautuvat vahingossa.
-
-        CPU-kuorma (Busy Wait): Odota-aliohjelma käyttää Do While odotus > Timer ... DoEvents ... Loop -rakennetta. Tämä "busy wait" pitää suorittimen ytimen 100 % kuormituksella odotuksen ajan ja tekee ohjelmasta epävakaan oloisen.
-
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
-
-        Käytät toistuvasti CurrentDb-kutsuja (esim. CurrentDb.Execute ja heti perään CurrentDb.OpenRecordset). Access luo jokaisella kerralla uuden referenssin tietokantaan, mikä on hitaampaa ja altistaa muistivuodoille.
-
-    💡 Parannusehdotukset (Ylläpidettävyys):
-
-        Käytä aina määriteltyä DAO.Database -muuttujaa.
-
-        Odotukseen kannattaa käyttää Windows API:n Sleep-funktiota, joka vapauttaa CPU:n.
-
-    🛠️ Korjattu koodi (Esimerkki):
-
-VBA
-
-' 1. Määrittele API Sleep moduulin alkuun (64-bit / 32-bit tuki)
-
-# If VBA7 Then
-
-    Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
-# Else
-
-    Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-
-# End If
-
-' 2. Korjattu Odota-funktio (ei kuormita CPU:ta)
-Private Sub Odota(Aika_Sadasosina As Integer)
-    DoEvents ' Käsitellään mahdolliset taustaviestit
-    Sleep Aika_Sadasosina * 10
-End Sub
-
-' 3. Korjattu datan poisto (HaeTekstit_Click)
-Dim db As DAO.Database
-Set db = CurrentDb
-' Estetään SQL-injektio Replace-funktiolla ja poistetaan vain kyseisen hakemiston blokit
-db.Execute "DELETE * FROM Blokit WHERE Path = '" & Replace(Polku, "'", "''") & "'", dbFailOnError
-Set Taulu = db.OpenRecordset("Blokit")
-
 1. Form_Tee Kuvat.cls
 
-    📊 Yhteenveto: Rinnakkainen tai uudempi iterointi AutoCAD-kuvien generointiin. Tässä moduulissa SQL-poisto on jo toteutettu edellisen esimerkin mukaisesti turvallisesti hakemistokohtaisesti (WHERE PATH='...'), mistä iso plussa.
+    📊 Yhteenveto: Hieno refaktorointi! Aiemmin havaittu "busy wait" -ongelma (joka piti prosessorin käyttöasteen korkeana) on korjattu käyttämällä Windows API:n Sleep-funktiota (Sleep CLng(Aika) * 10). Lisäksi lomakekontrollien ekspliittinen viittaus (Me.-etuliite) ja DAO:n selkeyttäminen parantavat koodin laatua ja ylläpidettävyyttä. Myös AutoCADin GetObject-fallback säästää valtavasti aikaa massatulostuksissa.
 
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus): Ei vakavia ongelmia. Moduuli noudattaa selvästi parempia DAO-käytäntöjä.
+    🚨 Kriittiset löydökset (Tietoturva & Vakaus): Ei havaittu. Koodi on erittäin vakaalla pohjalla.
 
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
+    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky): Olet lisännyt DoEvents-kutsun fiksusti juuri ennen Sleep-funktiota. Tämä varmistaa, että Accessin käyttöliittymä (esim. peruuta-painike tai tilarivi) ei jäädy odotuksen aikana.
 
-        CreateObject("AutoCAD.Application") on raskas operaatio. Jos painiketta painetaan useasti, avataan AutoCAD aina uudestaan (mikäli edellinen instanssi on suljettu). Jos taustalla on jo olemassa oleva AutoCAD-prosessi, olisi nopeampaa napata se käyttöön GetObject-funktiolla.
+    💡 Parannusehdotukset (Ylläpidettävyys): Varmista aina massatulostusajojen (TeeKuvat_Click) virheenkäsittelijässä (ErrorHandler), että oAcad- ja oDoc-objektit asetetaan arvoon Nothing, vaikkei ohjelmaa haluttaisikaan sulkea (Quit), jotta taustalle ei jää "haamuobjekteja" muistiin.
 
-    💡 Parannusehdotukset (Ylläpidettävyys):
+2. General.bas (Käyttäjäseuranta SniffUser)
 
-        Ota käyttöön nk. "Fallback"-mekanismi AutoCAD-instanssin luomiseen. Se parantaa nopeutta huomattavasti.
+    📊 Yhteenveto: Kirjaa käyttäjän verkkonimen (GetUserNameA) ja tietokoneen nimen (GetComputerNameA) UsysUsers-lokiin. API-kutsut on toteutettu fiksusti null-turvallisina (Nz) ja viety 64-bit yhteensopivaan formaattiin.
 
-    🛠️ Korjattu koodi:
+    🚨 Kriittiset löydökset (Tietoturva & Vakaus): Koodinpätkässä avataan transaktio komennolla DBEngine.BeginTrans ennen recordsetin täyttämistä. Tarkista, että koodin lopussa on ehdottomasti DBEngine.CommitTrans (tai workspace-tason vastaava). Jos CommitTrans jää uupumaan, taulu lukkiutuu ja tietoja katoaa. Samoin virheenkäsittelijässä tulee olla DBEngine.Rollback.
 
-VBA
+    💡 Parannusehdotukset (Ylläpidettävyys): Käytä transaktioissa mieluummin nimenomaista työtilaa (DBEngine.Workspaces(0)), sillä globaali DBEngine.BeginTrans koskettaa kaikkia avoimia tietokantayhteyksiä kyseisessä instanssissa.
 
-Private Sub HaeTekstit_Click()
-    On Error Resume Next
-    ' 1. Yritetään ottaa kiinni olemassa olevaan instanssiin
-    Set oAcad = GetObject(, "AutoCAD.Application")
-
-    If Err.Number <> 0 Then
-        ' 2. Jos ei ole auki, avataan uusi
-        Err.Clear
-        Set oAcad = CreateObject("AutoCAD.Application")
-    End If
-    On Error GoTo ErrHandler
-    ' ... muu koodi jatkuu ...
-
-3. Form_LukituskaavioLinkit.cls
-
-    📊 Yhteenveto: Päivittää lukituskaavioiden sivulinkityksiä. Aiempien raporttien mukaan tässä on tehty iso refaktorointi O(N²) -ongelman poistamiseksi.
-
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus): Ei havaittu.
-
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
-
-        Algoritmi hyödyntää tbl.FindFirst-metodia ja tyhjyystarkistukset on korjattu null-turvalliseksi (Nz(tbl!page1, "") = ""). Tämä on erinomaista työtä koodin suorituskyvyn kannalta. Kehut tästä!
-
-    💡 Parannusehdotukset (Ylläpidettävyys):
-
-        Vaikka suorituskyky on parantunut eksponentiaalisesti, satojen tai tuhansien .Edit / .Update -operaatioiden tekeminen yksitellen voi silti rokottaa verkkolevyn yli toimivaa tietokantaa. Kapseloimalla koko Do Until -luuppi DAO-transaktioon nopeus jopa kymmenkertaistuu.
-
-    🛠️ Korjattu koodi:
+    🛠️ Korjattu koodi (Transaktion varmistus):
 
 VBA
 
-DBEngine.Workspaces(0).BeginTrans ' Aloitetaan transaktio
-On Error GoTo ErrorHandler
+  ' Kirjataan sisäänkirjautuminen tietokantaan tapahtumana
+  Set db = CurrentDb
+  Dim ws As DAO.Workspace
+  Set ws = DBEngine.Workspaces(0)
+  
+  ws.BeginTrans
+  On Error GoTo TransError ' Siirrytään transaktion peruutukseen virheessä
+  
+  Set Taulu = db.OpenRecordset("UsysUsers", dbOpenDynaset)
+  With Taulu
+      .AddNew
+      .Fields(0) = Nz(NWUserName, "Unknown")
+      .Fields(1) = Nz(CurrentUser(), "Unknown")
+      .Fields(2) = Nz(CName, "Unknown")
+      .Fields(3) = Now
+      .Update
+  End With
+  Taulu.Close
+  
+  ws.CommitTrans ' HYVÄKSYTÄÄN TRANSAKTIO
+  Set Taulu = Nothing
+  Set db = Nothing
+  Exit Function
 
-Do Until qry.EOF
-    ' ... FindFirst ja .Edit / .Update logiikka pysyy samana ...
-Loop
+TransError:
+  ws.Rollback ' PERUTAAN VIRHETILANTEESSA
+  MsgBox "Lokituksen tallennus epäonnistui: " & Err.Description
 
-DBEngine.Workspaces(0).CommitTrans ' Hyväksytään muutokset yhtenä blokkina tietokantaan
+1. USysCheck.bas & For ACAD Utility.bas
 
-Exit Sub
+    📊 Yhteenveto: Todella oppikirjamainen korjaus! Olet siirtänyt rakenteet (Type OPENFILENAME, Type POINTAPI) ehdollisen käännöksen ulkopuolelle, mikä korjasi aiemman Type Declaration -bugin, joka rikkoi Accessin lomakeviittaukset. API-kutsut on deklatoitu moitteettomasti LongPtr (osoittimet) ja Long (tavalliset numeroarvot) osalta.
 
-ErrorHandler:
-    DBEngine.Workspaces(0).Rollback ' Perutaan muutokset virhetilanteessa
-    ' ... virheenkäsittely
+    🚨 Kriittiset löydökset: Ei havaittu. Erinomainen 64-bit vakaus.
 
-1. Form_DBUsers.cls
+2. Form_DBUsers.cls
 
-    📊 Yhteenveto: Lukee Accessin .ldb tai .laccdb lukkotiedostoa binäärinä selvittääkseen, ketkä ovat kirjautuneena järjestelmään. Todella hyödyllinen työkalu monikäyttäjäympäristöissä.
+    📊 Yhteenveto: Käyttäjien lukkotiedoston (.ldb / .laccdb) luku suoraan binäärinä. Olet siistinyt null-merkkiin päättyvien (null-terminated) merkkijonojen parsintalogiikkaa huomattavasti.
 
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus):
+    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky): Binääriluku (Do While Not EOF(iLDBFile)) on toimiva ja suhteellisen turvallinen. Varmista aiempien neuvojen mukaisesti, että moduulin ErrHandler-lohkossa on tarvittaessa komento Close iLDBFile (tai pelkkä Close), jotta lukkotiedosto ei jää haamulukkoon verkkoasemalle.
 
-        Binääritiedostoa luetaan Open SPath For Binary Access Read Shared As iLDBFile. Koodissa on kyllä virheenkäsittely, mutta alkuperäinen Close iLDBFile on vasta rutiinin lopussa. Jos do-while -luupin aikana tapahtuu lukuvirhe, suoritus hyppää ErrHandler-lohkoon, jolloin lukkotiedoston kahva jää käyttöjärjestelmälle auki (Lock state leak).
+3. Module1.bas
 
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
+    📊 Yhteenveto: InputBox-pohjainen syötteen validointiluuppi.
 
-        Tavutaulukon (Byte array) ja nollaterminoitujen merkkijonojen rakennus on tehty hyvin ja tehokkaasti.
+    ⚠️ Huomioitavaa (Toiminnallisuus): Nykyisellään Do While continueLoop pitää sisällään useita sisäkkäisiä If-Else -lauseita syötteen numeerisuudelle ja sallitulle välille (1-10). Logiikka on eettisesti oikein (Catch & Retry), mutta silmukan rakennetta voisi "litistää" (flatten) puhtaammaksi, mikä estää nk. "Hadouken"-efektin eli liian syvän sisennyksen.
 
-    💡 Parannusehdotukset (Ylläpidettävyys):
+    💡 Parannusehdotukset (Ylläpidettävyys): Return early / Fail fast -tyyli on usein luettavampi.
 
-        Sulje kaikki avoimet tiedostokahvat virheenkäsittelijässä komennolla Close.
-
-    🛠️ Korjattu koodi:
-
-VBA
-
-ErrHandler:
-   ' Varmistetaan, että kaikki avoimet tiedostokahvat suljetaan virhetilanteessa
-   On Error Resume Next
-   Close ' Sulkee kaikki VBA:n kautta avatut tiedostokahvat tässä kontekstissa
-   MsgBox "Virhe: " & Err.Number & " - " & Err.Description
-
-1. Form_Linkkien vaihto.cls
-
-    📊 Yhteenveto: Moduuli, joka linkittää (relink) ulkoiset Access-taulut dynaamisesti uudelleen nykyiseen polkuun.
-
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus): Ei vakavia tietoturva-aukkoja. Moduulissa on kuitenkin runsas On Error Resume Next -käyttö DoCmd.TransferDatabase yhteydessä. Jos taulun luonti epäonnistuu (esim. se on auki toisella käyttäjällä eksklusiivisesti), se ohitetaan hiljaisesti.
-
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
-
-        Polun parsinta on tehty For i = Len(...) To 1 Step -1 -luupilla takaperin hienosti ilman ylimääräisiä säännöllisiä lausekkeita, mikä on nopeaa.
-
-    💡 Parannusehdotukset (Ylläpidettävyys):
-
-        Hiljaisen ohittamisen sijaan olisi hyvä koota lista tauluista, joiden linkitys epäonnistui, ja näyttää se käyttäjälle operaation päätteeksi.
-
-    🛠️ Korjattu koodi:
+    🛠️ Korjattu koodi (Esimerkki siistimmästä silmukasta):
 
 VBA
 
-Dim Epäonnistuneet As String
+Sub CustomMessage()
+    Dim strInput As String
+    Dim n As Long
 
-On Error Resume Next
-DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, acTable, Taulu, Taulu, False
-
-If Err.Number <> 0 Then
-    Epäonnistuneet = Epäonnistuneet & Taulu & vbCrLf
-    Err.Clear
-Else
-    UpdateCount = UpdateCount + 1
-End If
-On Error GoTo ErrHandler
-
-' ... lopussa:
-If Epäonnistuneet <> "" Then
-    MsgBox "Seuraavien taulujen linkitys epäonnistui:" & vbCrLf & Epäonnistuneet, vbExclamation
-End If
-
-1. For ACAD Utility.bas
-
-    📊 Yhteenveto: API-määrityksiä AutoCAD-integraatiolle.
-
-    ⚠️ Huomioitavaa: Hiiren sijaintia (GetCursorPos) hakevan API-funktion deklarointi (vrt. 64-bit PtrSafe) on tehty oikeaoppisesti #If VBA7 -ehtolauseella (kuten MIGRATION_SUMMARY-dokumettikin toteaa). Tyypit on sijoitettu moduulitasolle (ratkaistu bugi), joten tämä moduuli on teknisesti todella vakaa 64-bit ympäristöihin.
-
-Review Agentin Loppusanat: Koodikanta on käynyt läpi hienoja 64-bittiseen ympäristöön siirtymiseen liittyviä päivityksiä. Eniten arvoa saat korjaamalla tietokantakyselyiden transaktionhallinnan ja poistamalla CPU:ta kuormittavat odotusluupit (busy waits). Näillä muutoksilla AutoCAD-automaatio toimii kevyesti ja vakaasti myös raskaassa tuotantokäytössä. Työ on erittäin ammattimaista!
+    Do
+        strInput = InputBox("Enter a number between 1 and 10.")
+        If strInput = "" Then Exit Sub ' Käyttäjä peruutti
+        
+        If Not IsNumeric(strInput) Then
+            If MsgBox("Please enter a numeric value.", vbOKCancel, "Error!") = vbCancel Then Exit Sub
+        Else
+            n = CLng(strInput)
+            If n >= 1 And n <= 10 Then
+                ' Validointi onnistui!
+                MsgBox "You entered valid number: " & n, vbInformation
+                Exit Do
+            Else
+                If MsgBox("Number outside range." & vbCrLf & _
+                          "You entered a number that is less than 1 or greater than 10.", _
+                          vbOKCancel, "Error!") = vbCancel Then Exit Sub
+            End If
+        End If
+    Loop
+End Sub

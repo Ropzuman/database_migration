@@ -52,7 +52,11 @@ Function SniffUser()
   
   ' Kirjataan sisäänkirjautuminen tietokantaan tapahtumana
   Set db = CurrentDb
-  DBEngine.BeginTrans
+  Dim ws As DAO.Workspace
+  Set ws = DBEngine.Workspaces(0) ' Nimenomainen työtila — ei koske muita avoimia yhteyksiä
+  
+  ws.BeginTrans
+  On Error GoTo ErrHandler ' Siirrytään transaktion peruutukseen virheessä
   
   Set Taulu = db.OpenRecordset("UsysUsers", dbOpenDynaset)
         With Taulu
@@ -63,7 +67,7 @@ Function SniffUser()
             .Fields(3) = Now             ' Aikaleima
             .Update
         End With  
-            DBEngine.CommitTrans
+            ws.CommitTrans ' Hyväksytään transaktio — kaikki muutokset tallennetaan
 
 Cleanup:
   On Error Resume Next
@@ -77,7 +81,7 @@ Cleanup:
 
 ErrHandler:
   On Error Resume Next
-  DBEngine.Rollback
+  ws.Rollback ' Perutaan transaktio — tietokannan eheys säilyy virhetilanteessa
   ' Virhe kirjataan hiljaisesti — tapahtuma perääntyy tietokannan eheyden suojaamiseksi
   Resume Cleanup
 End Function

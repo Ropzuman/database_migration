@@ -9,13 +9,22 @@
 
 ### Form_Tee Kuvat.cls
 
-- **Busy wait poistettu — `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla (`kernel32.dll`). CPU:n ytimä ei enää pyöri täysillä odotuksen ajan.
+- **Busy wait poistettu — `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla (`kernel32.dll`). CPU:n ytimet eivät enää pyöri täysillä odotuksen ajan.
 - **Sleep API -deklaraatio lisätty:** `#If VBA7 / PtrSafe` -lohko moduulin alkuun — 64-bit yhteensopiva.
 - **GetObject-fallback — `HaeTekstit_Click`:** `CreateObject("AutoCAD.Application")` edeltää nyt `GetObject`-yritys. Jos AutoCAD on jo auki, liitytään siihen — ei avata turhaa uutta instanssia.
+- **`oDoc = Nothing` Cleanup-lohkoon — `TeeKuvat_Click`:** Moduulitason `oDoc`-objekti nollataan siivouslohkossa `oAcad`-siivauksen jälkeen — estää haamuviittauksen muistissa virhetilanteessakin.
 
 ### Form_Linkkien vaihto.cls
 
 - **Epäonnistuneet linkitykset raportoitu:** Lisätty `Epäonnistuneet As String` -muuttuja keräämään taulut joiden `DoCmd.TransferDatabase` epäonnistui. Käyttäjälle näytetään lista epäonnistuneista operaation päätteeksi — hiljainen ohittaminen poistettu.
+
+### General.bas
+
+- **Transaktio nimenomaisen työtilan kautta — `SniffUser`:** `DBEngine.BeginTrans/CommitTrans/Rollback` korvattu `DBEngine.Workspaces(0).BeginTrans/CommitTrans/Rollback` — transaktio koskee vain kyseistä yhteyttä, ei kaikkia avoimia tietokantayhteyksiä instanssissa. `ws`-muuttuja deklaroitu `DAO.Workspace`-tyyppisenä.
+
+### Module1.bas
+
+- **Hadouken-sisennys litistetty — `CustomMessage`:** Sisäkkäinen `Do While continueLoop / If / Else / If / Else` -rakenne korvattu `Do...Loop` + fail-fast-tyylillä. `continueLoop`-apumuuttuja poistettu tarpeettomana. Koodi tasaisempaa ja helpommin luettavaa.
 
 ---
 

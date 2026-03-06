@@ -413,6 +413,7 @@ Cleanup:
         oAcad.Quit
         Set oAcad = Nothing
     End If
+    Set oDoc = Nothing ' Vapautetaan AutoCAD-dokumenttiobjekti — estää haamuviittauksen muistissa
     On Error GoTo 0
     Exit Sub
 
