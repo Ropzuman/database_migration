@@ -54,12 +54,14 @@ MsgBox "Uusi arvo lisätty"
 End Sub
 
 Private Sub NEWVALUE_Enter()
-  If UCase$(Left$(Atag, 5)) = "FTAGI" Then
+  Dim sAtag As String
+  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion estämiseksi
+  If UCase$(Left$(sAtag, 5)) = "FTAGI" Then
       NEWVALUE.RowSource = "SELECT POS FROM POS_List;"
-  ElseIf UCase$(Left$(Atag, 7)) = "REFFROM" Or UCase$(Left$(Atag, 5)) = "REFTO" Then
+  ElseIf UCase$(Left$(sAtag, 7)) = "REFFROM" Or UCase$(Left$(sAtag, 5)) = "REFTO" Then
       NEWVALUE.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like 'REFTO*'));"
   Else
-      NEWVALUE.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & Atag & "'));"
+      NEWVALUE.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & sAtag & "'));"
   End If
   NEWVALUE.Requery
 End Sub
@@ -73,13 +75,15 @@ Dim ALUE As String
 Dim looppi As String
 Dim tagi As String
 Dim Sfx As String
+Dim sAtag As String
 
+  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion estämiseksi
   SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
   If UCase$(Atag) = "RANGE" Then
-      ALUE = Me.Parent.Parent.AreaCode
-      looppi = Me.Parent.Parent.LoopNo
+      ALUE   = Replace(Me.Parent.Parent.AreaCode, "'", "''")
+      looppi = Replace(Me.Parent.Parent.LoopNo,   "'", "''")
       tagi = "T" ' Käytetään kiinteää T-tunnistetyyppiä alueeseen sidotuissa hauissa
-      Sfx = Me.Parent.Suffix
+      Sfx    = Replace(Me.Parent.Suffix,           "'", "''")
       
       SelectValue.BoundColumn = 1
       SelectValue.ColumnCount = 1
@@ -99,7 +103,7 @@ Dim Sfx As String
   Else
       SelectValue.BoundColumn = 1
       SelectValue.ColumnCount = 1
-      SelectValue.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & Atag & "'));"
+      SelectValue.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) = '" & sAtag & "'));"
       SelectValue.ColumnWidths = ""
   End If
   SelectValue.Requery

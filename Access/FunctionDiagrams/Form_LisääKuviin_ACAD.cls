@@ -298,13 +298,14 @@ For u = 1 To rstSnapshot.RecordCount
 
         LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] TEXT(250),"
         Kentat = Kentat & rstSnapshot.Fields(laskuri).Name & ", "
-        KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "',"
+        ' Suojataan heittomerkki: kenttäarvo ulkoisesta kannasta voi sisältää yksinkertaisen lainausmerkin
+        KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "',"
     
     Next laskuri
     
     Kentat = Kentat & rstSnapshot.Fields(laskuri).Name
     Kentat = Kentat & ")"
-    KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "'"
+    KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "'"
     KentanArvot = KentanArvot & ")"
     
     LisaaArvot = "INSERT INTO DocumentsDetail" & Kentat & " VALUES " & KentanArvot
@@ -375,13 +376,14 @@ For u = 1 To rstSnapshot.RecordCount
 
         LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] TEXT(250),"
         Kentat = Kentat & rstSnapshot.Fields(laskuri).Name & ", "
-        KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "',"
+        ' Suojataan heittomerkki: kenttäarvo ulkoisesta kannasta voi sisältää yksinkertaisen lainausmerkin
+        KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "',"
     
     Next laskuri
     
     Kentat = Kentat & rstSnapshot.Fields(laskuri).Name
     Kentat = Kentat & ")"
-    KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "'"
+    KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "'"
     KentanArvot = KentanArvot & ")"
     
     LisaaArvot = "INSERT INTO DocumentsRevision" & Kentat & " VALUES " & KentanArvot
@@ -402,7 +404,11 @@ Next u
       
       
       
+      rstSnapshot.Close
+      Set rstSnapshot = Nothing
       dbsDocuments.Close
+      Set dbsDocuments = Nothing
+      Set dbs = Nothing
 
 Debug.Print "PaivitaDocRev_Click: COMPLETED successfully - DocumentsDetail and DocumentsRevision tables updated"
 Exit Sub
@@ -412,7 +418,11 @@ ErrorHandler:
     Debug.Print "    ProjectID: " & Me.RefID.Value
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     On Error Resume Next
-    dbsDocuments.Close
+    If Not rstSnapshot Is Nothing Then rstSnapshot.Close
+    Set rstSnapshot = Nothing
+    If Not dbsDocuments Is Nothing Then dbsDocuments.Close
+    Set dbsDocuments = Nothing
+    Set dbs = Nothing
     MsgBox "Virhe dokumenttirevision päivityksessä: " & Err.Description, vbCritical
 End Sub
 
@@ -643,15 +653,21 @@ End If
 'oAcad.Quit
 
 Debug.Print "TeeKuvat_Click: COMPLETED successfully"
-Exit Sub
+GoTo Loppu   ' Siirrytään siivouslohkoon — resurssit vapautetaan aina
 
 ErrorHandler:
     Debug.Print "*** ERROR in TeeKuvat_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    TitleTable: " & OtsTaulukko & ", BlockTable: " & BlockTaulukko
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Virhe kuvien luonnissa: " & Err.Description, vbCritical
-    
+    Resume Loppu   ' Ohjataan siivouslohkoon — AutoCAD-prosessi ei jää taustalle
+  
 Loppu:
+    ' Suojataan siivouslohko — vapautetaan kaikki resurssit riippumatta siitä, missä virhe tapahtui
+    On Error Resume Next
+    If Not oAcad Is Nothing Then
+        oAcad.Quit   ' Varmistetaan ettei AutoCAD jää taustalle näkymättömäksi prosessiksi
+    End If
 Set oAcad = Nothing
 Set DB = Nothing
 Set Kuvat = Nothing
