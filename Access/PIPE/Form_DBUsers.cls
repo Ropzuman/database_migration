@@ -31,8 +31,9 @@ Private Sub Command27_Click()
 On Error GoTo ErrorHandler
 Dim Viesti As String
   Viesti = InputBox("Lähetä viesti käyttäjälle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "Lähetä viesti")
+  ' HUOM: net send poistettu Windows Vistasta alkaen — käytetään msg.exe-komentoa
   If Viesti <> "" Then
-    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
+    Shell "msg " & Me.NetworkName.Value & " """ & Viesti & """"
   End If
   Exit Sub
 
@@ -97,7 +98,7 @@ On Error GoTo Err_WhosOn
    sPath = CurrentDb.Name
 
 ' Muodostetaan kirjautumistiedostopolku (.laccdb)
-   sPath = Left$(sPath, InStr(1, sPath, ".")) + "LACCDB"
+   sPath = Left$(sPath, InStr(1, sPath, ".")) & "LACCDB"
 
 ' Test for valid file
    X = Dir$(sPath)
@@ -115,20 +116,24 @@ On Error GoTo Err_WhosOn
       Get iLDBFile, , rUser
       With rUser
          ' Poimitaan tietokoneen nimi (nollapäätteinen)
+         ' KORJATTU: Do While + Exit Do, koska VBA ei oikosulje And-operaattoria
+         ' (While .bMach(i)<>0 And i<=32 lukisi indeksin 33 ennen rajakieltoa -> Error 9)
          i = 1
          sMach = ""
-         While .bMach(i) <> 0 And i <= 32
+         Do While i <= 32
+            If .bMach(i) = 0 Then Exit Do
             sMach = sMach & Chr$(.bMach(i))
             i = i + 1
-         Wend
+         Loop
 
          ' Poimitaan käyttäjänimi (nollapäätteinen)
          i = 1
          sUser = ""
-         While .bUser(i) <> 0 And i <= 32
+         Do While i <= 32
+            If .bUser(i) = 0 Then Exit Do
             sUser = sUser & Chr$(.bUser(i))
             i = i + 1
-         Wend
+         Loop
       End With
       
       sLogStr = sMach & " -- " & sUser
@@ -145,14 +150,19 @@ Exit_WhosOn:
    Exit Function
 
 Err_WhosOn:
+   ' Tallennetaan alkuperäinen virhetieto ennen Close-kutsu (muuten ylikirjoittuu)
+   Dim lErrNum As Long
+   Dim sErrDesc As String
+   lErrNum = Err.Number
+   sErrDesc = Err.Description
    On Error Resume Next
-   Close iLDBFile
+   If iLDBFile > 0 Then Close #iLDBFile
    On Error GoTo 0
    
-   If Err = 68 Then
+   If lErrNum = 68 Then
       MsgBox "Tiedostoa ei löytynyt.", 48, "Ei LACCDB-tiedostoa"
    Else
-      MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "WhosOn"
+      MsgBox "Virhe: " & lErrNum & vbCrLf & sErrDesc, vbCritical, "WhosOn"
    End If
    WhosOn = ""
    Resume Exit_WhosOn
