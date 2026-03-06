@@ -217,8 +217,7 @@ End Sub
 ' Huom:
 '   - Siivoaa vanhentuneet instrumenttitiedot
 '   - Käyttää LEFT JOIN -kyselyä löytämään vastaattomat tietueet
-'   - L = Chr(34) SQL-merkkijonoja varten
-'   - Optimoitu: tiimalasi näytetään vain käsittelyn aikana
+'   - Tapahtumatuki tietojen eheyden varmistamiseksi
 '--------------------------------------------------------------------------------
 Private Sub Command5_Click()
 On Error GoTo ErrorHandler
@@ -226,18 +225,13 @@ On Error GoTo ErrorHandler
     Dim DB As DAO.Database      ' Tietokantaviittaus
     Dim WS As DAO.Workspace     ' Työtila tapahtumatukea varten
     Dim tbl As DAO.Recordset    ' Kyselyn tulokset (orpot tietueet)
-    Dim tbl2 As DAO.Recordset   ' zDetails-poistokohde
-    Dim qry As DAO.Recordset    ' Kyselyn tietuejoukko (käyttämätön)
+    Dim qdf As DAO.QueryDef     ' Parametrisoitu DELETE-kysely (SQL-injektiosuojaus)
     Dim sSQL As String          ' Pääkyselyn SQL
-    Dim ssSQL As String         ' Poistokyselun SQL
     Dim acode As String         ' Aluekoodi
     Dim LoopNo As String        ' Luuppinumero
     Dim LoopSymb As String      ' Luuppimerkki
     Dim Suffix As String        ' Tägisuffiksi
-    Dim L As String             ' Lainausmerkki SQL-merkkijonoja varten
     Dim DeleteCount As Long     ' Poistettujen tietueiden lukumäärä
-
-    L = Chr$(34)  ' Lainausmerkki SQL-merkkijonoja varten
     DeleteCount = 0
 
     Set DB = CurrentDb
@@ -262,20 +256,15 @@ On Error GoTo ErrorHandler
           Suffix = tbl!Suffix
           LoopSymb = tbl!LoopSymb
 
-          ' Rakennetaan SQL vastaavan tietueen poistamiseksi
-          ssSQL = ""
-          ssSQL = ssSQL & "SELECT zDetails.AreaCode, zDetails.LoopNo, zDetails.LoopSymb, zDetails.Suffix, zDetails.CirDWG, zDetails.Pageno, zDetails.AllDevTag, zDetails.Name, zDetails.Manufacturer, zDetails.Type, zDetails.ProcConn, zDetails.Faixatotal, zDetails.Faixa, zDetails.Blockname, zDetails.Blockplace, zDetails.[Select]"
-          ssSQL = ssSQL & " FROM zDetails"
-          ssSQL = ssSQL & " WHERE (((zDetails.AreaCode)=" & L & acode & L & ") AND ((zDetails.LoopNo)=" & L & LoopNo & L & ") AND ((zDetails.LoopSymb)=" & L & LoopSymb & L & ") AND ((zDetails.Suffix)=" & L & Suffix & L & "));"
-          Set tbl2 = DB.OpenRecordset(ssSQL)
-
-          If Not tbl2.EOF Then
-              tbl2.Delete
-              DeleteCount = DeleteCount + 1
-          End If
-          
-          tbl2.Close
-          Set tbl2 = Nothing
+          ' Poistetaan tietue turvallisella parametrisoidulla kyselyllä (SQL-injektiosuojaus)
+          Set qdf = DB.CreateQueryDef("", "DELETE FROM zDetails WHERE AreaCode=[pArea] AND LoopNo=[pLoop] AND LoopSymb=[pSymb] AND Suffix=[pSuffix]")
+          qdf.Parameters("pArea").Value = acode
+          qdf.Parameters("pLoop").Value = LoopNo
+          qdf.Parameters("pSymb").Value = LoopSymb
+          qdf.Parameters("pSuffix").Value = Suffix
+          qdf.Execute dbFailOnError
+          Set qdf = Nothing
+          DeleteCount = DeleteCount + 1
           tbl.MoveNext
       Loop
       
@@ -290,7 +279,6 @@ On Error GoTo ErrorHandler
     End If
     
     ' Siivotaan objektit
-    Set tbl2 = Nothing
     Set WS = Nothing
     Set DB = Nothing
     Exit Sub
@@ -301,7 +289,7 @@ ErrorHandler:
     If Not WS Is Nothing Then WS.Rollback
     If Not tbl Is Nothing Then tbl.Close
     Set tbl = Nothing
-    Set tbl2 = Nothing
+    Set qdf = Nothing
     Set DB = Nothing
     On Error GoTo 0
     MsgBox "Virhe vanhentuneita tietueita poistettaessa: " & Err.Description, vbCritical, "Virhe"
