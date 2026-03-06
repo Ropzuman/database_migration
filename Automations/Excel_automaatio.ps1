@@ -27,8 +27,8 @@
 if ([System.IntPtr]::Size -ne 8) {
     Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
     Write-Error "Sulje tämä (x86) ikkuna ja käynnistä normaali 'Windows PowerShell'."
-    Start-Sleep -Seconds 10
-    exit 1
+    # return on ISE-yhteensopiva; exit 1 lopettaisi koko ISE-istunnon
+    return
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
 
@@ -49,28 +49,44 @@ try {
     $DefaultExcelFilesPath = ''
 
     Write-Host "`nVAIHE 1: Moduulien lähde" -ForegroundColor Magenta
-    Write-Host "Module files folder: $DefaultModulePath" -ForegroundColor Cyan
+    $defaultModuleDisplay = if ([string]::IsNullOrWhiteSpace($DefaultModulePath)) { "(ei oletusta asetettu)" } else { $DefaultModulePath }
+    Write-Host "Oletuspolku moduuleille: $defaultModuleDisplay" -ForegroundColor Cyan
     $inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (.bas) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputModule)) { $modulePath = $DefaultModulePath } else { $modulePath = $inputModule }
+    if ([string]::IsNullOrWhiteSpace($inputModule)) {
+        if ([string]::IsNullOrWhiteSpace($DefaultModulePath)) {
+            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultModulePath skriptin alussa."
+            throw "No module path provided"
+        }
+        $modulePath = $DefaultModulePath
+    }
+    else { $modulePath = $inputModule }
 
     if (-not (Test-Path $modulePath -PathType Container)) {
-        Write-Error "Module files folder does not exist: $modulePath"
+        Write-Error "Moduulikansiota ei löydy: $modulePath"
         throw "Invalid module path"
     }
 
     Write-Host "`nVAIHE 2: Päivitettävät Excel-tiedostot" -ForegroundColor Magenta
-    Write-Host "Excel files folder: $DefaultExcelFilesPath" -ForegroundColor Cyan
+    $defaultExcelDisplay = if ([string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) { "(ei oletusta asetettu)" } else { $DefaultExcelFilesPath }
+    Write-Host "Oletuspolku Excel-tiedostoille: $defaultExcelDisplay" -ForegroundColor Cyan
     $inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (.xlsm) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputExcel)) { $excelFilesPath = $DefaultExcelFilesPath } else { $excelFilesPath = $inputExcel }
+    if ([string]::IsNullOrWhiteSpace($inputExcel)) {
+        if ([string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) {
+            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultExcelFilesPath skriptin alussa."
+            throw "No Excel files path provided"
+        }
+        $excelFilesPath = $DefaultExcelFilesPath
+    }
+    else { $excelFilesPath = $inputExcel }
 
     if (-not (Test-Path $excelFilesPath -PathType Container)) {
-        Write-Error "Excel files folder does not exist: $excelFilesPath"
+        Write-Error "Excel-tiedostojen kansiota ei löydy: $excelFilesPath"
         throw "Invalid Excel files path"
     }
 
     # --- 3. Skannaa moduulit automaattisesti ---
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [MODUULIT] Skannataan .bas-tiedostot kansiosta: $modulePath" -ForegroundColor Cyan
-    $basFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"
+    $basFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"  # vain ylätaso, ei alihakemistoja
     
     if ($basFiles.Count -eq 0) {
         Write-Error "Ei löytynyt yhtään .bas-tiedostoa kansiosta: $modulePath"
@@ -94,7 +110,9 @@ try {
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $totalFiles työkirjaa käsiteltäväksi." -ForegroundColor Green
     
     $currentFileIndex = 0
-    
+    $wbSuccess = 0; $wbSkipped = 0; $wbFailed = 0
+    $modSuccess = 0; $modFailed = 0
+
     # Käsittele kaikki .xlsm tiedostot kohdekansiossa
     $xlsmFiles | ForEach-Object {
         $currentFileIndex++
@@ -136,7 +154,8 @@ try {
                 else {
                     Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen jälkeen. Jätetään käsittelemättä."
                     $isOpened = $false
-                    throw $_
+                    $wbSkipped++
+                    break  # Ei throw — ForEach-Object jatkaa seuraavaan tiedostoon
                 }
             }
         } while (-not $isOpened -and $retryCount -lt $maxRetries)
@@ -165,13 +184,27 @@ try {
                     $fullModulePath = Join-Path $modulePath "$($name).bas"
                     
                     if (-not (Test-Path $fullModulePath)) {
-                        Write-Error "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan päivitys."
+                        Write-Error "$(Get-Date -Format 'HH:mm:ss')  ✗ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan päivitys."
+                        $modFailed++ 
                         continue
                     }
                     
                     try {
-                        # Lue .bas-tiedoston sisältö (UTF8 ilman BOM)
-                        $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+                        # Lue .bas-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
+                        # Get-Content -Encoding UTF8 voi PS 5.1:ssä palauttaa BOM:n merkkijonon ensimmäisenä merkkinä
+                        # try-finally takaa Close()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
+                        $reader = $null
+                        try {
+                            $reader = [System.IO.StreamReader]::new($fullModulePath, [System.Text.Encoding]::UTF8, $true)
+                            $moduleContent = $reader.ReadToEnd()
+                        }
+                        finally {
+                            if ($null -ne $reader) { $reader.Close(); $reader = $null }
+                        }
+                        # Poistetaan BOM varmuuden vuoksi (U+FEFF), jos StreamReader ei sitä poistanut
+                        if ($moduleContent.Length -gt 0 -and [int][char]$moduleContent[0] -eq 0xFEFF) {
+                            $moduleContent = $moduleContent.Substring(1)
+                        }
                         
                         # PARANNETTU HEADER-PARSAUS:
                         # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
@@ -232,64 +265,109 @@ try {
                         
                         $newLineCount = $codeModule.CountOfLines
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)" -ForegroundColor Green
+                        $modSuccess++
                         
                     }
                     catch {
                         Write-Error "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Moduulin $name päivitys epäonnistui: $($_.Exception.Message)"
+                        $modFailed++
                     }
                 }
                 
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    [MODUULIT] Kaikki moduulit käsitelty."
 
-                # 4. Tallenna samaan polkuun eri nimellä, poista vanha ja nimeä uusi uudelleen
+                # 4. Tallenna väliaikaiseen tiedostoon, korvaa atomisesti
                 $tempSuffix = "_MIGRATED"
-                $tempWorkbookPath = $workbookPath.Replace(".xlsm", "$tempSuffix.xlsm")
-                
+                # Käytetään Path-metodeja estääksemme ".xlsm"-korvauksen kansionimiin (HIGH: path corruption)
+                $wbDir = [System.IO.Path]::GetDirectoryName($workbookPath)
+                $wbStem = [System.IO.Path]::GetFileNameWithoutExtension($workbookPath)
+                $tempWorkbookPath = [System.IO.Path]::Combine($wbDir, $wbStem + $tempSuffix + ".xlsm")
+
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    [TALLENNUS] Tallennetaan väliaikaiseen tiedostoon: $tempWorkbookPath"
-                
+
+                # Tarkistetaan, onko väliaikainen tiedosto jäänyt edellisestä epäonnistuneesta ajosta
+                if (Test-Path $tempWorkbookPath) {
+                    Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Väliaikainen tiedosto löytyi jäänteenä edellisestä ajosta: $tempWorkbookPath"
+                    Write-Warning "    Poistetaan ennen tallennusta..."
+                    Remove-Item -Path $tempWorkbookPath -Force -ErrorAction Stop
+                }
+
                 # KRIITTINEN KORJAUS: Käytä FileFormat-parametria (52 = xlOpenXMLWorkbookMacroEnabled)
                 # Ilman tätä eri Office-versiot voivat tulkita formaatin eri tavalla
                 $xlOpenXMLWorkbookMacroEnabled = 52
-                $workbook.SaveAs($tempWorkbookPath, $xlOpenXMLWorkbookMacroEnabled) 
+                $workbook.SaveAs($tempWorkbookPath, $xlOpenXMLWorkbookMacroEnabled)
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Väliaikainen tallennus onnistui."
 
-                # Sulje työkirja (TÄRKEÄÄ: tiedosto on suljettava ennen tiedostojärjestelmän operaatioita)
-                $workbook.Close()
-                $workbook = $null # Nollaa muuttuja
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja suljettu."
+                # Sulje työkirja ja vapauta COM-viite ennen tiedostojärjestelmäoperaatioita
+                $workbook.Close($false)
+                try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($workbook) | Out-Null } catch {}
+                $workbook = $null
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja suljettu ja COM-viite vapautettu."
 
-                # Poista alkuperäinen tiedosto ja nimeä uusi uudelleen
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KORVAUS] Poistetaan alkuperäinen tiedosto..."
-                Remove-Item -Path $workbookPath -Force -ErrorAction Stop
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Alkuperäinen poistettu."
+                # ATOMINEN KORVAUS: alkuperäinen → .bak, temp → lopullinen, .bak poistetaan
+                # Jos Rename-Item epäonnistuu, .bak palautetaan alkuperäiseksi — tiedosto ei häviä
+                $backupPath = $workbookPath + ".bak"
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KORVAUS] Siirretään alkuperäinen varmuuskopioksi..."
+                Move-Item -Path $workbookPath -Destination $backupPath -Force -ErrorAction Stop
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Alkuperäinen siirretty varmuuskopioksi."
 
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KORVAUS] Nimetään uusi tiedosto alkuperäiseksi..."
-                # Käytetään Split-Path -Leaf varmistaaksemme, että NewName on vain tiedoston nimi
-                Rename-Item -Path $tempWorkbookPath -NewName (Split-Path $workbookPath -Leaf) -Force -ErrorAction Stop
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tiedosto $workbookPath päivitetty onnistuneesti!" -ForegroundColor Green
+                try {
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KORVAUS] Nimetään väliaikainen tiedosto lopulliseksi..."
+                    Rename-Item -Path $tempWorkbookPath -NewName (Split-Path $workbookPath -Leaf) -Force -ErrorAction Stop
+                    # Onnistui — varmuuskopio poistetaan
+                    Remove-Item -Path $backupPath -Force -ErrorAction SilentlyContinue
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tiedosto $workbookPath päivitetty onnistuneesti!" -ForegroundColor Green
+                    $wbSuccess++
+                }
+                catch {
+                    # Tallennetaan alkuperäinen virheviesti ennen palautusyritystä — muuten palautusvirhe korvaa sen
+                    $renameError = $_.Exception.Message
+                    Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ Uudelleennimeäminen epäonnistui: $renameError"
+                    Write-Warning "   Yritetään palauttaa alkuperäinen varmuuskopiosta: $backupPath"
+                    try {
+                        Move-Item -Path $backupPath -Destination $workbookPath -Force -ErrorAction Stop
+                        Write-Host "   ✓ Alkuperäinen palautettu onnistuneesti." -ForegroundColor Green
+                    }
+                    catch {
+                        # Palautuskin epäonnistui — kerrotaan operaattorille tiedostojen tila selkeästi
+                        Write-Error "   ✗ KRIITTINEN: Palautus epäonnistui myös: $($_.Exception.Message)"
+                        Write-Error "   Tiedostot levyllä:"
+                        Write-Error "     Varmuuskopio (alkuperäinen): $backupPath"
+                        Write-Error "     Päivitetty (nimeämätön):     $tempWorkbookPath"
+                        Write-Error "   Nimeä päivitetty tiedosto manuaalisesti alkuperäiseksi tai palauta varmuuskopio."
+                    }
+                    # Uudelleenheitä ALKUPERÄINEN nimivirhe, ei palautusvirhe
+                    throw [System.Exception]::new("Rename failed: $renameError", $_.Exception)
+                }
 
             }
             catch {
                 # Virheenkäsittely
+                $wbFailed++
                 Write-Error "$(Get-Date -Format 'HH:mm:ss') ✗ VIRHE VBA-käsittelyssä tai tallennuksessa/korvauksessa: $($_.Exception.Message)"
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    Virhetyyppi: $($_.Exception.GetType().FullName)" -ForegroundColor Yellow
                 
-                # HUOM: Jos $workbook on null, se tarkoittaa, että se on jo suljettu/nollattu onnistuneen Save/Close-syklin aikana.
+                # Jos $workbook ei ole null, se tarkoittaa että tallennus/sulku ei ehtinyt ajua
                 if ($workbook -ne $null) {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ Suljetaan työkirja tallentamatta virhetilanteen vuoksi."
                     try {
                         $workbook.Close($false)
-                        $workbook = $null 
+                        try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($workbook) | Out-Null } catch {}
+                        $workbook = $null
                     }
                     catch {
                         Write-Warning "$(Get-Date -Format 'HH:mm:ss')       Työkirjan sulkeminen epäonnistui."
+                        $workbook = $null
                     }
                 }
             }
         } # end if ($isOpened)
     } # end ForEach-Object
     
-    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [VALMIS] Kaikki työkirjat käsitelty!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') === YHTEENVETO ===" -ForegroundColor Cyan
+    Write-Host "  Työkirjat: $wbSuccess onnistui / $wbSkipped ohitettu / $wbFailed epäonnistui" -ForegroundColor $(if ($wbFailed -gt 0 -or $wbSkipped -gt 0) { 'Yellow' } else { 'Green' })
+    Write-Host "  Moduulit:  $modSuccess onnistui / $modFailed epäonnistui" -ForegroundColor $(if ($modFailed -gt 0) { 'Yellow' } else { 'Green' })
 
 }
 catch {
@@ -325,6 +403,11 @@ finally {
     }
     
     Remove-Variable excel -ErrorAction SilentlyContinue
+
+    # Pakotetaan roskienkeruu COM-viitteiden välittömäksi vapauttamiseksi
+    # Ilman tätä Excel.exe voi jäädä prosessilistalle kunnes GC ajaa automaattisesti
+    [System.GC]::Collect()
+    [System.GC]::WaitForPendingFinalizers()
     
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Siivous valmis." -ForegroundColor Green
 }

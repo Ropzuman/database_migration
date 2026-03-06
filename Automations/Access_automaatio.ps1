@@ -22,15 +22,14 @@
 if ([System.IntPtr]::Size -ne 8) {
     Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
     Write-Error "Sulje tämä (x86) ikkuna ja käynnistä normaali 'Windows PowerShell'."
-    Start-Sleep -Seconds 10
-    exit 1
+    # return on ISE-yhteensopiva; exit 1 lopettaisi koko ISE-istunnon
+    return
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
 
 
 # Määritellään muuttujat ennalta 'finally'-lohkoa varten
 $access = $null
-$database = $null
 $vbaProject = $null
 
 try {
@@ -45,41 +44,56 @@ try {
     $DefaultAccessFilePath = ''
 
     Write-Host "`nVAIHE 1: Komponenttien lähde" -ForegroundColor Magenta
-    Write-Host "Component files folder: $DefaultComponentPath" -ForegroundColor Cyan
+    $defaultCompDisplay = if ([string]::IsNullOrWhiteSpace($DefaultComponentPath)) { "(ei oletusta asetettu)" } else { $DefaultComponentPath }
+    Write-Host "Oletuspolku komponenteille: $defaultCompDisplay" -ForegroundColor Cyan
     $inputComponent = Read-Host -Prompt 'Lisää polku komponenttitiedostoille (.bas/.cls) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputComponent)) { $componentPath = $DefaultComponentPath } else { $componentPath = $inputComponent }
+    if ([string]::IsNullOrWhiteSpace($inputComponent)) {
+        if ([string]::IsNullOrWhiteSpace($DefaultComponentPath)) {
+            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultComponentPath skriptin alussa."
+            throw "No component path provided"
+        }
+        $componentPath = $DefaultComponentPath
+    }
+    else { $componentPath = $inputComponent }
 
     Write-Host "`nVAIHE 2: Päivitettävä Access-tiedosto" -ForegroundColor Magenta
-    Write-Host "Access file path: $DefaultAccessFilePath" -ForegroundColor Cyan
+    $defaultAccessDisplay = if ([string]::IsNullOrWhiteSpace($DefaultAccessFilePath)) { "(ei oletusta asetettu)" } else { $DefaultAccessFilePath }
+    Write-Host "Oletuspolku Access-tiedostolle: $defaultAccessDisplay" -ForegroundColor Cyan
     $inputAccess = Read-Host -Prompt 'Lisää polku Access-tiedostoon (.accdb) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputAccess)) { $databasePath = $DefaultAccessFilePath } else { $databasePath = $inputAccess }
+    if ([string]::IsNullOrWhiteSpace($inputAccess)) {
+        if ([string]::IsNullOrWhiteSpace($DefaultAccessFilePath)) {
+            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultAccessFilePath skriptin alussa."
+            throw "No Access file path provided"
+        }
+        $databasePath = $DefaultAccessFilePath
+    }
+    else { $databasePath = $inputAccess }
 
-    # Polkujen tarkistus
+    # Polkujen tarkistus — throw käytetään exit 1:n sijaan, jotta finally-lohko ajetaan aina
     if (-not (Test-Path $componentPath -PathType Container)) {
-        Write-Host "Component files folder does not exist: $componentPath"
-        exit 1
+        Write-Error "Komponenttikansio ei löydy: '$componentPath'"
+        throw "Invalid component path: $componentPath"
     }
     if (-not (Test-Path $databasePath -PathType Leaf)) {
-        Write-Host "Access-tiedostoa ei löydy tai polku on hakemisto: $databasePath"
-        exit 1
+        Write-Error "Access-tiedostoa ei löydy: '$databasePath'"
+        throw "Invalid database path: $databasePath"
     }
 
     # --- 3. Skannaa komponentit automaattisesti ---
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [KOMPONENTIT] Skannataan .bas ja .cls -tiedostot kansiosta: $componentPath" -ForegroundColor Cyan
-    $basFiles = Get-ChildItem -Path $componentPath -Filter "*.bas"
-    $clsFiles = Get-ChildItem -Path $componentPath -Filter "*.cls"
-    $allComponentFiles = $basFiles + $clsFiles
-    
-    if ($allComponentFiles.Count -eq 0) {
+    # Rakennetaan hajautustaulu (nimi → tiedosto) deduplikointia varten.
+    # Jos samalla nimellä on sekä .bas että .cls, .bas saa etusijan (se lisätään viimeisenä).
+    $componentMap = @{}
+    @(Get-ChildItem -Path $componentPath -Filter "*.cls") | ForEach-Object { $componentMap[$_.BaseName] = $_ }
+    @(Get-ChildItem -Path $componentPath -Filter "*.bas") | ForEach-Object { $componentMap[$_.BaseName] = $_ }
+
+    if ($componentMap.Count -eq 0) {
         Write-Error "Ei löytynyt yhtään .bas tai .cls -tiedostoa kansiosta: $componentPath"
         throw "No component files found"
     }
-    
-    # Poimii tiedostonimet ilman päätettä
-    $componentNames = $allComponentFiles | ForEach-Object { $_.BaseName }
-    
-    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($componentNames.Count) komponenttia:" -ForegroundColor Green
-    $componentNames | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray } 
+
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($componentMap.Count) komponenttia:" -ForegroundColor Green
+    $componentMap.Keys | Sort-Object | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray }
 
     # Retry-asetukset
     $maxRetries = 3
@@ -106,13 +120,13 @@ try {
         try {
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan tietokanta..."
             
-            # KRIITTINEN: Aseta AutomationSecurity ENNEN avausta (estää makrojen automaattisen suorituksen)
-            # Visible = $false on jo asetettu rivillä 39 (Access-objektin luonnin yhteydessä)
-            $access.AutomationSecurity = 1  # msoAutomationSecurityLow
+            # Aseta msoAutomationSecurityLow jotta VBA-projektiin päästään käsiksi.
+            # HUOM: Arvo 1 SALLII kaikki makrot — tämä on tarkoituksellista, VBE-rajapinta vaatii sen.
+            # Access on näkymätön ($access.Visible = $false), joten tietoturvariski on rajattu.
+            $access.AutomationSecurity = 1  # msoAutomationSecurityLow — sallii VBA-projektin muokkauksen
             
             # OpenCurrentDatabase(FilePath, [Exclusive], [Password])
             $access.OpenCurrentDatabase($databasePath, $false, "")
-            $database = $access.CurrentDb()
             $isOpened = $true
             
             # KRIITTINEN: OpenCurrentDatabase() resetoi Visible-arvon, asetetaan uudelleen
@@ -142,7 +156,7 @@ try {
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Access-varoitukset poistettu käytöstä."
 
             # KRIITTINEN: VBA-projektiin pääsy suoraan $access-objektista
-            # ($database.Application.VBE.ActiveVBProject ei toimi)
+            # VBA-projektiin pääsee vain $access.VBE.ActiveVBProject-kautta (ei DAO-tietokantaobjektin kautta)
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [VBE] Haetaan VBA-projekti..."
             $vbaProject = $access.VBE.ActiveVBProject
 
@@ -160,38 +174,48 @@ try {
 
             # 5.1 Päivitä komponenttien sisältö suoraan (välttää Import-metatietojen ongelman)
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KOMPONENTIT] Aloitetaan päivitys..."
-            foreach ($name in $componentNames) {
+            $successCount = 0
+            $failureCount = 0
+            foreach ($name in ($componentMap.Keys | Sort-Object)) {
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')       [KÄSITTELY] $name" -ForegroundColor Cyan
-                
-                $basPath = Join-Path $componentPath "$($name).bas"
-                $clsPath = Join-Path $componentPath "$($name).cls"
-                $fullModulePath = $null
-                $isFormComponent = $false
 
-                if (Test-Path $basPath) {
-                    $fullModulePath = $basPath
+                $fullModulePath = $componentMap[$name].FullName
+                $isBoundComponent = $false  # Form_* ja Report_* ovat sidottuja — ei voi luoda Add()-komennolla
+                $ext = $componentMap[$name].Extension
+
+                if ($ext -eq ".bas") {
                     $componentType = 1  # vbext_ct_StdModule
                 }
-                elseif (Test-Path $clsPath) {
-                    $fullModulePath = $clsPath
-                    # Tarkista, onko kyseessä lomake (alkaa "Form_")
-                    if ($name -like "Form_*") {
-                        $isFormComponent = $true
-                        $componentType = 100  # vbext_ct_MSForm (lomakkeet)
-                    }
-                    else {
-                        $componentType = 2  # vbext_ct_ClassModule
-                    }
+                elseif ($name -like "Form_*" -or $name -like "Report_*") {
+                    $isBoundComponent = $true
+                    $componentType = 100  # Sidottu komponentti — ei luotavissa Add():lla
+                }
+                else {
+                    $componentType = 2  # vbext_ct_ClassModule
                 }
 
-                if (-not $fullModulePath) {
-                    Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Komponenttitiedostoa $name.bas tai $name.cls ei löydy polusta $componentPath. Ohitetaan päivitys." -ForegroundColor Red
+                if (-not (Test-Path $fullModulePath)) {
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Komponenttitiedostoa $(Split-Path $fullModulePath -Leaf) ei löydy levyltä. Ohitetaan päivitys." -ForegroundColor Red
+                    $failureCount++
                     continue
                 }
                 
                 try {
-                    # Lue .bas/.cls-tiedoston sisältö (UTF8 ilman BOM)
-                    $moduleContent = Get-Content -Path $fullModulePath -Raw -Encoding UTF8
+                    # Lue .bas/.cls-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
+                    # Get-Content -Encoding UTF8 voi PS 5.1:ssä palauttaa BOM:n (U+FEFF) merkkijonon ensimmäisenä merkkinä
+                    # try-finally takaa Dispose()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
+                    $reader = $null
+                    try {
+                        $reader = [System.IO.StreamReader]::new($fullModulePath, [System.Text.Encoding]::UTF8, $true)
+                        $moduleContent = $reader.ReadToEnd()
+                    }
+                    finally {
+                        if ($null -ne $reader) { $reader.Dispose(); $reader = $null }
+                    }
+                    # Poistetaan BOM varmuuden vuoksi, jos StreamReader ei sitä poistanut
+                    if ($moduleContent.Length -gt 0 -and [int][char]$moduleContent[0] -eq 0xFEFF) {
+                        $moduleContent = $moduleContent.Substring(1)
+                    }
                     
                     # PARANNETTU HEADER-PARSAUS:
                     # Poista VBA-tiedoston header-rivit (.cls: VERSION, BEGIN/END, Attribute; .bas: Attribute)
@@ -237,12 +261,13 @@ try {
                     # "tyhjään tilaan", mikä tuottaa tyhjiä sulkeita () DeleteLines-ajon jälkeen.
                     # Korjaus: käytetään InsertLines(1, ...) joka KIRJOITTAA riville 1 liittämisen sijaan.
                     # Varmistetaan silti, että cleanCode päättyy CRLF-rivinvaihtoon.
-                    $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
-                    
+                    # Tarkistetaan tyhjyys ENNEN CRLF-liitosta — muuten \r\n menee IsNullOrWhiteSpace-testin läpi
                     if ([string]::IsNullOrWhiteSpace($cleanCode)) {
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ⚠ VAROITUS: Tiedosto $name on tyhjä tai sisältää vain headerit. Ohitetaan." -ForegroundColor Yellow
+                        $failureCount++
                         continue
                     }
+                    $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
                     
                     # Etsi tai luo komponentti
                     $component = $null
@@ -251,10 +276,12 @@ try {
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ Komponentti löytyi, päivitetään sisältö..."
                     }
                     catch {
-                        # HUOM: Lomakkeita (Form_*) ei voi luoda VBComponents.Add()-komennolla!
-                        # Ne pitää olla jo olemassa kannassa.
-                        if ($isFormComponent) {
-                            Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Lomake $name ei ole olemassa kannassa. Lomakkeita ei voi luoda automaattisesti, vain päivittää." -ForegroundColor Red
+                        # Lomakkeita (Form_*) ja raportteja (Report_*) ei voi luoda VBComponents.Add()-komennolla!
+                        # Ne ovat sidottuja komponentteja ja pitää olla jo olemassa kannassa.
+                        if ($isBoundComponent) {
+                            Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Sidottu komponentti $name ei ole olemassa kannassa." -ForegroundColor Red
+                            Write-Host "$(Get-Date -Format 'HH:mm:ss')             Lomakkeita (Form_*) ja raportteja (Report_*) ei voi luoda automaattisesti, vain päivittää." -ForegroundColor Yellow
+                            $failureCount++
                             continue
                         }
                         
@@ -278,16 +305,24 @@ try {
                     
                     $newLineCount = $codeModule.CountOfLines
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)" -ForegroundColor Green
+                    $successCount++
 
                 }
                 catch {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Komponentin $name päivitys epäonnistui: $($_.Exception.Message)" -ForegroundColor Red
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')             Virhetyyppi: $($_.Exception.GetType().FullName)" -ForegroundColor Yellow
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')             Stack: $($_.ScriptStackTrace)" -ForegroundColor Yellow
+                    $failureCount++
                 }
             }
             
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KOMPONENTIT] Kaikki komponentit käsitelty."
+            Write-Host ""
+            Write-Host "$(Get-Date -Format 'HH:mm:ss') === YHTEENVETO ===" -ForegroundColor Cyan
+            Write-Host "  Onnistuneet: $successCount / $($componentMap.Count)" -ForegroundColor Green
+            if ($failureCount -gt 0) {
+                Write-Host "  Epäonnistuneet: $failureCount" -ForegroundColor Red
+            }
             
             # 5.3 Tallenna ja sulje
             # HUOM: CloseCurrentDatabase() tallentaa automaattisesti VBA-projektin.
@@ -336,25 +371,7 @@ finally {
 
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Siivotaan ja suljetaan Access-prosessi..." -ForegroundColor Magenta
     
-    # Vapauta VBA Project -viittaus
-    if ($null -ne $vbaProject) {
-        try {
-            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($vbaProject) | Out-Null
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ VBA Project vapautettu."
-        }
-        catch { <# Hiljainen #> }
-    }
-    
-    # Vapauta Database-viittaus
-    if ($null -ne $database) {
-        try {
-            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($database) | Out-Null
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Database-objekti vapautettu."
-        }
-        catch { <# Hiljainen #> }
-    }
-    
-    # Sulje Access-sovellus
+    # Suljetaan Access ensin — tämä mitätöi lasten COM-viittaukset (VBProject ym.) turvallisesti
     if ($null -ne $access) {
         try {
             $access.Quit()
@@ -363,18 +380,23 @@ finally {
         catch {
             Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Access.Quit() epäonnistui (prosessi oli ehkä jo kaatunut)."
         }
-        
         Start-Sleep -Milliseconds 500
-        
-        try {
-            [System.Runtime.Interopservices.Marshal]::ReleaseComObject($access) | Out-Null
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Access COM-objekti vapautettu."
-        }
-        catch { <# Hiljainen #> }
     }
-    
+
+    # Vapautetaan kaikki COM-viittaukset Quit():n jälkeen
+    foreach ($obj in @($vbaProject, $access)) {
+        if ($null -ne $obj) {
+            try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($obj) | Out-Null } catch { }
+        }
+    }
+    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ COM-objektit vapautettu."
+
+    # Pakotetaan roskienkeruu COM-viitteiden välittömäksi vapauttamiseksi
+    # Ilman tätä Access.exe voi jäädä prosessilistalle kunnes GC ajaa automaattisesti
+    [System.GC]::Collect()
+    [System.GC]::WaitForPendingFinalizers()
+
     Remove-Variable access -ErrorAction SilentlyContinue
-    Remove-Variable database -ErrorAction SilentlyContinue
     Remove-Variable vbaProject -ErrorAction SilentlyContinue
     
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Siivous valmis." -ForegroundColor Green

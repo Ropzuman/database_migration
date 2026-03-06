@@ -49,6 +49,7 @@ Function Kaanna(Tieto As Variant) As Variant
     Dim Nimitys As Variant
     Dim Poistettu As Variant
     Dim Virheet As Long
+    Dim sPar0 As String, sPar1 As String, sPar2 As String  ' Sanitoidut DLookup-parametrit (heittomerkki duplikoitu)
     
     On Error GoTo ErrorHandler
     
@@ -77,15 +78,20 @@ Function Kaanna(Tieto As Variant) As Variant
         tPOS = Mid$(Tieto, OS + 1, OS2 - OS - 1)
         Osat = Split(tPOS, "-")
         
+        ' Sanitoidaan DLookup-parametrit heittomerkkien varalta — SQL-injektion esto
+        sPar0 = Replace(Nz(Osat(0), ""), "'", "''")
+        sPar1 = Replace(Nz(Osat(1), ""), "'", "''")
+        sPar2 = Replace(Nz(Osat(2), ""), "'", "''")
+
         ' Valitaan taulu aluekoodin perusteella
         If Osat(0) = "60" Then
             ' Moottori/laite MAINEQ-taulusta
-            Nimitys = DLookup("[EqNameSW20]", "MAINEQ", "[Department] = '" & Osat(1) & "' AND [EqSeq] = '" & Osat(2) & "'")
-            Poistettu = DLookup("[Deleted]", "MAINEQ", "[Department] = '" & Osat(1) & "' AND [EqSeq] = '" & Osat(2) & "'")
+            Nimitys   = DLookup("[EqNameSW20]", "MAINEQ", "[Department] = '" & sPar1 & "' AND [EqSeq] = '" & sPar2 & "'")
+            Poistettu = DLookup("[Deleted]",    "MAINEQ", "[Department] = '" & sPar1 & "' AND [EqSeq] = '" & sPar2 & "'")
         Else
             ' Prosessipiiri Loops-taulusta
-            Nimitys = DLookup("[Descr26_P]", "Loops", "[AreaCode] = '" & Osat(0) & "' AND [LoopSymb] = '" & Osat(1) & "' AND [LoopNo] = '" & Osat(2) & "'")
-            Poistettu = DLookup("[DELETED]", "Loops", "[AreaCode] = '" & Osat(0) & "' AND [LoopSymb] = '" & Osat(1) & "' AND [LoopNo] = '" & Osat(2) & "'")
+            Nimitys   = DLookup("[Descr26_P]", "Loops", "[AreaCode] = '" & sPar0 & "' AND [LoopSymb] = '" & sPar1 & "' AND [LoopNo] = '" & sPar2 & "'")
+            Poistettu = DLookup("[DELETED]",   "Loops", "[AreaCode] = '" & sPar0 & "' AND [LoopSymb] = '" & sPar1 & "' AND [LoopNo] = '" & sPar2 & "'")
         End If
         
         ' Tarkistetaan virheet ja merkitään tuntemattomiksi tarvittaessa
