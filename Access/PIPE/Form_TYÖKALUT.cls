@@ -102,7 +102,7 @@ End Sub
 Private Sub Command13_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+  If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
     CurrentDb.Execute "DELETE * From UsysPIPEUPD"
     CurrentDb.Execute "PIPELINES_UPDATE_START"
     CurrentDb.Execute "PIPELINES_UPDATE"
@@ -191,7 +191,7 @@ Private Sub Command23_Click()
   If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
     CurrentDb.Execute "MANVALVE_UPDATE"
     MsgBox "Käsiventtiilien päivitys valmis", vbInformation
   End If
@@ -246,7 +246,7 @@ Private Sub Command33_Click()
   If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
     CurrentDb.Execute "INSTVALVE_UPDATE"
     MsgBox "Instrumenttiventtiilien päivitys valmis", vbInformation
   End If
@@ -316,7 +316,7 @@ Private Sub Command43_Click()
   If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYesNo Then
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
     CurrentDb.Execute "FIELDINST_UPDATE"
     MsgBox "Kenttäinstrumenttien päivitys valmis", vbInformation
   End If
@@ -370,7 +370,7 @@ Private Sub Command53_Click()
   If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbYesNo, "Päivitä tiedot") = vbYes Then
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
     CurrentDb.Execute "INSTLOOP_UPDATE"
     MsgBox "Instrumenttipiirien päivitys valmis", vbInformation
   End If
@@ -453,10 +453,19 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
   
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
+  On Error Resume Next
   If Not Tiedot Is Nothing Then
     Tiedot.Close
     Set Tiedot = Nothing
   End If
+  ' Siivotaan COM-objektit muistivuotojen estämiseksi
+  If Not Joukko Is Nothing Then
+    Joukko.Delete
+    Set Joukko = Nothing
+  End If
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  On Error GoTo 0
   MsgBox "Virhe tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
@@ -516,10 +525,19 @@ Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
   
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
+  On Error Resume Next
   If Not Tiedot Is Nothing Then
     Tiedot.Close
     Set Tiedot = Nothing
   End If
+  ' Siivotaan COM-objektit muistivuotojen estämiseksi
+  If Not Joukko Is Nothing Then
+    Joukko.Delete
+    Set Joukko = Nothing
+  End If
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  On Error GoTo 0
   MsgBox "Virhe tietojen lukemisessa attribuuteilla: " & Err.Description, vbExclamation
 End Sub
 
@@ -581,10 +599,19 @@ Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String
   
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
+  On Error Resume Next
   If Not Tiedot Is Nothing Then
     Tiedot.Close
     Set Tiedot = Nothing
   End If
+  ' Siivotaan COM-objektit muistivuotojen estämiseksi
+  If Not Joukko Is Nothing Then
+    Joukko.Delete
+    Set Joukko = Nothing
+  End If
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  On Error GoTo 0
   MsgBox "Virhe suodatettujen tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
@@ -683,12 +710,11 @@ Private Sub PoimiJoukko(Nimet As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
-      Exit For
-    End If
-  Next i
+  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen (jos edellinen ajo
+  ' kaatui ennen joukon tuhoamista, Add heittäisi virheen ilman tätä)
+  On Error Resume Next
+  oDOC.SelectionSets.Item("APUPICK").Delete
+  On Error GoTo ErrorHandler
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
@@ -749,12 +775,10 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
-      Exit For
-    End If
-  Next i
+  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen
+  On Error Resume Next
+  oDOC.SelectionSets.Item("APUPICK").Delete
+  On Error GoTo ErrorHandler
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
@@ -827,12 +851,10 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  For i = 0 To oDOC.SelectionSets.Count - 1
-    If oDOC.SelectionSets(i).Name = "APUPICK" Then
-      oDOC.SelectionSets(i).Delete
-      Exit For
-    End If
-  Next i
+  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen
+  On Error Resume Next
+  oDOC.SelectionSets.Item("APUPICK").Delete
+  On Error GoTo ErrorHandler
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
