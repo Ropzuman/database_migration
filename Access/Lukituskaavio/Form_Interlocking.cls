@@ -10,12 +10,9 @@ Public oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
 Private Sub Blokki_BeforeUpdate(Cancel As Integer)
 Dim TAttrib As String
 Dim i As Integer
-  Debug.Print "Blokki_BeforeUpdate: Starting"
-  Debug.Print "  Block Value: " & Blokki.VALUE
   
   TKuva.VALUE = DLookup("[IMAGE]", "SETTINGS", "[VALUE]='" & Blokki.VALUE & "'")
   TAttrib = Blokki.Column(1, Blokki.ListIndex)
-  Debug.Print "  TAttrib: " & TAttrib
   
   For i = 1 To 5
     Controls("Text_" & i).BackColor = RGB(255, 0, 0)
@@ -33,7 +30,6 @@ Dim i As Integer
     End If
   
   Next i
-  Debug.Print "Blokki_BeforeUpdate: COMPLETED"
 End Sub
 
 Private Sub Blokki_Change()
@@ -82,30 +78,21 @@ End Sub
 Private Sub BMuokkaa_Click()
 'Muokkaa blokkia
 On Error GoTo ErrorHandler
-  Debug.Print "BMuokkaa_Click: Starting"
-  Debug.Print "  Current Caption: " & BMuokkaa.Caption
   
 If BMuokkaa.Caption = "Muokkaa blokkia" Then
-  Debug.Print "  Mode: Read from block"
   If LueAttribuutit Then
     BMuokkaa.Caption = "Vie blokkiin"
     BMuokkaa.FontBold = True
-    Debug.Print "  Attributes read successfully"
   End If
 Else
-  Debug.Print "  Mode: Write to block"
   KirjoitaAttribuutit
   Set oBlock = Nothing
   BMuokkaa.Caption = "Muokkaa blokkia"
   BMuokkaa.FontBold = False
-  Debug.Print "  Attributes written successfully"
 End If
-  Debug.Print "BMuokkaa_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in BMuokkaa_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Caption: " & BMuokkaa.Caption
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 Private Function LueAttribuutit() As Boolean
@@ -119,17 +106,13 @@ Dim Asetukset As DAO.Recordset
 Dim oAttrib As Variant
 On Error GoTo ErrorHandler
 
-  Debug.Print "LueAttribuutit: Starting"
   AppActivate oACAD.Caption
   'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   oDOC.Utility.GetEntity Valinta, Point, "Choose Device..."
-  Debug.Print "  Entity selected"
   
   If Valinta.ObjectName = "AcDbBlockReference" Then
-    Debug.Print "  ObjectName: " & Valinta.ObjectName
     Set Asetukset = CurrentDb.OpenRecordset("SETTINGS")
     BlockNimi = UCase$(Valinta.Name)
-    Debug.Print "  Block Name: " & BlockNimi
     Do While Not Asetukset.EOF 'Tarkistetaan että blokin nimi löytyy luettelosta
       If UCase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then   'Löyty
         Oikea = True
@@ -142,23 +125,17 @@ On Error GoTo ErrorHandler
         LueAttribuutit = True
         Set oBlock = Valinta
         oAttrib = oBlock.GetAttributes
-        Debug.Print "  Attributes count: " & UBound(oAttrib) + 1
         TaytaTextBoxit oAttrib
-        Debug.Print "  Text boxes filled"
       End If
     End If
   End If
   If LueAttribuutit = False Then
-    Debug.Print "  ERROR: Invalid block selection"
     MsgBox "Virhe blokin valinnassa!", vbOKOnly, "Muokkaa blokkia"
   End If
   AppActivate CurrentDb.Properties("AppTitle").VALUE
-  Debug.Print "LueAttribuutit: COMPLETED (Result=" & LueAttribuutit & ")"
   Exit Function
   
 ErrorHandler:
-  Debug.Print "*** ERROR in LueAttribuutit: " & Err.Number & " - " & Err.Description
-  If BlockNimi <> "" Then Debug.Print "    BlockNimi: " & BlockNimi
   MsgBox "Error: " & Err.Description, vbCritical
   LueAttribuutit = False
 End Function
@@ -168,10 +145,8 @@ Dim oAttrib As Variant
 On Error GoTo ErrorHandler
 
 'Kirjoitetaan attribuutit formista takaisin blokkiin
-  Debug.Print "KirjoitaAttribuutit: Starting"
 If Not oBlock Is Nothing Then
     oAttrib = oBlock.GetAttributes
-    Debug.Print "  Attributes count: " & UBound(oAttrib) + 1
     For i = 0 To UBound(oAttrib)
       With oAttrib(i)
         Select Case Left$(UCase$(.TagString), Len(.TagString) - 1)
@@ -184,13 +159,10 @@ If Not oBlock Is Nothing Then
         End Select
       End With
     Next i
-    Debug.Print "  All attributes written"
 End If
-  Debug.Print "KirjoitaAttribuutit: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in KirjoitaAttribuutit: " & Err.Number & " - " & Err.Description
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -198,19 +170,13 @@ End Sub
 Private Sub Command119_Click()
 'Avaa uusi pohjakuva
 On Error GoTo ErrorHandler
-  Debug.Print "Command119_Click: Starting - Open base drawing"
-  Debug.Print "  BasePath: " & BasePath
-  Debug.Print "  BaseDWG2: " & BaseDWG2
   
   Set oDOC = oACAD.Documents.Open(BasePath & BaseDWG2 & ".dwg", True)
   oACAD.ZoomExtents
   AppActivate oACAD.Caption
-  Debug.Print "Command119_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in Command119_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    BasePath: " & BasePath & ", BaseDWG2: " & BaseDWG2
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 Private Sub Command151_Click()
@@ -228,18 +194,14 @@ Dim FileCount As Long
 Dim BlockCount As Long
 On Error GoTo ErrorHandler
 
-Debug.Print "Command151_Click: Starting - Read position data"
 
 Blokit = DLookup("[VALUE]", "[SETTINGS]", "SETTING='POSBLOCKS'")
 Attribuutti = UCase$(DLookup("[VALUE]", "[SETTINGS]", "SETTING='POSBLOCKATT'"))
-Debug.Print "  Blocks filter: " & Blokit
-Debug.Print "  Attribute: " & Attribuutti
 
 FT(0) = 2
 FD(0) = Blokit
 Tied = Dir(SavePath & "*.dwg")
 CurrentDb.Execute "DELETE * FROM POSANDPAGES"
-Debug.Print "  POSANDPAGES table cleared"
 
 Set Taul = CurrentDb.OpenRecordset("POSANDPAGES")
 FileCount = 0
@@ -248,11 +210,9 @@ BlockCount = 0
 Do While Tied <> ""
   If IsNumeric(Mid$(Tied, Len(Tied) - 5, 2)) Then
     FileCount = FileCount + 1
-    Debug.Print "  Processing file #" & FileCount & ": " & Tied
     Set oDOC = oACAD.Documents.Open(SavePath & Tied, True)
     Set Joukko = oDOC.SelectionSets.Add("iLockAPU")
     Joukko.Select acSelectionSetAll, , , FT, FD
-    Debug.Print "    Blocks found: " & Joukko.Count
     For i = 0 To Joukko.Count - 1
       If Joukko(i).HasAttributes Then
         ATTRIB = Joukko(i).GetAttributes
@@ -276,13 +236,9 @@ Do While Tied <> ""
   End If
  Tied = Dir
 Loop
-Debug.Print "Command151_Click: COMPLETED - Files: " & FileCount & ", Blocks: " & BlockCount
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Command151_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Current file: " & Tied
-  Debug.Print "    Files processed: " & FileCount & ", Blocks: " & BlockCount
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -307,13 +263,10 @@ Dim edPiir As String
 Dim PositionCount As Long
 On Error GoTo ErrorHandler
 
-Debug.Print "Command152_Click: Starting - Create index pages"
 
 IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
-Debug.Print "  IndexBase: " & IndexBase
 
 Set Taul = CurrentDb.OpenRecordset("Interlocking_Pages")
-Debug.Print "  Recordset opened: Interlocking_Pages"
 
 Set oDOC = oACAD.Documents.Open(BasePath & IndexBase & ".dwg")
 
@@ -336,7 +289,6 @@ PositionCount = 0
 
 Do While Not Taul.EOF
 If Taul.Fields("TEXT_4") = "=231P891A-A" Then
-  Debug.Print ""
 End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
@@ -364,7 +316,6 @@ End If
           ind = 0
         End If
         ind = ind + 1
-        Debug.Print "  Saving index page: " & SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         oDOC.SaveAs SavePath & Taul.Fields("Piir") & "_IDX_" & ind
         edPiir = Taul.Fields("Piir")
         oDOC.Close
@@ -384,16 +335,12 @@ Loop
     oDOC.ModelSpace.AddText edPOS, Piste, TextSize
     oDOC.ModelSpace.AddText Sivut, Piste2, TextSize
   ind = ind + 1
-  Debug.Print "  Final page save: " & SavePath & edPiir & "_IDX_" & ind
   oDOC.SaveAs SavePath & edPiir & "_IDX_" & ind
   oDOC.Close
-  Debug.Print "Command152_Click: COMPLETED - Positions: " & PositionCount & ", Pages: " & ind
   MsgBox "Valmis"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in Command152_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Position: " & edPOS & ", Positions processed: " & PositionCount
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -404,19 +351,13 @@ End Sub
 Private Sub Command7_Click()
 'Avaa uusi pohjakuva
 On Error GoTo ErrorHandler
-  Debug.Print "Command7_Click: Starting - Open base drawing 1"
-  Debug.Print "  BasePath: " & BasePath
-  Debug.Print "  BaseDWG1: " & BaseDWG1
   
   Set oDOC = oACAD.Documents.Open(BasePath & BaseDWG1 & ".dwg", True)
   oACAD.ZoomExtents
   AppActivate oACAD.Caption
-  Debug.Print "Command7_Click: COMPLETED"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in Command7_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    BasePath: " & BasePath & ", BaseDWG1: " & BaseDWG1
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -574,10 +515,8 @@ End Sub
 
 Private Sub Form_Close()
 'Vapautetaan objektit ennen sulkemista
-  Debug.Print "Form_Close: Starting - Releasing AutoCAD objects"
   Set oACAD = Nothing
   Set oDOC = Nothing
-  Debug.Print "Form_Close: COMPLETED"
 End Sub
 
 Private Sub Form_Current()
@@ -620,16 +559,9 @@ Private Sub Form_Load()
   SavePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='SAVEPATH'")
   If Right$(SavePath, 1) <> "\" Then SavePath = SavePath & "\"
   
-  Debug.Print "  BaseDWG1: " & BaseDWG1
-  Debug.Print "  BaseDWG2: " & BaseDWG2
-  Debug.Print "  BasePath: " & BasePath
-  Debug.Print "  BlockPath: " & BlockPath
-  Debug.Print "  SavePath: " & SavePath
-  Debug.Print "Form_Load: COMPLETED successfully"
   Exit Sub
   
 ErrorHandler:
-  Debug.Print "*** ERROR in Form_Load: " & Err.Number & " - " & Err.Description
   MsgBox "Error loading form: " & Err.Description, vbCritical
 End Sub
 
@@ -644,7 +576,6 @@ End Sub
 
 
 Private Sub Lehdet_Change()
-  Debug.Print "Lehdet_Change: Starting - Tab changed to: " & Lehdet
   'If Lehdet <> 3 Then
   If Lehdet = 2 Then
     Blokki.RowSource = "SELECT SETTINGS.VALUE, ATTRIB FROM SETTINGS WHERE (((SETTINGS.SETTING)='BLOCK_S'));"
@@ -665,7 +596,6 @@ Private Sub Lehdet_Change()
   Blokki.Requery
   Blokki.VALUE = ""
   TKuva.VALUE = Nothing
-  Debug.Print "Lehdet_Change: COMPLETED"
 End Sub
 
 Private Sub Lisays_Click()
@@ -696,19 +626,15 @@ Virhe:
 '---------------------------------------------------------
   Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
   BName = BlockPath & Blokki & ".dwg"
-  Debug.Print "  Inserting block: " & BName
   Set oBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   'Kirjoitetaan arvot textboxeista
-  Debug.Print "  Writing attributes to block"
   KirjoitaAttribuutit
   'Annetaan komentorivikomento jolla saadaan siirrettyä blokkia haluttuun paikkaan
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
   With oBlock
     If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
-      Debug.Print "  Block insertion cancelled - deleted"
       .Delete
     Else 'Kirjoitetaan tieto insertoinnista taulukkoon
-      Debug.Print "  Block inserted successfully"
       If Lehdet = 0 Then 'Jos insertoitiin joku muu kuin yleisblokki
         Lehdet_Sub0.Form.USED = True
         Lehdet_Sub0.Form.Refresh 'Requery
@@ -723,7 +649,6 @@ Virhe:
   End With
   Set oBlock = Nothing
   AppActivate CurrentDb.Properties("AppTitle").VALUE
-  Debug.Print "Lisays_Click: COMPLETED"
 End Sub
 Private Function DoubleToPoint(ByVal Piste As Double) As String
 Dim APU As String
@@ -759,7 +684,6 @@ Dim i As Integer
        End Select
     End With
   Next i
-  Debug.Print "TaytaTextBoxit: COMPLETED"
 End Sub
 Public Sub TyhjennaKentat()
 Dim i As Integer
@@ -899,8 +823,9 @@ End Sub
 
 
 
-Private Sub �C_Click()
-Text_5.VALUE = Text_5.VALUE & " �C"
+Private Sub astC_Click()
+' Lisätään lämpötilayksikkö °C tekstikenttään
+Text_5.VALUE = Text_5.VALUE & " °C"
 End Sub
 
 Private Sub OPEN_LIMIT_F_Click()
@@ -964,8 +889,9 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "TRANSITION2"
 End Sub
-Private Sub �S_cm_Click()
-Text_5.VALUE = Text_5.VALUE & " �S/cm"
+Private Sub uS_cm_Click()
+' Lisätään johtokykyasikkö µS/cm tekstikenttään
+Text_5.VALUE = Text_5.VALUE & " µS/cm"
 End Sub
 Private Sub S_cm_Click()
 Text_5.VALUE = Text_5.VALUE & " mS/cm"

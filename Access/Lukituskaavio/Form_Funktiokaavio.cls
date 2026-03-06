@@ -1,8 +1,7 @@
 Option Compare Database
-Private Declare PtrSafe Function api_GetUserName _
-                Lib "advapi32.dll" _
-                Alias "GetUserNameA" _
-                (ByVal lpBuffer As String, nSize As Long) As Long
+Option Explicit
+
+' HUOM: api_GetUserName-kutsu on poistettu käytöstä — käytetään Me!RevBy-kentän arvoa suoraan
 Private Sub ADDNEWREV_Click()
 Dim DB As DAO.Database
 Dim vrev As String
@@ -20,7 +19,6 @@ Dim BuffSize As Long
 Dim NBuffer As String
 On Error GoTo ErrorHandler
 
-Debug.Print "ADDNEWREV_Click: Starting - Add new revision"
 Set DB = CurrentDb
 
 'BuffSize = 256
@@ -37,7 +35,6 @@ revteki = Me!RevBy
 urev = Me!NEWREV
 ALUE = Me!AreaCode
 LooppiNo = Me!LoopNo
-Debug.Print "  Area: " & ALUE & ", Loop: " & LooppiNo & ", New Rev: " & urev
 paiva = Day(Date)
 kk = Month(Date)
 'vuosi = Right(Year(Date), 2)
@@ -46,13 +43,11 @@ revpaiva = paiva & "." & kk & "." & vuosi
 LooppiSymb = Me!LoopSymb
 
 If Me!FReV = urev Then
-    Debug.Print "  ERROR: Revision already exists"
-    Viesti = MsgBox("Uusi revisio on jo olemassa!", vbOKOnly)
+    MsgBox "Uusi revisio on jo olemassa!", vbOKOnly
     Exit Sub
 End If
 
 Set Taulu = DB.OpenRecordset("rev", dbOpenTable)
-Debug.Print "  Adding revision to database"
 Taulu.AddNew
 Taulu.Fields("Area") = ALUE
 Taulu.Fields("no") = LooppiNo
@@ -66,12 +61,9 @@ Taulu.Update
 
 'If IsNull(Forms!funktiokaavio.FReV.Value) Then
 Me!FReV = urev
-Debug.Print "ADDNEWREV_Click: COMPLETED - Revision added: " & urev
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in ADDNEWREV_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Area: " & ALUE & ", Loop: " & LooppiNo & ", Rev: " & urev
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -81,9 +73,6 @@ Dim sql As String
 Dim DB As Object ' Database
 On Error GoTo ErrorHandler
 
-Debug.Print "Command50_Click: Starting - Update Control table"
-Debug.Print "  AreaCode: " & Me!Muokkaus0.VALUE & ", LoopNo: " & Me!Muokkaus4.VALUE
-Debug.Print "  TagID: " & Me!Muokkaus3.VALUE
 
 Set DB = CurrentDb
 
@@ -100,46 +89,39 @@ CurrentDb.Execute "UPDATE Control SET Sel = '" & KAYTTAJA() & "' WHERE AreaCode 
 'Set qry = db.OpenRecordset(sql)
 
 'DoCmd.OpenQuery ("Control_Lisaa_tulostus")
-DoCmd.SetWarnings TrueDebug.Print "Command50_Click: COMPLETED"
+DoCmd.SetWarnings True
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Command50_Click: " & Err.Number & " - " & Err.Description
   MsgBox "Error: " & Err.Description, vbCritical
-  DoCmd.SetWarnings TrueEnd Sub
+  DoCmd.SetWarnings True
+End Sub
 
 
 Private Sub Command83_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 Dim DB As DAO.Database
-Dim Vastaus As VbMsgBoxResultOn Error GoTo ErrorHandler
+Dim Vastaus As VbMsgBoxResult
+On Error GoTo ErrorHandler
 
-Debug.Print "Command83_Click: Starting - Update recipe to all circuits"
-Debug.Print "  Recipe ID: " & RECIPES.Form.ID
-Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & Me.RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
 If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
-  Debug.Print "  Deleting old blocks for recipe ID: " & RECIPES.Form.ID
-  CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID
+  CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & Me.RECIPES.Form.ID
 End If
 If Vastaus <> vbCancel Then
-  Debug.Print "  Inserting updated recipe blocks"
-  CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID
+  CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & Me.RECIPES.Form.ID
   MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
   Me.Refresh
-  Debug.Print "Command83_Click: COMPLETED"
 End If
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Recipe ID: " & RECIPES.Form.ID
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Command97_Click()
 On Error GoTo ErrorHandler
 
-Debug.Print "Command97_Click: Starting - Link operations"
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Delete tolink from FunckblockAttr")
 DoCmd.OpenQuery ("Delete todesc from FunckblockAttr")
@@ -153,11 +135,9 @@ DoCmd.OpenQuery ("LinkTo6ADD")
 DoCmd.OpenQuery ("TODESCADD")
 DoCmd.OpenQuery ("FROMDESCADD")
 DoCmd.SetWarnings True
-Debug.Print "Command97_Click: COMPLETED - All link queries executed"
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Command97_Click: " & Err.Number & " - " & Err.Description
   MsgBox "Error: " & Err.Description, vbCritical
   DoCmd.SetWarnings True
 End Sub
@@ -204,7 +184,6 @@ Piste2(1) = aY
 
 Do While Not Taul.EOF
 If Taul.Fields("Position") = "=231P891A-A" Then
-  Debug.Print ""
 End If
   If edPOS <> Taul.Fields("position") Then
     If Sivut <> "" Then
@@ -272,14 +251,11 @@ Dim Tyyppi As String
 Dim RecordCount As Long
 On Error GoTo ErrorHandler
 
-Debug.Print "Komento46_Click: Starting - Update Intpage table"
 
 Set DB = CurrentDb
 DB.Execute "DELETE * FROM Intpage"
-Debug.Print "  Intpage table cleared"
 Set Taul = DB.OpenRecordset("SELECT DWG, TEXT_4, PAGE FROM POSANDPAGES GROUP BY DWG, TEXT_4, PAGE HAVING (TEXT_4<>'') ORDER BY TEXT_4, PAGE;")
 Set Intpage = DB.OpenRecordset("Intpage")
-Debug.Print "  Recordsets opened"
 
 RecordCount = 0
 Do While Not Taul.EOF
@@ -290,7 +266,6 @@ Do While Not Taul.EOF
       End If
       Intpage.AddNew
       EdLoop = Taul.Fields("TEXT_4")
-      Debug.Print "  Processing loop: " & EdLoop
     End If
     PIIR = Taul.Fields("DWG")
     PIIR = Left$(PIIR, InStr(PIIR, "_") - 1)
@@ -324,13 +299,10 @@ RecordCount = RecordCount + 1
 Set Taul = Nothing
 Set Intpage = Nothing
 Set DB = Nothing
-Debug.Print "Komento46_Click: COMPLETED - Records processed: " & RecordCount
 MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Komento46_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Current loop: " & EdLoop & ", Records: " & RecordCount
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -389,16 +361,13 @@ End Sub
 Private Sub Komento47_Click()
 On Error GoTo ErrorHandler
 
-Debug.Print "Komento47_Click: Starting - Control queries"
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
 DoCmd.OpenQuery ("Control_Lisaa_tulostus")
 DoCmd.SetWarnings True
-Debug.Print "Komento47_Click: COMPLETED"
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Komento47_Click: " & Err.Number & " - " & Err.Description
   MsgBox "Error: " & Err.Description, vbCritical
   DoCmd.SetWarnings True
 End Sub
@@ -406,36 +375,29 @@ End Sub
 Private Sub hae_Click()
 On Error GoTo Err_hae_Click
 
-Debug.Print "hae_Click: Starting - Find next"
 
     Screen.PreviousControl.SetFocus.LoopNo
     DoCmd.FindNext
-    Debug.Print "hae_Click: COMPLETED"
 
 Exit_hae_Click:
     Exit Sub
 
 Err_hae_Click:
-    Debug.Print "*** ERROR in hae_Click: " & Err.Number & " - " & Err.Description
     MsgBox Err.Description
     Resume Exit_hae_Click
     
 End Sub
 
 Private Sub Komento57_Click()
-  Debug.Print "Komento57_Click: Switching to MOTORS view"
-  LTITLE.Caption = "MOTORS"
+  Me.LTITLE.Caption = "MOTORS"
   Me.RecordSource = "FuncDiag_Motors"
   Me.Requery
-  Debug.Print "Komento57_Click: COMPLETED"
 End Sub
 
 Private Sub Komento58_Click()
-  Debug.Print "Komento58_Click: Switching to LOOPS view"
-  LTITLE.Caption = "LOOPS"
+  Me.LTITLE.Caption = "LOOPS"
   Me.RecordSource = "FuncDiag_Loops"
   Me.Requery
-  Debug.Print "Komento58_Click: COMPLETED"
 End Sub
 
 Private Sub Komento67_Click()
@@ -446,30 +408,26 @@ Dim Taul As DAO.Recordset
 Dim sSQL As String
 On Error GoTo ErrorHandler
 
-Debug.Print "Komento67_Click: Starting - Create recipe"
 
-If IsNull(RProcess.VALUE) Or IsNull(RCode.VALUE) Then
-  Debug.Print "  ERROR: Process or Code missing"
+If IsNull(Me.RProcess.Value) Or IsNull(Me.RCode.Value) Then
   MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
   Exit Sub
 End If
 
-Debug.Print "  Process: " & RProcess.VALUE & ", Code: " & RCode.VALUE
 Set DB = CurrentDb
-Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & RProcess.VALUE & "' and Code = '" & RCode.VALUE & "'")
+Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & Me.RProcess.Value & "' and Code = '" & Me.RCode.Value & "'")
 If Taul.RecordCount > 0 Then
-  Debug.Print "  ERROR: Recipe already exists"
   MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
   Exit Sub
 End If
 'Luodaan uusi resepti RECIPES taulukkoon.
-Debug.Print "  Creating new recipe"
 Taul.AddNew
-Taul.Fields("PROCESS") = RProcess.VALUE
-Taul.Fields("CODE") = RCode.VALUE
-Taul.Fields("INFO") = RInfo.VALUE
+Taul.Fields("PROCESS") = Me.RProcess.Value
+Taul.Fields("CODE") = Me.RCode.Value
+Taul.Fields("INFO") = Me.RInfo.Value
 'Otetaan ylös luodun reseptin ID
-RID = Taul.Fields("ID")Debug.Print "  Recipe ID created: " & RIDTaul.Update
+RID = Taul.Fields("ID")
+Taul.Update
 'Kirjoitetana reseptin ID piirille (Loops tai drives)
 Me.RecipeID = RID
 'Luodaan tiedoista rivit RECIPE_TMP taulukkoon
@@ -482,12 +440,9 @@ sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
 sSQL = sSQL & "WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
 DB.Execute sSQL
 Me.Refresh
-Debug.Print "Komento67_Click: COMPLETED - Recipe created: " & RID
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Komento67_Click: " & Err.Number & " - " & Err.Description
-  Debug.Print "    Process: " & RProcess.VALUE & ", Code: " & RCode.VALUE
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -495,26 +450,22 @@ End Sub
 Private Sub Komento80_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 Dim DB As DAO.Database
-Dim Vastaus As VbMsgBoxResultOn Error GoTo ErrorHandler
+Dim Vastaus As VbMsgBoxResult
+On Error GoTo ErrorHandler
 
-Debug.Print "Komento80_Click: Starting - Update all recipes to all circuits"
 Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN")
 
 If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
-  Debug.Print "  Deleting old blocks from circuits with recipes"
   CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null"
 End If
 If Vastaus <> vbCancel Then
-  Debug.Print "  Inserting updated recipes"
   CurrentDb.Execute "RECIPES_ADD"
   MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ RESEPTIT KAIKKIIn PIIREIHIN"
   Me.Refresh
-  Debug.Print "Komento80_Click: COMPLETED"
 End If
 Exit Sub
 
 ErrorHandler:
-  Debug.Print "*** ERROR in Komento80_Click: " & Err.Number & " - " & Err.Description
   MsgBox "Error: " & Err.Description, vbCritical
 End Sub
 
@@ -560,7 +511,6 @@ Piste2(1) = aY
 
 Do While Not Taul.EOF
 If Taul.Fields("TEXT_4") = "=231P891A-A" Then
-  Debug.Print ""
 End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then

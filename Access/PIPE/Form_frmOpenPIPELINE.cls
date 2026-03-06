@@ -1,62 +1,62 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: frmOpenPIPELINE
-' Purpose: Pipeline segment selector for multi-segment pipelines
-' Updated: 2025-11-12 - Added VBA7/64-bit support and optimization
+' Lomake: frmOpenPIPELINE
+' Tarkoitus: Monisegmenttisten putkilinjojen segmentinvalitsin
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki lisätty
 '
-' Description:
-'   When a pipeline spans multiple drawings, this form allows selection:
-'   - Displays list of pipeline segments from PIPELINEDATA
-'   - Shows path, drawing, area, line, FROM, TO for each segment
+' Kuvaus:
+'   Kun putkilinja ulottuu useisiin piirustuksiin, tällä lomakkeella valitaan segmentti:
+'   - Näyttää putkilinjasegmenttien listan PIPELINEDATA-taulukosta
+'   - Näyttää polun, piirustuksen, alueen, linjan, FROM ja TO kullekin segmentille
 '   - Opens selected drawing and zooms to pipeline block
-'   - Auto-opens if only 2 segments (one is header row)
+'   - Avautuu automaattisesti, jos vain 2 segmenttiä (yksi on otsikkorivi)
 '
-' Dependencies:
-'   - PIPELINEDATA table (imported pipeline data)
-'   - AvaaKuvasta function from Koodit module
+' Riippuvuudet:
+'   - PIPELINEDATA-taulukko (tuotu putkilinjadata)
+'   - AvaaKuvasta-funktio Koodit-moduulista
 '
-' OpenArgs Format:
-'   - "AreaCode,LineNo" (comma-separated)
+' OpenArgs-muoto:
+'   - "AluetKoodi,LinjaNo" (pilkuilla erotettu)
 '
-' Controls:
-'   - Lista: Listbox showing pipeline segments
-'   - Command3: Open selected button
-'   - Command4: Close form button
+' Kontrollit:
+'   - Lista: Listaruutu putkilinjasegmenteille
+'   - Command3: Avaa valittu -painike
+'   - Command4: Sulje lomake -painike
 '================================================================================
 
 '--------------------------------------------------------------------------------
-' Event: Command3_Click
-' Purpose: Open selected pipeline segment
+' Tapahtuma: Command3_Click
+' Tarkoitus: Avaa valittu putkilinjasegmentti
 '--------------------------------------------------------------------------------
 Private Sub Command3_Click()
   AvaaValittu False
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Command4_Click
-' Purpose: Close form
+' Tapahtuma: Command4_Click
+' Tarkoitus: Sulkee lomakkeen
 '--------------------------------------------------------------------------------
 Private Sub Command4_Click()
   DoCmd.Close
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Form_Load
-' Purpose: Initialize form and populate pipeline segment list
+' Tapahtuma: Form_Load
+' Tarkoitus: Alustetaan lomake ja tÃ¤ytetÃ¤Ã¤n putkilinjasegmenttilista
 '
-' Process:
-'   1. Parse OpenArgs for AreaCode and LineNo
-'   2. Build SQL to query PIPELINEDATA for matching segments
-'   3. Populate Lista listbox with results
-'   4. If only 2 rows (header + 1 segment), auto-open and close
-'   5. If no data found, show error and close
+' Toiminta:
+'   1. Jäsennetään OpenArgs (aluekoodi ja linjanumero)
+'   2. Rakennetaan SQL-kysely PIPELINEDATA-taulukkoon
+'   3. Täytetään Lista-listaruutu tuloksilla
+'   4. Jos vain 2 riviä (otsikko + 1 segmentti), avataan automaattisesti
+'   5. Jos dataa ei löydy, näytetään virhe ja suljetaan
 '
-' Notes:
-'   - Must be opened via OpenArgs with "Area,LineNo" format
-'   - Auto-selects first segment (row 1)
-'   - Shows error if opened incorrectly
+' Huom:
+'   - Avattava OpenArgs-parametrilla muotoiltuna "Alue,LinjaNo"
+'   - Valitsee ensimmäisen segmentin automaattisesti (rivi 1)
+'   - Näyttää virheen, jos lomake avataan väärin
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
 On Error GoTo ErrorHandler
@@ -71,7 +71,7 @@ Dim Parametrit As Variant
      Exit Sub
   End If
   
-  ' Parse OpenArgs
+  ' Jäsennetään OpenArgs-parametrit
   Parametrit = Split(Me.OpenArgs, ",")
   If UBound(Parametrit) <> 1 Then
     MsgBox "Virheelliset parametrit", vbCritical, "Virhe"
@@ -82,45 +82,45 @@ Dim Parametrit As Variant
   Alue = Trim$(Parametrit(0))
   Linja = Trim$(Parametrit(1))
   
-  ' Build SQL query
+  ' Rakennetaan SQL-kysely
   SQL = "SELECT PATH, ImpFileID, Handles, DEP, FLOWSUBSTMAINGROUP AS FSMG, LINENO, FLOWSUBSTCODE AS FSC, DN, PN,  [FROM], [TO] FROM PIPELINEDATA "
   SQL = SQL & "WHERE DEP = '" & Alue & "' AND LINENO = '" & Linja & "'"
   Lista.RowSource = SQL
   
-  ' Check results and auto-open if single segment
+  ' Tarkistetaan tulokset - avataan automaattisesti, jos yksi segmentti
   If Lista.ListCount = 2 Then
-    ' Only header + 1 data row, auto-open
+    ' Vain otsikko + 1 datarivi, avataan automaattisesti
     Lista.Selected(1) = True
     AvaaValittu True
   ElseIf Lista.ListCount < 2 Then
     MsgBox "Putkilinjatietoja ei ole tuotu virtauskaavioista", vbCritical, "Virhe"
     DoCmd.Close acForm, "frmOpenPIPELINE", acSaveNo
   Else
-    ' Multiple segments, select first
+    ' Useita segmentejä, valitaan ensimmäinen
     Lista.Selected(1) = True
   End If
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error loading form: " & Err.Description, vbCritical, "Virhe"
+    MsgBox "Virhe lomakkeen latauksessa: " & Err.Description, vbCritical, "Virhe"
     DoCmd.Close acForm, "frmOpenPIPELINE", acSaveNo
 End Sub
 '--------------------------------------------------------------------------------
-' Sub: AvaaValittu
-' Purpose: Open selected pipeline segment in AutoCAD
+' Aliohjelma: AvaaValittu
+' Tarkoitus: Avaa valittu putkilinjasegmentti AutoCADissa
 '
-' Parameters:
-'   Sulje - Boolean, True = close form after opening
+' Parametrit:
+'   Sulje - Boolean, True = suljetaan lomake avauksen jälkeen
 '
-' Process:
-'   1. Extract selected row data from Lista listbox
-'   2. Get PATH, ImpFileID (drawing), Handles, identification info
-'   3. Call AvaaKuvasta to open drawing and zoom to block
-'   4. Optionally close form
+' Toiminta:
+'   1. Poimitaan valitun rivin tiedot Lista-listaruudusta
+'   2. Haetaan polku, piirustus (ImpFileID), Handle ja tunnistetiedot
+'   3. Kutsutaan AvaaKuvasta avaamaan piirustus ja zoomaamaan blokkiin
+'   4. Suljetaan lomake tarvittaessa
 '
-' Notes:
-'   - Lista.ListIndex is 0-based, so add 1 to skip header
-'   - Column indices: 0=PATH, 1=ImpFileID, 2=Handles, 3=DEP, 5=LINENO
+' Huom:
+'   - Lista.ListIndex on 0-pohjainen, lisätään 1 otsikon ohittamiseksi
+'   - Sarakeindeksit: 0=PATH, 1=ImpFileID, 2=Handles, 3=DEP, 5=LINENO
 '--------------------------------------------------------------------------------
 Private Sub AvaaValittu(Sulje As Boolean)
 On Error GoTo ErrorHandler
@@ -142,5 +142,5 @@ Dim Info As String
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error opening pipeline: " & Err.Description, vbCritical, "Virhe"
+    MsgBox "Virhe putkilinjan avaamisessa: " & Err.Description, vbCritical, "Virhe"
 End Sub

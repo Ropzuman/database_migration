@@ -1,67 +1,64 @@
-Option Compare Database
+﻿Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: Linkkien vaihto (Link Updater)
-' Purpose: Update linked table paths to current database directory
-' Updated: 2025-11-12 - Added VBA7/64-bit support
+' Lomake: Linkkien vaihto
+' Tarkoitus: Päivittää linkitettyjen taulujen polut nykyiseen tietokannan hakemistoon
+' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki lisätty
 '
-' Description:
-'   Utility form to relink external tables to the current database directory:
-'   - Scans MSysObjects for linked tables
-'   - Extracts database filename from current link path
-'   - Relinks table to same filename in current database folder
-'   - Prevents links to wrong directory after database moves
+' Kuvaus:
+'   Apulomake ulkoisten taulujen uudelleenlinkitykseen nykyiseen hakemistoon:
+'   - Skannaa MSysObjects-järjestelmätaulun linkitetyistä tauluista
+'   - Poimii tietokannan tiedostonimen nykyisestä linkityspolusta
+'   - Linkittää taulun samaan tiedostoon nykyisessä hakemistossa
+'   - Estää väärään hakemistoon osoittavat linkit tietokannan siirron jälkeen
 '
-' Dependencies:
-'   - MSysObjects system table (Access internal)
-'   - Linked Access database tables
+' Riippuvuudet:
+'   - MSysObjects-järjestelmätaulu (Accessin sisäinen)
+'   - Linkitetyt Access-tietokantataulut
 '
-' Use Case:
-'   When database is moved to new folder, linked tables still point to old
-'   location. This form updates all links to current directory.
+' Käyttötapaus:
+'   Kun tietokanta siirretään uuteen kansioon, linkitetyt taulut osoittavat
+'   edelleen vanhaan sijaintiin. Tämä lomake päivittää kaikki linkit nykyiseen
+'   hakemistoon.
 '================================================================================
 
 '--------------------------------------------------------------------------------
-' Event: Command0_Click
-' Purpose: Relink all external tables to current database directory
-'
-' Process:
-'   1. Get current database path (directory only)
-'   2. Query MSysObjects for all linked tables
-'   3. For each linked table:
-'      - Extract filename from current link path
-'      - Compare directory paths
-'      - If paths differ, drop and recreate link to current directory
-'   4. Preserve table name and structure
-'
-' Notes:
-'   - Only relinks if source directory differs from current directory
-'   - Uses case-insensitive path comparison
-'   - Prevents duplicate relinking of same table
-'   - Uses DoCmd.TransferDatabase to recreate links
+' Tapahtuma: Command0_Click
+' Tarkoitus: Linkittää kaikki ulkoiset taulut nykyiseen tietokannan hakemistoon
+' Toiminta:
+'   1. Haetaan nykyinen tietokannan hakemistopolku
+'   2. Kysellään MSysObjects-taulusta kaikki linkitetyt taulut
+'   3. Jokaiselle linkitetylle taululle:
+'      - Poimitaan tiedostonimi nykyisestä linkityspolusta
+'      - Vertaillaan hakemistopolkuja
+'      - Jos polut eroavat, pudotetaan ja luodaan uudelleen linkki nykyiseen hakemistoon
+'   4. Säilytetään taulun nimi ja rakenne
+' Huom:
+'   - Linkittää uudelleen vain, jos lähdehakemisto eroaa nykyisestä
+'   - Käyttää kirjainkoosta riippumatonta polkuvertailua
+'   - Estää saman taulun kaksinkertaisen uudelleenlinkityksen
+'   - Käyttää DoCmd.TransferDatabase-komentoa linkkien uudelleenluomiseen
 '--------------------------------------------------------------------------------
 Private Sub Command0_Click()
 On Error GoTo ErrorHandler
-    Dim i As Integer, j As Integer  ' Loop counters
-    Dim Polku As String  ' Current database directory path
-    Dim Polku2 As String  ' Linked table directory path
-    Dim Nimi As String  ' Database filename
-    Dim Taulut() As String  ' Array for table tracking (unused)
-    Dim s As Integer  ' Counter (unused)
-    Dim Taul As DAO.Recordset  ' MSysObjects query results
-    Dim Taulu As String  ' Current table name being processed
-    Dim LowerPolku As String  ' Lowercase current path for comparison
-    Dim LinksUpdated As Integer  ' Counter for updated links
+    Dim i As Integer, j As Integer  ' Silmukkalasku
+    Dim Polku As String             ' Nykyinen tietokannan hakemistopolku
+    Dim Polku2 As String            ' Linkitetyn taulun hakemistopolku
+    Dim Nimi As String              ' Tietokannan tiedostonimi
+    Dim Taul As DAO.Recordset       ' MSysObjects-kyselyn tulokset
+    Dim Taulu As String             ' Käsiteltävän taulun nimi
+    Dim LowerPolku As String        ' Nykyinen polku pieniksi kirjaimiksi vertailua varten
+    Dim LinksUpdated As Integer     ' Päivitettyjen linkkien laskuri
 
-    ' Initialize counter
+    ' Alustetaan laskuri
     LinksUpdated = 0
     
-    ' Get current database directory path
+    ' Haetaan nykyinen tietokannan hakemistopolku
     Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir$(CurrentDb.Name)))
-    LowerPolku = LCase$(Polku)  ' Cache lowercase for comparison
+    LowerPolku = LCase$(Polku)  ' Välimuistiin pieniksi kirjaimiksi vertailua varten
     
-    ' Query for all linked tables
+    ' Kysellään linkitetyt taulut
     Set Taul = CurrentDb.OpenRecordset("SELECT DATABASE, ForeignName, Name FROM MSysObjects WHERE Database Is Not Null")
     
     If Taul.EOF Then
@@ -71,11 +68,11 @@ On Error GoTo ErrorHandler
         Exit Sub
     End If
     
-    ' Process each linked table
+    ' Käsitellään jokainen linkitetty taulu
     Do While Not Taul.EOF
-      ' Prevent processing same table multiple times
+      ' Estetään saman taulun käsittely useampaan kertaan
       If Taul.Fields("Name") <> Taulu Then
-          ' Extract directory and filename from current link path
+          ' Poimitaan hakemisto ja tiedostonimi nykyisestä linkityspolusta
           For i = Len(Taul.Fields("Database")) To 1 Step -1
             If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
               Polku2 = LCase$(Left$(Taul.Fields("Database"), i))  ' Directory path
@@ -84,14 +81,14 @@ On Error GoTo ErrorHandler
             End If
           Next i
           
-          ' Check if link path differs from current database path
+          ' Tarkistetaan, eroaako linkkipolku nykyisestÃ¤ tietokantapolusta
           If Polku2 <> LowerPolku Then
             Taulu = Taul.Fields("Name")
             
-            ' Drop existing linked table
+            ' Pudotetaan nykyinen linkitetty taulu
             CurrentDb.Execute "DROP TABLE [" & Taulu & "]"
             
-            ' Recreate link to current directory
+            ' Luodaan linkki uudelleen nykyiseen hakemistoon
             On Error Resume Next
             DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, acTable, Taulu, Taulu, False
             If Err = 0 Then
@@ -104,7 +101,7 @@ On Error GoTo ErrorHandler
       Taul.MoveNext
     Loop
     
-    ' Cleanup
+    ' Siivotaan objektit
     Taul.Close
     Set Taul = Nothing
     
@@ -116,7 +113,7 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error updating links: " & Err.Description, vbCritical, "Link Update"
+    MsgBox "Virhe linkkien päivittämisessä: " & Err.Description, vbCritical, "Linkkien vaihto"
     On Error Resume Next
     If Not Taul Is Nothing Then Taul.Close
     Set Taul = Nothing
