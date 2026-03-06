@@ -5,16 +5,16 @@ Option Explicit
 ' Tarkoitus: Yleiset apufunktiot ja tiedostodialogituki
 ' Päivitetty: 2025-11-11 - VBA7/64-bit-tuki lisätty
 '             2026-03-03 - Kommentit suomeksi
+'             2026-03-06 - GetOpenFileName-API poistettu — korvattu HaeTiedostoNimi (Application.FileDialog)
 '
 ' Kuvaus:
 '   Tarjoaa apufunktioita:
 '   - Lukumuotoilu (pilkku↔piste-muunnos)
 '   - Revisioseuranta ja päivämääräjäsentäminen
 '   - Loopin olemassaolon tarkistus
-'   - Tiedoston avausdialogi (Windows Common Dialog)
+'   - Tiedoston avausdialogi (Office FileDialog)
 '
 ' Riippuvuudet:
-'   - comdlg32.dll (Common Dialog API)
 '   - _Revisions-taulu (revisioseurantaan)
 '   - qrysolvalve-kysely (looppitarkistukseen)
 '================================================================================
@@ -25,58 +25,31 @@ Public EdelArea As Integer  ' Edellinen aluekoodi
 Public Sivuja As Integer  ' Sivulaskuri
 
 '--------------------------------------------------------------------------------
-' Windows Common Dialog API -määrittely
-' Päivitetty 2025-11-11: VBA7/64-bit-tuki lisätty GetOpenFileName-APIlle
+' Funktio: HaeTiedostoNimi
+' Tarkoitus: Avaa Office-natiivi tiedostovalintaikkuna
+'
+' Palauttaa:
+'   Merkkijono — valitun tiedoston täydellinen polku, tai "" jos peruttu
+'
+' Huomiot:
+'   - Korvaa vanhan ja 64-bittisessä Officessa epävakaan GetOpenFileName-API-rakenteen
+'   - Application.FileDialog toimii luotettavasti kaikissa Office-versioissa (32/64-bit)
 '--------------------------------------------------------------------------------
-#If VBA7 Then
-    Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
-    Public Type OPENFILENAME
-        lStructSize As Long
-        hwndOwner As LongPtr  ' Updated for 64-bit (window handle)
-        hInstance As LongPtr  ' Updated for 64-bit (instance handle)
-        lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
-        nFilterIndex As Long
-        lpstrFile As String
-        nMaxFile As Long
-        lpstrFileTitle As String
-        nMaxFileTitle As Long
-        lpstrInitialDir As String
-        lpstrTitle As String
-        flags As Long
-        nFileOffset As Integer
-        nFileExtension As Integer
-        lpstrDefExt As String
-        lCustData As LongPtr  ' Updated for 64-bit
-        lpfnHook As LongPtr  ' Updated for 64-bit (callback pointer)
-        lpTemplateName As String
-    End Type
-#Else
-    Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
-    Public Type OPENFILENAME
-        lStructSize As Long
-        hwndOwner As Long
-        hInstance As Long
-        lpstrFilter As String
-        lpstrCustomFilter As String
-        nMaxCustFilter As Long
-        nFilterIndex As Long
-        lpstrFile As String
-        nMaxFile As Long
-        lpstrFileTitle As String
-        nMaxFileTitle As Long
-        lpstrInitialDir As String
-        lpstrTitle As String
-        flags As Long
-        nFileOffset As Integer
-        nFileExtension As Integer
-        lpstrDefExt As String
-        lCustData As Long
-        lpfnHook As Long
-        lpTemplateName As String
-    End Type
-#End If
+Public Function HaeTiedostoNimi() As String
+    Dim fd As Object
+    ' msoFileDialogFilePicker = 3
+    Set fd = Application.FileDialog(3)
+    With fd
+        .Title = "Valitse tiedosto"
+        .AllowMultiSelect = False
+        If .Show = -1 Then
+            HaeTiedostoNimi = .SelectedItems(1)
+        Else
+            HaeTiedostoNimi = ""
+        End If
+    End With
+    Set fd = Nothing
+End Function
 
 '--------------------------------------------------------------------------------
 ' Funktio: PilkkuPiste
