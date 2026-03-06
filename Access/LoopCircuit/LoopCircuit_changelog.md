@@ -5,6 +5,20 @@
 
 ---
 
+## 2026-03-07 — Code Review -korjaukset (suorituskyky & vakaus)
+
+### Form_Tee Kuvat.cls
+
+- **Busy wait poistettu — `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla (`kernel32.dll`). CPU:n ytimä ei enää pyöri täysillä odotuksen ajan.
+- **Sleep API -deklaraatio lisätty:** `#If VBA7 / PtrSafe` -lohko moduulin alkuun — 64-bit yhteensopiva.
+- **GetObject-fallback — `HaeTekstit_Click`:** `CreateObject("AutoCAD.Application")` edeltää nyt `GetObject`-yritys. Jos AutoCAD on jo auki, liitytään siihen — ei avata turhaa uutta instanssia.
+
+### Form_Linkkien vaihto.cls
+
+- **Epäonnistuneet linkitykset raportoitu:** Lisätty `Epäonnistuneet As String` -muuttuja keräämään taulut joiden `DoCmd.TransferDatabase` epäonnistui. Käyttäjälle näytetään lista epäonnistuneista operaation päätteeksi — hiljainen ohittaminen poistettu.
+
+---
+
 ## Kriittiset muutokset (64-bit ja API)
 
 ### General.bas

@@ -27,6 +27,8 @@ Private Sub Command0_Click()
         "WHERE ([Database] Is Not Null) AND ([Name] Not Like 'MotorData')")
 
     UpdateCount = 0
+    Dim Epäonnistuneet As String
+    Epäonnistuneet = ""
 
     Do While Not Taul.EOF
         If Taul.Fields("Name") <> Taulu Then
@@ -52,6 +54,9 @@ Private Sub Command0_Click()
 
                 If Err.Number = 0 Then
                     UpdateCount = UpdateCount + 1
+                Else
+                    ' Kirjataan epäonnistuneet taulut käyttäjälle näytettäväksi
+                    Epäonnistuneet = Epäonnistuneet & Taulu & " (" & Err.Description & ")" & vbCrLf
                 End If
 
                 Err.Clear
@@ -72,6 +77,10 @@ Cleanup:
     On Error GoTo 0
 
     MsgBox "Valmis - Päivitetty " & UpdateCount & " taulukkoa.", vbInformation, "Linkkien vaihto"
+    ' Ilmoitetaan epäonnistuneista linkityksistä, jos sellaisia löytyi
+    If Epäonnistuneet <> "" Then
+        MsgBox "Seuraavien taulujen linkitys epäonnistui:" & vbCrLf & Epäonnistuneet, vbExclamation, "Linkkien vaihto"
+    End If
     Exit Sub
 
 ErrHandler:

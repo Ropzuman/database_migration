@@ -1,5 +1,11 @@
 Option Compare Database
 Option Explicit
+' Sleep API — estää busy wait -kuormituksen CPU:lla (VBA7/64-bit yhteensopiva)
+#If VBA7 Then
+    Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+#Else
+    Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+#End If
 
 ' Päivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenkäsittely, poistettu kuollut koodi
 
@@ -13,11 +19,9 @@ Public oDoc As Object ' AcadDocument-objekti
 
 ' Odottaa annetun ajan (sadasosasekunteina) — käytössä AutoCAD-operaatioiden välille
 Private Sub Odota(Aika As Integer)
-    Dim odotus As Double
-    odotus = CDbl(Timer) + CDbl((Aika / 100))
-    Do While odotus > Timer
-        DoEvents
-    Loop
+    ' Sleep vapauttaa CPU:n odotusajalla — busy wait korvattu kernel-tasoisella odotuksella
+    DoEvents ' Käsitellään mahdolliset taustaviestit ennen odotusta
+    Sleep CLng(Aika) * 10
 End Sub
 
 ' Päivittää Accessin tilapalkin tiedostonnimellä ja kuluneella ajalla
@@ -58,7 +62,15 @@ Private Sub HaeTekstit_Click()
     On Error GoTo ErrHandler
     
     Ajastin = Timer
-    Set oAcad = CreateObject("AutoCAD.Application")
+    ' Yritetään ensin liittyä jo auki olevaan AutoCAD-instanssiin — nopeampaa kuin uuden luonti
+    On Error Resume Next
+    Set oAcad = GetObject(, "AutoCAD.Application")
+    If Err.Number <> 0 Then
+        ' AutoCAD ei ole auki — avataan uusi instanssi
+        Err.Clear
+        Set oAcad = CreateObject("AutoCAD.Application")
+    End If
+    On Error GoTo ErrHandler
     
     Polku = Me.PohjaHakem.Value
     If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"

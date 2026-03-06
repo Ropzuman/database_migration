@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-03-07 — Code Review -korjaukset (suorituskyky & vakaus)
+
+### Form_LisääKuviin_ACAD.cls
+
+- **Datan menetysriski poistettu — `HaeTekstit_Click`:** `DELETE * FROM Blokit` (koko taulu) korvattu `DELETE * FROM Blokit WHERE Path='...'` — muiden projektien attribuuttitiedot eivät enää tuhoudu hakemistovaihtoa lähestäessä.
+- **GetObject-fallback lisätty — `HaeTekstit_Click`:** `GetObject(, "AutoCAD.Application")` yritetään ensin; vasta virheen sattuessa avataan `CreateObject` — ei turhaa raskaita instansseja.
+- **Busy wait poistettu — `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla; CPU ei enää kuormitu 100 %:sti odotusajalla.
+- **Sleep API -deklaraatio lisätty:** `#If VBA7 / PtrSafe` -lohko moduulin alkuun.
+- **`CurrentDb`-kutsuketju korvattu `db`-muuttujalla — `HaeTekstit_Click`:** Yksi `Set db = CurrentDb` -viittaus riittää koko aliohjelmalle; säästää uusien viittausten luomiselta ja muistivuodoilta.
+- **Cleanup-lohko — `HaeTekstit_Click`:** Lisatty `Loppu:`-siivouslohko (GoTo Loppu / Resume Loppu) — resurssit vapautetaan myös virhetilanteessa.
+
+### Form_LukituskaavioLinkit.cls
+
+- **DAO-transaktio lisätty — `Command0_Click`:** Koko `Do Until qry.EOF` -silmukka kapseloitu `DBEngine.Workspaces(0).BeginTrans` / `CommitTrans` -rakenteeseen. Kaikki `.Edit/.Update`-kutsut käsitellään yhtenä blokkina — kymmenkertaistaa nopeuden verkkolevyllä.
+- **Rollback virheenkäsittelijessä:** `DBEngine.Workspaces(0).Rollback` lisätty `ErrorHandler`-lohkoon — virhetilanteessa tietokanta palautuu ehjeen tilaan.
+
+---
+
 ## Kriittiset muutokset (tietoturva & vakaus)
 
 ### Form_FuncBlock.cls

@@ -29,10 +29,15 @@ Tässä on kattava ja ammattimainen Code Review -raportti toimittamistasi instru
 VBA
 
 ' 1. Määrittele API Sleep moduulin alkuun (64-bit / 32-bit tuki)
+
 # If VBA7 Then
+
     Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
 # Else
+
     Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
 # End If
 
 ' 2. Korjattu Odota-funktio (ei kuormita CPU:ta)
@@ -174,23 +179,7 @@ If Epäonnistuneet <> "" Then
     MsgBox "Seuraavien taulujen linkitys epäonnistui:" & vbCrLf & Epäonnistuneet, vbExclamation
 End If
 
-1. CLEANED_SQL_QUERY.sql
-
-    📊 Yhteenveto: Siivottu tietokantakysely, jota hyödynnetään OLE DB -yhteyksissä (esim. Excelin Power Queryn kautta).
-
-    🚨 Kriittiset löydökset (Tietoturva & Vakaus):
-
-        Ei löydöksiä. Ongelmallinen, pelkästään Accessin sisäinen Nz() -funktio on havaittu ja raportoitu dokumentaatiossa korvattavaksi. Tämä ratkaisee tunnetun "Undefined function in expression" -OLE DB -bugin.
-
-    ⚠️ Huomioitavaa (Toiminnallisuus & Suorituskyky):
-
-        SQL-kyselyssä käytetään raskaasti merkkijonojen manipulointia (Left([Rev],InStr([Rev],"/")-1) AS RevNum). Jos aineisto kasvaa suureksi, nämä hidastavat kyselyä, koska niitä ei voida indeksoida.
-
-    💡 Parannusehdotukset (Ylläpidettävyys):
-
-        Harkitse revision ja sen aputietojen tallentamista omiin sarakkeisiinsa kantaan (RevNum, RevDate) sen sijaan, että ne parsitaan lennosta monimutkaisista stringeistä. Se nopeuttaa tiedonhakua eksponentiaalisesti, kun datamäärä ylittää 10 000 riviä.
-
-2. For ACAD Utility.bas
+1. For ACAD Utility.bas
 
     📊 Yhteenveto: API-määrityksiä AutoCAD-integraatiolle.
 
