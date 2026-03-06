@@ -6,37 +6,39 @@ Option Explicit
 ' Tekijä: VG Codes (2001)
 ' Päivitetty: 2025-11-11 - VBA7/64-bit-tuki lisätty
 '             2026-03-03 - Kommentit suomeksi, nSize-tyyppikorjaus
+'             2026-03-06 - Siirtyminen Unicode W -API-versioihin (GetUserNameW, GetComputerNameW)
 '
 ' Kuvaus:
 '   Kirjaa käyttäjän kirjautumistiedot UsysUsers-tauluun, mukaan lukien:
-'   - Verkkokäyttäjänimi (Windows API)
-'   - Tietokonenimi (Windows API)
+'   - Verkkokäyttäjänimi (Windows API — Unicode)
+'   - Tietokonenimi (Windows API — Unicode)
 '   - Access-tietokannan käyttäjänimi
 '   - Kirjautumisaika
 '
 ' Riippuvuudet:
 '   - UsysUsers-taulu tietokannassa
-'   - advapi32.dll (GetUserName API)
-'   - kernel32.dll (GetComputerName API)
+'   - advapi32.dll (GetUserNameW API)
+'   - kernel32.dll (GetComputerNameW API)
 '================================================================================
 
+' Unicode W -versiot tukevat skandinaavisia merkkejä (Ä, Ö) ilman merkistökorruptioriskiä
 #If VBA7 Then
     Private Declare PtrSafe Function api_GetUserName _
                     Lib "advapi32.dll" _
-                    Alias "GetUserNameA" _
+                    Alias "GetUserNameW" _
                     (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Private Declare PtrSafe Function api_GetComputerName _
                     Lib "kernel32" _
-                    Alias "GetComputerNameA" _
+                    Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
     Private Declare Function api_GetUserName _
                     Lib "advapi32.dll" _
-                    Alias "GetUserNameA" _
+                    Alias "GetUserNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long
     Private Declare Function api_GetComputerName _
                     Lib "kernel32" _
-                    Alias "GetComputerNameA" _
+                    Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long
 #End If
 

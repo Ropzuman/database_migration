@@ -28,3 +28,23 @@
 - **Kaikki tiedostot** – Moduuliotsikot päivitetty `Päivitetty`-kenttään 2026-03-03-merkintä.
 - **Form_CopyLoops.cls** – MsgBox-viestit suomeksi: `"Select database first!"` → `"Valitse ensin tietokanta!"`, `"Ready!"` → `"Valmis!"`, virheviestit suomeksi.
 - **USysCheck.bas** – Tuntematon käyttäjä/kone: `"Unknown"` → `"Tuntematon"`.
+
+---
+
+## 2026-03-06 – Code Review -korjaukset (tietoturva & vakaus)
+
+### Kriittiset muutokset
+
+- **Form_DBUsers.cls** – Command Injection -haavoittuvuus korjattu: `net send` → `msg.exe` (Windows Vista+ yhteensopiva). Käyttäjäsyötteet (`Viesti`, `NetworkName`) sanitoidaan: poistetaan `"`, `&`, `|` ennen Shell-kutsuun välittämistä. Häkättyyn InputBox-muotoiluun (7× vbCrLf) siistiminen.
+- **Form_SizingOut.cls** – RFC 4180 -standardin mukainen CSV-lainausmerkkien tuplataminen lisätty: `Replace(Nz(Arvo, ""), """", """""")`. Formula Injection -esto lisätty Excelin varalle: `=`, `@`, `+`, `-` -alkuiset arvot saavat eteen heittomerkin `'`. Käsittelyjärjestys korjattu: formula injection -tarkistus ennen RFC 4180 -muunnosta. Aiempi virheellinen kolmoislainaus (`""""""""`) korvattu oikealla (`""""""`).
+- **Form_Linkkien vaihto.cls** – Vakava tiedonhäviöriski poistettu: `DROP TABLE` + `DoCmd.TransferDatabase` -ketju korvattu turvallisella `tdf.Connect` + `tdf.RefreshLink` -päivitysmekanismilla. Linkitetyn taulun relaatiot säilyvät ehjinä.
+- **Form_CopyLoops.cls** – `Form_Unload`-lukkiutumisriski korjattu: alilomakkeen `Me.Loopit.Form.RecordSource = ""` tyhjennetään ja `DoEvents`-kutsu suoritetaan ennen `LOOPLINK`-taulun poistoa, jotta Access ehtii vapauttaa tiedostolukot.
+
+### API- ja yhteensopivuuskorjaukset
+
+- **general.bas** – 64-bittisessä Officessa epävakaa `GetOpenFileNameA` (comdlg32.dll) poistettu kokonaan. Korvattu Office-natiivilla `Application.FileDialog(3)` -pohjaisella `HaeTiedostoNimi()`-funktiolla (toimii luotettavasti 32/64-bit).
+- **USysCheck.bas** – ANSI-versiot `GetUserNameA` ja `GetComputerNameA` korvattu Unicode-versioilla `GetUserNameW` ja `GetComputerNameW`. Estää skandinaavisten merkkien (Ä, Ö) korruptoitumisen koodisivumuunnosten yhteydessä. Muutos tehty sekä `#If VBA7` että `#Else`-haaroihin.
+
+### Siivous
+
+- **Access/instru3/CodeReview_instru3** – Tiedostonimi muutettu: nimetty uudelleen `CodeReview_instru3.md`-tiedostoksi.
