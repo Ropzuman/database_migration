@@ -76,18 +76,22 @@ Private Sub OpenPipeline()
       If Kohde.ObjectName = "AcDbBlockReference" Then
         Set oPipeBlock = Kohde
         Nimi = UCase$(oPipeBlock.EffectiveName)
-        If Nimi = "PIPELINE_F" Or Nimi = "PIPELINE" Or Nimi = "PIPELINE_DATA" Or Nimi = "METSO_PIPE" Or Nimi = "BAHPIPEL" Then
-          Attrib = oPipeBlock.GetAttributes
-          Putkilinja = AttribToPipeline(Attrib)
-          TPipeline.Value = Putkilinja
-          PipeAttrib.TextString = Putkilinja
-          OK = True
-        ElseIf Left$(Nimi, 6) = "_PLATE" Then
-          Attrib = oPipeBlock.GetAttributes
-          TPipeline.Value = Attrib(1).TextString
-          PipeAttrib.TextString = Attrib(1).TextString
-          OK = True
-        End If
+        ' KORJATTU: Pitkän ehtolauseen sijaan luettavampi Select Case (DRY)
+        Select Case Nimi
+          Case "PIPELINE_F", "PIPELINE", "PIPELINE_DATA", "METSO_PIPE", "BAHPIPEL"
+            Attrib = oPipeBlock.GetAttributes
+            Putkilinja = AttribToPipeline(Attrib)
+            Me.TPipeline.Value = Putkilinja
+            PipeAttrib.TextString = Putkilinja
+            OK = True
+          Case Else
+            If Left$(Nimi, 6) = "_PLATE" Then
+              Attrib = oPipeBlock.GetAttributes
+              Me.TPipeline.Value = Attrib(1).TextString
+              PipeAttrib.TextString = Attrib(1).TextString
+              OK = True
+            End If
+        End Select
       End If
     End If
     If OK Then
@@ -147,7 +151,7 @@ Private Sub BFind_Click()
       End If
     End If
     AvaaBlokki
-    If TPipeline.Value = "" Then Exit Do
+    If Me.TPipeline.Value = "" Then Exit Do
   Loop
   
   Exit Sub
@@ -384,7 +388,7 @@ Private Sub AvaaBlokki()
   For j = 0 To UBound(Attrib)
     If Attrib(j).TagString = "PIPELINE" Or Attrib(j).TagString = "PIPELINENO" Then
       Set PipeAttrib = Attrib(j)
-      TPipeline.Value = PipeAttrib.TextString
+      Me.TPipeline.Value = PipeAttrib.TextString
     End If
   Next j
   
