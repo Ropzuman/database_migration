@@ -23,6 +23,11 @@
 - **Ongelma:** `DB.Close` kutsuttiin `DB = CurrentDb` -viittauksen päälle, mikä on virheellinen tapa. `CurrentDb`-viittauksen sulkeminen `.Close`-kutsulla voi epävakaistaa Access-istunnon.
 - **Korjaus:** Poistettu `DB.Close` sekä normaalilta polulta että ErrorHandler-lohkosta. Jätetty vain `Set DB = Nothing`. Lisätty selittävä kommentti.
 
+### USysCheck.bas — Kenttäindeksit korvattu nimetyillä sarakkeilla
+
+- **Ongelma:** `UsysUsers`-tauluun kirjattiin arvot indekseillä `.Fields(0..3)`. Indeksipohjainen viittaus rikkoutuu välittömästi, jos taulun kenttäjärjestystä muutetaan.
+- **Korjaus:** Korvattu `Fields("Verkkotunnus")`, `Fields("AccessTunnus")`, `Fields("KoneenNimi")`, `Fields("Aikaleima")` — noudattaa Clean Code -periaatetta (Avoid Magic Numbers).
+
 ---
 
 ## Toiminnalliset parannukset

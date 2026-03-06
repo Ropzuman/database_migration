@@ -5,7 +5,8 @@ Option Explicit
 ' Moduuli: USysCheck
 ' Tarkoitus: Käyttäjäseuranta ja validointityökalut
 ' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
-'             2026-03-03 — ErrorHandler-lohkoon lisätty DB.Close ennen Nothing
+'             2026-03-03 — Poistettu virheellinen DB.Close CurrentDb-viittaukselta
+'             2026-03-06 — Kenttäindeksit korvattu nimetyillä sarakkeilla (ylläpidettävyys)
 '
 ' Kuvaus:
 '   Kirjaa tietokantaan kirjautuvat käyttäjät tallentamalla verkkokäyttäjänimen,
@@ -74,10 +75,10 @@ Function SniffUser()
     
     With Taulu
         .AddNew
-        .Fields(0) = NWUserName     ' Verkkokäyttäjänimi
-        .Fields(1) = CurrentUser()  ' Access-tietokannan käyttäjänimi
-        .Fields(2) = CName          ' Tietokoneen nimi
-        .Fields(3) = Now            ' Aikaleima
+        .Fields("Verkkotunnus") = NWUserName     ' Windows-verkkokäyttäjänimi
+        .Fields("AccessTunnus") = CurrentUser()  ' Access-tietokannan käyttäjänimi
+        .Fields("KoneenNimi")   = CName          ' Tietokoneen nimi
+        .Fields("Aikaleima")    = Now             ' Kirjaushetki
         .Update
     End With
     
