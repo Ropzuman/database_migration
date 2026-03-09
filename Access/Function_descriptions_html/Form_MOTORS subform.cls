@@ -29,37 +29,40 @@ Option Explicit
 Private Sub LisaaTeksti()
     Dim Alku As String
     Dim Loppu As String
-    
+    Dim KohdeTeksti As String
+    Dim TurvallinenKursori As Long  ' Rajattu kursori — ei voi ylitää tekstin pituutta
+
     On Error GoTo ErrorHandler
-    
+
     If Not KohdeTextBox Is Nothing Then
+        KohdeTeksti = Nz(KohdeTextBox.Value, "")
+        ' Rajataan kursori tekstin pituuden sisään — estää Left$/Mid$-virheet fokuksenvaihdon jälkeen
+        TurvallinenKursori = Kursori
+        If TurvallinenKursori > Len(KohdeTeksti) Then TurvallinenKursori = Len(KohdeTeksti)
+        If TurvallinenKursori < 0 Then TurvallinenKursori = 0
+
         If Form.Parent.CLoppuun = True Then
             ' Lisätään kentän loppuun
-            Alku = Nz(KohdeTextBox.Value, "")
+            Alku = KohdeTeksti
             Loppu = ""
         Else
             ' Lisätään kursorin kohtaan
-            If IsNull(KohdeTextBox.Value) Then
-                Alku = ""
-                Loppu = ""
-            Else
-                Alku = Left$(KohdeTextBox.Value, Kursori)
-                Loppu = Mid$(KohdeTextBox.Value, Kursori + 1)
-            End If
+            Alku = Left$(KohdeTeksti, TurvallinenKursori)
+            Loppu = Mid$(KohdeTeksti, TurvallinenKursori + 1)
         End If
-        
+
         KohdeTextBox.Value = Alku & " {" & Me.TEKSTI.Value & "}" & Loppu
         KohdeTextBox.SetFocus
-        ' SelStart ja SelLength vaativat fokuksen — estetään Virhe 2185
+        ' SelStart ja SelLength vaativat fokuksen — estätään Virhe 2185
         On Error Resume Next
-        KohdeTextBox.SelStart = Kursori + Len(Me.TEKSTI.Value) + 3
+        KohdeTextBox.SelStart = TurvallinenKursori + Len(Me.TEKSTI.Value) + 3
         KohdeTextBox.SelLength = 0
         Kursori = KohdeTextBox.SelStart
         On Error GoTo ErrorHandler
     End If
-    
+
     Exit Sub
-    
+
 ErrorHandler:
     MsgBox "Virhe tekstin lisäyksessä: " & Err.Description, vbExclamation
 End Sub

@@ -2,55 +2,48 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Form: DBUsers
-' Purpose: Display currently logged-in database users
-' Updated: 2025-11-12 - Added VBA7/64-bit support
+' Lomake: DBUsers
+' Tarkoitus: Näyttää tietokantaan tällä hetkellä kirjautuneet käyttäjät
 '
-' Description:
-'   Shows active database users by reading .LACCDB lock file:
-'   - Displays machine name and username for each connection
-'   - Refresh button to update list
-'   - Optional send message functionality (net send command)
+' Kuvaus:
+'   Lukee .LACCDB-lukitustiedostosta aktiiviset käyttäjät:
+'   - Näyttää tietokoneen nimen ja käyttäjänimen jokaiselle yhteydelle
+'   - Päivityspainike listan uudelleenlataamista varten
+'   - Viestin lähetys (net send, ei toimi uusissa Windowseissa)
 '
-' Dependencies:
-'   - .LACCDB file (Access 2013+ lock file)
-'   - WhosOn() function to parse lock file
-'
-' Notes:
-'   - Similar to instru3 and MAINEQ versions
-'   - Uses binary file reading of 64-byte records
-'   - No Windows APIs needed (pure VBA)
+' Riippuvuudet:
+'   - .LACCDB-tiedosto (Access 2013+ lukitustiedosto)
+'   - WhosOn()-funktio lukitustiedoston lukemiseen
 '================================================================================
 
-' Declare a record type to break down the user info
+
+' Tietueen esittely kirjautumistietojen purkamista varten
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
    bUser(1 To 32) As Byte  ' 2nd 32 bytes hold user name
 End Type
 '--------------------------------------------------------------------------------
-' Event: Command27_Click
-' Purpose: Send network message to selected user (legacy feature)
-'
-' Notes:
-'   - Uses legacy "net send" command (may not work on modern Windows)
-'   - Requires NetBIOS messaging service enabled
+' Tapahtuma: Command27_Click
+' Tarkoitus: Lähetä verkkoviesti valitulle käyttäjälle (vanhentunut toiminto)
+' Huom: Käyttää vanhaa "net send" -komentoa — ei toimi uusissa Windowseissa
 '--------------------------------------------------------------------------------
 Private Sub Command27_Click()
 On Error GoTo ErrorHandler
 Dim Viesti As String
-  Viesti = InputBox("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Viesti = InputBox("Lähetä viesti käyttäjälle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "Lähetä viesti")
+  ' HUOM: net send poistettu Windows Vistasta alkaen — käytetään msg.exe-komentoa
   If Viesti <> "" Then
-    Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
+    Shell "msg " & Me.NetworkName.Value & " """ & Viesti & """"
   End If
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Error sending message: " & Err.Description, vbCritical, "Send Message"
+    MsgBox "Virhe viestin lähetyksessä: " & Err.Description, vbCritical, "Lähetä viesti"
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: Form_Open
-' Purpose: Populate logged-on users list when form opens
+' Tapahtuma: Form_Open
+' Tarkoitus: Täyttää kirjautuneiden käyttäjien lista lomakkeen avautuessa
 '--------------------------------------------------------------------------------
 Private Sub Form_Open(Cancel As Integer)
 On Error GoTo ErrorHandler
@@ -58,21 +51,21 @@ On Error GoTo ErrorHandler
    Exit Sub
 
 ErrorHandler:
-    MsgBox "Error opening form: " & Err.Description, vbCritical, "DBUsers"
+    MsgBox "Virhe lomakkeen avaamisessa: " & Err.Description, vbCritical, "DBUsers"
     Cancel = True
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: OKBtn_Click
-' Purpose: Close form
+' Tapahtuma: OKBtn_Click
+' Tarkoitus: Sulkee lomakkeen
 '--------------------------------------------------------------------------------
 Private Sub OKBtn_Click()
    DoCmd.Close
 End Sub
 
 '--------------------------------------------------------------------------------
-' Event: UpdateBtn_Click
-' Purpose: Refresh the logged-on users list
+' Tapahtuma: UpdateBtn_Click
+' Tarkoitus: Päivittää kirjautuneiden käyttäjien listan
 '--------------------------------------------------------------------------------
 Private Sub UpdateBtn_Click()
 On Error GoTo ErrorHandler
@@ -81,50 +74,31 @@ On Error GoTo ErrorHandler
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error updating list: " & Err.Description, vbCritical, "Update"
+    MsgBox "Virhe listan päivittämisessä: " & Err.Description, vbCritical, "Päivitä"
 End Sub
 
 '--------------------------------------------------------------------------------
-' Function: WhosOn
-' Purpose: Read .LACCDB lock file to determine currently logged-in users
-'
-' Returns:
-'   String - Semicolon-delimited list of "MachineName -- Username" pairs
-'
-' Process:
-'   1. Get current database path
-'   2. Replace .accdb extension with .LACCDB
-'   3. Open lock file in binary mode
-'   4. Read 64-byte records (32 bytes machine name + 32 bytes user name)
-'   5. Parse null-terminated strings
-'   6. Build semicolon-delimited list
-'
-' Notes:
-'   - LACCDB file format: 64-byte records
-'   - Machine name: bytes 1-32 (null-terminated)
-'   - User name: bytes 33-64 (null-terminated)
-'   - Opens file with shared read access
-'   - Handles missing file gracefully
+' Funktio: WhosOn
+' Tarkoitus: Lukee .LACCDB-lukitustiedostosta nykyiset kirjautuneet käyttäjät
+' Palautusarvo: Puolipisteillä eroteltu merkkijono "KoneNimi -- Käyttäjä"-pareista
+' Huom: LACCDB-tietuerakenne: 64 tavua / tietue
+'   - Tavut 1–32: tietokoneen nimi (nollapäätteinen)
+'   - Tavut 33–64: käyttäjänimi (nollapäätteinen)
 '--------------------------------------------------------------------------------
 Private Function WhosOn() As String
 On Error GoTo Err_WhosOn
 
    Dim iLDBFile As Integer, iStart As Integer
-   Dim iLOF As Integer, i As Integer
+   Dim i As Integer
    Dim sPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' User record structure
-   Dim dbCurrent As DAO.Database
+' Haetaan nykyisen tietokannan polku
+   sPath = CurrentDb.Name
 
-' Get path of current database
-   Set dbCurrent = DBEngine.Workspaces(0).Databases(0)
-   sPath = dbCurrent.Name
-   dbCurrent.Close
-   Set dbCurrent = Nothing
-
-' Build path to .LACCDB lock file
-   sPath = Left$(sPath, InStr(1, sPath, ".")) + "LACCDB"
+' Muodostetaan kirjautumistiedostopolku (.laccdb)
+   sPath = Left$(sPath, InStr(1, sPath, ".")) & "LACCDB"
 
 ' Test for valid file
    X = Dir$(sPath)
@@ -137,33 +111,36 @@ On Error GoTo Err_WhosOn
    iLDBFile = FreeFile
 
    Open sPath For Binary Access Read Shared As iLDBFile
-   iLOF = LOF(iLDBFile)
-   
+
    Do While Not EOF(iLDBFile)
       Get iLDBFile, , rUser
       With rUser
-         ' Extract machine name (null-terminated)
+         ' Poimitaan tietokoneen nimi (nollapäätteinen)
+         ' KORJATTU: Do While + Exit Do, koska VBA ei oikosulje And-operaattoria
+         ' (While .bMach(i)<>0 And i<=32 lukisi indeksin 33 ennen rajakieltoa -> Error 9)
          i = 1
          sMach = ""
-         While .bMach(i) <> 0 And i <= 32
+         Do While i <= 32
+            If .bMach(i) = 0 Then Exit Do
             sMach = sMach & Chr$(.bMach(i))
             i = i + 1
-         Wend
-         
-         ' Extract user name (null-terminated)
+         Loop
+
+         ' Poimitaan käyttäjänimi (nollapäätteinen)
          i = 1
          sUser = ""
-         While .bUser(i) <> 0 And i <= 32
+         Do While i <= 32
+            If .bUser(i) = 0 Then Exit Do
             sUser = sUser & Chr$(.bUser(i))
             i = i + 1
-         Wend
+         Loop
       End With
       
       sLogStr = sMach & " -- " & sUser
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 'increment to next record offset
+      iStart = iStart + 64 ' Siirrytään seuraavaan tietueeseen (64 tavua / tietue)
    Loop
    
    Close iLDBFile
@@ -173,14 +150,19 @@ Exit_WhosOn:
    Exit Function
 
 Err_WhosOn:
+   ' Tallennetaan alkuperäinen virhetieto ennen Close-kutsu (muuten ylikirjoittuu)
+   Dim lErrNum As Long
+   Dim sErrDesc As String
+   lErrNum = Err.Number
+   sErrDesc = Err.Description
    On Error Resume Next
-   Close iLDBFile
+   If iLDBFile > 0 Then Close #iLDBFile
    On Error GoTo 0
    
-   If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LACCDB File"
+   If lErrNum = 68 Then
+      MsgBox "Tiedostoa ei löytynyt.", 48, "Ei LACCDB-tiedostoa"
    Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description, vbCritical, "WhosOn"
+      MsgBox "Virhe: " & lErrNum & vbCrLf & sErrDesc, vbCritical, "WhosOn"
    End If
    WhosOn = ""
    Resume Exit_WhosOn

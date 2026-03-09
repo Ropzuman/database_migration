@@ -823,8 +823,9 @@ End Sub
 
 
 
-Private Sub �C_Click()
-Text_5.VALUE = Text_5.VALUE & " �C"
+Private Sub astC_Click()
+' Lisätään lämpötilayksikkö °C tekstikenttään
+Text_5.VALUE = Text_5.VALUE & " °C"
 End Sub
 
 Private Sub OPEN_LIMIT_F_Click()
@@ -888,8 +889,9 @@ T_OUT3.VALUE = ""
 T_OUT4.VALUE = ""
 Blokki.VALUE = "TRANSITION2"
 End Sub
-Private Sub �S_cm_Click()
-Text_5.VALUE = Text_5.VALUE & " �S/cm"
+Private Sub uS_cm_Click()
+' Lisätään johtokykyasikkö µS/cm tekstikenttään
+Text_5.VALUE = Text_5.VALUE & " µS/cm"
 End Sub
 Private Sub S_cm_Click()
 Text_5.VALUE = Text_5.VALUE & " mS/cm"

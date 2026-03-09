@@ -74,30 +74,39 @@ End Sub
 '================================================================================
 Private Sub Linkkaa(Taulukko As String, KANTA As String)
     Dim tdf As DAO.TableDef
+    Dim db As DAO.Database
     Dim i As Integer
     
     On Error GoTo ErrorHandler
     
+    ' Välimuistitetaan CurrentDb — vältetään toistuva uuden instanssin luonti per kutsu
+    Set db = CurrentDb
+    
     ' Poistetaan olemassa oleva taulu ennen uudelleenlinkitystä
-    For i = 0 To CurrentDb.TableDefs.Count - 1
-        If LCase$(CurrentDb.TableDefs(i).Name) = LCase$(Taulukko) Then
-            CurrentDb.Execute "DROP TABLE [" & Taulukko & "]"
+    For i = 0 To db.TableDefs.Count - 1
+        If LCase$(db.TableDefs(i).Name) = LCase$(Taulukko) Then
+            db.Execute "DROP TABLE [" & Taulukko & "]"
             Exit For
         End If
     Next i
     
     ' Luodaan linkitetty taulumääritys
-    Set tdf = CurrentDb.CreateTableDef(Taulukko)
+    Set tdf = db.CreateTableDef(Taulukko)
     With tdf
         .Connect = ";DATABASE=" & KANTA
         .SourceTableName = Taulukko
     End With
-    CurrentDb.TableDefs.Append tdf
-    CurrentDb.TableDefs.Refresh
+    db.TableDefs.Append tdf
+    db.TableDefs.Refresh
     
+    ' Vapautetaan DAO-resurssit
+    Set tdf = Nothing
+    Set db = Nothing
     Exit Sub
     
 ErrorHandler:
+    Set tdf = Nothing
+    Set db = Nothing
     MsgBox "Virhe taulun '" & Taulukko & "' linkityksessä: " & Err.Description, vbExclamation
 End Sub
 

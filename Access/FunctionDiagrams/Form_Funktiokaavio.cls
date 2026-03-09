@@ -30,7 +30,6 @@ Private Sub ADDNEWREV_Click()
 On Error GoTo ErrorHandler
 Debug.Print "ADDNEWREV_Click: Starting operation"
 Dim DB As DAO.Database
-Dim vrev As String
 Dim urev As String
 Dim Taulu As DAO.Recordset
 Dim ALUE As String
@@ -41,8 +40,6 @@ Dim kk As String
 Dim vuosi As String
 Dim revpaiva As String
 Dim revteki As String
-Dim BuffSize As LongPtr
-Dim NBuffer As String
 Set DB = CurrentDb
 Debug.Print "  Database connection established"
 
@@ -112,17 +109,17 @@ End Sub
 Private Sub Command50_Click()
 On Error GoTo ErrorHandler
 Debug.Print "Command50_Click: Starting control update operation"
-Dim qry As DAO.Recordset
-Dim sql As String
-Dim DB As Object ' Database
-Set DB = CurrentDb
 
 Debug.Print "  AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value & ", TagID: " & Me!Muokkaus3.Value
+' Sanitoidaan syötteet SQL-injektion estämiseksi
+Dim sAreaCode As String, sLoopNo As String, sTagID As String, sUser As String
+sAreaCode = Replace(CStr(Me!Muokkaus0.Value), """", """""")
+sLoopNo   = Replace(CStr(Me!Muokkaus4.Value), """", """""")
+sTagID    = Replace(CStr(Me!Muokkaus3.Value), """", """""")
+sUser     = Replace(KAYTTAJA(), "'", "''")   ' Sel-sarake käyttää yksinkertaisia lainausmerkkejä
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
-'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
-
-CurrentDb.Execute "UPDATE Control SET Sel = '" & KAYTTAJA() & "' WHERE AreaCode = """ & Me!Muokkaus0.Value & """ And LoopNo = """ & Me!Muokkaus4.Value & """ And TagID = """ & Me!Muokkaus3.Value & """"
+CurrentDb.Execute "UPDATE Control SET Sel = '" & sUser & "' WHERE AreaCode = """" & sAreaCode & """" And LoopNo = """" & sLoopNo & """" And TagID = """" & sTagID & """"
 Debug.Print "  Control table updated"
 
 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
@@ -148,7 +145,6 @@ Private Sub Command83_Click()
 'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
 On Error GoTo ErrorHandler
 Debug.Print "Command83_Click: Starting recipe update operation"
-Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
 Debug.Print "  RecipeID: " & RECIPES.Form.ID
@@ -165,16 +161,12 @@ If Vastaus <> vbCancel Then
   Me.Refresh
 End If
 Debug.Print "Command83_Click: COMPLETED successfully"
-
-' Vapautetaan tietokantaviite
-Set DB = Nothing
 Exit Sub
 
 ErrorHandler:
     Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    RecipeID: " & RECIPES.Form.ID
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    Set DB = Nothing
     MsgBox "Virhe reseptin päivityksessä: " & Err.Description, vbCritical
 End Sub
 
@@ -475,6 +467,7 @@ Dim DB As DAO.Database
 Dim RID As Long
 Dim Taul As DAO.Recordset
 Dim sSQL As String
+Dim sProcess As String, sCode As String, sAreaCode2 As String, sLoopNo2 As String
 If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
   Debug.Print "  ERROR: Process or Code missing"
   MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
@@ -482,9 +475,14 @@ If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
 End If
 Debug.Print "  Process: " & RProcess.Value & ", Code: " & RCode.Value
 Set DB = CurrentDb
-Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & RProcess.Value & "' and Code = '" & RCode.Value & "'")
-If Taul.RecordCount > 0 Then
+' Sanitoidaan käyttäjän syöttämät arvot SQL-injektion estämiseksi
+sProcess = Replace(CStr(RProcess.Value), "'", "''")
+sCode    = Replace(CStr(RCode.Value),    "'", "''")
+Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & sProcess & "' and Code = '" & sCode & "'")
+If Not Taul.EOF Then   ' Resepti on jo olemassa — EOF on luotettavampi kuin RecordCount ennen MoveLast-kutsua
   Debug.Print "  ERROR: Recipe already exists"
+  Taul.Close
+  Set Taul = Nothing
   MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
   Exit Sub
 End If
@@ -500,14 +498,17 @@ Taul.Update
 Debug.Print "  New RecipeID: " & RID
 'Kirjoitetana reseptin ID piirille (Loops tai drives)
 Me.RecipeID = RID
+' Sanitoidaan alue- ja piiriarvot SQL-lauseita varten
+sAreaCode2 = Replace(CStr(Me.AreaCode), "'", "''")
+sLoopNo2   = Replace(CStr(Me.LoopNo),   "'", "''")
 'Luodaan tiedoista rivit RECIPE_TMP taulukkoon
 sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description2, BlockPlace, [Note], Sivu, Sivuja )"
 sSQL = sSQL & "SELECT " & RID & " AS ID, Control.FBlock, Control.LoopSymb, Control.Suffix, Control.Description2, Control.BlockPlace, Control.Note, Control.Sivu, Control.Sivuja "
-sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
+sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & sAreaCode2 & "') AND ((Control.LoopNo)='" & sLoopNo2 & "'));"
 DB.Execute sSQL
 'Kirjoitetaan vielä Control taulukkoon, mikä resepti piirillä on käytössä
 sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
-sSQL = sSQL & "WHERE (((Control.AreaCode)='" & Me.AreaCode & "') AND ((Control.LoopNo)='" & Me.LoopNo & "'));"
+sSQL = sSQL & "WHERE (((Control.AreaCode)='" & sAreaCode2 & "') AND ((Control.LoopNo)='" & sLoopNo2 & "'));"
 DB.Execute sSQL
 Debug.Print "  Recipe assigned to control loops"
 Me.Refresh

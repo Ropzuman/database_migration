@@ -1,4 +1,6 @@
-﻿Public CheckOK As Boolean
+﻿Option Explicit
+
+Public CheckOK As Boolean
 Public PHStart As Long
 Public PHEnd As Long
 Public PFStart As Long
@@ -86,12 +88,58 @@ Private Sub EndFastMode()
 End Sub
 
 '''
+' LuoADODBYhteys: Hakee toimivan ADODB-yhteyden kokeilemalla ACE OLE DB -moottoriversiota prioriteettijärjestyksessä.
+' Palauttaa avatun ADODB.Connection-objektin tai Nothing jos kaikki yritykset epäonnistuvat.
+' DRY-apufunktio — korvaa kolminkertaisen yhteysyritysrakenteen kutsupaikoissa.
+'''
+Private Function LuoADODBYhteys(kantaPolku As String) As Object
+    Dim conn As Object
+    Dim providerVersions As Variant
+    Dim i As Integer
+    ' Kokeiltavat versiot prioriteettijärjestyksessä (64-bit / uudemmat ensin)
+    providerVersions = Array("16.0", "15.0", "12.0")
+    For i = LBound(providerVersions) To UBound(providerVersions)
+        Set conn = CreateObject("ADODB.Connection")
+        conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB." & providerVersions(i) & ";Data Source=" & kantaPolku
+        On Error Resume Next
+        conn.Open
+        If Err.Number = 0 Then
+            On Error GoTo 0
+            Set LuoADODBYhteys = conn  ' Yhteys onnistui — palautetaan se
+            Exit Function
+        End If
+        Err.Clear
+        On Error GoTo 0
+        Set conn = Nothing  ' Siivotaan epäonnistunut yritys
+    Next i
+    Set LuoADODBYhteys = Nothing  ' Kaikki versiot käyty läpi — yhteys ei onnistunut
+End Function
+
+'''
+' OnTurvallinenSQL: Validoi SQL-merkkijono tietoturvan kannalta (CWE-89 SQL-injektioesto).
+' Estää vaarallisten DML/DDL-komentojen (DROP, DELETE, UPDATE, INSERT, ALTER, EXEC) suorittamisen
+' soluista luetuille dynaamisille kyselyille. Sallii SELECT-kyselyt ja tallennettujen kyselyiden nimet.
+'''
+Private Function OnTurvallinenSQL(ByVal sqlText As String) As Boolean
+    Dim uSQL As String
+    uSQL = UCase(Trim(sqlText))
+    ' Estetään vaaralliset DML/DDL-komennot — sallitaan vain SELECT tai tallennetut kyselyt
+    If InStr(uSQL, "DROP ") > 0 Or InStr(uSQL, "DELETE ") > 0 Or _
+       InStr(uSQL, "UPDATE ") > 0 Or InStr(uSQL, "INSERT ") > 0 Or _
+       InStr(uSQL, "ALTER ") > 0 Or InStr(uSQL, "EXEC ") > 0 Then
+        OnTurvallinenSQL = False
+    Else
+        OnTurvallinenSQL = True
+    End If
+End Function
+
+'''
 ' HaeData: Hakee datan Access-tietokannasta käyttäen tallennettuja kyselyitä tai SQL-lauseita.
 ' Täyttää DB1 (pääasiallinen body-data) ja DB2 (dokumentin metadata) -sheetit.
 ' 
 ' DB1: Käyttää DAO:ta (Data Access Objects) joka tukee natiivisti Access-tallennettuja kyselyitä
 '      ja JET SQL -syntaksia (Like "pattern", Deleted=No, IIf, jne.)
-' DB2: Käyttää ADODB:ta yhteensopivuuden vuoksi
+' DB2: Käyttää ADODB:ta yhteensopivuuden vuoksi (LuoADODBYhteys-apufunktio)
 ' 
 ' Diagnostiikka: Rivimäärät näytetään StatusBarissa ja Immediate Windowissa jokaisen kyselyn jälkeen.
 '''
@@ -140,9 +188,8 @@ Dim fld As Object        ' ADODB.Field
   
   ' Varmistetaan että tietokantatiedosto on olemassa
   If Dir(Kanta) = "" Then
-    MsgBox "Database file not found: " & Kanta, vbCritical, "Database Error"
-    EndFastMode
-    Exit Sub
+    MsgBox "Tietokantatiedostoa ei löydy: " & Kanta, vbCritical, "Tietokantavirhe"
+    GoTo SafeExit  ' Try-Finally: SafeExit siivoo aina
   End If
   
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB1: DAO (tallennetut kyselyt) ==="
@@ -158,10 +205,9 @@ Dim fld As Object        ' ADODB.Field
   On Error GoTo ErrorHandler
   
   If dbDAO Is Nothing Then
-    MsgBox "Could not open database with DAO!" & vbCrLf & _
-           "Ensure Microsoft Access Database Engine is installed.", vbCritical, "DAO Error"
-    EndFastMode
-    Exit Sub
+    MsgBox "Tietokantaa ei voitu avata DAO:lla!" & vbCrLf & _
+           "Varmista että Microsoft Access Database Engine on asennettuna.", vbCritical, "DAO-virhe"
+    GoTo SafeExit  ' Try-Finally: SafeExit siivoo aina
   End If
   
   Debug.Print "  DAO Database avattu"
@@ -173,7 +219,13 @@ Dim fld As Object        ' ADODB.Field
   If sSQL(1) <> "" Then
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB1 dataa..."
     Debug.Print "    Kysely/SQL: " & sSQL(1)
-    
+
+    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
+    If Not OnTurvallinenSQL(sSQL(1)) Then
+      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB1): " & vbCrLf & sSQL(1), vbCritical, "SQL-tietoturvavirhe"
+      GoTo SafeExit
+    End If
+
     ' DAO.OpenRecordset voi ottaa joko tallenetun kyselyn nimen tai SQL-lauseen
     Set rsDAO = dbDAO.OpenRecordset(sSQL(1))
     
@@ -187,21 +239,36 @@ Dim fld As Object        ' ADODB.Field
         colData = colData + 1
       Next fldDAO
       
-      ' Kopioidaan data rivi riviltä (DAO ei tue CopyFromRecordset samalla tavalla)
-      Dim rowNum As Long
-      rowNum = 2
+      ' Fix3: Kerätään data 2D-taulukkoon ja kirjoitetaan yhdellä COM-kutsulla
+      ' (vähentää COM-silmukat 200rv*20kol=4000 → 1)
+      Dim dataArr() As Variant
+      Dim totalRows As Long
+      Dim fieldCount As Long
+      Dim arrRow As Long, arrCol As Long
+      fieldCount = rsDAO.Fields.Count
+
+      ' MoveLast/RecordCount on luotettava DAO dynaset- ja table-tyypeille
+      rsDAO.MoveLast
+      totalRows = rsDAO.RecordCount
       rsDAO.MoveFirst
-      Do While Not rsDAO.EOF
-        colData = 1
-        For Each fldDAO In rsDAO.Fields
-          ws.Cells(rowNum, colData).Value = fldDAO.Value
-          colData = colData + 1
-        Next fldDAO
-        rowNum = rowNum + 1
-        rsDAO.MoveNext
-      Loop
-      
-      Debug.Print "    DAO data kopioitu: " & (rowNum - 2) & " riviä, " & rsDAO.Fields.Count & " saraketta"
+
+      If totalRows > 0 Then
+        ReDim dataArr(1 To totalRows, 1 To fieldCount)
+        arrRow = 1
+        Do While Not rsDAO.EOF
+          arrCol = 1
+          For Each fldDAO In rsDAO.Fields
+            dataArr(arrRow, arrCol) = fldDAO.Value
+            arrCol = arrCol + 1
+          Next fldDAO
+          arrRow = arrRow + 1
+          rsDAO.MoveNext
+        Loop
+        ' Kirjoitetaan koko datasetti yhdellä COM-kutsulla
+        ws.Range("A2").Resize(totalRows, fieldCount).Value = dataArr
+      End If
+
+      Debug.Print "    DAO data kopioitu (array): " & totalRows & " riviä, " & fieldCount & " saraketta"
     Else
       Debug.Print "    VAROITUS: Kysely ei palauttanut rivejä (EOF=True)"
       ' Kirjoitetaan silti header
@@ -260,28 +327,17 @@ Dim fld As Object        ' ADODB.Field
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB2: ADODB (SQL-kyselyt) ==="
   
   ' DB2: Käytetään ADODB:ta (toimii hyvin SQL-kyselyiden kanssa)
-  ' OLE DB yhteys ACE provider-fallbackilla (16.0 → 15.0 → 12.0)
-  On Error Resume Next
-  Provider = "Microsoft.ACE.OLEDB.16.0"
-  
-  Set conn = CreateObject("ADODB.Connection")
-  conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-  conn.Open
-  
-  If Err.Number <> 0 Then
-    Err.Clear
-    Provider = "Microsoft.ACE.OLEDB.15.0"
-    conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-    conn.Open
-    If Err.Number <> 0 Then
-      Err.Clear
-      Provider = "Microsoft.ACE.OLEDB.12.0"
-      conn.ConnectionString = "Provider=" & Provider & ";Data Source=" & Kanta
-      conn.Open
-    End If
-  End If
+  ' DRY-refaktorointi: provider-fallback (16.0→15.0→12.0) on eristetty LuoADODBYhteys-apufunktioon
+  Set conn = LuoADODBYhteys(Kanta)
   On Error GoTo ErrorHandler
-  
+
+  If conn Is Nothing Then
+    MsgBox "ADODB-tietokantayhteyttä ei voitu muodostaa!" & vbCrLf & _
+           "Tarkista että Microsoft Access Database Engine on asennettuna.", vbCritical, "ADODB-virhe"
+    GoTo SafeExit
+  End If
+  Provider = conn.Provider  ' Tallennetaan diagnostiikkaa varten
+
   Debug.Print "  ADODB Provider: " & Provider
   Debug.Print "  ADODB Connection avattu"
   
@@ -291,7 +347,13 @@ Dim fld As Object        ' ADODB.Field
   If sSQL(2) <> "" Then
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB2 dataa..."
     Debug.Print "    SQL: " & sSQL(2)
-    
+
+    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
+    If Not OnTurvallinenSQL(sSQL(2)) Then
+      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB2): " & vbCrLf & sSQL(2), vbCritical, "SQL-tietoturvavirhe"
+      GoTo SafeExit
+    End If
+
     ' Käytetään ADODB.Recordset
     Set rs = CreateObject("ADODB.Recordset")
     
@@ -354,28 +416,29 @@ Dim fld As Object        ' ADODB.Field
   End If
   On Error GoTo 0
   
-  EndFastMode
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Valmis!"
-  MsgBox "Data brought successfully!", vbOKOnly, "Ready"
+  MsgBox "Data haettu onnistuneesti!", vbOKOnly, "Valmis"
   Sheets("Main").Select
-  Exit Sub
-  
-ErrorHandler:
-  ' Cleanup
+
+SafeExit:
+  ' Try-Finally -malli VBA:ssa: siivoo resurssit ja palauttaa UI-tilan AINA
+  ' — oli suoritus onnistunut, varhainen poistuminen tai virhe.
   On Error Resume Next
   If Not rsDAO Is Nothing Then rsDAO.Close: Set rsDAO = Nothing
   If Not dbDAO Is Nothing Then dbDAO.Close: Set dbDAO = Nothing
   If Not rs Is Nothing Then rs.Close: Set rs = Nothing
   If Not conn Is Nothing Then conn.Close: Set conn = Nothing
   On Error GoTo 0
-  
   EndFastMode
+  Exit Sub
+
+ErrorHandler:
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData ERROR] " & Err.Number & ": " & Err.Description
   MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
          "Database: " & Kanta & vbCrLf & _
          "Provider: " & Provider, vbCritical, "Database Connection Error"
   Err.Clear
-  Sheets("Main").Select
+  Resume SafeExit  ' Hyppää aina SafeExit-lohkoon — EndFastMode laukeaa varmasti
 End Sub
 '''
 ' GenPrintout: Generoi uuden tuloste-työkirjan käyttäen TEMPLATEa ja DB1-dataa.
@@ -387,7 +450,7 @@ Sub GenPrintout()
   Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout] Aloitetaan tulosteen generointi"
   
   If CheckOK = False Then
-    MsgBox "Check data first!", vbCritical, "Error!"
+    MsgBox "Tarkista data ensin!", vbCritical, "Virhe!"
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout ERROR] CheckOK=False - keskeytetään"
     Exit Sub
   End If
@@ -396,6 +459,8 @@ Sub GenPrintout()
   Dim perfStart As Double, perfTotal As Double
   Dim perfCopy As Double, perfLink As Double, perfShade As Double
   Dim perfIterations As Long
+  ' Siirretty loopista: Dim-lauseet kuuluvat aliohjelman alkuun (VBA nostaa ne kääntöaikana)
+  Dim tCopy As Double, tShade As Double, tLink As Double
   perfStart = Timer
   perfCopy = 0
   perfLink = 0
@@ -416,6 +481,10 @@ Sub GenPrintout()
   Dim lastCol As Long
   Dim c As Range
   Dim Riveja As Long
+  ' Siirretty Sub-alkuun yhtenäisyyden vuoksi (review v2: kaikki Dim-lauseet kuuluvat tähän)
+  Dim lastCell As Range
+  Dim templateRange As Range
+  Dim stagingSheet As Worksheet     ' Fix1: cross-WB staging (1 kopio loopille)
   
   On Error GoTo GenPrintoutError
   BeginFastMode
@@ -446,7 +515,6 @@ Sub GenPrintout()
   Application.StatusBar = "Luetaan dataa DB1:stä..."
   
   ' Etsitään viimeinen käytetty rivi DB1:stä - null-tarkistuksella
-  Dim lastCell As Range
   Set lastCell = wsDB1.Cells.Find(What:="*", _
                                   After:=wsDB1.Range("A1"), _
                                   LookAt:=xlPart, _
@@ -458,7 +526,7 @@ Sub GenPrintout()
   If lastCell Is Nothing Then
     EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout ERROR] DB1 tyhjä"
-    MsgBox "DB1 sheet is empty! Please click 'Get Data' first to load data from database.", vbCritical, "No Data Error"
+    MsgBox "DB1-sheet on tyhjä! Klikkaa ensin 'Hae Data' ladataksesi tiedot tietokannasta.", vbCritical, "Ei dataa"
     Exit Sub
   End If
   
@@ -468,8 +536,10 @@ Sub GenPrintout()
   Application.StatusBar = "Luodaan uusi työkirja..."
   
   ' Luodaan uusi työkirja kopioimalla Info-sheet
+  ' Korjattu: ActiveWorkbook voi pettää jos lisäosa aktivoi toisen työkirjan Copy-operaation jälkeen.
+  ' Workbooks(Workbooks.Count) viittaa aina juuri lisättyyn työkirjaan turvallisesti.
   srcWB.Sheets("Info").Copy
-  Set destWB = ActiveWorkbook
+  Set destWB = Workbooks(Workbooks.Count)
   destWB.Sheets(1).Cells.ClearComments
   
   ' Kopioidaan TEMPLATE, Legend ja Revisions uuteen työkirjaan
@@ -502,13 +572,18 @@ Sub GenPrintout()
   Application.CutCopyMode = False
   
   ' Asetetaan tulostuksen otsikkorivit ja jäädytetään paneelit
+  ' Fix2: PrintCommunication=False estää tulostinohjain-kyselyt per kirjoitus
+  Application.PrintCommunication = False
   destSheet.PageSetup.PrintTitleRows = "$" & ViimRivi & ":$" & ViimRivi + PHEnd - PHStart
+  Application.PrintCommunication = True
   destSheet.Activate
   destSheet.Cells(ViimRivi + PHEnd - PHStart + 1, 1).Select
   ActiveWindow.FreezePanes = True
   ViimRivi = ViimRivi + 1 + PHEnd - PHStart
   
   ' Asetetaan alatunnisteet kolmelle ensimmäiselle sheetille (Info, POSheet, Legend)
+  ' Fix2: PrintCommunication=False niputtaa kaikki 9 PageSetup-kirjoitusta yhteen tulostinohjain-pyyntöön
+  Application.PrintCommunication = False
   Application.StatusBar = "Asetetaan alatunnisteet..."
   Debug.Print "  Asennetaan alatunnisteet dokumenttitiedoilla"
   For i = 1 To 3
@@ -526,30 +601,45 @@ Sub GenPrintout()
                    & "&8Page &P(&N)"
     End With
   Next i
+  Application.PrintCommunication = True
   
   ' Luodaan LINKING-sheet ja kopioidaan DB1-data
   Application.StatusBar = "Luodaan LINKING-sheet..."
   Debug.Print "  Luodaan LINKING-sheet DB1-datalla"
   With destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
     .Name = "LINKING"
-    wsDB1.Cells.Copy Destination:=.Range("A1")
+    wsDB1.UsedRange.Copy Destination:=.Range("A1")  ' Fix5: Cells.Copy → UsedRange.Copy (vain data, ei 1M riviä)
   End With
   Application.CutCopyMode = False
   
   ' Alkuperäinen linkitys otsikkoalueelle
   Kerta = 0
-  VaihdaLinkit destSheet, 1, ViimRivi, Kerta
+  VaihdaLinkit destSheet, 1, ViimRivi, Kerta, srcWB
   
   ' Template-pohjainen täyttö: kopioidaan TEMPLATE-lohkoja ja kartoitetaan arvot VaihdaLinkit-funktiolla
-  ' OPTIMOITU: Vähennetään työkirjojen välisiä kopioita käyttämällä väliaikaista range-aluetta + batch clipboard clears
+  ' Fix1: TEMPLATE kopioidaan KERRAN paikalliseen __STAGING__-sheettiin destWB:ssä.
+  ' Looppi käyttää saman-WB kopiointia (5-10x nopeampi kuin cross-WB per iteraatio).
   Application.StatusBar = "Kopioidaan dataa tulosteeseen käyttäen template-lohkoja..."
   Debug.Print "  Aloitetaan template-lohkojen kopiointi (RMAX=" & RMAX & ")"
   Riveja = DocEnd - DocStart
   If RMAX <= 0 Then RMAX = 1
-  
-  ' Esikopioidaan TEMPLATE-lohko kohteeseen kerran (työkirjojen välinen kopiointi on hidasta)
-  Dim templateRange As Range
-  Set templateRange = srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd)
+
+  ' Siivotaan mahdollinen aiemman kaatuneen ajon staging-sheet
+  Application.DisplayAlerts = False
+  On Error Resume Next
+  destWB.Sheets("__STAGING__").Delete
+  On Error GoTo GenPrintoutError
+  Application.DisplayAlerts = True
+
+  ' Yksi cross-WB kopio — kaikki loopin kopiot tapahtuvat tästä eteenpäin saman WB:n sisällä
+  Set stagingSheet = destWB.Sheets.Add(After:=destWB.Sheets(destWB.Sheets.Count))
+  stagingSheet.Name = "__STAGING__"
+  stagingSheet.Visible = xlSheetVeryHidden
+  srcWB.Sheets("TEMPLATE").Rows(DocStart & ":" & DocEnd).Copy _
+      Destination:=stagingSheet.Rows("1:1")
+  Application.CutCopyMode = False
+  Set templateRange = stagingSheet.Rows("1:" & (DocEnd - DocStart + 1))
+  Debug.Print "  Staging-sheet luotu (__STAGING__) — loop käyttää saman-WB kopiointia"
   
   ' Iteroidaan DB1-datarivejä RMAX-ryhmissä, kopioidaan TEMPLATE-rivit joka kerralla
   Kerta = 0
@@ -558,12 +648,12 @@ Sub GenPrintout()
     
     ' OPTIMOINTI: Kopioidaan lähdetyökirjasta
     ' (Huom: Ei voi täysin optimoida ilman array-lähestymistapaa koska tarvitaan muotoilua)
-    Dim tCopy As Double: tCopy = Timer
+    tCopy = Timer
     templateRange.Copy Destination:=destSheet.Rows(ViimRivi & ":" & ViimRivi + Riveja)
     perfCopy = perfCopy + (Timer - tCopy)
     
     ' Lisätään vuorottelevatvarjostukset lohkoittain
-    Dim tShade As Double: tShade = Timer
+    tShade = Timer
     If ((i - 2) \ RMAX) Mod 2 = 1 Then
       With destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + Riveja, Sarakkeita)).Interior
         .ColorIndex = 19
@@ -573,9 +663,9 @@ Sub GenPrintout()
     End If
     perfShade = perfShade + (Timer - tShade)
     
-    ' Kartoitetaan arvot LINKINGistä template-alueelle kommenttimerkkien kautta
-    Dim tLink As Double: tLink = Timer
-    VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta
+    ' Kartoitetaan arvot DB1:stä template-alueelle kommenttimerkkien kautta (srcWB välitetään suoraa lukua varten)
+    tLink = Timer
+    VaihdaLinkit destSheet, ViimRivi, ViimRivi + Riveja, Kerta, srcWB
     perfLink = perfLink + (Timer - tLink)
     
     ' Siirrytään seuraavaan lohkoon
@@ -583,8 +673,17 @@ Sub GenPrintout()
     Kerta = Kerta + 1
   Next i
   Debug.Print "  Kopioitu " & perfIterations & " template-lohkoa"
-  
-  ' OPTIMOINTI: Tyhjennetään leikepöytä kerran kaikkien kopioiden jälkeen (ei loopissa)
+
+  ' Fix1: Poistetaan staging-sheet loopin jälkeen
+  Application.DisplayAlerts = False
+  On Error Resume Next
+  stagingSheet.Delete
+  On Error GoTo GenPrintoutError
+  Application.DisplayAlerts = True
+  Set stagingSheet = Nothing
+  Debug.Print "  Staging-sheet poistettu"
+
+  ' Tyhjennetään leikepöytä kerran kaikkien kopioiden jälkeen (ei loopissa)
   Application.CutCopyMode = False
   
   ' Poistetaan ylimääräiset sarakkeet Sarakkeita-määrän jälkeen
@@ -611,10 +710,9 @@ Sub GenPrintout()
     Next c
   End If
   
-  ' Tyhjennetään kommentit ja lisätään LINKING-kommentit
+  ' Tyhjennetään kommentit — LINKING sisältää nyt staattiset arvot (ei kaavoja), TeeLinkingKommentit ohitetaan
   Application.StatusBar = "Viimeistellään..."
   destSheet.Cells.ClearComments
-  TeeLinkingKommentit
   
   ' Käsitellään LINKING-sheetin näkyvyys/poisto
   On Error Resume Next
@@ -644,7 +742,7 @@ Sub GenPrintout()
   On Error GoTo GenPrintoutError
   
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
-  If Right$(defPath, 1) <> "\\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
+  If Right$(defPath, 1) <> "\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
   
   ' Vaatimuksen mukaan: tiedostonimi tulee DB2 "File"-sarakkeesta
   If defName = "" Then defName = POSheet ' varatieto vain jos DB2 ei tarjonnut nimeä
@@ -686,6 +784,15 @@ Sub GenPrintout()
 
 GenPrintoutError:
   Application.StatusBar = False
+  ' Siivotaan staging-sheet jos se jäi kesken virheen sattuessa
+  On Error Resume Next
+  If Not stagingSheet Is Nothing Then
+    Application.DisplayAlerts = False
+    stagingSheet.Delete
+    Application.DisplayAlerts = True
+    Set stagingSheet = Nothing
+  End If
+  On Error GoTo 0
   EndFastMode
   
   ' Parannettu virhekäsittelijä kontekstispesifeillä viesteillä
@@ -742,7 +849,8 @@ Dim wsErrors As Worksheet
   CheckOK = False
   RMAX = 0
   Virhe = False
-  Application.ScreenUpdating = False
+  ' Käytetään BeginFastMode/EndFastMode yhtenäisesti kuten muissakin makroissa
+  BeginFastMode
   
   Set wsErrors = Sheets("ERRORS")
   Set wsTemplate = Sheets("TEMPLATE")
@@ -770,9 +878,9 @@ Dim wsErrors As Worksheet
       wsErrors.Range("A1").Font.Bold = True
       wsErrors.Range("A1").Font.ColorIndex = 3
       wsErrors.Activate
-      Application.ScreenUpdating = True
+      EndFastMode
       Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] &&PAGE_HEADER_START puuttuu"
-      MsgBox "TEMPLATE is missing required markers! See ERRORS sheet.", vbCritical, "Template Error"
+      MsgBox "TEMPLATE-sheetistä puuttuu vaaditut merkit! Katso ERRORS-sheet.", vbCritical, "Template-virhe"
       Exit Sub
     End If
     PHStart = foundCell.Row + 1
@@ -839,8 +947,10 @@ Dim wsErrors As Worksheet
           If RMAX > 1 Then Virhe = True
           RMAX = 1
         ElseIf Left(Arvo, 1) = "£" Then
-          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 4, 1)) Then Virhe = True
-          RMAX = CInt(Mid(Arvo, 4, 1))
+          ' Korjattu: käytetään Mid(Arvo, 2, 1) joka lukee rivinumeron £-merkin jälkeen
+          ' (Mid(Arvo, 4, 1) luki välilyönnin "£1: "-muodossa ja antoi CInt(" ")=0)
+          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 2, 1)) Then Virhe = True
+          RMAX = CInt(Mid(Arvo, 2, 1))
         End If
       End If
     Next j
@@ -855,7 +965,7 @@ Dim wsErrors As Worksheet
     wsErrors.Range("A3").Value = "- Et myöskään voi käyttää £1/2 ja £1/3 linkkejä samassa templatessa."
     wsErrors.Range("A4").Value = "- Korjaa nämä virheet ja yritä uudelleen!"
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] Ristiriitaiset rivimerkit"
     MsgBox "Templatessa oli virheitä, katso ERRORS-sheet!", vbCritical, "Virhe!"
     Exit Sub
@@ -870,6 +980,9 @@ Dim wsErrors As Worksheet
         If Left(Arvo, 2) = "££" Then
           If EtsiOts(Mid(Arvo, 3), i, j, 1) = False Then Virhe = True
         ElseIf Left(Arvo, 1) = "£" Then
+          ' Merkkimuoto: "£D SARAKE" — £=1, numero=2, kaksoispiste=3, välilyönti=4, sarakenimi alkaen 5
+          ' Mid(Arvo, 2, 1) lukee rivinumeron D (korjattu RMAX-bugi), Mid(Arvo, 5) lukee sarakenimen
+          ' Molemmat offsetit ovat johdettu samasta dokumentoidusta formaatista.
           If EtsiOts(Mid(Arvo, 5), i, j, CInt(Mid(Arvo, 2, 1))) = False Then Virhe = True
         End If
       End If
@@ -878,12 +991,12 @@ Dim wsErrors As Worksheet
   
   If Virhe Then
     wsErrors.Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] Puuttuvia otsikkoita DB1:ssä"
     MsgBox "Templatessa oli virheitä! Katso ERRORS-sheet.", vbCritical, "Virhe!"
   Else
     Sheets("Main").Activate
-    Application.ScreenUpdating = True
+    EndFastMode
     CheckOK = True
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout] VALMIS - CheckOK=True"
     MsgBox "Tarkistus OK!", vbOKOnly, "OK!"
@@ -891,7 +1004,7 @@ Dim wsErrors As Worksheet
   Exit Sub
 
 CheckoutError:
-  Application.ScreenUpdating = True
+  EndFastMode
   
   Dim errMsg As String
   errMsg = "Error in Checkout: " & Err.Description & " (Error " & Err.Number & ")"

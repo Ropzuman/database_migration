@@ -1,10 +1,10 @@
 Option Compare Database
 Option Explicit
 
-' Updated 2025-10-22: 64-bit compatibility, cleaner code
-' Updated 2025-10-23: Changed API Declarations from Private to Public
+' Päivitetty 2025-10-22: 64-bit-yhteensopivuus, siivottu koodi
+' Päivitetty 2025-10-23: API-deklaraatiot vaihdettu Private → Public
 
-' Type must be declared outside conditional compilation for Access form compatibility
+' UDT-tyyppi määritellään ehdollisen käännöksen ulkopuolella (Access-lomakeyhteensopivuus vaatii)
 Public Type OPENFILENAME
     lStructSize As Long
 #If VBA7 Then
@@ -40,34 +40,35 @@ End Type
 
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 #If VBA7 Then
+    ' KORJATTU: GetUserNameA palauttaa BOOL (32-bit) ja nSize on DWORD — molemmat ovat Long, eivät LongPtr
     Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
-        (ByVal lpBuffer As String, nSize As LongPtr) As LongPtr
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
     Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
-        (ByVal lpBuffer As String, nSize As Long) As Long
+        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
-' Module-level state variables (consider replacing with collection or class for better encapsulation)
+' Moduulitason tilamuuttujat — tallentavat viimeksi käytetyt hakuarvot
 Private m_last_criteria As Variant
 Private m_last_used As Variant
 
-' Stores last used values and criteria
+' Tallentaa viimeksi käytetyt arvot ja hakuehdot
 Function Set_last(Values As Variant, criterias As Variant) As Variant
     m_last_criteria = criterias
     m_last_used = Values
     Set_last = m_last_used
 End Function
 
-' Retrieves last used values
+' Palauttaa viimeksi käytetyt arvot
 Function Show_last(criterias As Variant) As Variant
     Show_last = m_last_used
 End Function
 
-' Retrieves last used criteria
+' Palauttaa viimeksi käytetyn hakuehdon
 Function Show_last_criteria(criterias As Variant) As Variant
     Show_last_criteria = m_last_criteria
 End Function

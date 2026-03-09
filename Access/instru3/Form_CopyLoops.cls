@@ -50,14 +50,17 @@ Dim LahdeDB As DAO.Database
 '   - Varmistaa, ettei jää avoimia väliaikaistauluja tai yhteyksiä
 '--------------------------------------------------------------------------------
 Private Sub Form_Unload(Cancel As Integer)
-  On Error Resume Next
-  CurrentDb.TableDefs.Delete "LOOPLINK"  ' Poistetaan väliaikainen LOOPLINK-taulu
-  Err.Clear
-  On Error GoTo 0
-  If Not LahdeDB Is Nothing Then
-    LahdeDB.Close
-    Set LahdeDB = Nothing
-  End If
+    On Error Resume Next
+    ' Vapautetaan alilomakkeen lukitukset ennen taulun poistoa — estää Access-kaatumisen
+    Me.Loopit.Form.RecordSource = ""
+    DoEvents  ' Annetaan Accessille hetki vapauttaa tiedostolukot
+    CurrentDb.TableDefs.Delete "LOOPLINK"  ' Poistetaan väliaikainen LOOPLINK-taulu
+    Err.Clear
+    If Not LahdeDB Is Nothing Then
+        LahdeDB.Close
+        Set LahdeDB = Nothing
+    End If
+    On Error GoTo 0
 End Sub
 '--------------------------------------------------------------------------------
 ' Tapahtuma: HaeLoopit_Click
@@ -252,88 +255,68 @@ End Sub
 '--------------------------------------------------------------------------------
 Private Sub ValitseKanta_Click()
 On Error GoTo ErrorHandler
-    'Avataan tiedostovalintaikkuna tietokannan valitsemiseksi
-    Dim OpenFile As OPENFILENAME  ' Windows Common Dialog -rakenne
-    Dim lReturn As Long  ' Dialogin paluuarvo
-    Dim Filtteri As String  ' Tiedostotyyppisuodatin
-    Dim AHakem As String  ' Alkuhakemiston polku
-    Dim Otsikko As String  ' Dialogin otsikko
-    Dim i As Integer  ' Silmukkalaskuri
-    Dim Linkki As DAO.TableDef  ' Väliaikaisen linkitetyn taulun määritys
-    
+    ' Avataan Office-natiivi tiedostovalintaikkuna tietokannan valitsemiseksi
+    Dim fd As Object                   ' FileDialog-objekti
+    Dim ValittuTiedosto As String      ' Käyttäjän valitsema tiedostopolku
+    Dim AHakem As String               ' Alkuhakemisto dialogille
+    Dim Linkki As DAO.TableDef         ' Väliaikaisen linkitetyn taulun määritys
+
     Debug.Print "ValitseKanta: Opening database selection dialog"
-    
-    
-    ' Determine initial directory from previously selected database or current database
+
+    ' Määritetään alkuhakemisto aiemmin valitusta tai nykykannasta
     If InStr(Nz(Me.Kanta.Value), "\") Then
-      AHakem = Me.Kanta.Value
+        AHakem = Me.Kanta.Value
     Else
-      AHakem = Application.CurrentDb.Name
+        AHakem = Application.CurrentDb.Name
     End If
-    
-    ' Extract directory path (remove filename)
-    For i = 1 To Len(AHakem)
-      If Mid$(AHakem, Len(AHakem) - i, 1) = "\" Then
-        AHakem = Left$(AHakem, Len(AHakem) - i)
-        Exit For
-      End If
-    Next i
-    
-    ' Configure file dialog
-    Filtteri = "Microsoft Access Databases (*.accdb)" & Chr(0) & "*.ACCDB" & Chr(0)
-    Otsikko = "Choose Instru Database"
-    With OpenFile
-      .lStructSize = Len(OpenFile)
-      .hwndOwner = Me.Hwnd  ' Isäntäikkunan kahva
-      .hInstance = 0
-      .lpstrFilter = Filtteri
-      .nFilterIndex = 1
-      .lpstrFile = String(257, 0)  ' Puskuri tiedostonimelle
-      .nMaxFile = Len(.lpstrFile) - 1
-      .lpstrFileTitle = .lpstrFile
-      .nMaxFileTitle = .nMaxFile
-      .lpstrInitialDir = AHakem
-      .lpstrTitle = Otsikko
-      .flags = 0
+    AHakem = Left$(AHakem, InStrRev(AHakem, "\"))
+
+    ' Application.FileDialog korvaa haurauden OPENFILENAME-API-rakenteen (kaataa 64-bit Accessin)
+    Set fd = Application.FileDialog(3)  ' msoFileDialogFilePicker = 3
+    With fd
+        .Title = "Choose Instru Database"
+        .AllowMultiSelect = False
+        .Filters.Clear
+        .Filters.Add "Microsoft Access Databases", "*.accdb"
+        .InitialFileName = AHakem
+        If .Show = -1 Then
+            ValittuTiedosto = .SelectedItems(1)
+        End If
     End With
-    
-    ' Display file dialog
-    lReturn = GetOpenFileName(OpenFile)
-    If lReturn <> 0 Then
-      ' Poimitaan valittu tiedostonimi (poistetaan null-päätteen merkki)
-      Me.Kanta.Value = Mid$(OpenFile.lpstrFile, 1, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
-      
-      Debug.Print "  Valittu tietokanta: " & Me.Kanta.Value
-      
-      ' Open source database connection
-      Set LahdeDB = OpenDatabase(Me.Kanta.Value)
-      
-      Debug.Print "  Tietokanta avattu onnistuneesti"
-      
-      ' Poistetaan mahdollinen olemassa oleva LOOPLINK-taulu
-      On Error Resume Next
-      CurrentDb.TableDefs.Delete "LOOPLINK"
-      Err.Clear
-      On Error GoTo 0
-      
-      ' Luodaan linkitetty taulu lähteen Loops-tauluun
-      Set Linkki = CurrentDb.CreateTableDef("LOOPLINK")
-      Linkki.Connect = ";DATABASE=" & Me.Kanta.Value
-      Linkki.SourceTableName = "Loops"
-      CurrentDb.TableDefs.Append Linkki
-      Set Linkki = Nothing
-      
-      ' Näytetään saatavilla olevat loopit alilomakkeessa
-      Me.Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
+    Set fd = Nothing
+
+    If ValittuTiedosto <> "" Then
+        Me.Kanta.Value = ValittuTiedosto
+        Debug.Print "  Valittu tietokanta: " & ValittuTiedosto
+
+        ' Avataan lähdetietokantayhteys
+        Set LahdeDB = OpenDatabase(ValittuTiedosto)
+        Debug.Print "  Tietokanta avattu onnistuneesti"
+
+        ' Poistetaan mahdollinen olemassa oleva LOOPLINK-taulu
+        On Error Resume Next
+        CurrentDb.TableDefs.Delete "LOOPLINK"
+        Err.Clear
+        On Error GoTo ErrorHandler
+
+        ' Luodaan linkitetty taulu lähteen Loops-tauluun
+        Set Linkki = CurrentDb.CreateTableDef("LOOPLINK")
+        Linkki.Connect = ";DATABASE=" & ValittuTiedosto
+        Linkki.SourceTableName = "Loops"
+        CurrentDb.TableDefs.Append Linkki
+        Set Linkki = Nothing
+
+        ' Näytetään saatavilla olevat loopit alilomakkeessa
+        Me.Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
     End If
     Me.Refresh
     Exit Sub
 
 ErrorHandler:
     Debug.Print "*** ERROR in ValitseKanta: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Virhe tietokannan valinnassa: " & Err.Description, vbCritical, "Valitse tietokanta"
     On Error Resume Next
+    Set fd = Nothing
     Set Linkki = Nothing
     On Error GoTo 0
 End Sub

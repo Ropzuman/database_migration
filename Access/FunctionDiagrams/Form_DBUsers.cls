@@ -52,9 +52,9 @@ Private Function WhosOn() As String
 
 On Error GoTo Err_WhosOn
 
-   Dim iLDBFile As Integer, iStart As Integer
-   Dim iLOF As Integer, i As Integer
-   Dim SPath As String, X As String
+   Dim iLDBFile As Integer
+   Dim i As Integer
+   Dim SPath As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' Defined in General
@@ -68,13 +68,9 @@ On Error GoTo Err_WhosOn
    ' Muodostetaan LACCDB-tiedostopolku (.accdb → .LACCDB)
    SPath = Left$(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-   ' Tarkistetaan tiedoston olemassaolo ennen avaamista
-   X = Dir(SPath)
-   iStart = 1
    iLDBFile = FreeFile
 
    Open SPath For Binary Access Read Shared As iLDBFile
-   iLOF = LOF(iLDBFile)
    Do While Not EOF(iLDBFile)
       Get iLDBFile, , rUser
       With rUser
@@ -95,7 +91,6 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 ' Siirrytään seuraavaan 64-tavun tietueeseen
    Loop
    Close iLDBFile
    WhosOn = sLogins

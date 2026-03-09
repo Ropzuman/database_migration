@@ -9,11 +9,22 @@ Private Type UserRec
 End Type
 
 Private Sub Command27_Click()
-Dim Viesti As String
-  Viesti = INPUTBOX("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
-  If Viesti <> "" Then
-    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
-  End If
+    Dim Viesti As String
+    Dim PuhdistettuViesti As String
+    Dim PuhdistettuKohde  As String
+
+    Viesti = InputBox("Syötä viesti käyttäjälle " & Me.NetworkName.Value & ":" & vbCrLf & vbCrLf, "Lähetä viesti")
+
+    If Trim(Viesti) <> "" Then
+        ' Estetään Command Injection — poistetaan lainausmerkit ja Shell-erikoismerkit
+        PuhdistettuViesti = Replace(Viesti, """", "'")
+        PuhdistettuViesti = Replace(PuhdistettuViesti, "&", "ja")
+        PuhdistettuViesti = Replace(PuhdistettuViesti, "|", "")
+        PuhdistettuKohde  = Replace(CStr(Nz(Me.NetworkName.Value, "")), " ", "")
+
+        ' Käytetään modernia MSG.EXE-komentoa — NET SEND poistettu Windows Vistasta lähtien
+        Call Shell("msg " & PuhdistettuKohde & " """ & PuhdistettuViesti & """", vbHide)
+    End If
 End Sub
 
 Private Sub Form_Open(Cancel As Integer)
@@ -61,7 +72,8 @@ On Error GoTo Err_WhosOn
 
    Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
-   dbCurrent.Close
+   ' CurrentDb-viittausta EI suljeta .Close-kutsulla — vain Set Nothing
+   Set dbCurrent = Nothing
 
 ' Rakennetaan LACCDB-tiedoston polku.
 
