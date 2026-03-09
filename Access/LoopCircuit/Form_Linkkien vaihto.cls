@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
 
-' Updated 2025-10-22: Explicit DAO, error handling, cleaner logic
+' Päivitetty 2025-10-22: Eksplisiittinen DAO, virheenkäsittely, siivottu logiikka
 
 Private Sub Command0_Click()
     Dim i As Long
@@ -16,21 +16,23 @@ Private Sub Command0_Click()
 
     On Error GoTo ErrHandler
 
-    ' Get current database path
+    ' Haetaan nykyinen tietokannan hakemistopolku
     Set db = CurrentDb
     DbName = db.Name
     Polku = Left$(DbName, Len(DbName) - Len(Dir(DbName)))
 
-    ' Query linked tables (excluding MotorData)
+    ' Haetaan linkitetyt taulut (MotorData jätetään pois)
     Set Taul = db.OpenRecordset( _
         "SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects " & _
         "WHERE ([Database] Is Not Null) AND ([Name] Not Like 'MotorData')")
 
     UpdateCount = 0
+    Dim Epäonnistuneet As String
+    Epäonnistuneet = ""
 
     Do While Not Taul.EOF
         If Taul.Fields("Name") <> Taulu Then
-            ' Extract path and filename from database field
+            ' Poimitaan polku ja tiedostonimi Database-kentästä
             For i = Len(Taul.Fields("Database")) To 1 Step -1
                 If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
                     Polku2 = LCase$(Left$(Taul.Fields("Database"), i))
@@ -39,11 +41,11 @@ Private Sub Command0_Click()
                 End If
             Next i
 
-            ' Relink if path doesn't match current path
+            ' Linkataan uudelleen, jos polku poikkeaa nykyisestä
             If Polku2 <> LCase$(Polku) Then
                 Taulu = Taul.Fields("Name")
 
-                ' Drop and relink table
+                ' Poistetaan vanha linkki ja luodaan uusi nykyisellä polulla
                 db.Execute "DROP TABLE [" & Taulu & "]"
 
                 On Error Resume Next
@@ -52,6 +54,9 @@ Private Sub Command0_Click()
 
                 If Err.Number = 0 Then
                     UpdateCount = UpdateCount + 1
+                Else
+                    ' Kirjataan epäonnistuneet taulut käyttäjälle näytettäväksi
+                    Epäonnistuneet = Epäonnistuneet & Taulu & " (" & Err.Description & ")" & vbCrLf
                 End If
 
                 Err.Clear
@@ -67,11 +72,15 @@ Cleanup:
         Taul.Close
         Set Taul = Nothing
     End If
-    ' Note: Do NOT close db if it's CurrentDb - it's the currently open database
+    ' HUOM: CurrentDb-objektia ei suljeta — se on aktiivinen tietokanta
     Set db = Nothing
     On Error GoTo 0
 
     MsgBox "Valmis - Päivitetty " & UpdateCount & " taulukkoa.", vbInformation, "Linkkien vaihto"
+    ' Ilmoitetaan epäonnistuneista linkityksistä, jos sellaisia löytyi
+    If Epäonnistuneet <> "" Then
+        MsgBox "Seuraavien taulujen linkitys epäonnistui:" & vbCrLf & Epäonnistuneet, vbExclamation, "Linkkien vaihto"
+    End If
     Exit Sub
 
 ErrHandler:

@@ -53,6 +53,7 @@ On Error GoTo ErrorHandler
     Dim s As Integer  ' Counter (unused)
     Dim Taul As DAO.Recordset  ' MSysObjects query results
     Dim Taulu As String  ' Current table name being processed
+    Dim tdf As DAO.TableDef  ' Linkitetyn taulun määritys päivitystä varten
 
     ' Get current database directory path
     Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
@@ -77,14 +78,17 @@ On Error GoTo ErrorHandler
             If Polku2 <> LCase$(Polku) Then
                 Taulu = Taul.Fields("Name")
                 
-                ' Drop existing linked table
-                CurrentDb.Execute "DROP TABLE [" & Taul.Fields("Name") & "]"
-                
-                ' Recreate link to current directory
+                ' Päivitetään linkki turvallisesti — RefreshLink ei riko taulua eikä sen relaatioita
+                Set tdf = CurrentDb.TableDefs(Taulu)
+                tdf.Connect = ";DATABASE=" & Polku & Nimi
                 On Error Resume Next
-                DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, acTable, Taulu, Taulu, False
+                tdf.RefreshLink
+                If Err.Number <> 0 Then
+                    MsgBox "Virhe päivitettäessä taulua " & tdf.Name & ": " & Err.Description, vbExclamation, "Linkin päivitysvirhe"
+                End If
                 Err.Clear
                 On Error GoTo ErrorHandler
+                Set tdf = Nothing
             End If
         End If
         Taul.MoveNext
@@ -101,5 +105,6 @@ ErrorHandler:
     On Error Resume Next
     If Not Taul Is Nothing Then Taul.Close
     Set Taul = Nothing
+    Set tdf = Nothing
     On Error GoTo 0
 End Sub

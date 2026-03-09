@@ -16,10 +16,27 @@ Private Type UserRec
    bUser(1 To 32) As Byte  ' 2nd 32 bytes hold user name
 End Type
 Private Sub Command27_Click()
-Dim Viesti As String
-  Viesti = InputBox("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
+  Dim Viesti As String
+  Dim TurvallinenViesti As String
+
+  ' Tarkistetaan, että vastaanottaja on valittu ennen viestin lähetystä
+  If IsNull(Me.NetworkName.Value) Or Me.NetworkName.Value = "" Then Exit Sub
+
+  Viesti = InputBox("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & "Give message:", "Send message")
+
   If Viesti <> "" Then
-    Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
+    ' Estetään komentoinjektio poistamalla vaaralliset erikoismerkit
+    TurvallinenViesti = Replace(Viesti, """", "'")
+    TurvallinenViesti = Replace(TurvallinenViesti, "&", " ja ")
+    TurvallinenViesti = Replace(TurvallinenViesti, "|", "")
+
+    ' Huom: 'net send' poistettu Windowsista; msg.exe on moderni vastine
+    On Error Resume Next
+    Call Shell("msg " & Me.NetworkName.Value & " """ & TurvallinenViesti & """", vbHide)
+    If Err.Number <> 0 Then
+      MsgBox "Failed to send message. Please ensure MSG command is supported.", vbExclamation
+    End If
+    On Error GoTo 0
   End If
 End Sub
 
@@ -115,8 +132,8 @@ On Error GoTo Err_WhosOn
    WhosOn = sLogins
 
 Exit_WhosOn:
+   ' EI dbCurrent.Close: CurrentDb-viitettä ei tule sulkea koodista
    If Not dbCurrent Is Nothing Then
-      dbCurrent.Close
       Set dbCurrent = Nothing
    End If
    Exit Function

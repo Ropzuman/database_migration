@@ -104,8 +104,17 @@ On Error GoTo ErrorHandler
                 End If
             End If
             
+            ' Formula Injection -esto: lisätään heittomerkki vaarallisten =-@-alkuisten arvojen eteen
+            If Arvo <> "" Then
+                If Left$(Arvo, 1) = "=" Or Left$(Arvo, 1) = "@" Or _
+                   Left$(Arvo, 1) = "+" Or Left$(Arvo, 1) = "-" Then
+                    Arvo = "'" & Arvo
+                End If
+            End If
+            ' RFC 4180: tuplaa lainausmerkit — estää CSV-rakenteen rikkoutumisen (yksi " → "")
+            Arvo = Replace(Nz(Arvo, ""), """", """""")
             ' Kirjoitetaan kenttäarvo lainausmerkeissä, puolipisteeroteltu
-            Tiedosto.Write ";""" & Arvo & """"
+            Tiedosto.Write ";""" & Arvo & """"    
         Next i
         
         ' Rivinloppu

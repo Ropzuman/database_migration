@@ -14,9 +14,16 @@ Private Sub Command4_Click()
   DoCmd.Close
 End Sub
 Private Sub Command52_Click()
+  ' Avataan hakemisto turvallisesti käyttöjärjestelmän omalla menettelyllä
+  ' FollowHyperlink välttää Shell-komentoinjektioriskin kokonaan
   If fso.FolderExists(Hakem) Then
-    Call Shell("C:\Windows\explorer.exe /e, " & Hakem, vbNormalFocus)
-  Else 'Hakemistoa ei ole
+    On Error Resume Next
+    Application.FollowHyperlink Hakem
+    If Err.Number <> 0 Then
+      MsgBox "Failed to open folder.", vbCritical, "Error"
+    End If
+    On Error GoTo 0
+  Else
     MsgBox "Invalid path! " & Hakem, vbCritical, "Open Path"
   End If
 End Sub

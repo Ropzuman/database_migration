@@ -2,45 +2,47 @@ Option Compare Database
 Option Explicit
 
 Private Sub LoppuKoodi1_DblClick(Cancel As Integer)
-Dim endCode As String
-Dim UusiTyyppi As String
+    Dim endCode As String
+    Dim UusiTyyppi As String
+    Dim origType As String
 
-endCode = Me.LoppuKoodi1
-'If Right(Forms!motortypes!MotorType, 1) = "." Then
-If InStr(1, Forms!motortypes!MotorType, ".") > 0 Then
-    'UusiTyyppi = Left(Forms!motortypes!MotorType, InStr(1, Forms!motortypes!MotorType, ".") - 1) & endCode
-    UusiTyyppi = Replace(Forms!motortypes!MotorType, ".", endCode)
-    Forms!motortypes!MotorType = UusiTyyppi
-    If IsLoaded("SiemensConstrCodeLastPosition") Then
-    DoCmd.Close
-    End If
-Else
-    If IsLoaded("SiemensConstrCodeLastPosition") Then
-    DoCmd.Close
-    End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
-End If
+    endCode = IIf(IsNull(Me.LoppuKoodi1), "", Me.LoppuKoodi1)
+    origType = IIf(IsNull(Forms!motortypes!MotorType), "", Forms!motortypes!MotorType)
 
+    If InStr(1, origType, ".") > 0 Then
+        ' Korvataan VAIN ENSIMMÄINEN piste (Count:=1) — estää usean pisteen vahingollisen korvauksen
+        UusiTyyppi = Replace(origType, ".", endCode, 1, 1)
+        Forms!motortypes!MotorType = UusiTyyppi
+        If IsLoaded("SiemensConstrCodeLastPosition") Then
+            DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
+        End If
+    Else
+        If IsLoaded("SiemensConstrCodeLastPosition") Then
+            DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
+        End If
+        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkissä ei ollut pistettä." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
+    End If
 End Sub
 
 Private Sub LoppuKoodi2_DblClick(Cancel As Integer)
-Dim endCode As String
-Dim UusiTyyppi As String
+    Dim endCode As String
+    Dim UusiTyyppi As String
+    Dim origType As String
 
-endCode = Me.LoppuKoodi2
-'If Right(Forms!motortypes!MotorType, 1) = "." Then
-If InStr(1, Forms!motortypes!MotorType, ".") > 0 Then
-    'UusiTyyppi = Left(Forms!motortypes!MotorType, InStr(1, Forms!motortypes!MotorType, ".") - 1) & endCode
-    UusiTyyppi = Replace(Forms!motortypes!MotorType, ".", endCode)
-    Forms!motortypes!MotorType = UusiTyyppi
-    If IsLoaded("SiemensConstrCodeLastPosition") Then
-    DoCmd.Close
-    End If
-Else
-    If IsLoaded("SiemensConstrCodeLastPosition") Then
-    DoCmd.Close
-    End If
-    MsgBox "Koodia ei muutettu!@Tyyppimerkissä ei ollut pistettä.@Tarkista luettelosta!"
-End If
+    endCode = IIf(IsNull(Me.LoppuKoodi2), "", Me.LoppuKoodi2)
+    origType = IIf(IsNull(Forms!motortypes!MotorType), "", Forms!motortypes!MotorType)
 
+    If InStr(1, origType, ".") > 0 Then
+        ' Korvataan VAIN ENSIMMÄINEN piste (Count:=1) — estää usean pisteen vahingollisen korvauksen
+        UusiTyyppi = Replace(origType, ".", endCode, 1, 1)
+        Forms!motortypes!MotorType = UusiTyyppi
+        If IsLoaded("SiemensConstrCodeLastPosition") Then
+            DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
+        End If
+    Else
+        If IsLoaded("SiemensConstrCodeLastPosition") Then
+            DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
+        End If
+        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkissä ei ollut pistettä." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
+    End If
 End Sub

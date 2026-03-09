@@ -1,5 +1,11 @@
 Option Compare Database
 Option Explicit
+' Sleep API — estää busy wait -kuormituksen CPU:lla (VBA7/64-bit yhteensopiva)
+#If VBA7 Then
+    Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+#Else
+    Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+#End If
 '==========================================================================
 ' LOMAKE   : Form_LisääKuviin_ACAD
 ' SOVELLUS : FunctionDiagrams — AutoCAD-piirustusautomaatio
@@ -36,12 +42,9 @@ End Type
 Private Paikat() As AcadInsertPiste
 
 Private Sub Odota(Aika As Integer)
-'Tämä aliohjema odottaa määritellyn ajan sekunnin sadasosina
-Dim odotus As Double
-odotus = CDbl(Timer) + CDbl((Aika / 100))
-Do While odotus > Timer
-  DoEvents
-Loop
+    ' Sleep vapauttaa CPU:n odotusajalla — busy wait korvattu kernel-tasoisella odotuksella
+    DoEvents ' Käsitellään mahdolliset taustaviestit ennen odotusta
+    Sleep CLng(Aika) * 10
 End Sub
 Private Sub Tila(Tiedosto As String)
   sec = CInt(Timer - Ajastin)
@@ -71,19 +74,31 @@ Dim Nimi As String
 Dim Taulu As DAO.Recordset
 Dim oEnt As Object '(acadentity - muutettu late binding)
 Dim oAcad As Object '(AutoCAD.AcadApplication - muutettu late binding)
+Dim db As DAO.Database
 
 Ajastin = Timer
 Debug.Print "  Timer started"
-Set oAcad = CreateObject("AutoCAD.Application")
-Debug.Print "  AutoCAD application created"
+
+' Yritetään ensin liittyä jo auki olevaan AutoCAD-instanssiin — nopeampaa ja kevyempää
+On Error Resume Next
+Set oAcad = GetObject(, "AutoCAD.Application")
+If Err.Number <> 0 Then
+    ' AutoCAD ei ole auki — avataan uusi instanssi
+    Err.Clear
+    Set oAcad = CreateObject("AutoCAD.Application")
+End If
+On Error GoTo ErrorHandler
+Debug.Print "  AutoCAD application ready"
 
 Polku = Me.PohjaHakem.Value
 If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
 Debug.Print "  Path: " & Polku
 Tied = Dir(Polku & "*.dwg")
-Debug.Print "  Clearing Blokit table"
-CurrentDb.Execute "DELETE * FROM Blokit"
-Set Taulu = CurrentDb.OpenRecordset("Blokit")
+Debug.Print "  Clearing Blokit table for path: " & Polku
+' Poistetaan vain kyseisen hakemiston blokit — suojaa muiden projektien data
+Set db = CurrentDb
+db.Execute "DELETE * FROM Blokit WHERE Path='" & Replace(Polku, "'", "''") & "'", dbFailOnError
+Set Taulu = db.OpenRecordset("Blokit", dbOpenDynaset)
 Debug.Print "  Processing DWG files..."
 Do While Tied <> ""
   Nimi = Left$(Tied, Len(Tied) - 4)
@@ -98,7 +113,6 @@ Do While Tied <> ""
         Taulu.Fields("ATAG").Value = oEnt.TagString
         Taulu.Fields("VALUE").Value = oEnt.TextString
         Taulu.Fields("Path").Value = Polku
-        Taulu.Fields("VALUE").Value = oEnt.TextString
         Taulu.Update
       End If
     Next
@@ -107,22 +121,29 @@ Do While Tied <> ""
   Tied = Dir
 Loop
 Debug.Print "  All files processed"
-Taulu.Close
-oAcad.Quit
-Set oAcad = Nothing
-Debug.Print "HaeTekstit_Click: COMPLETED successfully"
+
+Loppu:
+On Error Resume Next
+If Not Taulu Is Nothing Then
+    Taulu.Close
+    Set Taulu = Nothing
+End If
+Set db = Nothing
+If Not oAcad Is Nothing Then
+    oAcad.Quit
+    Set oAcad = Nothing
+End If
+On Error GoTo 0
+Debug.Print "HaeTekstit_Click: COMPLETED"
 MsgBox "Valmis", vbInformation, "Päivitä tekstit"
-Set Taulu = Nothing
 Exit Sub
 
 ErrorHandler:
     Debug.Print "*** ERROR in HaeTekstit_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Path: " & Polku & ", File: " & Tied
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    On Error Resume Next
-    oAcad.Quit
-    Set oAcad = Nothing
     MsgBox "Virhe tekstien poiminnassa: " & Err.Description, vbCritical
+    Resume Loppu
 End Sub
 
 
@@ -298,13 +319,14 @@ For u = 1 To rstSnapshot.RecordCount
 
         LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] TEXT(250),"
         Kentat = Kentat & rstSnapshot.Fields(laskuri).Name & ", "
-        KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "',"
+        ' Suojataan heittomerkki: kenttäarvo ulkoisesta kannasta voi sisältää yksinkertaisen lainausmerkin
+        KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "',"
     
     Next laskuri
     
     Kentat = Kentat & rstSnapshot.Fields(laskuri).Name
     Kentat = Kentat & ")"
-    KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "'"
+    KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "'"
     KentanArvot = KentanArvot & ")"
     
     LisaaArvot = "INSERT INTO DocumentsDetail" & Kentat & " VALUES " & KentanArvot
@@ -375,13 +397,14 @@ For u = 1 To rstSnapshot.RecordCount
 
         LuoKentat = LuoKentat & "[" & rstSnapshot.Fields(laskuri).Name & "] TEXT(250),"
         Kentat = Kentat & rstSnapshot.Fields(laskuri).Name & ", "
-        KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "',"
+        ' Suojataan heittomerkki: kenttäarvo ulkoisesta kannasta voi sisältää yksinkertaisen lainausmerkin
+        KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "',"
     
     Next laskuri
     
     Kentat = Kentat & rstSnapshot.Fields(laskuri).Name
     Kentat = Kentat & ")"
-    KentanArvot = KentanArvot & "'" & rstSnapshot.Fields(laskuri) & "'"
+    KentanArvot = KentanArvot & "'" & Replace(CStr(rstSnapshot.Fields(laskuri)), "'", "''") & "'"
     KentanArvot = KentanArvot & ")"
     
     LisaaArvot = "INSERT INTO DocumentsRevision" & Kentat & " VALUES " & KentanArvot
@@ -402,7 +425,11 @@ Next u
       
       
       
+      rstSnapshot.Close
+      Set rstSnapshot = Nothing
       dbsDocuments.Close
+      Set dbsDocuments = Nothing
+      Set dbs = Nothing
 
 Debug.Print "PaivitaDocRev_Click: COMPLETED successfully - DocumentsDetail and DocumentsRevision tables updated"
 Exit Sub
@@ -412,7 +439,11 @@ ErrorHandler:
     Debug.Print "    ProjectID: " & Me.RefID.Value
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     On Error Resume Next
-    dbsDocuments.Close
+    If Not rstSnapshot Is Nothing Then rstSnapshot.Close
+    Set rstSnapshot = Nothing
+    If Not dbsDocuments Is Nothing Then dbsDocuments.Close
+    Set dbsDocuments = Nothing
+    Set dbs = Nothing
     MsgBox "Virhe dokumenttirevision päivityksessä: " & Err.Description, vbCritical
 End Sub
 
@@ -643,15 +674,21 @@ End If
 'oAcad.Quit
 
 Debug.Print "TeeKuvat_Click: COMPLETED successfully"
-Exit Sub
+GoTo Loppu   ' Siirrytään siivouslohkoon — resurssit vapautetaan aina
 
 ErrorHandler:
     Debug.Print "*** ERROR in TeeKuvat_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    TitleTable: " & OtsTaulukko & ", BlockTable: " & BlockTaulukko
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     MsgBox "Virhe kuvien luonnissa: " & Err.Description, vbCritical
-    
+    Resume Loppu   ' Ohjataan siivouslohkoon — AutoCAD-prosessi ei jää taustalle
+  
 Loppu:
+    ' Suojataan siivouslohko — vapautetaan kaikki resurssit riippumatta siitä, missä virhe tapahtui
+    On Error Resume Next
+    If Not oAcad Is Nothing Then
+        oAcad.Quit   ' Varmistetaan ettei AutoCAD jää taustalle näkymättömäksi prosessiksi
+    End If
 Set oAcad = Nothing
 Set DB = Nothing
 Set Kuvat = Nothing

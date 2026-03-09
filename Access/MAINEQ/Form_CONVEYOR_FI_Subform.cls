@@ -2,18 +2,36 @@ Option Compare Database
 Option Explicit
 
 Private Sub Form_BeforeInsert(Cancel As Integer)
-Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix for early binding
-Dim Uusi As String
-Set Taulukko = CurrentDb.OpenRecordset("SELECT Suffix From CONVEYORS WHERE Department = '" & Me.Parent.Department.Value & "' AND Eqtype='" & Me.Parent.EqType.Value & "' AND EqSeq='" & Me.Parent.EqSeq.Value & "' ORDER BY Suffix DESC;")
-If Taulukko.RecordCount = 0 Then
-  Uusi = "01"
-Else
-  Uusi = Taulukko.Fields("Suffix").Value
-  Uusi = VAL(Uusi) + 1
-  If Len(Uusi) = 1 Then Uusi = "0" & Uusi
-End If
-Suffix.Value = Uusi
-Set Taulukko = Nothing
+    ' Haetaan suurin olemassa oleva Suffix parametrisoidulla kyselyllä (SQL-injektio estetty)
+    Dim qdf As DAO.QueryDef
+    Dim Taulukko As DAO.Recordset
+    Dim Uusi As String
+    Dim SqlStr As String
+
+    SqlStr = "PARAMETERS [pDept] Text, [pEqType] Text, [pEqSeq] Text; " & _
+             "SELECT MAX(Suffix) AS MaxSuffix FROM CONVEYORS " & _
+             "WHERE Department = [pDept] AND Eqtype = [pEqType] AND EqSeq = [pEqSeq];"
+
+    Set qdf = CurrentDb.CreateQueryDef("", SqlStr)
+    ' Syötetään arvot parametreina — heittomerkit tai erikoismerkit eivät aiheuta SQL-injektiota
+    qdf.Parameters("[pDept]") = IIf(IsNull(Me.Parent.Department.Value), "", Me.Parent.Department.Value)
+    qdf.Parameters("[pEqType]") = IIf(IsNull(Me.Parent.EqType.Value), "", Me.Parent.EqType.Value)
+    qdf.Parameters("[pEqSeq]") = IIf(IsNull(Me.Parent.EqSeq.Value), "", Me.Parent.EqSeq.Value)
+
+    Set Taulukko = qdf.OpenRecordset(dbOpenSnapshot)
+
+    If Taulukko.EOF Or IsNull(Taulukko!MaxSuffix) Then
+        Uusi = "01"  ' Ei aiempia tietueita tälle kombinaatiolle
+    Else
+        ' Lisätään 1 suurimpaan arvoon — turvallinen myös poistettujen rivien jälkeen
+        Uusi = Format$(CStr(Val(Taulukko!MaxSuffix) + 1), "00")
+    End If
+
+    Me.Suffix.Value = Uusi
+
+    Taulukko.Close
+    Set Taulukko = Nothing
+    Set qdf = Nothing
 End Sub
 Private Sub Rev_Click()
   MuutaRevisio
