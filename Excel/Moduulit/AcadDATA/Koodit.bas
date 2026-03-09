@@ -760,6 +760,9 @@ Public Sub VieDATA()
     Dim SkippedCount As Long
     Dim EmptyCount As Long
     Dim HeaderMap As Object ' Otsikkosarakkeiden välimuisti: TAG -> sarakeindeksi
+    Dim prevScreen As Boolean   ' Tallennetaan alkutila – palautetaan aina, myös virhetilanteessa
+    Dim prevEvents As Boolean
+    Dim wasCalcAuto As Boolean
     
     StepMsg = "VieDATA: Alustus"
     Trace StepMsg
@@ -781,6 +784,14 @@ Public Sub VieDATA()
     
     ' Varmista että DATA-taulukko on aktiivinen
     DATA.Select
+
+    ' Minimoidaan Excel-käyttöliittymän päivitykset ja laskentakulut viennin aikana
+    prevScreen = Application.ScreenUpdating
+    prevEvents = Application.EnableEvents
+    wasCalcAuto = (Application.Calculation = xlCalculationAutomatic)
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
 
     ' Rakennetaan otsikkokartta kerran (TAG -> sarakeindeksi) suorituskyvyn parantamiseksi.
     ' Näin jokainen attribuutti ei vaadi erillistä k=8..256-silmukkaa per rivi.
@@ -817,7 +828,7 @@ Public Sub VieDATA()
         If Cells(i, 4).Value = "" Then ' Last row in Excel
             ' Tallennetaan aina riippumatta OliAuki-lipusta – muutoin jo auki oleva piirustus jää tallentamatta
             If Not oDOC Is Nothing Then
-                oDOC.SaveAs oDOC.FullName, Ver
+                oDOC.Save  ' Save-metodi on turvallisempi kuin SaveAs samaan polkuun (ei .bak-konflikteja)
                 If Not OliAuki Then oDOC.Close False  ' Suljetaan vain, jos macro avasi piirustuksen
             End If
             Exit Do
@@ -853,10 +864,20 @@ Public Sub VieDATA()
                             If HeaderMap.Exists(TagName) Then ColIdx = CLng(HeaderMap(TagName))
                             
                             If ColIdx > 0 Then
-                                ' Sarake löytyi – tarkistetaan, onko Excel-arvo ei-tyhjä
+                                ' Sarake löytyi – tarkistetaan ensin Excel-virhearvot (#N/A, #VALUE! jne.)
+                                If IsError(Cells(i, ColIdx).Value) Then
+                                    ' Kaavavirhe solussa – ohitetaan, ettei "#N/A" kirjoiteta AutoCADiin
+                                    Trace "  [" & TagName & "] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
+                                    GoTo NextAttribute
+                                End If
                                 NewValue = CStr(Cells(i, ColIdx).Text)
                                 
-                                If Len(NewValue) > 0 Then
+                                If UCase(Trim(NewValue)) = "[CLEAR]" Then
+                                    ' Käyttäjä haluaa eksplisiittisesti tyhjentää AutoCAD-attribuutin
+                                    BlockArray(j).TextString = ""
+                                    UpdateCount = UpdateCount + 1
+                                    Trace "  [" & TagName & "] TYHJENNETTY tarkoituksella ([CLEAR])"
+                                ElseIf Len(NewValue) > 0 Then
                                     ' Päivitetään attribuutti vain, jos Excelissä on arvo
                                     BlockArray(j).TextString = NewValue
                                     UpdateCount = UpdateCount + 1
@@ -892,27 +913,45 @@ NextAttribute:
                     
                     If oEntity.EntityName = "AcDbText" Then
                         Set oText = oEntity
-                        NewValue = CStr(Cells(i, 8).Value)
-                        If Len(NewValue) > 0 Then
-                            OldValue = oText.TextString
-                            oText.TextString = NewValue
-                            UpdateCount = UpdateCount + 1
-                            Trace "  [TEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                        If IsError(Cells(i, 8).Value) Then
+                            Trace "  [TEXT] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
                         Else
-                            EmptyCount = EmptyCount + 1
-                            Trace "  [TEXT] SKIPPED (Excel empty)"
+                            NewValue = CStr(Cells(i, 8).Value)
+                            If UCase(Trim(NewValue)) = "[CLEAR]" Then
+                                OldValue = oText.TextString
+                                oText.TextString = ""
+                                UpdateCount = UpdateCount + 1
+                                Trace "  [TEXT] TYHJENNETTY tarkoituksella ([CLEAR])"
+                            ElseIf Len(NewValue) > 0 Then
+                                OldValue = oText.TextString
+                                oText.TextString = NewValue
+                                UpdateCount = UpdateCount + 1
+                                Trace "  [TEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                            Else
+                                EmptyCount = EmptyCount + 1
+                                Trace "  [TEXT] OHITETTU (Excel tyhjä)"
+                            End If
                         End If
                     Else
                         Set oMText = oEntity
-                        NewValue = CStr(Cells(i, 8).Value)
-                        If Len(NewValue) > 0 Then
-                            OldValue = oMText.TextString
-                            oMText.TextString = NewValue
-                            UpdateCount = UpdateCount + 1
-                            Trace "  [MTEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                        If IsError(Cells(i, 8).Value) Then
+                            Trace "  [MTEXT] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
                         Else
-                            EmptyCount = EmptyCount + 1
-                            Trace "  [MTEXT] SKIPPED (Excel empty)"
+                            NewValue = CStr(Cells(i, 8).Value)
+                            If UCase(Trim(NewValue)) = "[CLEAR]" Then
+                                OldValue = oMText.TextString
+                                oMText.TextString = ""
+                                UpdateCount = UpdateCount + 1
+                                Trace "  [MTEXT] TYHJENNETTY tarkoituksella ([CLEAR])"
+                            ElseIf Len(NewValue) > 0 Then
+                                OldValue = oMText.TextString
+                                oMText.TextString = NewValue
+                                UpdateCount = UpdateCount + 1
+                                Trace "  [MTEXT] '" & OldValue & "' -> '" & NewValue & "'"
+                            Else
+                                EmptyCount = EmptyCount + 1
+                                Trace "  [MTEXT] OHITETTU (Excel tyhjä)"
+                            End If
                         End If
                     End If
                 End If
@@ -922,6 +961,13 @@ NextAttribute:
     
     ' Viennin yhteenveto
     Trace "VieDATA valmis: Päivitetty=" & UpdateCount & ", Ohitettu(ei saraketta)=" & SkippedCount & ", Säilytetty(tyhjä)=" & EmptyCount
+    ' Näytetään yhteenveto käyttäjälle – Immediate-ikkuna ei ole tavalliselle käyttäjälle näkyvä
+    MsgBox "Vienti valmis!" & vbCrLf & vbCrLf & _
+           "Päivitetty:      " & UpdateCount & " attribuuttia" & vbCrLf & _
+           "Säilytetty:      " & EmptyCount & vbCrLf & _
+           "Ohitettu:        " & SkippedCount & vbCrLf & vbCrLf & _
+           "Vihje: Kirjoita soluun [CLEAR] tyhjentääksesi attribuutin tarkoituksella.", _
+           vbInformation, "Vie DATA"
   
 Cleanup:
     On Error Resume Next
@@ -939,6 +985,15 @@ Cleanup:
         oACAD.Preferences.System.SingleDocumentMode = Docmode
     End If
     Application.StatusBar = False
+
+    ' Palautetaan Excel-asetukset (myös virhetilanteessa, koska ErrHandler siirtyy Cleanup-lohkoon)
+    Application.EnableEvents = prevEvents
+    If wasCalcAuto Then
+        Application.Calculation = xlCalculationAutomatic
+    Else
+        Application.Calculation = xlCalculationManual
+    End If
+    Application.ScreenUpdating = prevScreen
 
     ' Vapauta objektit
     Set oEntity = Nothing
@@ -1011,7 +1066,7 @@ Cleanup:
     ' Ilman tätä jo auki olleeseen piirustukseen tehdyt poistot jäivät tallentamatta levylle.
     If Not oDOC Is Nothing Then
         If Ver = 0 Then Ver = acNative
-        oDOC.SaveAs oDOC.FullName, Ver        ' Tallennetaan aina
+        oDOC.Save                             ' Save on turvallisempi kuin SaveAs samaan polkuun (ei .bak-konflikteja)
         If Not OliAuki Then oDOC.Close False  ' Suljetaan vain, jos macro avasi piirustuksen
     End If
     If Not oACAD Is Nothing Then
@@ -1117,6 +1172,7 @@ Sub Numerointi()
     Dim Jakso As Long '' Muutettu Integer → Long
     Dim Vali As Long '' Muutettu Integer → Long
     Dim i As Long, j As Long '' Muutettu Integer → Long
+    Dim wasCalcAutoNum As Boolean ' Tallennetaan laskentatila – palautetaan alkuperäiseksi
 
     Aloitus.Tyhjenna.Value = True
     Aloitus.Nykyinen.Value = True
@@ -1129,6 +1185,7 @@ Sub Numerointi()
     Cells.Sort Key1:=Range("E2"), Order1:=xlAscending, Key2:=Range("F2"), Order2:=xlDescending, Header:=xlYes, OrderCustom:=1, MatchCase:=False, Orientation:=xlTopToBottom
     
     ' Suorituskykysuojaus: estetään uudelleenpiirrto ja -laskenta rivittäisen kirjoituksen ajaksi
+    wasCalcAutoNum = (Application.Calculation = xlCalculationAutomatic)
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     On Error GoTo NumCleanup
@@ -1145,8 +1202,12 @@ Sub Numerointi()
     Loop
     
 NumCleanup:
-    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa
-    Application.Calculation = xlCalculationAutomatic
+    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa (säilytetään alkuperäinen laskentatila)
+    If wasCalcAutoNum Then
+        Application.Calculation = xlCalculationAutomatic
+    Else
+        Application.Calculation = xlCalculationManual
+    End If
     Application.ScreenUpdating = True
     If Err.Number <> 0 Then
         MsgBox "Virhe Numeroinnissa: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Numerointi"
@@ -1179,6 +1240,7 @@ Sub RefNumerointi()
     Dim vSivu As Long '' Muutettu Integer → Long
     Dim Kirjain As String
     Dim i As Long, j As Long '' Muutettu Integer → Long
+    Dim wasCalcAutoRef As Boolean ' Tallennetaan laskentatila – palautetaan alkuperäiseksi
 
     Aloitus.Tyhjenna.Value = True
     Aloitus.Nykyinen.Value = True
@@ -1192,6 +1254,7 @@ Sub RefNumerointi()
     
     ' Suorituskykysuojaus: estetään uudelleenpiirrto ja -laskenta rivittäisen kirjoituksen ajaksi
     ' (vastaa Numerointi-aliohjelman toteutusta)
+    wasCalcAutoRef = (Application.Calculation = xlCalculationAutomatic)
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     On Error GoTo RefNumCleanup
@@ -1206,8 +1269,12 @@ Sub RefNumerointi()
     Loop
 
 RefNumCleanup:
-    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa
-    Application.Calculation = xlCalculationAutomatic
+    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa (säilytetään alkuperäinen laskentatila)
+    If wasCalcAutoRef Then
+        Application.Calculation = xlCalculationAutomatic
+    Else
+        Application.Calculation = xlCalculationManual
+    End If
     Application.ScreenUpdating = True
     If Err.Number <> 0 Then
         MsgBox "Virhe RefNumeroinnissa: " & Err.Number & vbCrLf & Err.Description, vbCritical, "RefNumerointi"
