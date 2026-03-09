@@ -159,6 +159,10 @@ Private Sub ExcelRep(Ehto As String)
     
 Cleanup:
     If Not xlApp Is Nothing Then
+        ' Suljetaan Excel-prosessi – ilman Quit-kutsua Excel jää taustalle zombina
+        On Error Resume Next
+        xlApp.Quit
+        On Error GoTo 0
         Set xlApp = Nothing
     End If
     If Not DB Is Nothing Then

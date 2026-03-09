@@ -29,7 +29,7 @@ End Type
 Public Sub KuvienSelaus()
 Dim i As Integer
 Dim Nimi As String
-  'N�ytet��n Formi
+  'Näytetään Formi
    Formi.Show
 End Sub
 

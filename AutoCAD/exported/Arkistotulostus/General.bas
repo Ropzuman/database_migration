@@ -27,6 +27,6 @@ Public Type OPENFILENAME
     lpTemplateName As String
 End Type
 Public Sub MPlot()
-  'N�ytet��n tulostusformi
+  'Näytetään tulostusformi
   Formi.Show
 End Sub

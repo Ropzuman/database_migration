@@ -32,7 +32,7 @@ Do While Not Taulu.EOF
   If Err = 0 Then
     Set oBlock = ThisDrawing.ModelSpace.InsertBlock(ipoint, BName, 1, 1, 1, 0)
     Attribuutit = oBlock.GetAttributes
-    For i = 0 To UBound(Attribuutit) 'K‰yd‰‰n l‰pi kaikki attribuutit
+    For i = 0 To UBound(Attribuutit) 'K√§yd√§√§n l√§pi kaikki attribuutit
       With Attribuutit(i)
         If .TagString = "FUNCTION" Then
           .TextString = Funktio
@@ -44,9 +44,9 @@ Do While Not Taulu.EOF
       End With
     Next i
     Piste = Replace(CStr(ipoint(0)), ",", ".") & "," & Replace(CStr(ipoint(1)), ",", ".")
-    'Annetaan komentorivikomento jolla saadaan siirretty‰ blokkia haluttuun paikkaan
+    'Annetaan komentorivikomento jolla saadaan siirretty√§ blokkia haluttuun paikkaan
     ThisDrawing.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
-    'Tarkistetaan ett‰ blokkia yleens‰ siirettiin
+    'Tarkistetaan ett√§ blokkia yleens√§ siirettiin
     With oBlock
       If .InsertionPoint(0) = ipoint(0) And .InsertionPoint(1) = ipoint(1) Then 'Ei siirretty joten poistetaan blokki
         .Delete
@@ -54,11 +54,11 @@ Do While Not Taulu.EOF
         GoTo Ohitus
       End If
     End With
-'Piirret‰‰n viiva
+'Piirret√§√§n viiva
     Do
       ePoint = ThisDrawing.Utility.GetPoint(ipoint, "Draw line")
       If Err <> 0 Then
-        If Viiva Is Nothing Then 'Lopetettiin ennen kuin yht‰k‰‰n viiva oli piirretty
+        If Viiva Is Nothing Then 'Lopetettiin ennen kuin yht√§k√§√§n viiva oli piirretty
           oBlock.Delete   'Tuhotaan Blokki
           GoTo Ohitus
         End If

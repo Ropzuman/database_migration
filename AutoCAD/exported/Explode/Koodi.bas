@@ -21,7 +21,7 @@ Dim Viesti As String
   Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
   If Joukko.Count = 0 Then
     Joukko.Delete
-    ThisDrawing.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
+    ThisDrawing.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
     Viesti = "Choose Block..."
     On Error Resume Next
     Do

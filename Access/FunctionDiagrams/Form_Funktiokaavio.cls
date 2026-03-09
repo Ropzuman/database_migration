@@ -43,15 +43,6 @@ Dim revteki As String
 Set DB = CurrentDb
 Debug.Print "  Database connection established"
 
-'BuffSize = 256
-'NBuffer = Space$(BuffSize)
-'
-'    If api_GetUserName(NBuffer, BuffSize) Then
-'     revteki = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
-'    Else
-'      revteki = "Unknown"
-'    End If
-
 revteki = Me!RevBy
 Debug.Print "  RevBy: " & revteki
 

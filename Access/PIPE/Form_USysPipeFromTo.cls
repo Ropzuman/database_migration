@@ -37,7 +37,7 @@ Dim i As Integer  ' Nykyinen blokkiindeksi
 
 '================================================================================
 ' Tapahtuma: BClearFrom_Click
-' Tarkoitus: TyhjentÃ¤Ã¤ nykyisen putkilinjablokin FROM-attribuutin
+' Tarkoitus: Tyhjentää nykyisen putkilinjablokin FROM-attribuutin
 '================================================================================
 Private Sub BClearFrom_Click()
   On Error GoTo ErrorHandler
@@ -52,7 +52,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: BClearTo_Click
-' Tarkoitus: TyhjentÃ¤Ã¤ nykyisen putkilinjablokin TO-attribuutin
+' Tarkoitus: Tyhjentää nykyisen putkilinjablokin TO-attribuutin
 '================================================================================
 Private Sub BClearTo_Click()
   On Error GoTo ErrorHandler
@@ -75,10 +75,10 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: OpenSource
-' Tarkoitus: Poimii putkilinjan, sÃ¤iliÃ¶n, pumpun tai laitteen piirroksesta ja palauttaa viittauksen
+' Tarkoitus: Poimii putkilinjan, säiliön, pumpun tai laitteen piirroksesta ja palauttaa viittauksen
 ' Parametrit:
-'   Teksti - TekstikenttÃ¤, johon viittaus asetetaan
-'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
+'   Teksti - Tekstikenttä, johon viittaus asetetaan
+'   oAttrib - Päivitettävä attribuuttiviittaus
 '================================================================================
 Private Sub OpenSource(Teksti As TextBox, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   Dim Kohde As Object
@@ -156,7 +156,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: BFind_Click
-' Tarkoitus: Etsii seuraavan putkilinjablokin, jolla FROM tai TO on tyhjÃ¤
+' Tarkoitus: Etsii seuraavan putkilinjablokin, jolla FROM tai TO on tyhjä
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -193,7 +193,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: NextBlock
-' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertÃ¤Ã¤ alkuun)
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertää alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -214,7 +214,7 @@ End Sub
 ' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
+'   oAttrib - Päivitettävä attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -274,7 +274,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: PrevBlock
-' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertÃ¤Ã¤ loppuun)
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertää loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -313,7 +313,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake, yhdistetÃ¤Ã¤n AutoCADiin, suodatetaan putkilinjablokit
+' Tarkoitus: Alustetaan lomake, yhdistetään AutoCADiin, suodatetaan putkilinjablokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -390,7 +390,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja korostaa nykyisen putkilinjablokin ja lataa attribuutit
+' Tarkoitus: Näyttää ja korostaa nykyisen putkilinjablokin ja lataa attribuutit
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -432,7 +432,7 @@ End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdistää käynnissä olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
@@ -454,7 +454,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: TFrom_AfterUpdate
-' Tarkoitus: PÃ¤ivittÃ¤Ã¤ FROM-attribuutin tekstikentÃ¤n arvon muuttuessa
+' Tarkoitus: Päivittää FROM-attribuutin tekstikentän arvon muuttuessa
 '================================================================================
 Private Sub TFrom_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -468,7 +468,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: TTo_AfterUpdate
-' Tarkoitus: PÃ¤ivittÃ¤Ã¤ TO-attribuutin tekstikentÃ¤n arvon muuttuessa
+' Tarkoitus: Päivittää TO-attribuutin tekstikentän arvon muuttuessa
 '================================================================================
 Private Sub TTo_AfterUpdate()
   On Error GoTo ErrorHandler

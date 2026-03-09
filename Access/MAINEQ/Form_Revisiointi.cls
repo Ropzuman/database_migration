@@ -58,15 +58,19 @@ For i = 0 To Rev.ListCount - 1
     Exit For
   End If
 Next i
-Set Taul = CurrentDb.OpenRecordset(ATaulu.Value)  ' Updated 2025-11-11: CurrentDB -> CurrentDb
+' Avataan taulu kenttien tyyppien tarkistamista varten (suljetaan ennen uudelleenkäyttöä)
+Set Taul = CurrentDb.OpenRecordset(ATaulu.Value)
 For i = 0 To Taul.Fields.Count - 1
   If Taul.Fields(i).Type = 4 And Taul.Fields(i).Attributes = 49 Then
     ID.Value = Taul.Fields(i).Name
     Exit For
   End If
 Next i
+Taul.Close
+Set Taul = Nothing
 If ATaulu <> "" And Rev <> "" Then
-  Set Taul = CurrentDb.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")  ' Updated 2025-11-11: CurrentDB -> CurrentDb
+  ' Avataan uusi kysely viimeisimmän revision selvittämiseksi
+  Set Taul = CurrentDb.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")
   If Not Taul.EOF Then
     Revi = Left$(Taul.Fields(0), InStr(Taul.Fields(0), " ") - 1)
     If Len(Revi) > 1 Then
@@ -79,6 +83,8 @@ If ATaulu <> "" And Rev <> "" Then
     End If
     TRev = Revi
   End If
+  Taul.Close
+  Set Taul = Nothing
 End If
 End Sub
 Private Sub Sulje_Click()
@@ -136,6 +142,7 @@ Do While Not Vert.EOF
   Vert.MoveNext
 Loop
 Merk.Visible = False
+Vert.Close
+Set Vert = Nothing
 MsgBox "Valmis", vbOKOnly, "Tee merkinnät"
-
 End Sub

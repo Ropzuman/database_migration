@@ -259,6 +259,7 @@ ElseIf Len(Uusi) = 2 Then
 End If
 
   EqSeq.Value = Uusi
+  Taulukko.Close
   Set Taulukko = Nothing
   Form_Current
 End Sub

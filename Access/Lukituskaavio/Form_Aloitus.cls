@@ -33,13 +33,12 @@ End If
 End Sub
 Private Sub Linkkaa(Tietokanta As String, TAULUKKO As String)
     Dim tdfLinkki As DAO.TableDef
-    Dim rstLinkki As DAO.Recordset
     
     Set tdfLinkki = CurrentDb.CreateTableDef(TAULUKKO)
     tdfLinkki.Connect = ";DATABASE=" & Tietokanta
     tdfLinkki.SourceTableName = TAULUKKO
     CurrentDb.TableDefs.Append tdfLinkki
-
+    Set tdfLinkki = Nothing
 
 End Sub
 

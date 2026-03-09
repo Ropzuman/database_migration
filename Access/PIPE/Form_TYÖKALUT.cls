@@ -617,7 +617,7 @@ End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdistää käynnissä olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean

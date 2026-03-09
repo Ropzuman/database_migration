@@ -1,4 +1,5 @@
 Option Compare Database
+Option Explicit
 
 Private Sub Form_Current()
   VaihdaTiedot

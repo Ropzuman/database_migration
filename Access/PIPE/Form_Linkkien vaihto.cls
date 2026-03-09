@@ -81,7 +81,7 @@ On Error GoTo ErrorHandler
             End If
           Next i
           
-          ' Tarkistetaan, eroaako linkkipolku nykyisestÃ¤ tietokantapolusta
+          ' Tarkistetaan, eroaako linkkipolku nykyisestä tietokantapolusta
           If Polku2 <> LowerPolku Then
             Taulu = Taul.Fields("Name")
             

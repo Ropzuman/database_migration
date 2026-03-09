@@ -934,10 +934,6 @@ Private Sub TOtsTaulukko_BeforeUpdate(Cancel As Integer)
 
 End Sub
 
-Private Sub TTitleBlokki_BeforeUpdate(Cancel As Integer)
-
-End Sub
-
 Private Sub ValHakem_Click()
 Dim Hakemisto As String
   Hakemisto = PoimiHakemisto(IIf(IsNull(Me.PohjaHakem.Value), "", Me.PohjaHakem.Value))

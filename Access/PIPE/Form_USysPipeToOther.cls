@@ -136,7 +136,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: BFind_Click
-' Tarkoitus: Etsii seuraavan laiteblokin, jolla PIPELINE-attribuutti on tyhjÃ¤
+' Tarkoitus: Etsii seuraavan laiteblokin, jolla PIPELINE-attribuutti on tyhjä
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -173,7 +173,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: NextBlock
-' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertÃ¤Ã¤ alkuun)
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiertää alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -194,7 +194,7 @@ End Sub
 ' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - PÃ¤ivitettÃ¤vÃ¤ attribuuttiviittaus
+'   oAttrib - Päivitettävä attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -238,7 +238,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: PrevBlock
-' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertÃ¤Ã¤ loppuun)
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiertää loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -276,7 +276,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake, yhdistetÃ¤Ã¤n AutoCADiin, suodatetaan laiteblokit
+' Tarkoitus: Alustetaan lomake, yhdistetään AutoCADiin, suodatetaan laiteblokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -358,7 +358,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja korostaa nykyisen laiteblokin ja lataa PIPELINE-attribuutin
+' Tarkoitus: Näyttää ja korostaa nykyisen laiteblokin ja lataa PIPELINE-attribuutin
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -403,7 +403,7 @@ End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdistää käynnissä olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
@@ -425,7 +425,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: TPipeline_AfterUpdate
-' Tarkoitus: PÃ¤ivittÃ¤Ã¤ PIPELINE-attribuutin tekstikentÃ¤n arvon muuttuessa
+' Tarkoitus: Päivittää PIPELINE-attribuutin tekstikentän arvon muuttuessa
 '================================================================================
 Private Sub TPipeline_AfterUpdate()
   On Error GoTo ErrorHandler

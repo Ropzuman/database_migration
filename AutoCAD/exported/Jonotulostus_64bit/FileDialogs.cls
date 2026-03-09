@@ -260,7 +260,9 @@ End Function
 Public Function ShowSave() As String
     Dim strTemp As String
   Dim udtStruct As OPENFILENAME
-  udtStruct.lStructSize = Len(udtStruct)
+  ' KRIITTINEN 64-bit-korjaus: LenB palauttaa rakenteen koon tavuina (ei merkkeinä)
+  ' Len() antaisi väärän arvon 64-bit-yhteensopivissa rakenteissa (LongPtr-kentät)
+  udtStruct.lStructSize = LenB(udtStruct)
   'Use our private variable
   udtStruct.hwndOwner = lngHwnd
   'Use our private variable

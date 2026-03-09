@@ -38,7 +38,7 @@ Option Explicit
 
 '================================================================================
 ' Tapahtuma: Command0_Click
-' Tarkoitus: KÃ¤ynnistÃ¤Ã¤ venttiilienvaihdon erÃ¤ajon
+' Tarkoitus: Käynnistää venttiilienvaihdon eräajon
 '================================================================================
 Private Sub Command0_Click()
   Dim Taulukko As DAO.Recordset

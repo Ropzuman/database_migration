@@ -28,7 +28,7 @@ End Type
 Public Sub Start()
 Dim i As Integer
 Dim Nimi As String
-  'N‰ytet‰‰n tulostusformi
+  'N√§ytet√§√§n tulostusformi
   Formi.Show
 End Sub
 

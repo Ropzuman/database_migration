@@ -51,12 +51,14 @@ Do While Not Kuvat.EOF
   'Talletetaan kuva
   oDoc.SaveAs Talletus
   oDoc.Close
+  Set Revisiot = Nothing  ' Vapautetaan revisio-recordset ennen seuraavaa iteraatiota
   Kuvat.MoveNext
 Loop
 MsgBox "Valmis"
+Set Kuvat = Nothing
+Set DB = Nothing
 Set oDoc = Nothing
 Set oAcad = Nothing
-Set Kuvat = Nothing
 End Sub
 
 Private Sub Teetaulukko_Click()
@@ -141,6 +143,7 @@ Set KuviinTbl = Nothing
 Set zTitleTbl = Nothing
 Set TEKSTITTbl = Nothing
 Set Taulu = Nothing
+Set DB = Nothing
 End Sub
 Private Sub GenKuvat_Click()
 Dim Kuvat As DAO.Recordset
@@ -185,9 +188,9 @@ oAcad.Preferences.System.SingleDocumentMode = DocTila
 MsgBox "Valmis", vbOKOnly, "Generoi kuvat"
 Set oDoc = Nothing
 Set oAcad = Nothing
-Set Kuvat = Nothing
 Set Tiedot = Nothing
 Set oEntity = Nothing
+Set DB = Nothing
 End Sub
 
 Private Sub LisaaTeksti(ByVal Paikka As Integer, Sarake As Integer, teksti As String)

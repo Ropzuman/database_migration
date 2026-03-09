@@ -9,6 +9,9 @@ Dim Tiedot As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
 Dim FSO As New FileSystemObject
 Dim Rivi As Integer
 Dim Sar As Integer
+
+On Error GoTo ErrorHandler
+
 Set Tiedot = CurrentDb.OpenRecordset("_qryMAINEQCust")
 Rivi = 9
   
@@ -46,7 +49,17 @@ Rivi = 9
     MsgBox "Päälaiteluettelo generoitu Exceliin.", vbInformation, "Päälaiteluettelo"
   End If
 Set WB = Nothing
+Tiedot.Close
 Set Tiedot = Nothing
 Set xlApp = Nothing
+Exit Sub
+
+ErrorHandler:
+    On Error Resume Next
+    If Not WB Is Nothing Then Set WB = Nothing
+    If Not Tiedot Is Nothing Then Tiedot.Close: Set Tiedot = Nothing
+    If Not xlApp Is Nothing Then Set xlApp = Nothing
+    On Error GoTo 0
+    MsgBox "Virhe raportin generoinnissa: " & Err.Description, vbExclamation, "Päälaiteluettelo"
 End Sub
 

@@ -44,7 +44,7 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake ja tÃ¤ytetÃ¤Ã¤n putkilinjasegmenttilista
+' Tarkoitus: Alustetaan lomake ja täytetään putkilinjasegmenttilista
 '
 ' Toiminta:
 '   1. Jäsennetään OpenArgs (aluekoodi ja linjanumero)

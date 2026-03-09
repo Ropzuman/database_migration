@@ -117,7 +117,7 @@ End Function
 Public Sub MPlot()
 Dim i As Integer
 Dim Nimi As String
-  'N�ytet��n tulostusformi
+  'Näytetään tulostusformi
   Formi.Show
 End Sub
 Public Function DummyFunc(ByVal param As Long) As Long
@@ -144,29 +144,29 @@ Dim Alku As String
 Dim Polku As String
 Dim Tied As String
   Polku = Left(Tiedosto, InStrRev(Tiedosto, "\"))
-  If UCase(Right(Tiedosto, 3)) = "LST" Then 'Jos kysymyksess� on lista
+  If UCase(Right(Tiedosto, 3)) = "LST" Then 'Jos kysymyksessä on lista
     Tied = Dir(Tiedosto)
     Do While Tied <> ""
       Set oTiedosto = FSO.OpenTextFile(Polku & Tied, 1) 'Avataan lista
-      Do While Not oTiedosto.AtEndOfStream 'K�yd��n l�pi listan kaikki rivit
+      Do While Not oTiedosto.AtEndOfStream 'Käydään läpi listan kaikki rivit
         DoEvents
         Rivi = oTiedosto.ReadLine
         Alku = Mid(Rivi, 1, 1)
-        If Alku = " " Or Alku = ";" Or Rivi = "" Then 'Rivi ei sis�ll� tietoa tai se on kommentti
-          'Ei mit��n
+        If Alku = " " Or Alku = ";" Or Rivi = "" Then 'Rivi ei sisällä tietoa tai se on kommentti
+          'Ei mitään
         ElseIf Alku = "@" Then 'Rivi on linkki toiseen listaan
-          LueTiedosto Mid(Rivi, 2), Kaikki 'Luetaan toisen lista sis�lt�
+          LueTiedosto Mid(Rivi, 2), Kaikki 'Luetaan toisen lista sisältö
         Else
           If InStr(Rivi, "\") Then 'Rivi on suora osoitus tiedostoon polkuinen
             Tiedosto = Rivi
-          ElseIf Len(Rivi) > 38 Then 'Rivi on DOS listaus ja tiedostonimi alkaa merkist� 38
+          ElseIf Len(Rivi) > 38 Then 'Rivi on DOS listaus ja tiedostonimi alkaa merkistä 38
             Tiedosto = Formi.FPath.Value & Mid(Rivi, 38)
           Else 'Listassa on vain tiedoston nimi, joten polku tulee formissa olevasta polusta
             Tiedosto = Formi.FPath.Value & Rivi
           End If
           If Right(UCase(Tiedosto), 4) <> ".DWG" And Right(UCase(Tiedosto), 4) <> ".DXF" Then Tiedosto = Tiedosto & ".DWG"
           LisaaListaan Tiedosto
-          If Kaikki = False Then  'Lopetetaan t�h�n jos on kysymys testitulostuksesta
+          If Kaikki = False Then  'Lopetetaan tähän jos on kysymys testitulostuksesta
             Exit Do
           End If
         End If

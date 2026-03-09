@@ -115,7 +115,7 @@ End Function
 Public Sub MPlot()
 Dim i As Integer
 Dim Nimi As String
-  'N�ytet��n tulostusformi
+  'Näytetään tulostusformi
   Formi.Show
 End Sub
 Public Function DummyFunc(ByVal param As Long) As Long

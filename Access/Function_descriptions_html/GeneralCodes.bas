@@ -42,6 +42,11 @@ Public Function MuutaRev()
     
     If Taul = "MAINEQ" Or Taul = "DRIVES" Or Taul = "PUMPS" Or Taul = "GEARS" Or Taul = "TANKS" Then
         Set PaluuTaulu = Screen.ActiveDatasheet
+        ' Suljetaan aiempi tietue ennen uuden avaamista
+        If Not oTaulu Is Nothing Then
+            oTaulu.Close
+            Set oTaulu = Nothing
+        End If
         Set oTaulu = CurrentDb.OpenRecordset("SELECT * FROM " & Taul & " WHERE ID=" & Screen.ActiveDatasheet("ID").Value)
         DoCmd.OpenForm "USysRevision"
     End If

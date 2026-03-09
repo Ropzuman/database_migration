@@ -108,7 +108,7 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: BAutohaku_Click
-' Tarkoitus: LÃ¶ytÃ¤Ã¤ automaattisesti kaikki putkilinjat virtausblokeille
+' Tarkoitus: Löytää automaattisesti kaikki putkilinjat virtausblokeille
 '
 ' Toiminta:
 '   1. Käydään läpi jokainen virtausblokki valintajoukossa
@@ -240,7 +240,7 @@ ErrorHandler:
 End Function
 '--------------------------------------------------------------------------------
 ' Tapahtuma: BSeurT_Click
-' Tarkoitus: Etsii seuraavan virtausblokin, jolla putkilinjaviittaus on tyhjÃ¤
+' Tarkoitus: Etsii seuraavan virtausblokin, jolla putkilinjaviittaus on tyhjä
 '
 ' Toiminta:
 '   1. Poistetaan nykyisen blokin korostus
@@ -326,7 +326,7 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: NÃ¤yttÃ¤Ã¤ ja zoomaa nykyisen virtausblokin AutoCADissa
+' Tarkoitus: Näyttää ja zoomaa nykyisen virtausblokin AutoCADissa
 '
 ' Toiminta:
 '   1. Korostetaan nykyinen blokki valintajoukossa
@@ -386,7 +386,7 @@ ErrorHandler:
 End Sub
 '--------------------------------------------------------------------------------
 ' Funktio: Yhdista
-' Tarkoitus: YhdistÃ¤Ã¤ kÃ¤ynnissÃ¤ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdistää käynnissä olevaan AutoCAD-instanssiin
 '
 ' Palautusarvo: Boolean - True jos yhteys onnistui, False jos AutoCAD ei käynnissä
 '
@@ -414,7 +414,7 @@ On Error Resume Next
 End Function
 '--------------------------------------------------------------------------------
 ' Aliohjelma: EtsiLinja
-' Tarkoitus: Etsii automaattisesti putkilinjan lÃ¤hellÃ¤ nykyistÃ¤ virtausblokkia
+' Tarkoitus: Etsii automaattisesti putkilinjan lähellä nykyistä virtausblokkia
 '
 ' Toiminta:
 '   1. Haetaan nykyisen virtausblokin sijainti
