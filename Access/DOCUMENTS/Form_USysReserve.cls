@@ -16,32 +16,53 @@ Private Sub Peruuta_Click()
   DoCmd.Close
 End Sub
 Private Sub TalletaNappi_Click()
-    'Formin tietojen talletus ja sulkeminen
+    ' Formin tietojen talletus ja sulkeminen asiakkaan piirustunumeron varauksen jälkeen
+    Dim DB As DAO.Database
+    Dim taulu As DAO.Recordset
+    Dim SQL As String
+    Dim EtsittavaNumero As String
+
+    On Error GoTo ErrorHandler
+
     If IsNull(Me.TPaperSize.Value) Or IsNull(Me.TDiscipline.Value) Or IsNull(Me.TNumber.Value) Then
       MsgBox "You didn't select client number!" & vbCrLf _
            & "Please fill all fields and try again.", vbCritical, "Error!"
       Exit Sub
     End If
-    Dim taulu As DAO.Recordset
-    Dim SQL As String
-    SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & Me.TNumber.Value & "'"
-    Set taulu = CurrentDb.OpenRecordset(SQL, , dbDenyWrite)
-    If IsNull(taulu.Fields("Reserved")) Then 'Tarkistetaan että kyseinen numero on vielä vapaana
+
+    Set DB = CurrentDb
+    ' Puhdistetaan heittomerkit SQL-injektioriskin poistamiseksi
+    EtsittavaNumero = Replace(Me.TNumber.Value, "'", "")
+
+    SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & EtsittavaNumero & "'"
+    Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset, dbDenyWrite)
+
+    If IsNull(taulu.Fields("Reserved")) Then
+      ' Numero vielä vapaa — kirjataan varaus ja aikaleima
       taulu.Edit
       taulu.Fields("Number") = Me.TClientNo.Caption
       taulu.Fields("Reserved") = Varaaja & "@" & Now
       taulu.Update
-      taulu.Close
-    Else 'Virhe joku kerkesi jo varaamaan numeron välissä
-      MsgBox "Someone reserved number " & Me.TNumber.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
+      Me.ClientNo.Value = Me.TClientNo.Caption
+      DoCmd.Close
+    Else
+      ' Kilpailutilanne: joku kerkesi varaamaan numeron samanaikaisesti
+      MsgBox "Someone reserved number " & EtsittavaNumero & " at the same time!" & vbCrLf & _
+             "Please choose another number.", vbCritical, "Error!"
+    End If
+
+Cleanup:
+    If Not taulu Is Nothing Then
       taulu.Close
       Set taulu = Nothing
-      Exit Sub
     End If
-    Set taulu = Nothing
-    'Kaikki kunnossa, voidaan tallettaa tiedot ja poistua formista
-    Me.ClientNo.Value = Me.TClientNo.Caption    'Asiakkaan piirustunumeron osa1: Size
-    DoCmd.Close
+    ' EI DB.Close: CurrentDb-viitettä ei tule sulkea koodista
+    Set DB = Nothing
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Error: " & Err.Description, vbCritical, "Database Error"
+    Resume Cleanup
 End Sub
 
 Private Sub TDiscipline_Change()

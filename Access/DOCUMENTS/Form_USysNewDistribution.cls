@@ -18,21 +18,27 @@ End Sub
 '''
 Private Sub Form_Load()
   Dim DB As DAO.Database
-  
+  Dim Kayttaja As String
+
   On Error GoTo ErrorHandler
-  
+
+  ' Haetaan nykyinen Windows-käyttäjätunnus omien valintojen tunnistamiseksi
+  Kayttaja = NetworkUserName
+
   Set DB = CurrentDb
-  DB.Execute "UPDATE USysRecipients SET USysRecipients.[To Distribution] = No;"
+  ' Nollataan VAIN tämän käyttäjän aiemmat unohtuneet valinnat —
+  ' muiden käyttäjien samanaikaiset valinnat säilyvät koskemattomina
+  DB.Execute "UPDATE USysRecipients SET [To Distribution] = No, SelectedBy = Null " & _
+             "WHERE SelectedBy = '" & Replace(Kayttaja, "'", "") & "';", dbFailOnError
   Me.TDate.Value = Date
-  
-  DB.Close
+
+  ' EI DB.Close: CurrentDb-viitettä ei tule sulkea koodista
   Set DB = Nothing
   Exit Sub
-  
+
 ErrorHandler:
   MsgBox "Error initializing form: " & Err.Description, vbExclamation, "Form Load Error"
   If Not DB Is Nothing Then
-    DB.Close
     Set DB = Nothing
   End If
 End Sub
@@ -63,112 +69,142 @@ SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.Item
   If Not taulu.EOF Then
     taulu.Edit
     If taulu.Fields("To Distribution") Then
-       taulu.Fields("To Distribution") = False
+      ' Poistetaan valinta — tyhjennetään myös käyttäjätunnus
+      taulu.Fields("To Distribution") = False
+      taulu.Fields("SelectedBy") = Null
     Else
       Oletus = IIf(IsNull(taulu.Fields("Copies")), "", taulu.Fields("Copies"))
       Kopioita = InputBox("How many copies are been sent? E.g. 4 paper copies and e-mail are marked as ""4+e"".", "Copies", Oletus)
       If Kopioita <> "" Then
+        ' Merkitään valituksi ja kirjataan valitsijan käyttäjätunnus monikäyttäjätuen takaamiseksi
         taulu.Fields("To Distribution") = True
         taulu.Fields("Copies") = Kopioita
+        taulu.Fields("SelectedBy") = NetworkUserName
       End If
     End If
     taulu.Update
   End If
 
   Me.Lista.Requery
-  
+
 Cleanup:
   If Not taulu Is Nothing Then
+    taulu.Close
     Set taulu = Nothing
   End If
-  If Not DB Is Nothing Then
-    DB.Close
-    Set DB = Nothing
-  End If
+  ' EI DB.Close: CurrentDb-viitettä ei tule sulkea koodista
+  Set DB = Nothing
   Exit Sub
-  
+
 ErrorHandler:
   MsgBox "Error updating recipient: " & Err.Description, vbExclamation, "Update Error"
   Resume Cleanup
 End Sub
 
 Private Sub Valmis_Click()
-' Tämä lisää uuden distribuution USysDISTRIBUTION taulukkoon ja
-' Vastaanottajat USysRecipByDistr taulukkoon
-Dim TRecipients As String
-'Dim FSO As New FileSystemObject
-Dim i As Integer
-Dim SQL As String
-Dim DB As DAO.Database
-Dim taulu As DAO.Recordset
-Dim Taulu2 As DAO.Recordset
-Dim Hakemisto As String
-Dim OutboxPath As String
-Dim DistrID As Long
-Set DB = CurrentDb
-'Haetaan ensin projektin Outbox laatikon sijainti
-'SQL = "SELECT Name, Path FROM ProjPaths WHERE Name Like 'OUTBOX'"
-'Set Taulu = DB.OpenRecordset(SQL)
-'OutboxPath = Taulu.Fields("Path")
+' Lisätään uusi distribuutio UsysDISTRIBUTION-tauluun ja
+' vastaanottajat USysRecipByDistr-tauluun transaktion sisällä atomaarisuuden takaamiseksi
+  Dim SQL As String
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
+  Dim Taulu2 As DAO.Recordset
+  Dim Hakemisto As String
+  Dim DistrID As Long
+  Dim inTransaction As Boolean
+  Dim Kayttaja As String
 
-SQL = "SELECT USysRecipients.*, USysRecipients.[To Distribution] FROM USysRecipients WHERE (((USysRecipients.[To Distribution])=Yes));"
-Set taulu = DB.OpenRecordset(SQL)
-If taulu.EOF Then
- MsgBox "You have to select recipients for Distribution!", vbCritical, "Error!"
-ElseIf IsNull(Me.DistrNo) Then
- MsgBox "You have to give number for distribution!", vbCritical, "Error!"
-ElseIf IsNull(Me.TDate) Then
- MsgBox "You have to select date!", vbCritical, "Error!"
-ElseIf IsNull(Me.Desc) Then
- MsgBox "You have to put description!", vbCritical, "Error!"
-ElseIf IsNull(Me.TReason) Then
- MsgBox "Distribution must have reason! Select reason and try again", vbCritical, "Error!"
-Else
-  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & Me.DistrNo & "'"
+  On Error GoTo ErrorHandler
+  inTransaction = False
+
+  Set DB = CurrentDb
+  Kayttaja = NetworkUserName
+
+  ' Tarkistetaan valinnat vain tämän käyttäjän rivien perusteella
+  Set taulu = DB.OpenRecordset("SELECT * FROM USysRecipients WHERE [To Distribution] = Yes AND SelectedBy = '" & Replace(Kayttaja, "'", "") & "';")
+  If taulu.EOF Then
+    MsgBox "You have to select recipients for Distribution!", vbCritical, "Error!"
+    GoTo Cleanup
+  ElseIf IsNull(Me.DistrNo) Then
+    MsgBox "You have to give number for distribution!", vbCritical, "Error!"
+    GoTo Cleanup
+  ElseIf IsNull(Me.TDate) Then
+    MsgBox "You have to select date!", vbCritical, "Error!"
+    GoTo Cleanup
+  ElseIf IsNull(Me.Desc) Then
+    MsgBox "You have to put description!", vbCritical, "Error!"
+    GoTo Cleanup
+  ElseIf IsNull(Me.TReason) Then
+    MsgBox "Distribution must have reason! Select reason and try again", vbCritical, "Error!"
+    GoTo Cleanup
+  End If
+
+  taulu.Close
+  Set taulu = Nothing
+
+  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & Replace(Me.DistrNo, "'", "") & "'"
   Set taulu = DB.OpenRecordset(SQL)
-  If taulu.EOF Then 'Ei vielä yhtään saman ID:n omaavaa Distribuutiota
-    Hakemisto = aReplace(Me.DistrNo) & "\"
-'    If FSO.FolderExists(OutboxPath & Hakemisto) = False Then
-'      FSO.CreateFolder (OutboxPath & Hakemisto)
-'    End If
-    With taulu
-      .AddNew
-      .Fields("No") = Me.DistrNo
-      .Fields("Description") = Me.Desc
-      .Fields("Date") = Me.TDate
-      .Fields("Sender") = Me.TSender
-      .Fields("Reason") = Me.TReason
-      .Fields("Note") = Me.Note
-      DistrID = .Fields("ID")
-      .Update
-      .Close
-    End With
-    SQL = "SELECT USysRecipients.*, USysRecipients.[To Distribution] FROM USysRecipients WHERE (((USysRecipients.[To Distribution])=Yes));"
-    Set taulu = DB.OpenRecordset(SQL)
-    Set Taulu2 = DB.OpenRecordset("USysRecipByDistr")
-    Do While Not taulu.EOF
-      With Taulu2
-        .AddNew
-        .Fields("DistrID") = DistrID
-        .Fields("Copies") = taulu.Fields("Copies")
-        .Fields("Unit") = taulu.Fields("Unit")
-        .Fields("Company") = taulu.Fields("Company")
-        .Fields("Name") = taulu.Fields("Name")
-        .Fields("Description") = taulu.Fields("Description")
-        .Fields("Address") = taulu.Fields("Address")
-        .Fields("email") = taulu.Fields("email")
-        .Update
-      End With
-      taulu.MoveNext
-    Loop
-    Common = OutboxPath & Hakemisto
-'    DoCmd.OpenForm "UsysAddedDistr", acNormal, , , , acDialog
-  Else
-    MsgBox "Distirubution number """ & Me.DistrNo & """ were already selected! Please select another number.", vbCritical, "Error!"
+  If Not taulu.EOF Then
+    MsgBox "Distribuution numero """ & Me.DistrNo & """ on jo käytössä! Valitse toinen numero.", vbCritical, "Error!"
+    GoTo Cleanup
   End If
   taulu.Close
+  Set taulu = Nothing
+
+  Hakemisto = aReplace(Me.DistrNo) & "\"
+
+  ' Aloitetaan transaktio: molemmat taulut päivitetään atomaarisesti
+  DBEngine.BeginTrans
+  inTransaction = True
+
+  Set taulu = DB.OpenRecordset("UsysDISTRIBUTION", dbOpenDynaset)
+  With taulu
+    .AddNew
+    .Fields("No") = Me.DistrNo
+    .Fields("Description") = Me.Desc
+    .Fields("Date") = Me.TDate
+    .Fields("Sender") = Me.TSender
+    .Fields("Reason") = Me.TReason
+    .Fields("Note") = Me.Note
+    DistrID = .Fields("ID")
+    .Update
+    .Close
+  End With
+  Set taulu = Nothing
+
+  ' Tehokkaampi INSERT INTO -kysely — kopioidaan vain tämän käyttäjän valitsemat vastaanottajat
+  SQL = "INSERT INTO USysRecipByDistr (DistrID, Copies, Unit, Company, Name, Description, Address, email) " & _
+        "SELECT " & DistrID & ", Copies, Unit, Company, Name, Description, Address, email " & _
+        "FROM USysRecipients WHERE [To Distribution] = Yes AND SelectedBy = '" & Replace(Kayttaja, "'", "") & "';"
+  DB.Execute SQL, dbFailOnError
+
+  ' Siivotaan tämän käyttäjän valinnat lomakkeen sulkemisen jälkeen
+  DB.Execute "UPDATE USysRecipients SET [To Distribution] = No, SelectedBy = Null " & _
+             "WHERE SelectedBy = '" & Replace(Kayttaja, "'", "") & "';", dbFailOnError
+
+  DBEngine.CommitTrans
+  inTransaction = False
+
+  Common = Hakemisto
   DoCmd.Close
-End If
-Set taulu = Nothing
-Set DB = Nothing
+
+Cleanup:
+  If Not taulu Is Nothing Then
+    taulu.Close
+    Set taulu = Nothing
+  End If
+  If Not Taulu2 Is Nothing Then
+    Taulu2.Close
+    Set Taulu2 = Nothing
+  End If
+  ' EI DB.Close: CurrentDb-viitettä ei tule sulkea koodista
+  Set DB = Nothing
+  Exit Sub
+
+ErrorHandler:
+  If inTransaction Then
+    DBEngine.Rollback  ' Perutaan kaikki muutokset virhetilanteessa
+    inTransaction = False
+  End If
+  MsgBox "Error saving distribution: " & Err.Description, vbCritical, "Database Error"
+  Resume Cleanup
 End Sub

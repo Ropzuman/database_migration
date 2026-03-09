@@ -16,40 +16,54 @@ Option Explicit
 Private Sub Add_Click()
   Dim DB As DAO.Database
   Dim taulu As DAO.Recordset
+  Dim inTransaction As Boolean
   
   On Error GoTo ErrorHandler
+  inTransaction = False
+  
+  ' Esitarkistus: varmistetaan että distribuutio on valittu
+  If IsNull(Me.Distribution.Value) Then
+    MsgBox "Please select a distribution first.", vbExclamation, "Validation"
+    Exit Sub
+  End If
   
   Set DB = CurrentDb
-Set taulu = DB.OpenRecordset("SELECT * FROM SentDocuments WHERE TDoc=" & CurRecord & " AND TDistr=" & Me.Distribution.Value, dbOpenDynaset)
 
-  If taulu.RecordCount <> 0 Then
+  ' Suorituskykyisempi DCount-tarkistus SQL-injektioriskin minimoimiseksi
+  If DCount("*", "SentDocuments", "TDoc=" & CLng(CurRecord) & " AND TDistr=" & CLng(Me.Distribution.Value)) > 0 Then
     MsgBox "Document were already on selected distribution!", vbCritical, "Add document to distribution"
   Else
     DBEngine.BeginTrans
+    inTransaction = True
+
+    ' Avataan taulu pelkkää lisäystä varten
+    Set taulu = DB.OpenRecordset("SentDocuments", dbOpenDynaset, dbAppendOnly)
     taulu.AddNew
     taulu.Fields(0) = CurRecord
     taulu.Fields(1) = Me.Distribution.Value
     taulu.Fields(2) = IIf(Common = "", Null, Common)
     If DocStatus <> "" Then taulu.Fields(3) = DocStatus
     taulu.Update
+
     DBEngine.CommitTrans
+    inTransaction = False
+
     DoCmd.Close
   End If
   
 Cleanup:
   If Not taulu Is Nothing Then
+    taulu.Close
     Set taulu = Nothing
   End If
-  If Not DB Is Nothing Then
-    DB.Close
-    Set DB = Nothing
-  End If
+  ' EI DB.Close: CurrentDb-viitettä ei tule sulkea
+  Set DB = Nothing
   Exit Sub
   
 ErrorHandler:
-  If Not DB Is Nothing Then
-    On Error Resume Next
-    DBEngine.Rollback
+  If inTransaction Then
+    DBEngine.Rollback  ' Vapautetaan tietokanta lukot epäonnistuneen tallennuksen jälkeen
+    inTransaction = False
   End If
   MsgBox "Error adding document to distribution: " & Err.Description, vbCritical, "Add Error"
   Resume Cleanup
