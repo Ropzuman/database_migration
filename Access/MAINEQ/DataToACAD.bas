@@ -8,52 +8,72 @@ Option Explicit           ' Muuttujaesittely pakollinen
 ' Muokattu: 1997-03-21 Fr 16:07 /tw
 ' Muokattu: 1997-07-14 Mo 14:29 /tw
 ' Päivitetty: 2025-11-11 — DAO-tyypit, virheenkäsittely, kommentit lisätty
+' Päivitetty: 2026-03-09 — CrsRefLink muutettu välimuisti-hakuun (N+1-pullonkaula poistettu)
 '==============================================================================
+
+' --- Moduulitason välimuisti CrsRefLisps-haulle ---
+' Ladataan taulukko kerran Dictionary-objektiin; jokainen haku on O(1) levyluvun sijaan
+Private dictCrsRef As Object   ' Scripting.Dictionary
+Private blnCrsRefLoaded As Boolean
+
+'------------------------------------------------------------------------------
+' Alirutiini: LoadCrsRefCache
+' Tarkoitus: Lataa CrsRefLisps-taulukon kerran muistiin Dictionary-objektiin.
+'            Kutsutaan laiskasti CrsRefLink-funktiosta ensimmäisellä hakukerralla.
+'------------------------------------------------------------------------------
+Private Sub LoadCrsRefCache()
+    Dim tble As DAO.Recordset
+
+    Set dictCrsRef = CreateObject("Scripting.Dictionary")
+    ' dbOpenForwardOnly on nopein vaihtoehto pelkkään lukemiseen
+    Set tble = CurrentDb.OpenRecordset("CrsRefLisps", dbOpenForwardOnly)
+
+    Do Until tble.EOF
+        ' Lisätään vain ensimmäinen osuma, jos duplikaatteja on
+        If Not dictCrsRef.Exists(CStr(tble!CrsRefID)) Then
+            dictCrsRef.Add CStr(tble!CrsRefID), CStr(tble!Lisp)
+        End If
+        tble.MoveNext
+    Loop
+
+    tble.Close
+    Set tble = Nothing
+    blnCrsRefLoaded = True
+End Sub
 
 '------------------------------------------------------------------------------
 ' Funktio: CrsRefLink
-' Tarkoitus: Hakee LISP-koodin ristiviitetaulukosta
+' Tarkoitus: Hakee LISP-koodin ristiviitetaulukosta välimuistin avulla.
+'            Ensimmäisellä kutsulla lataa koko taulukon muistiin; sen jälkeen
+'            jokainen haku on O(1)-nopea eikä avaa Recordsetia lainkaan.
 ' Parametrit:
-'   tblnimi - Taulukonnimi
+'   tblnimi - Taulukonnimi (vain "CRSREF" käynnistää haun)
 '   teksti  - Haettava ristiviite-ID
 ' Palautusarvo: LISP-koodi tai alkuperäinen teksti, jos ei löydy
 '------------------------------------------------------------------------------
 Function CrsRefLink(tblnimi As String, teksti As String) As String
 On Error GoTo ErrorHandler
 
-Dim DB As DAO.Database
-Dim tble As DAO.Recordset
-Set DB = CurrentDb
-
 If tblnimi = "CRSREF" Then
-    ' Avataan ristiviite-LISP-hakutaulukko
-    Set tble = DB.OpenRecordset("CrsRefLisps", dbOpenDynaset)
-    Do Until tble.EOF
-        If tble!CrsRefID = teksti Then
-            CrsRefLink = tble!Lisp
-            tble.Close
-            Set tble = Nothing
-            Exit Function
-        End If
-    tble.MoveNext
-    Loop
-    CrsRefLink = teksti  ' Ei löydetty — palautetaan alkuperäinen teksti
-    tble.Close
+    ' Ladataan välimuistiin vain ensimmäisellä kerralla
+    If Not blnCrsRefLoaded Then LoadCrsRefCache
+
+    ' Nopea O(1)-haku Dictionary-objektista levyn sijaan
+    If dictCrsRef.Exists(teksti) Then
+        CrsRefLink = dictCrsRef(teksti)
+    Else
+        CrsRefLink = teksti  ' Ei löydetty — palautetaan alkuperäinen teksti
+    End If
 Else
     ' Ei ristiviite — palautetaan alkuperäinen teksti
     CrsRefLink = teksti
 End If
 
-Set tble = Nothing
 Exit Function
 
 ErrorHandler:
     MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
     CrsRefLink = teksti  ' Virhetilanteessa palautetaan alkuperäinen teksti
-    If Not tble Is Nothing Then
-        tble.Close
-        Set tble = Nothing
-    End If
 End Function
 
 '------------------------------------------------------------------------------

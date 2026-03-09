@@ -78,6 +78,51 @@
 
 - **Ongelma:** AutoExec-makron `RunCode`-toiminto kutsui `=SniffUser()`, jota ei ollut MAINEQ-projektissa lainkaan → Access antoi virheen 2425 käynnistyksen yhteydessä
 - **Korjaus:** `SniffUser()`-funktio lisätty `USysCheck.bas`:iin
+
+---
+
+## Koodikatselmointikorjaukset (2026-03-09) — Erät 1–4
+
+### Kriittiset tietoturvakorjaukset
+
+#### SQL-injektioiden poisto — QueryDef-parametrisointi
+
+- **Form_BeltConvFi_Subform.cls** (`Form_BeforeInsert`): Merkkijonoina rakennettu SQL-kysely korvattu `DAO.QueryDef`-pohjaisella parametrisoinnilla. Samalla korjattu `RecordCount`-haku `MAX(Suffix)`-funktioksi, joka on oikea myös poistojen jälkeen.
+- **Form_CONVEYOR_FI_Subform.cls** (`Form_BeforeInsert`): Sama SQL-injektiokorjaus + `MAX(Suffix)`.
+- **Form_DRIVES_FI_SubForm.cls** (`Form_BeforeInsert`): SQL-injektio + samanaikaisuusongelma (Race Condition) korjattu. `RecordCount + 1` → `MAX(Suffix) + 1`.
+- **Form_DRIVES_SubForm.cls** (`Form_BeforeInsert`): Sama korjaus kuin edellä.
+
+#### Haamuprosessien esto — Excel COM -virheenkäsittely
+
+- **Form_MoottTilaus.cls** (`Command0_Click`): Lisätty `On Error GoTo ErrorHandler` + `Cleanup`-lohko. `Dir()`-tarkistus mallitiedostolle ennen Excel-käynnistystä. Early Binding (`Excel.Application`) vaihdettu Late Bindingiiin (`Object`) yhteensopivuuden parantamiseksi. Excel-konstantit korvattu numeerisilla arvoilla (`xlTop` → `-4160` jne.).
+- **Report_MOOTTORIT.cls** (`Report_Open`): Lisätty täydellinen `On Error GoTo ErrorHandler` + `Cleanup`-lohko. Poistettu käyttämätön `FileSystemObject`. Late Binding + numeriset Excel-konstantit.
+- **Report_PÄÄLAITTEET.cls** (`Report_Open`): Uudelleenkirjoitettu. Sisäkkäiset silmukat (`For Sar = 1 To 13`) korvattu `CopyFromRecordset`-metodilla (kertaluokan suorituskyky parannus). Lisätty `On Error GoTo`-virheenkäsittely + `Dir()`-tarkistus. Late Binding + numeriset Excel-konstantit.
+
+#### Merkkijonon korvausbugi — Form_SiemensConstrCodeLastPosition.cls
+
+- `LoppuKoodi1_DblClick` ja `LoppuKoodi2_DblClick`: `Replace(origType, ".", endCode)` → `Replace(origType, ".", endCode, 1, 1)`. Estää tilanteen, jossa useampi piste moottorin tyyppikoodissa (esim. `1LA7.5.3`) korvautuu kaikki kerralla.
+- `Null`-arvojen käsittely lisätty: `endCode` ja `origType` suojattu `IIf(IsNull(...))`.
+- `MsgBox`-viestit muutettu nykyaikaisiksi (`@`-erottelusta `vbCrLf`-rivinvaihtoon).
+- `DoCmd.Close` tarkennettu muotoon `DoCmd.Close acForm, "SiemensConstrCodeLastPosition"`.
+
+### Suorituskykykorjaukset
+
+#### CrsRefLink — N+1-pullonkaula poistettu (DataToACAD.bas)
+
+- Funktio avasi aiemmin uuden `DAO.Recordset`-olion **joka kutsulla** ja iteroi koko taulukon läpi lineaarisesti.
+- Korjaus: Lisätty moduulitason `dictCrsRef As Object` (Scripting.Dictionary) ja `blnCrsRefLoaded As Boolean`. Taulukko ladataan `LoadCrsRefCache()`-alirutiinilla kerran ensimmäisellä kutsulla; kaikki myöhemmät haut ovat O(1).
+
+### Siivous
+
+#### Kuollut koodi poistettu — Form_VDFManuf_Subform.cls
+
+- `MuutaRevisio()`-alirutiinin sisältö oli kokonaan kommentoitu ulos (7 riviä). Kommentoitu koodi poistettu; tyhjä runko säilytetty viittauksia varten.
+
+#### Datan menettämisen riski poistettu — Form_Linkkien vaihto.cls
+
+- `DROP TABLE` suoritettiin aiemmin ennen kuin uuden tietokantatiedoston olemassaolo tarkistettiin.
+- Korjaus: Lisätty `Dir(UusiPolku) = ""`-tarkistus ennen `DROP TABLE`. Jos tiedostoa ei löydy, käyttäjälle näytetään selkeä virheilmoitus ja kyseinen taulu ohitetaan — alkuperäinen linkki säilyy ehjänä.
+- Lisätty `Taul.Close` / `Set Taul = Nothing` siivous funkition loppuun.
   - Hakee verkkokäyttäjänimen olemassa olevalla `wu_GetUserName`-API:lla
   - Hakee tietokoneen nimen `Environ("COMPUTERNAME")`:lla (ei vaadi lisä-API:a)
   - Kirjoittaa kirjautumistietueen `UsysUsers`-tauluun (kentät: NetworkUser, DBUser, ComputerName, LoginTime)
