@@ -111,15 +111,16 @@ On Error GoTo ErrorHandler
 Debug.Print "Command50_Click: Starting control update operation"
 
 Debug.Print "  AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value & ", TagID: " & Me!Muokkaus3.Value
-' Sanitoidaan syötteet SQL-injektion estämiseksi
+' Sanitoidaan syötteet SQL-injektion estämiseksi — yksinkertaiset lainausmerkit
+' SQL-merkkijonoarvoissa (Jet/ACE tulkitsee kaksoisheittomerkit sarakenimiksi!)
 Dim sAreaCode As String, sLoopNo As String, sTagID As String, sUser As String
-sAreaCode = Replace(CStr(Me!Muokkaus0.Value), """", """""")
-sLoopNo   = Replace(CStr(Me!Muokkaus4.Value), """", """""")
-sTagID    = Replace(CStr(Me!Muokkaus3.Value), """", """""")
+sAreaCode = Replace(CStr(Me!Muokkaus0.Value), "'", "''")
+sLoopNo   = Replace(CStr(Me!Muokkaus4.Value), "'", "''")
+sTagID    = Replace(CStr(Me!Muokkaus3.Value), "'", "''")
 sUser     = Replace(KAYTTAJA(), "'", "''")   ' Sel-sarake käyttää yksinkertaisia lainausmerkkejä
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
-CurrentDb.Execute "UPDATE Control SET Sel = '" & sUser & "' WHERE AreaCode = """" & sAreaCode & """" And LoopNo = """" & sLoopNo & """" And TagID = """" & sTagID & """"
+CurrentDb.Execute "UPDATE Control SET Sel = '" & sUser & "' WHERE AreaCode = '" & sAreaCode & "' And LoopNo = '" & sLoopNo & "' And TagID = '" & sTagID & "'", dbFailOnError
 Debug.Print "  Control table updated"
 
 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
