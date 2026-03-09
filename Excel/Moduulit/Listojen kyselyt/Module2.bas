@@ -12,7 +12,6 @@ Option Explicit
 '''
 
 ' Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
-Private Const MAX_EXCEL_COLUMNS As Long = 16384
 
 Sub HaeDocTiedot()
 '''
@@ -32,28 +31,28 @@ Dim valArr As Variant  ' Datarivi taulukossa (1 COM-kysely kaikkien sarakkeiden 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeDocTiedot] Poimitaan dokumentin metadata DB2:sta"
 
   ' Initialize all document info variables
-  DIRev = ""
-  DIRevID = ""
-  DIRevDate = ""
-  DIDocNo = ""
-  DIMetsoDocNo = ""
-  DIProject = ""
-  DIStatus = ""
-  DIDocName = ""
-  DIDocName1 = ""
-  DIDocName2 = ""
-  DIDocName3 = ""
-  DIContract = ""
-  DIProjNo = ""
-  DIProjName = ""
-  DIPath = ""
-  DIDate = ""
-  DIManager = ""
-  DIMunit = ""
-  DIMill = ""
-  DIDepartName = ""
-  DICustomer = ""
-  DIFile = ""
+  DocInfo.Rev = ""
+  DocInfo.RevID = ""
+  DocInfo.RevDate = ""
+  DocInfo.DocNo = ""
+  DocInfo.MetsoDocNo = ""
+  DocInfo.Project = ""
+  DocInfo.Status = ""
+  DocInfo.DocName = ""
+  DocInfo.DocName1 = ""
+  DocInfo.DocName2 = ""
+  DocInfo.DocName3 = ""
+  DocInfo.Contract = ""
+  DocInfo.ProjNo = ""
+  DocInfo.ProjName = ""
+  DocInfo.Path = ""
+  DocInfo.Date = ""
+  DocInfo.Manager = ""
+  DocInfo.Munit = ""
+  DocInfo.Mill = ""
+  DocInfo.DepartName = ""
+  DocInfo.Customer = ""
+  DocInfo.File = ""
 
   On Error Resume Next
   Set wsDB2 = Sheets("DB2")
@@ -78,72 +77,74 @@ Dim valArr As Variant  ' Datarivi taulukossa (1 COM-kysely kaikkien sarakkeiden 
     Select Case Arvo
       Case "rev"
         ' Null-turvallinen split: tarkistetaan pituus ennen splittausta (Type Mismatch -esto)
-        DIRev = CStr(valArr(1, i) & "")
+        DocInfo.Rev = CStr(valArr(1, i) & "")
         Erase DIRevArr
-        If Len(DIRev) > 0 Then
-          DIRevArr = Split(DIRev, Chr(10))
+        If Len(DocInfo.Rev) > 0 Then
+          ' Puhdistetaan piilevät CR-merkit (Chr(13)) ennen jakamista — Windows CR+LF -yhteensopivuus
+          DocInfo.Rev = Replace(DocInfo.Rev, vbCr, "")
+          DIRevArr = Split(DocInfo.Rev, vbLf)
         Else
           ReDim DIRevArr(0): DIRevArr(0) = ""
         End If
       Case "revid"
-        DIRevID = valArr(1, i)
+        DocInfo.RevID = valArr(1, i)
       Case "revdate"
-        DIRevDate = valArr(1, i)
+        DocInfo.RevDate = valArr(1, i)
       Case "date", "dateoriginal"
-        DIDate = valArr(1, i)
+        DocInfo.Date = valArr(1, i)
       Case "docno"
-        DIDocNo = valArr(1, i)
+        DocInfo.DocNo = valArr(1, i)
       Case "metsodocno"
-        DIMetsoDocNo = valArr(1, i)
+        DocInfo.MetsoDocNo = valArr(1, i)
       Case "project"
-        DIProject = valArr(1, i)
+        DocInfo.Project = valArr(1, i)
       Case "status"
-        DIStatus = valArr(1, i)
+        DocInfo.Status = valArr(1, i)
       Case "docname"
-        DIDocName = valArr(1, i)
+        DocInfo.DocName = valArr(1, i)
       Case "docname1"
-        DIDocName1 = valArr(1, i)
+        DocInfo.DocName1 = valArr(1, i)
       Case "docname2"
-        DIDocName2 = valArr(1, i)
+        DocInfo.DocName2 = valArr(1, i)
       Case "docname3"
-        DIDocName3 = valArr(1, i)
+        DocInfo.DocName3 = valArr(1, i)
       Case "contractno"
-        DIContract = valArr(1, i)
+        DocInfo.Contract = valArr(1, i)
       Case "projno"
-        DIProjNo = valArr(1, i)
+        DocInfo.ProjNo = valArr(1, i)
       Case "name"
-        DIProjName = valArr(1, i)
+        DocInfo.ProjName = valArr(1, i)
       Case "workpath", "path", "work_path", "listpath", "lists_path", "zlistspath", "savepath", "targetpath", "outputpath"
         p = CStr(valArr(1, i) & "")
         If Len(p) > 0 Then
           ' Normalisoidaan erottajat: kauttaviivat kenoviivoiksi, varmistetaan loppukenoviiva
           p = Replace(p, "/", "\")
-          DIPath = p & IIf(Right$(p, 1) = "\", "", "\")
+          DocInfo.Path = p & IIf(Right$(p, 1) = "\", "", "\")
         End If
       Case "manager"
-        DIManager = valArr(1, i)
+        DocInfo.Manager = valArr(1, i)
       Case "mill"
-        DIMill = valArr(1, i)
+        DocInfo.Mill = valArr(1, i)
       Case "departname"
-        DIDepartName = valArr(1, i)
+        DocInfo.DepartName = valArr(1, i)
       Case "customer"
-        DICustomer = valArr(1, i)
+        DocInfo.Customer = valArr(1, i)
       Case "metsounitname"
-        DIMunit = valArr(1, i)
+        DocInfo.Munit = valArr(1, i)
       Case "file", "filename", "file_name"
-        DIFile = CStr(valArr(1, i) & "")
+        DocInfo.File = CStr(valArr(1, i) & "")
       Case Else
     End Select
   Next i
   
   ' DEBUG: Raportoidaan mitä ladattiin
   Debug.Print "  Ladattu " & lastCol & " saraketta DB2:sta"
-  Debug.Print "  DIProject: '" & DIProject & "'"
-  Debug.Print "  DIManager: '" & DIManager & "'"
-  Debug.Print "  DIDocNo: '" & DIDocNo & "'"
-  Debug.Print "  DIProjNo: '" & DIProjNo & "'"
-  Debug.Print "  DIPath: '" & DIPath & "'"
-  Debug.Print "  DIFile: '" & DIFile & "'"
+  Debug.Print "  DocInfo.Project: '" & DocInfo.Project & "'"
+  Debug.Print "  DocInfo.Manager: '" & DocInfo.Manager & "'"
+  Debug.Print "  DocInfo.DocNo: '" & DocInfo.DocNo & "'"
+  Debug.Print "  DocInfo.ProjNo: '" & DocInfo.ProjNo & "'"
+  Debug.Print "  DocInfo.Path: '" & DocInfo.Path & "'"
+  Debug.Print "  DocInfo.File: '" & DocInfo.File & "'"
 End Sub
 Sub VaihdaInfo(Optional SheetName As String = "Info")
 '''
@@ -193,39 +194,39 @@ Dim processedApprover As Boolean, processedDesc As Boolean
     For Each cmt In .Comments 'Käydään läpi kaikki kommentit
         Select Case LCase(cmt.Text) ' Muutetaan kommenttiteksti pieniksi kirjaimiksi
         Case "unit"
-          cmt.Parent.Value = "Metso Paper - " & DIMunit
+          cmt.Parent.Value = "Metso Paper - " & DocInfo.Munit
         Case "project"
-          cmt.Parent.Value = DIProject
+          cmt.Parent.Value = DocInfo.Project
         Case "manager"
-          cmt.Parent.Value = DIManager
+          cmt.Parent.Value = DocInfo.Manager
         Case "contractno"
-          cmt.Parent.Value = DIContract
+          cmt.Parent.Value = DocInfo.Contract
         Case "projname"
-          cmt.Parent.Value = DIProjName
+          cmt.Parent.Value = DocInfo.ProjName
         Case "projno"
-          cmt.Parent.Value = DIProjNo
+          cmt.Parent.Value = DocInfo.ProjNo
         Case "date"
-          cmt.Parent.Value = DIDate
+          cmt.Parent.Value = DocInfo.Date
         Case "status"
-          cmt.Parent.Value = DIStatus
+          cmt.Parent.Value = DocInfo.Status
         Case "mill"
-          cmt.Parent.Value = DIMill
+          cmt.Parent.Value = DocInfo.Mill
         Case "departname"
-          cmt.Parent.Value = DIDepartName
+          cmt.Parent.Value = DocInfo.DepartName
         Case "customer"
-          cmt.Parent.Value = DICustomer
+          cmt.Parent.Value = DocInfo.Customer
         Case "docname"
-          cmt.Parent.Value = DIDocName
+          cmt.Parent.Value = DocInfo.DocName
         Case "docname1"
-          cmt.Parent.Value = DIDocName1
+          cmt.Parent.Value = DocInfo.DocName1
         Case "docname2"
-          cmt.Parent.Value = DIDocName2
+          cmt.Parent.Value = DocInfo.DocName2
         Case "docname3"          
-          cmt.Parent.Value = DIDocName3
+          cmt.Parent.Value = DocInfo.DocName3
         Case "metsodocno"
-          cmt.Parent.Value = DIMetsoDocNo
+          cmt.Parent.Value = DocInfo.MetsoDocNo
         Case "rev"
-          cmt.Parent.Value = DIRev
+          cmt.Parent.Value = DocInfo.Rev
         Case "revid"
           If SheetName <> "Info" Then
             If Not processedRevId Then
@@ -245,7 +246,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevId = True
             End If
           Else
-            cmt.Parent.Value = "'" & DIRevID
+            cmt.Parent.Value = "'" & DocInfo.RevID
           End If
         Case "revdate"
           If SheetName <> "Info" Then
@@ -265,7 +266,7 @@ Dim processedApprover As Boolean, processedDesc As Boolean
               processedRevDate = True
             End If
           Else
-            cmt.Parent.Value = DIRevDate
+            cmt.Parent.Value = DocInfo.RevDate
           End If
         Case "designer"
           If SheetName <> "Info" Then
@@ -480,8 +481,9 @@ Dim wsDB1 As Worksheet
         ' Löyttyi kommentti alueella - käsitellään se
         Teksti = cmt.Text
         Osoite = cmt.Parent.Address(rowAbsolute:=False, columnAbsolute:=False)
-        TRow = 1 + CInt(Left(Teksti, 1)) + Kerta * RMAX
-        TCol = CInt(Mid(Teksti, 3))
+        ' CLng estää Integer Overflow -kaatumisen yli 32767 rivin tiedostoissa
+        TRow = 1 + CLng(Left(Teksti, 1)) + Kerta * RMAX
+        TCol = CLng(Mid(Teksti, 3))
         ' Luetaan arvo suoraan DB1:stä — poistettu kaavaketju joka viittasi tyhjään kohdesoluun
         Teksti = CStr(wsDB1.Cells(TRow, TCol).Value)
         ' Fix4: Kirjoitetaan staattinen arvo LINKINGiin yhdellä COM-kutsulla

@@ -85,19 +85,23 @@ try {
     }
 
     # --- 3. Skannaa moduulit automaattisesti ---
-    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [MODUULIT] Skannataan .bas-tiedostot kansiosta: $modulePath" -ForegroundColor Cyan
+    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [MODUULIT] Skannataan .bas- ja .cls-tiedostot kansiosta: $modulePath" -ForegroundColor Cyan
     $basFiles = Get-ChildItem -Path $modulePath -Filter "*.bas"  # vain ylätaso, ei alihakemistoja
-    
-    if ($basFiles.Count -eq 0) {
-        Write-Error "Ei löytynyt yhtään .bas-tiedostoa kansiosta: $modulePath"
+    $clsFiles = Get-ChildItem -Path $modulePath -Filter "*.cls"  # luokkamoduulit
+    $allModuleFiles = @($basFiles) + @($clsFiles)
+
+    if ($allModuleFiles.Count -eq 0) {
+        Write-Error "Ei löytynyt yhtään .bas- tai .cls-tiedostoa kansiosta: $modulePath"
         throw "No module files found"
     }
-    
-    # Poimii tiedostonimet ilman .bas-päätettä
-    $moduleNames = $basFiles | ForEach-Object { $_.BaseName }
-    
-    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($moduleNames.Count) moduulia:" -ForegroundColor Green
-    $moduleNames | ForEach-Object { Write-Host "  - $_" -ForegroundColor Gray } 
+
+    # Rakennetaan moduulitieto-objektit (nimi, polku, tiedostopääte)
+    $moduleInfos = $allModuleFiles | ForEach-Object {
+        [PSCustomObject]@{ Name = $_.BaseName; Path = $_.FullName; Extension = $_.Extension.ToLower() }
+    }
+
+    Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $($moduleInfos.Count) moduulia:" -ForegroundColor Green
+    $moduleInfos | ForEach-Object { Write-Host "  - $($_.Name) ($($_.Extension))" -ForegroundColor Gray }
 
     # Retry-asetukset OneDrive-lukkojen kiertämiseksi
     $maxRetries = 3
@@ -178,10 +182,10 @@ try {
 
                 # 3. Päivitä moduulien sisältö suoraan (välttää Import-metatietojen ongelman)
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    [MODUULIT] Aloitetaan päivitys..."
-                foreach ($name in $moduleNames) {
-                    Write-Host "$(Get-Date -Format 'HH:mm:ss')       [KÄSITTELY] $name" -ForegroundColor Cyan
-                    
-                    $fullModulePath = Join-Path $modulePath "$($name).bas"
+                foreach ($modInfo in $moduleInfos) {
+                    $name = $modInfo.Name
+                    $fullModulePath = $modInfo.Path
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')       [KÄSITTELY] $name ($($modInfo.Extension))" -ForegroundColor Cyan
                     
                     if (-not (Test-Path $fullModulePath)) {
                         Write-Error "$(Get-Date -Format 'HH:mm:ss')  ✗ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan päivitys."
@@ -190,7 +194,7 @@ try {
                     }
                     
                     try {
-                        # Lue .bas-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
+                        # Lue .bas- tai .cls-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
                         # Get-Content -Encoding UTF8 voi PS 5.1:ssä palauttaa BOM:n merkkijonon ensimmäisenä merkkinä
                         # try-finally takaa Close()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
                         $reader = $null
@@ -208,21 +212,33 @@ try {
                         
                         # PARANNETTU HEADER-PARSAUS:
                         # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
+                        # .cls-tiedostoissa poistetaan myös VERSION...CLASS ja BEGIN...END-lohko
                         # Säilytetään varsinainen VBA-koodi (Option Explicit, Declare, Public, Private, jne.)
                         $lines = $moduleContent -split "`r?`n"
                         $codeStartIndex = 0
                         $inHeader = $true
+                        $inBeginBlock = $false  # .cls-tiedoston BEGIN...END-lohkon seuranta
                         
                         # Käy läpi rivejä ja tunnista header-lohkon loppu
                         for ($i = 0; $i -lt $lines.Count; $i++) {
                             $line = $lines[$i].Trim()
                             
                             if ($inHeader) {
+                                if ($inBeginBlock) {
+                                    # Ollaan BEGIN...END-lohkossa — ohitetaan rivit kunnes END löytyy
+                                    if ($line -eq "END") { $inBeginBlock = $false }
+                                    $codeStartIndex = $i + 1
+                                }
                                 # Header-rivit (poistetaan):
-                                if ($line -match "^Attribute\s+VB_(Name|GlobalNameSpace|Creatable|PredeclaredId|Exposed)" -or 
+                                elseif ($line -match "^Attribute\s+VB_(Name|GlobalNameSpace|Creatable|PredeclaredId|Exposed)" -or 
                                     $line -match "^VERSION\s+" -or
                                     $line -eq "") {
                                     # Jatka header-lohkossa
+                                    $codeStartIndex = $i + 1
+                                }
+                                elseif ($line -eq "BEGIN") {
+                                    # .cls-tiedoston BEGIN...END-lohko alkaa
+                                    $inBeginBlock = $true
                                     $codeStartIndex = $i + 1
                                 }
                                 else {
@@ -241,16 +257,18 @@ try {
                             continue
                         }
                         
-                        # Etsi tai luo moduuli
+                        # Etsi tai luo moduuli (tyyppi määräytyy tiedostopäätteen mukaan)
                         $module = $null
                         try {
                             $module = $vbaProject.VBComponents.Item($name)
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ Moduuli löytyi, päivitetään sisältö..."
                         }
                         catch {
-                            # Jos moduulia ei ole, luo se
+                            # Jos moduulia ei ole, luo se oikealla tyypillä
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          ! Moduulia ei löytynyt, luodaan uusi..."
-                            $module = $vbaProject.VBComponents.Add(1) # 1 = vbext_ct_StdModule
+                            # 1 = vbext_ct_StdModule (.bas), 2 = vbext_ct_ClassModule (.cls)
+                            $moduleType = if ($modInfo.Extension -eq ".cls") { 2 } else { 1 }
+                            $module = $vbaProject.VBComponents.Add($moduleType)
                             $module.Name = $name
                         }
                         

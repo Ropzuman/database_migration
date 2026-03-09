@@ -77,3 +77,69 @@ Case "rev"
     Else
         ReDim DIRevArr(0): DIRevArr(0) = ""
     End If
+
+
+##Update
+
+💡 Parannusehdotukset (Ylläpidettävyys)
+
+    Globaalien muuttujien kapselointi: Module1.bas sisältää edelleen kymmeniä irrallisia Public-muuttujia (esim. DIContract, DIMill, DIDocNo jne.). Nämä kannattaisi ryhmitellä omaan tietuorakenteeseensa (User-Defined Type, UDT) tai luokkaan. Se tekee tilan hallinnasta huomattavasti puhtaampaa ja estää globaalin nimiavaruuden saastumisen (namespace pollution).
+
+    Nimettyjen alueiden (Named Ranges) käyttö: Koodissa on edelleen kovakoodattuja soluviittauksia, kuten rivien hakeminen suoraan indeksillä Sheets("Main").Cells(8 + Valinta, 3).Value. Mikäli Excelin käyttöliittymään lisätään välirivejä, tämä logiikka hajoaa välittömästi. Nimettyjen alueiden hyödyntäminen tekisi käyttöliittymän ja koodin rajapinnasta joustavamman.
+
+🛠️ Korjattu koodi
+1. Recordsetin natiivi kopiointi (dataArr-silmukan korvaaminen)
+
+Tällä yksinkertaistuksella voit poistaa koko monimutkaisen Do While Not rsDAO.EOF -matriisisilmukan  Module1.bas -tiedostosta:
+VBA
+
+    If Not rsDAO.EOF Then
+      ' 1. Kirjoitetaan sarakkeiden nimet (header)
+      colData = 1
+      For Each fldDAO In rsDAO.Fields
+        ws.Cells(1, colData).Value = fldDAO.Name
+        colData = colData + 1
+      Next fldDAO
+      
+      ' 2. Kirjoitetaan koko data yhdellä huippunopealla natiivikutsulla
+      ' Tämä korvaa koko dataArr-taulukon alustamisen, täyttämisen ja purkamisen!
+      ws.Range("A2").CopyFromRecordset rsDAO
+      
+      ' 3. Lasketaan rivit suoraan Recordsetistä raportointia varten
+      rsDAO.MoveLast
+      totalRows = rsDAO.RecordCount
+      
+      Debug.Print "    DAO data kopioitu (CopyFromRecordset): " & totalRows & " riviä"
+    Else
+      Debug.Print "    VAROITUS: Kysely ei palauttanut rivejä (EOF=True)"
+      ' ...
+
+2. Globaalien muuttujien siistiminen (UDT-kapselointi)
+
+Suosittelen poistamaan valtavan listan irrallisia Public-muuttujia moduulin alusta  ja kokoamaan ne yhteen loogiseen kokonaisuuteen (User-Defined Type):
+VBA
+
+' Module1.bas alussa
+Type DocumentMetadata
+    Contract As String
+    Mill As String
+    DepartName As String
+    Customer As String
+    Project As String
+    ProjNo As String
+    ProjName As String
+    Manager As String
+    DocNo As String
+    MetsoDocNo As String
+    Path As String
+    File As String
+    Rev As String
+    RevDate As String
+    Status As String
+End Type
+
+' Tämän jälkeen tarvitset vain yhden globaalin muuttujan!
+Public DocInfo As DocumentMetadata
+
+Näin voit viitata muuttujiin siististi ja modulaarisesti, esimerkiksi koodissa Module2.bas: DocInfo.Project = valArr(1, i).
+

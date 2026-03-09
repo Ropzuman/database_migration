@@ -12,32 +12,37 @@ Public RMAX As Long
 Public POSheet As String
 Public HideLINKING As Boolean
 Public AddFooter As Boolean
-Public DIContract As String
-Public DIMill As String
-Public DIDepartName As String
-Public DICustomer As String
-Public DIProject As String
-Public DIProjNo As String
-Public DIProjName As String
-Public DIMunit As String
-Public DIManager As String
-Public DIDocNo As String
-Public DIMetsoDocNo As String
-Public DIDocName As String
-Public DIDocName1 As String
-Public DIDocName2 As String
-Public DIDocName3 As String
-Public DIPath As String
-Public DIFile As String
-Public DIDate As String
-Public DIRev As String
-Public DIRevArr() As String
-Public DIRevID As String
+' Dokumentin metatiedot kapseloitu UDT:hen — vältetään globaalin nimiavaruuden saastuminen
+Type DocumentMetadata
+    Contract   As String
+    Mill       As String
+    DepartName As String
+    Customer   As String
+    Project    As String
+    ProjNo     As String
+    ProjName   As String
+    Munit      As String
+    Manager    As String
+    DocNo      As String
+    MetsoDocNo As String
+    DocName    As String
+    DocName1   As String
+    DocName2   As String
+    DocName3   As String
+    Path       As String
+    File       As String
+    Date       As String
+    Rev        As String
+    RevID      As String
+    RevDate    As String
+    Status     As String
+End Type
+
+Public DocInfo As DocumentMetadata
+Public DIRevArr() As String  ' Dynaaminen taulukko ei voi olla UDT-jäsen VBA:ssa
 
 ' Suojaus silmukoiden iteraatioille estääkseen ikuiset silmukat
-Private Const MAX_EXCEL_COLUMNS As Long = 16384
-Public DIRevDate As String
-Public DIStatus As String
+Public Const MAX_EXCEL_COLUMNS As Long = 16384
 
 '''
 ' Module1.vba - Päälogiikka Kytkentälista Excel-makrojärjestelmälle.
@@ -50,6 +55,19 @@ Private prevCalculation As XlCalculation
 Private prevEnableEvents As Boolean
 Private prevDisplayAlerts As Boolean
 Private prevDisplayStatusBar As Boolean
+
+'''
+' AlustaTila: Nollaa kaikki makron ajokohtaiset globaalitilat.
+' Kutsutaan ThisWorkbook.Workbook_Open-tapahtumasta, jotta edellisen ajon
+' CheckOK=True-tila ei jaa voimaan uuden istunnon alussa.
+'''
+Public Sub AlustaTila()
+  CheckOK = False
+  RMAX = 0
+  PHStart = 0: PHEnd = 0: PFStart = 0: PFEnd = 0
+  DocStart = 0: DocEnd = 0
+  Debug.Print Format(Now, "hh:mm:ss") & " [AlustaTila] Tila nollattu"
+End Sub
 
 '''
 ' BeginFastMode: Poistaa väliaikaisesti Excel UI-päivitykset, tapahtumat ja asettaa laskennan manuaaliseksi
@@ -89,6 +107,7 @@ End Sub
 
 '''
 ' LuoADODBYhteys: Hakee toimivan ADODB-yhteyden kokeilemalla ACE OLE DB -moottoriversiota prioriteettijärjestyksessä.
+' Käyttää Mode=Read -yhteysparametria (adModeRead) estääkseen kirjoitusoperaatiot arkkitehtuuritasolla.
 ' Palauttaa avatun ADODB.Connection-objektin tai Nothing jos kaikki yritykset epäonnistuvat.
 ' DRY-apufunktio — korvaa kolminkertaisen yhteysyritysrakenteen kutsupaikoissa.
 '''
@@ -100,7 +119,7 @@ Private Function LuoADODBYhteys(kantaPolku As String) As Object
     providerVersions = Array("16.0", "15.0", "12.0")
     For i = LBound(providerVersions) To UBound(providerVersions)
         Set conn = CreateObject("ADODB.Connection")
-        conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB." & providerVersions(i) & ";Data Source=" & kantaPolku
+        conn.ConnectionString = "Provider=Microsoft.ACE.OLEDB." & providerVersions(i) & ";Data Source=" & kantaPolku & ";Mode=Read;"
         On Error Resume Next
         conn.Open
         If Err.Number = 0 Then
@@ -115,23 +134,6 @@ Private Function LuoADODBYhteys(kantaPolku As String) As Object
     Set LuoADODBYhteys = Nothing  ' Kaikki versiot käyty läpi — yhteys ei onnistunut
 End Function
 
-'''
-' OnTurvallinenSQL: Validoi SQL-merkkijono tietoturvan kannalta (CWE-89 SQL-injektioesto).
-' Estää vaarallisten DML/DDL-komentojen (DROP, DELETE, UPDATE, INSERT, ALTER, EXEC) suorittamisen
-' soluista luetuille dynaamisille kyselyille. Sallii SELECT-kyselyt ja tallennettujen kyselyiden nimet.
-'''
-Private Function OnTurvallinenSQL(ByVal sqlText As String) As Boolean
-    Dim uSQL As String
-    uSQL = UCase(Trim(sqlText))
-    ' Estetään vaaralliset DML/DDL-komennot — sallitaan vain SELECT tai tallennetut kyselyt
-    If InStr(uSQL, "DROP ") > 0 Or InStr(uSQL, "DELETE ") > 0 Or _
-       InStr(uSQL, "UPDATE ") > 0 Or InStr(uSQL, "INSERT ") > 0 Or _
-       InStr(uSQL, "ALTER ") > 0 Or InStr(uSQL, "EXEC ") > 0 Then
-        OnTurvallinenSQL = False
-    Else
-        OnTurvallinenSQL = True
-    End If
-End Function
 
 '''
 ' HaeData: Hakee datan Access-tietokannasta käyttäen tallennettuja kyselyitä tai SQL-lauseita.
@@ -184,6 +186,7 @@ Dim fld As Object        ' ADODB.Field
   Debug.Print "  Tietokanta: " & Kanta
   Debug.Print "  SQL-valinta: " & Valinta
   
+  On Error GoTo ErrorHandler
   BeginFastMode
   
   ' Varmistetaan että tietokantatiedosto on olemassa
@@ -194,13 +197,11 @@ Dim fld As Object        ' ADODB.Field
   
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] === DB1: DAO (tallennetut kyselyt) ==="
   
-  ' Avataan DAO-tietokanta DB1:lle
+  ' Avataan DAO-tietokanta DB1:lle vain luku -tilassa (ReadOnly=True estää kirjoituskyselyt arkkitehtuuritasolla)
   On Error Resume Next
-  Set dbDAO = CreateObject("DAO.DBEngine.120").OpenDatabase(Kanta)
+  Set dbDAO = CreateObject("DAO.DBEngine.120").OpenDatabase(Name:=Kanta, Options:=False, ReadOnly:=True)
   If Err.Number <> 0 Then
-    Err.Clear
-    ' Kokeillaan vanhempaa versiota
-    Set dbDAO = CreateObject("DAO.DBEngine.36").OpenDatabase(Kanta)
+    Err.Clear  ' DBEngine.120 ei käytettävissä — ACE OLEDB ei ole asennettu
   End If
   On Error GoTo ErrorHandler
   
@@ -220,11 +221,6 @@ Dim fld As Object        ' ADODB.Field
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB1 dataa..."
     Debug.Print "    Kysely/SQL: " & sSQL(1)
 
-    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
-    If Not OnTurvallinenSQL(sSQL(1)) Then
-      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB1): " & vbCrLf & sSQL(1), vbCritical, "SQL-tietoturvavirhe"
-      GoTo SafeExit
-    End If
 
     ' DAO.OpenRecordset voi ottaa joko tallenetun kyselyn nimen tai SQL-lauseen
     Set rsDAO = dbDAO.OpenRecordset(sSQL(1))
@@ -239,36 +235,15 @@ Dim fld As Object        ' ADODB.Field
         colData = colData + 1
       Next fldDAO
       
-      ' Fix3: Kerätään data 2D-taulukkoon ja kirjoitetaan yhdellä COM-kutsulla
-      ' (vähentää COM-silmukat 200rv*20kol=4000 → 1)
-      Dim dataArr() As Variant
+      ' CopyFromRecordset siirtää koko tulosjoukon natiivillä C++-toteutuksella — korvaa
+      ' koko aiemman dataArr-taulukon alustuksen, täyttösilmukan ja levykirjoituksen yhdellä kutsulla
+      ws.Range("A2").CopyFromRecordset rsDAO
+      
+      ' RecordCount raportointia varten (MoveLast vaaditaan dynaset-tyypille)
       Dim totalRows As Long
-      Dim fieldCount As Long
-      Dim arrRow As Long, arrCol As Long
-      fieldCount = rsDAO.Fields.Count
-
-      ' MoveLast/RecordCount on luotettava DAO dynaset- ja table-tyypeille
       rsDAO.MoveLast
       totalRows = rsDAO.RecordCount
-      rsDAO.MoveFirst
-
-      If totalRows > 0 Then
-        ReDim dataArr(1 To totalRows, 1 To fieldCount)
-        arrRow = 1
-        Do While Not rsDAO.EOF
-          arrCol = 1
-          For Each fldDAO In rsDAO.Fields
-            dataArr(arrRow, arrCol) = fldDAO.Value
-            arrCol = arrCol + 1
-          Next fldDAO
-          arrRow = arrRow + 1
-          rsDAO.MoveNext
-        Loop
-        ' Kirjoitetaan koko datasetti yhdellä COM-kutsulla
-        ws.Range("A2").Resize(totalRows, fieldCount).Value = dataArr
-      End If
-
-      Debug.Print "    DAO data kopioitu (array): " & totalRows & " riviä, " & fieldCount & " saraketta"
+      Debug.Print "    DAO data kopioitu (CopyFromRecordset): " & totalRows & " riviä, " & rsDAO.Fields.Count & " saraketta"
     Else
       Debug.Print "    VAROITUS: Kysely ei palauttanut rivejä (EOF=True)"
       ' Kirjoitetaan silti header
@@ -348,11 +323,6 @@ Dim fld As Object        ' ADODB.Field
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB2 dataa..."
     Debug.Print "    SQL: " & sSQL(2)
 
-    ' Tietoturvatarkistus: estetään vaaralliset DML/DDL-komennot (CWE-89)
-    If Not OnTurvallinenSQL(sSQL(2)) Then
-      MsgBox "Virheellinen tai vaarallinen SQL-kysely (DB2): " & vbCrLf & sSQL(2), vbCritical, "SQL-tietoturvavirhe"
-      GoTo SafeExit
-    End If
 
     ' Käytetään ADODB.Recordset
     Set rs = CreateObject("ADODB.Recordset")
@@ -496,7 +466,7 @@ Sub GenPrintout()
   
   ' Varmistetaan että dokumentin tiedot ovat ajantasalla (polku/nimi DB2:sta)
   On Error Resume Next
-  If Trim(DIPath) = "" Or Trim(DIFile) = "" Then HaeDocTiedot
+  If Trim(DocInfo.Path) = "" Or Trim(DocInfo.File) = "" Then HaeDocTiedot
   On Error GoTo GenPrintoutError
   
   Application.StatusBar = "Alustetaan tulosteen generointi..."
@@ -589,14 +559,14 @@ Sub GenPrintout()
   For i = 1 To 3
     With destWB.Sheets(i).PageSetup
       ' Null-turvallinen merkkijonojen yhdistäminen (tyhjät arvot OK - joissakin laitteissa puuttuu tiettyjä attribuutteja)
-      .LeftFooter = "&8Document: " & (DIMetsoDocNo & "") & Chr(10) _
-                  & "&8Revision: " & (DIRevID & "") & " - " & (DIRevDate & "") & Chr(10) _
-                  & "&8Status: " & (DIStatus & "")
-      .CenterFooter = "&8 " & (DICustomer & "") & Chr(10) _
-                    & "&8 " & (DIMill & "") & Chr(10) _
-                    & "&8 " & (DIDepartName & "") & Chr(10) _
-                    & "&8 " & (DIDocName2 & "")
-      .RightFooter = "&8Project: " & (DIProjNo & "") & Chr(10) _
+      .LeftFooter = "&8Document: " & (DocInfo.MetsoDocNo & "") & Chr(10) _
+                  & "&8Revision: " & (DocInfo.RevID & "") & " - " & (DocInfo.RevDate & "") & Chr(10) _
+                  & "&8Status: " & (DocInfo.Status & "")
+      .CenterFooter = "&8 " & (DocInfo.Customer & "") & Chr(10) _
+                    & "&8 " & (DocInfo.Mill & "") & Chr(10) _
+                    & "&8 " & (DocInfo.DepartName & "") & Chr(10) _
+                    & "&8 " & (DocInfo.DocName2 & "")
+      .RightFooter = "&8Project: " & (DocInfo.ProjNo & "") & Chr(10) _
                    & "&8File: &F" & Chr(10) _
                    & "&8Page &P(&N)"
     End With
@@ -735,10 +705,10 @@ Sub GenPrintout()
   ' Rakennetaan luotettava oletus polku+tiedosto tallennusdialogille
   Dim defPath As String, defName As String
   
-  ' Turvallinen käsittely mahdollisesti tyhjille/null DIPath ja DIFile -arvoille
+  ' Turvallinen käsittely mahdollisesti tyhjille/null DocInfo.Path ja DocInfo.File -arvoille
   On Error Resume Next
-    defPath = Trim(DIPath & "")
-    defName = Trim(DIFile & "")
+    defPath = Trim(DocInfo.Path & "")
+    defName = Trim(DocInfo.File & "")
   On Error GoTo GenPrintoutError
   
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
@@ -756,14 +726,26 @@ Sub GenPrintout()
   Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
   If Tiedosto <> "" Then
     destWB.BuiltinDocumentProperties("Title").Value = POSheet
-    destWB.SaveAs Tiedosto, xlOpenXMLWorkbook
+    ' Valitaan tallennusformaatti tiedostopäätteen mukaan — .xlsm vaatii makropohjaisen formaatin
+    If LCase(Right$(Tiedosto, 5)) = ".xlsm" Then
+      destWB.SaveAs Tiedosto, 52  ' xlOpenXMLWorkbookMacroEnabled
+    Else
+      destWB.SaveAs Tiedosto, xlOpenXMLWorkbook  ' xlOpenXMLWorkbook (51)
+    End If
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout] Tallennettu: " & Tiedosto
   Else
     Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout] Tallennus peruttu"
   End If
   
   ' Suorituskykydiagnostiikka
-  perfTotal = Timer - perfStart
+  ' Keskiyön ylittyminen: Timer nollaantuu päivänvaihteessa — käytetään turvallista laskentaa
+  Dim endTimer As Double
+  endTimer = Timer
+  If endTimer < perfStart Then
+    perfTotal = (86400 - perfStart) + endTimer  ' Päivänvaihde ylittyi
+  Else
+    perfTotal = endTimer - perfStart
+  End If
   Debug.Print "=== GenPrintout Suorituskykyraportti ==="
   Debug.Print "Kokonaisaika: " & Format(perfTotal, "0.00") & "s"
   Debug.Print "Iteraatioita: " & perfIterations & " (RMAX=" & RMAX & ", Rivejä=" & Recordeja & ")"
@@ -926,7 +908,7 @@ Dim wsErrors As Worksheet
   HaeDocTiedot
   
   ' Tarkistetaan ladattiinko dataa DB2:sta
-  If DIProject = "" And DIDocNo = "" And DIProjNo = "" And DIMetsoDocNo = "" Then
+  If DocInfo.Project = "" And DocInfo.DocNo = "" And DocInfo.ProjNo = "" And DocInfo.MetsoDocNo = "" Then
     wsErrors.Range("A1").Value = "WARNING: No document metadata found in DB2 sheet!"
     wsErrors.Range("A2").Value = "Please click 'Get Data' button first to load data from database."
     wsErrors.Range("A1").Font.Bold = True
@@ -949,8 +931,8 @@ Dim wsErrors As Worksheet
         ElseIf Left(Arvo, 1) = "£" Then
           ' Korjattu: käytetään Mid(Arvo, 2, 1) joka lukee rivinumeron £-merkin jälkeen
           ' (Mid(Arvo, 4, 1) luki välilyönnin "£1: "-muodossa ja antoi CInt(" ")=0)
-          If RMAX <> 0 And RMAX <> CInt(Mid(Arvo, 2, 1)) Then Virhe = True
-          RMAX = CInt(Mid(Arvo, 2, 1))
+          If RMAX <> 0 And RMAX <> CLng(Mid(Arvo, 2, 1)) Then Virhe = True
+          RMAX = CLng(Mid(Arvo, 2, 1))
         End If
       End If
     Next j
@@ -983,7 +965,7 @@ Dim wsErrors As Worksheet
           ' Merkkimuoto: "£D SARAKE" — £=1, numero=2, kaksoispiste=3, välilyönti=4, sarakenimi alkaen 5
           ' Mid(Arvo, 2, 1) lukee rivinumeron D (korjattu RMAX-bugi), Mid(Arvo, 5) lukee sarakenimen
           ' Molemmat offsetit ovat johdettu samasta dokumentoidusta formaatista.
-          If EtsiOts(Mid(Arvo, 5), i, j, CInt(Mid(Arvo, 2, 1))) = False Then Virhe = True
+          If EtsiOts(Mid(Arvo, 5), i, j, CLng(Mid(Arvo, 2, 1))) = False Then Virhe = True
         End If
       End If
     Next j
@@ -997,6 +979,18 @@ Dim wsErrors As Worksheet
   Else
     Sheets("Main").Activate
     EndFastMode
+    ' Varmistetaan että RMAX on asetettu — tyhjä datasetti jättäisi sen 0:ksi
+    If RMAX = 0 Then
+      CheckOK = False
+      wsErrors.Range("A1").Value = "TEMPLATE ERROR: Yhtään rivimerkkiä (££ tai £1/2/3) ei löytynyt!"
+      wsErrors.Range("A1").Font.Bold = True
+      wsErrors.Range("A1").Font.ColorIndex = 3
+      wsErrors.Activate
+      EndFastMode
+      Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] RMAX=0 — template ei sisällä rivimerkkejä"
+      MsgBox "Templatessa ei löytynyt rivimerkkejä (££ tai £1)! Katso ERRORS-sheet.", vbCritical, "RMAX-virhe"
+      Exit Sub
+    End If
     CheckOK = True
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout] VALMIS - CheckOK=True"
     MsgBox "Tarkistus OK!", vbOKOnly, "OK!"
