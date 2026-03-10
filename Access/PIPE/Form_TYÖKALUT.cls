@@ -26,8 +26,8 @@ Option Explicit
 '   - PIPELINEDATA: Putkilinjablokit (PIPELINE_DATA)
 '   - MANVALVEDATA: Käsiventtiilit (MANUALVALVE_DATA)
 '   - INSTVALVEDATA: Instrumenttiventtiilit (INSTVALVE_DATA)
-'   - FIELDINSTDATA: Kenttälaitteet (FIELDINST_DATA)
-'   - INSTLOOPDATA: Instrumenttisilmukat (UP079D, UP008C, UP085D, UP08C)
+'   - FIELDINSTDATA: Kenttälaitteet (UP080D)
+'   - INSTLOOPDATA: Instrumenttisilmukat (UP079D))
 '
 ' Kontrollit:
 '   - Command11-13: Putkilinjatyönkulku
@@ -264,7 +264,7 @@ Private Sub Command40_Click()
   On Error GoTo ErrorHandler
   
   If MsgBox("Onko haluttu P&I kaavio auki AutoCADissä?", vbYesNo, "Pipeline To Loops") = vbYes Then
-    DoCmd.OpenForm "USysPipeToOther", , , , , , "UP079D,UP008C,UP085D,UP08C,"
+    DoCmd.OpenForm "USysPipeToOther", , , , , , "UP079D"
   End If
   
   Exit Sub
@@ -422,7 +422,6 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
     For i = 0 To Joukko.Count - 1
       Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
       Set oBlock = Joukko(i)
-      Attrib = oBlock.GetAttributes
       
       Tiedot.AddNew
       Tiedot.Fields("PATH") = oDOC.Path
@@ -430,12 +429,16 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
       Tiedot.Fields("BLOCK") = oBlock.EffectiveName
       Tiedot.Fields("Handles") = oBlock.Handle
       
-      For j = 0 To UBound(Attrib)
-        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
-          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
-          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
-        End If
-      Next j
+      ' Luetaan attribuutit vain jos blokilla on niitä – estää virheen attribuutittomilla blokeilla
+      If oBlock.HasAttributes Then
+        Attrib = oBlock.GetAttributes
+        For j = 0 To UBound(Attrib)
+          If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
+            Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
+            fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+          End If
+        Next j
+      End If
       
       Tiedot.Update
     Next i
@@ -720,12 +723,16 @@ Private Sub PoimiJoukko(Nimet As String)
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
   ' Suodatus: poistetaan blokit, jotka eivät ole listalla
+  ' Huom: xref-blokeilla EffectiveName on muodossa "XREF|BLOKKI" → otetaan vain loppuosa vertailua varten
+  Dim sNimi As String
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
+      sNimi = UCase$(Joukko(j).EffectiveName)
+      If InStr(sNimi, "|") > 0 Then sNimi = Mid$(sNimi, InStrRev(sNimi, "|") + 1)
       EiPoisteta = False
       For i = 0 To UBound(Blokit)
-        If UCase$(Joukko(j).EffectiveName) = Blokit(i) Then
+        If sNimi = Blokit(i) Then
           EiPoisteta = True
           Exit For
         End If

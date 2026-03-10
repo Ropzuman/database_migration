@@ -396,8 +396,11 @@ Virhe:
   'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan että ollaan poistuttu komennosta
   Set PointBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
+  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingissä
+  Dim InsPointP As Variant
+  InsPointP = PointBlock.InsertionPoint
   With PointBlock
-    If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
+    If InsPointP(0) = iPoint(0) And InsPointP(1) = iPoint(1) Then
       .Delete
     End If
   End With
@@ -449,30 +452,34 @@ Dim i As Integer
         Else 'Lopetettiin, piirretään viivan pää
         '------- VIIVJEN PÄÄT ---------
         
+        Err.Clear 'Tyhjennetään GetPoint-virhe ennen viivapää-kutsuja
         ViivaPaa ALKU, BNameA, LyhennysA
         ViivaPaa LOPPU, BNameL, LyhennysL
 
         If ALKU <> 4 Then 'Piirretään alkuun joku symboli.
-            With EkaViiva
-              iPoint(0) = .StartPoint(0)
-              iPoint(1) = .StartPoint(1)
-              Rotation = .Angle + Pi
-              LoppuPiste(0) = .StartPoint(0) + LyhennysA * Cos(Rotation - Pi)
-              LoppuPiste(1) = .StartPoint(1) + LyhennysA * Sin(Rotation - Pi)
-              .StartPoint = LoppuPiste
-            End With
+            ' KORJATTU: .StartPoint palauttaa Variant-taulukon late bindingissä -
+            ' suora indeksointi .StartPoint(0) heittää virheen 451 (maskautui Resume Next)
+            Dim StartPt As Variant
+            StartPt = EkaViiva.StartPoint
+            iPoint(0) = StartPt(0)
+            iPoint(1) = StartPt(1)
+            Rotation = EkaViiva.Angle + Pi
+            LoppuPiste(0) = StartPt(0) + LyhennysA * Cos(Rotation - Pi)
+            LoppuPiste(1) = StartPt(1) + LyhennysA * Sin(Rotation - Pi)
+            EkaViiva.StartPoint = LoppuPiste
             oDOC.ModelSpace.InsertBlock iPoint, BNameA, 1, 1, 1, Rotation
         End If
         
         If LOPPU <> 4 Then 'Piirretään loppuun joku symboli
-            With ViimViiva
-              iPoint(0) = .EndPoint(0)
-              iPoint(1) = .EndPoint(1)
-              Rotation = .Angle
-              LoppuPiste(0) = .EndPoint(0) - LyhennysL * Cos(Rotation)
-              LoppuPiste(1) = .EndPoint(1) - LyhennysL * Sin(Rotation)
-              .EndPoint = LoppuPiste
-            End With
+            ' KORJATTU: .EndPoint palauttaa Variant-taulukon late bindingissä
+            Dim EndPt As Variant
+            EndPt = ViimViiva.EndPoint
+            iPoint(0) = EndPt(0)
+            iPoint(1) = EndPt(1)
+            Rotation = ViimViiva.Angle
+            LoppuPiste(0) = EndPt(0) - LyhennysL * Cos(Rotation)
+            LoppuPiste(1) = EndPt(1) - LyhennysL * Sin(Rotation)
+            ViimViiva.EndPoint = LoppuPiste
             oDOC.ModelSpace.InsertBlock iPoint, BNameL, 1, 1, 1, Rotation
         End If
         Set EkaViiva = Nothing
@@ -504,7 +511,7 @@ If Merkki = 1 Then 'Nuoli
 ElseIf Merkki = 2 Then 'Nuoli ja Not merkki
   Blokki = BlockPath & "NOTARROW.DWG"
   Lyhennys = 7.5
-ElseIf ALKU.VALUE = 3 Then 'Piste
+ElseIf Merkki = 3 Then 'Piste - KORJATTU: käytetään parametria Merkki, ei ALKU-lomakekenttää
   Blokki = BlockPath & "POINT.DWG"
   Lyhennys = 0
 Else
@@ -620,19 +627,30 @@ On Error GoTo Virhe
 Virhe:
   gPoint = oDOC.Utility.GetPoint(, "Set start point")
   Err.Clear
-  On Error GoTo 0
+  On Error GoTo ErrorHandler
+  
+  ' Tarkistetaan, että käyttäjä valitsi pisteen eikä perunut
+  If IsEmpty(gPoint) Or IsNull(gPoint) Then
+    AppActivate CurrentDb.Properties("AppTitle").VALUE
+    Exit Sub
+  End If
+  
   iPoint(0) = gPoint(0) + 0.00001
   iPoint(1) = gPoint(1) + 0.00001
 '---------------------------------------------------------
   Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
-  BName = BlockPath & Blokki & ".dwg"
+  BName = BlockPath & Blokki.VALUE & ".dwg"
   Set oBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   'Kirjoitetaan arvot textboxeista
   KirjoitaAttribuutit
   'Annetaan komentorivikomento jolla saadaan siirrettyä blokkia haluttuun paikkaan
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
+  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingissä - indeksointi
+  ' suoraan .InsertionPoint(0) heittää virheen 451; tallennetaan ensin muuttujaan
+  Dim InsPoint As Variant
+  InsPoint = oBlock.InsertionPoint
   With oBlock
-    If .InsertionPoint(0) = iPoint(0) And .InsertionPoint(1) = iPoint(1) Then
+    If InsPoint(0) = iPoint(0) And InsPoint(1) = iPoint(1) Then
       .Delete
     Else 'Kirjoitetaan tieto insertoinnista taulukkoon
       If Lehdet = 0 Then 'Jos insertoitiin joku muu kuin yleisblokki
@@ -649,6 +667,12 @@ Virhe:
   End With
   Set oBlock = Nothing
   AppActivate CurrentDb.Properties("AppTitle").VALUE
+  Exit Sub
+  
+ErrorHandler:
+  Set oBlock = Nothing
+  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  MsgBox "Virhe blokin insertoinnissa: " & Err.Description, vbExclamation, "Lisäys"
 End Sub
 Private Function DoubleToPoint(ByVal Piste As Double) As String
 Dim APU As String
