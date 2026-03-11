@@ -1,7 +1,7 @@
 # Tietokantamigraatio: 32-bit → 64-bit Office VBA
 >
-> Suunnittelijoiden tietokantajärjestelmä päivitetty 64-bittiseksi M365-yhteensopivaksi.
-> *Design system database upgrade to 64-bit M365 compatibility.*
+> Tietokantapohjainen suunnittelujärjestelmä päivitetty 64-bittiseksi M365-yhteensopivaksi.
+> *Database-driven design system upgraded to 64-bit M365 compatibility.*
 
 ---
 
@@ -30,9 +30,9 @@
 
 ## 🔍 Yleiskatsaus / Overview
 
-Tämä järjestelmä on suunnittelijoille ja projektipäälliköille tarkoitettu tietokantapohjainen työkalu, joka yhdistää **MS Access -tietokannan**, **Excel-työkirjat** ja **AutoCAD 2019** -piirustukset yhdeksi kokonaisuudeksi.
+Tämä järjestelmä on suunnittelijoille tarkoitettu tietokantapohjainen työkalu, joka yhdistää **MS Access -tietokannan**, **Excel-työkirjat** ja **AutoCAD 2019** -piirustukset yhdeksi kokonaisuudeksi.
 
-*This is a database-driven toolset for designers and project managers that connects an MS Access database, Excel workbooks, and AutoCAD 2019 drawings into a unified workflow.*
+*This is a database-driven toolset for designers that connects an MS Access database, Excel workbooks, and AutoCAD 2019 drawings into a unified workflow.*
 
 **Järjestelmä koostuu kolmesta osasta / The system has three parts:**
 
