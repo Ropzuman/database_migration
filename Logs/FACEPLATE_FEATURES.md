@@ -1,4 +1,13 @@
-# Kytkentälista Faceplate Feature Analysis
+# Kytkentälista — Faceplate-ominaisuudet / Faceplate Feature Analysis
+
+> **Luokitus / Classification:** `[ACTIVE]` — Tekninen spesifikaatio kehittäjille
+> **Päivitetty / Updated:** 12.10.2025
+> **Kohderyhmä / Audience:** Kehittäjät / Developers only
+>
+> *Tämä dokumentti kuvaa Kytkentälista-työkalun käyttöliittymälomakkeen toiminnot koodaus- ja testaustarkoituksiin.*
+> *This document describes the Kytkentälista faceplate UI controls for development and testing purposes.*
+
+---
 
 ## Date: October 12, 2025
 

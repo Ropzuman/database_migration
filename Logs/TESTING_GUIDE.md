@@ -1,11 +1,15 @@
-# Quick Testing Guide - Optimized VBA Code
+# Pikatestausopas — 64-bit v2.0 / Quick Testing Guide
+
+> **Luokitus / Classification:** `[ACTIVE]` — Kehittäjän testausopas
+> **Versio / Version:** 2.0 — 64-bit M365
+> **Kohderyhmä / Audience:** Kehittäjät / Developers
 
 ## 🧪 Fast Testing Checklist
 
 ### Pre-Test Setup ✅
-1. ✅ Code compiles (all modules show "No errors")
-2. ✅ You're on branch `Iso_optimointi`
-3. ✅ Backup exists (branch `comments` has pre-optimization code)
+1. ✅ Koodi kääntyy — kaikki moduulit ilman virheitä / Code compiles — all modules without errors
+2. ✅ Käytössä on versio 2.0 (64-bit M365 -yhteensopiva) / Using version 2.0 (64-bit M365 compatible)
+3. ✅ Varmuuskopio olemassa (`_archive/README_pre-v2.md` dokumentoi edellisen tilan)
 
 ---
 

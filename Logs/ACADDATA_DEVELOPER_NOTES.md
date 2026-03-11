@@ -1,4 +1,11 @@
-# AcadDATA Developer Notes
+# AcadDATA — Kehittäjämuistiinpanot / Developer Notes
+
+> **Luokitus / Classification:** `[ACTIVE]` — Tekninen viitedokumentti kehittäjille
+> **Päivitetty / Updated:** 8.11.2025 (64-bit refaktoroinnin jälkeen / post-64-bit refactoring)
+> **Kohderyhmä / Audience:** Kehittäjät / Developers only
+>
+> *Tämä dokumentti on tekninen kehittäjäopas. Jos haluat vain käyttää AcadDATA-työkalua, katso pääohje: `README.md`.*
+> *This is a technical developer reference. For end-user instructions, see `README.md`.*
 
 ## 2025-10-30 – Non-functional cleanup
 

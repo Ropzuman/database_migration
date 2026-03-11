@@ -1,7 +1,10 @@
-# Testing Checklist for Optimized Code
+# Testauksen tarkistuslista / Testing Checklist — v2.0 (64-bit M365)
 
-Branch: `optimointi`  
-Status: Ready for testing
+> **Luokitus / Classification:** `[ACTIVE]` — Kehittäjän testausohje
+> **Versio / Version:** 2.0 — 64-bit M365 Compatible
+> **Kohderyhmä / Audience:** Kehittäjät / Developers
+
+Status: ✅ Valmis käytettäväksi 64-bit-ympäristössä / Ready for 64-bit environment
 
 ## Pre-Testing Setup
 - [ ] Open the Excel workbook containing the Kytkentälista macros
@@ -42,15 +45,7 @@ Status: Ready for testing
 
 ### Expected Results:
 - [ ] Message: "Check OK!"
-- [ ] **Info sheet** populated with:
-  - Customer: Fortum (or your actual data)
-  - Mill: Nuijalan lämpölaitos (or your actual data)
-  - Project Name: Fortum Nuijalan lämpölaitos
-  - Project No: 24PRO229 (or your actual project number)
-  - Document ID: NUI-ND-30016 (or your actual doc ID)
-  - Status: FC (or your actual status)
-  - Revision: B (or your actual revision)
-  - Revision Date: 21.5.2025 (or your actual date)
+- [ ] **Info sheet** populated with document metadata (Customer, Mill, Project Name, Project No, Document ID, Status, Revision, Revision Date)
 - [ ] **ERRORS sheet** is empty (no missing headers)
 - [ ] **TEMPLATE sheet** has comments on header cells (linking annotations)
 - [ ] No freezes or performance issues

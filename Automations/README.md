@@ -150,8 +150,8 @@ Export tehtiin manuaalisesti AutoCADin COM-rajapinnan kautta 27.2.2026.
 1. **Aja 64-bitti-skanneri:**
 
    ```powershell
-   powershell.exe -ExecutionPolicy Bypass -File ./_scan_64bit.ps1
-   powershell.exe -ExecutionPolicy Bypass -File ./_scan_frm.ps1
+   powershell.exe -ExecutionPolicy Bypass -File Apuskriptit\_scan_64bit.ps1
+   powershell.exe -ExecutionPolicy Bypass -File Apuskriptit\_scan_frm.ps1
    ```
 
    Tulostaa kaikki `DECLARE_NO_PTRSAFE` ja `LONG_HANDLE` -ongelmat tiedostoittain.
@@ -171,7 +171,7 @@ Export tehtiin manuaalisesti AutoCADin COM-rajapinnan kautta 27.2.2026.
 3. **Aja import-skripti WinPS 5.1:llä** (ei pwsh/PS7)
 
    ```powershell
-   powershell.exe -ExecutionPolicy Bypass -File AutoCAD_DVB_Import_Run.ps1
+   powershell.exe -ExecutionPolicy Bypass -File Apuskriptit\AutoCAD_DVB_Import_Run.ps1
    ```
 
    **HUOM:** Skripti käyttää `powershell.exe` (Windows PowerShell 5.1) — ei toimi `pwsh`:lla (PS7), koska `Marshal.GetActiveObject()` puuttuu PS7:sta.

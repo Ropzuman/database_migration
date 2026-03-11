@@ -1,4 +1,8 @@
-# VBA Debug Logging - Käyttöohje
+# VBA Debug-lokitus — Käyttöohje / Debug Logging Guide
+
+> **Luokitus / Classification:** `[ACTIVE]` — Tekninen kehittäjäopas
+> **Päivitetty / Updated:** 3.3.2026
+> **Kohderyhmä / Audience:** Kehittäjät / Developers
 
 ## Yleiskatsaus
 

@@ -1,209 +1,272 @@
-﻿# Database Migration: 32-bit to 64-bit Office VBA
+# Tietokantamigraatio: 32-bit → 64-bit Office VBA
+> Suunnittelijoiden tietokantajärjestelmä päivitetty 64-bittiseksi M365-yhteensopivaksi.
+> *Design system database upgrade to 64-bit M365 compatibility.*
 
-## Purpose
+---
 
-Migration of an MS Access/Excel/AutoCAD design system from 32-bit to 64-bit Office (VBA7). Updates API declarations, data access patterns, and ODBC compatibility for 64-bit operation with performance optimization.
+## 📌 Projektin tila / Project Status
 
-## Components
+> **Versio / Version:** 2.0 — 64-bit M365 Compatible
+> **Viimeksi päivitetty / Last updated:** 11.3.2026
+> **Yhteensopivuus / Compatibility:** Microsoft 365 (64-bit), Excel, Access, AutoCAD 2019+
+> **Tila / Status:** ✅ Migraatio valmis — kaikki moduulit testattu
 
-[This section will be updated with new information once the placeholder is filled.]
+---
 
-### Access VBA
+## 🗂️ Sisällysluettelo / Table of Contents
 
-- **API Compatibility:** Conditional compilation (`#If VBA7 Then`) with `PtrSafe` and `LongPtr` for pointers/handles
-- **DAO:** Explicit qualification (`DAO.Database`, `DAO.Recordset`), safe cleanup patterns
-- **Transactions:** `DBEngine.BeginTrans/CommitTrans/Rollback` for robust inserts
-- **Validation:** Hardened input checks in `CustomMessage`, explicit typing for globals
+1. [Yleiskatsaus / Overview](#yleiskatsaus--overview)
+2. [Mitä muuttui / What Changed](#mitä-muuttui--what-changed)
+3. [Järjestelmävaatimukset / System Requirements](#järjestelmävaatimukset--system-requirements)
+4. [Tietokantatyökalut / Database Tools](#tietokantatyökalut--database-tools)
+5. [AutoCAD-integraatio / AutoCAD Integration](#autocad-integraatio--autocad-integration)
+6. [Automaatiot / Automations](#automaatiot--automations)
+7. [Vianmääritys / Troubleshooting](#vianmääritys--troubleshooting)
+8. [Kehittäjille / For Developers](#kehittäjille--for-developers)
+9. [Muutoshistoria / Changelog](#muutoshistoria--changelog)
 
-### Excel Macros
+---
 
-- **OLE DB Migration:** Switched from ODBC to OLE DB (ACE.OLEDB) for better 64-bit compatibility
-- **Provider Fallback:** Automatic fallback: 16.0 → 15.0 → 12.0 for Office version compatibility
-- **DB2 Query Fix:** Fixed saved query `_qryForExcel` to work with OLE DB (removed `Nz()` function)
-- **Column Mapping:** Complete mapping from DOCUMENTS table to Info sheet (see `COLUMN_MAPPING_COMPLETE.md`)
-- **Performance:** Consistent BeginFastMode/EndFastMode usage, optimized screen updating
-- **Safety:** Infinite loop protection, sheet existence validation, database file checks
-- **Type Safety:** `Long` for all counters/indices (64-bit compatibility)
+## 🔍 Yleiskatsaus / Overview
 
-## Excel Workflows
+Tämä järjestelmä on suunnittelijoille ja projektipäälliköille tarkoitettu tietokantapohjainen työkalu, joka yhdistää **MS Access -tietokannan**, **Excel-työkirjat** ja **AutoCAD 2019** -piirustukset yhdeksi kokonaisuudeksi.
 
-### 1. Get Data (HaeData)
+*This is a database-driven toolset for designers and project managers that connects an MS Access database, Excel workbooks, and AutoCAD 2019 drawings into a unified workflow.*
 
-- Fetches data from Access database via OLE DB (with automatic provider fallback)
-- Populates DB1 (Circuit_Diagrams_IO_Terminals) and DB2 (DOCUMENTS) sheets
-- Validates database file existence, handles connection errors gracefully
+**Järjestelmä koostuu kolmesta osasta / The system has three parts:**
 
-### 2. Run Check (Checkout)
+| Osa / Part | Mitä tekee / What it does |
+|---|---|
+| **Access-tietokanta** | Säilyttää laitteiden, piirien ja dokumenttien tiedot / Stores equipment, circuit, and document data |
+| **Excel-kyselyt** | Hakee tietoja kannasta ja tuottaa listat ja tulosteet / Fetches data and produces lists and printouts |
+| **AutoCAD-integraatio** | Lukee ja kirjoittaa lohkoattribuutteja AutoCAD-piirustuksiin / Reads and writes block attributes in AutoCAD drawings |
 
-- Validates TEMPLATE headers against DB1 data
-- Extracts document metadata from DB2 (via HaeDocTiedot)
-- Populates Info sheet using comment-based templating (via VaihdaInfo)
-- Reports missing headers to ERRORS sheet
+---
 
-### 3. Generate Printout (GenPrintout)
+## 🔄 Mitä muuttui / What Changed
 
-- Creates new workbook from TEMPLATE
-- Populates with DB1 data and document metadata
-- Generates print-ready output
+Järjestelmä päivitettiin toimimaan nykyaikaisessa **64-bittisessä Microsoft 365** -ympäristössä. Aiempi versio toimi vain 32-bittisessä Officessa.
 
-## Testing
+*The system was updated to work in modern 64-bit Microsoft 365. The previous version only worked in 32-bit Office.*
 
-1. **Access:** Debug → Compile in VBA editor, test `SniffUser`, `CustomMessage`
-2. **Excel:** Click "Get Data" → verify DB1/DB2 populate without errors
-3. **Excel:** Click "Run Check" → verify Info sheet populates, no ERRORS
-4. **Excel:** Click "Generate Printout" → verify new workbook created
+**Käyttäjälle näkyvät muutokset / Changes visible to users:**
+- ✅ Kaikki toiminnot toimivat Microsoft 365 (64-bit) -ympäristössä
+- ✅ Yhteydet tietokantaan ovat nopeampia ja luotettavampia
+- ✅ Automaatioskriptit toimivat 64-bit PowerShellissä
 
-## Excel: AutoCAD Import/Export (AcadDATA)
+**Tekniset muutokset (kehittäjille) / Technical changes (for developers):**
 
-This workbook includes an AutoCAD integration to read block attributes (and optional text entities) from DWG and write changes back.
+<details>
+<summary>▶ Näytä tekniset muutokset / Show technical details</summary>
 
-### Import (TuoDATA)
+- Kaikki `Declare`-lauseet päivitetty `PtrSafe`-avainsanalla ja `LongPtr`-tyypeillä
+- Tietokanta-ajuri vaihdettu: `Microsoft.Jet.OLEDB.4.0` → `Microsoft.ACE.OLEDB.12.0`
+- `Nz()`-funktio korvattu `IIf(IsNull(), 0, Value)` -rakenteella (Excel VBA -yhteensopivuus)
+- Kaikki koodikommentit suomeksi Ä/Ö-kirjaimia käyttäen
+- `ScreenUpdating` ja `Calculation`-suojaukset lisätty virheenkäsittelijöineen
+- Ajuri-fallback: 16.0 → 15.0 → 12.0 eri Office-versioiden tukemiseksi
+- Kaikki laskurimuuttujat muutettu `Long`-tyyppisiksi 64-bit-yhteensopivuuden vuoksi
 
-- Run via Macros: `TuoDATA_All` (all blocks) or `TuoDATA_Selected` (previous AutoCAD selection).
-- Inputs on the Start sheet:
-  - **D7:** Block names, comma-separated. Use `*` to import all blocks.
-  - **D5:** Entity scope: `"Blokit"`, `"Tekstit"`, or `"Blokit ja tekstit"` (includes TEXT/MTEXT).
-  - **Nykyinen checkbox:** Import from the currently active AutoCAD drawing (no file list needed).
-  - **Lista checkbox:** Import from the file list on the TIEDLISTA sheet.
-- Output columns: PATH, DWG, BLOCK, HANDLE, XCord, YCord, Layer, then one column per attribute tag (created as needed).
+Katso täydelliset muutokset: `Logs/CHANGELOG_64bit_and_perf.md`
 
-Selection behavior
+</details>
 
-- No layer filter (by design for simplicity and correctness).
-- DXF type filter: single `FilterType(0)=0` / `FilterData(0)="INSERT"` entry (reliable in AutoCAD 2019 late binding). Text modes use `"TEXT,MTEXT,DTEXT"` or `"TEXT,MTEXT,DTEXT,INSERT"`.
-- When `Nykyinen` is checked, `acSelectionSetAll` is always used — no "select only previous?" prompt — so all blocks in the active drawing are scanned and then name-filtered.
-- Name pre-filter: after selection, entities whose `EffectiveName` does not match D7 are removed via `SelectionSet.RemoveItems` before processing begins.
-- Text entities (when enabled) bypass the block-name filter and are included as-is.
+---
 
-Dynamic blocks
+## 💻 Järjestelmävaatimukset / System Requirements
 
-- Matching is performed against `EffectiveName` (direct property access), so dynamic blocks with anonymous internal names are handled correctly.
+| Komponentti / Component | Vaatimus / Requirement |
+|---|---|
+| Office | Microsoft 365 (64-bit) |
+| Access | Microsoft Access (sisältyy M365:een / included in M365) |
+| Excel | Microsoft Excel (sisältyy M365:een / included in M365) |
+| AutoCAD | AutoCAD 2019 tai uudempi / or newer |
+| Windows | Windows 10/11 (64-bit) |
+| PowerShell | 5.1+ (64-bit) — automaatioita varten / for automations |
 
-Dev tracing
+> ⚠️ **Tärkeää / Important:** Varmista että Office on **64-bittinen** versio. Tarkista: Excel → Tiedosto → Tili → Tietoja Excelistä. Ylhäällä pitää näkyä "64-bit".
+> *Make sure Office is the **64-bit** version. Check: Excel → File → Account → About Excel. It must say "64-bit".*
 
-- Controlled in `Excel/Moduulit/AcadDATA/Koodit.bas` by `Public Const DEBUG_TRACE As Boolean`.
-- When `True`, detailed timestamps and steps are printed to the Immediate Window (Ctrl+G): filter setup, selection counts before/after name-prune, and per-document row totals.
+---
 
-### Export (VieDATA)
+## 🛠️ Tietokantatyökalut / Database Tools
 
-More details for developers: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
+### Kytkentälista / Connection List
 
-- Writes edited attribute values back to blocks by HANDLE using TAG-based matching (symmetric with TuoDATA).
-- Calls `oBlock.Update` after each block so attribute changes are visible on-screen immediately (not only after save).
-- Calls `oDOC.Regen 1` at the end to regenerate all viewports.
-- Uses a `HeaderMap` dictionary (built once before the main loop) for O(1) TAG→column lookups.
-- Respects AutoCAD SingleDocumentMode and performs safe COM cleanup.
+Kytkentälista-työkalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel-pohjasta.
 
-### Double-click navigation
+*The Kytkentälista tool fetches data from the Access database and generates a printout from an Excel template.*
 
-- On the data sheet, double-click a row to locate the entity in AutoCAD and zoom to it.
-- Uses a robust zoom sequence: ZoomWindow to the entity’s bounding box and a safe scaled zoom helper to avoid enum mismatches under late binding.
+**Kolme päätoimintoa / Three main functions:**
 
-## File Organization
+#### 1. Hae tiedot (HaeData) / Get Data
 
-- `Access/` - Access VBA modules
-- `Excel/Kytkentälista/` - Excel macro modules
-- `Excel/Kytkentälista/Debugging/` - Diagnostic tools (DiagnosticTest, ColumnMappingDiagnostic, FixInfoSheetComments)
-- `Logs/` - Changelogs, fixes, and analysis documentation
-- `COLUMN_MAPPING_COMPLETE.md` - DB2→Info sheet mapping reference
-- `Automations/` - Automation scripts used to migrate and extract VBA components (see `Automations/export_access_vba.ps1`, `Automations/Excel_automaatio.ps1`, and `Automations/Access_automaatio.ps1`)
-- `Logs/AUTOMATIONS_LOG.md` - Log and changelog for automation scripts
+- Hakee tiedot Access-tietokannasta Excel-arkeille DB1 ja DB2
+- Tarkistaa tietokantatiedoston olemassaolon ennen yhteyden avaamista
+- Käsittelee yhteysvirheet selkokielisillä virheilmoituksilla
 
-## Automations: Access updater
+*Fetches data from the Access database to Excel sheets DB1 and DB2. Validates the database file before connecting.*
 
-Use `Automations/Access_automaatio.ps1` to replace Access VBA modules (.bas) and class modules (.cls) inside an .accdb safely on 64-bit Office.
+#### 2. Aja tarkistus (Checkout) / Run Check
 
-Prerequisites:
+- Tarkistaa TEMPLATE-otsikot DB1-dataa vasten
+- Hakee dokumentin metatiedot DB2:sta
+- Täyttää Info-arkin tiedoilla
+- Raportoi puuttuvat otsikot ERRORS-arkille
 
-- Run in 64-bit PowerShell (x64). The script enforces this and exits if not.
-- Microsoft Access installed (same bitness as PowerShell).
-- Trust Center: enable "Trust access to the VBA project object model" and ensure the database and module folder are in trusted locations.
+*Validates TEMPLATE headers against DB1 data, fetches document metadata from DB2, fills the Info sheet, reports missing headers to ERRORS sheet.*
 
-What it does:
+#### 3. Luo tuloste (GenPrintout) / Generate Printout
 
-- Prompts for the database file path and the folder containing exported VBA components.
-- Opens the database with retry logic and removes read-only attribute if set.
-- **Replaces component code directly** (reads .bas/.cls content, strips headers, writes clean code via CodeModule API).
-- Saves the database, re-enables warnings, and performs robust COM cleanup to avoid orphaned MSACCESS.EXE.
+- Luo uuden työkirjan TEMPLATE-pohjasta
+- Täyttää DB1-datan ja dokumentin metatiedot
+- Tuottaa tulostusvalmiit dokumentit
 
-**Important:** The script uses **direct code replacement** instead of `VBComponents.Import()` to avoid invisible metadata corruption. This approach is equivalent to manually copy-pasting code into the VBA editor and works correctly for both standard modules (.bas) and class modules (.cls).
+*Creates a new workbook from the TEMPLATE, populates it with DB1 data and document metadata, produces print-ready output.*
 
-Notes:
+**Tietokantayhteyden asetukset / Database connection settings:**
 
-- You can pre-fill default paths by editing `$DefaultAccessFilePath` and `$DefaultComponentPath` at the top of the script.
-- Component names to update are defined in `$componentNames` array.
-- See `Logs/AUTOMATIONS_LOG.md` for technical details on the VBComponents.Import issue.
+- DB1 hakee piirikaavio- ja IO-terminaalidatan (`Circuit_Diagrams_IO_Terminals`)
+- DB2 hakee dokumenttimetatiedot (`DOCUMENTS`-taulu tai `_qryForExcel`-kysely)
+- Hakupolku: DB2-sarake `WorkPath` määrittää oletustallennushakemiston
+- Tiedostonimi: DB2-sarake `File` — puuttuessa käytetään pohjan nimeä + `.xlsx`
 
-## Automations: Excel updater
+---
 
-Use `Automations/Excel_automaatio.ps1` to replace VBA modules in .xlsm workbooks across multiple locations.
+## 🗺️ AutoCAD-integraatio / AutoCAD Integration
 
-Prerequisites:
+AcadDATA-työkalu lukee lohkoattribuutteja AutoCAD-piirustuksista ja kirjoittaa muutokset takaisin.
 
-- Run in PowerShell (any bitness, but must match Excel if opening workbooks).
-- Microsoft Excel installed.
-- Trust Center: enable "Trust access to the VBA project object model".
+*The AcadDATA tool reads block attributes from AutoCAD drawings and writes changes back.*
 
-What it does:
+### Tuo tiedot (TuoDATA) / Import Data
 
-- Prompts for the folder containing .xlsm files and the folder with updated .bas module files.
-- For each .xlsm workbook:
-  - Opens with retry logic (handles OneDrive locks).
-  - **Replaces module code directly** (reads .bas content, strips headers, writes clean code via CodeModule API).
-  - Saves to temporary file, deletes original, renames (atomic replacement pattern).
-- Performs robust COM cleanup to avoid orphaned EXCEL.EXE processes.
+Ajettavissa makroina: `TuoDATA_All` (kaikki lohkot) tai `TuoDATA_Selected` (edellinen AutoCAD-valinta).
 
-**Important:** The script uses **direct code replacement** instead of `VBComponents.Import()` to avoid invisible metadata corruption that can cause modules to behave incorrectly. This approach is equivalent to manually copy-pasting code into the VBA editor.
+**Start-arkin asetukset / Start sheet settings:**
 
-Notes:
+| Kenttä / Field | Kuvaus / Description |
+|---|---|
+| **D7** | Lohkojen nimet pilkulla erotettuna. `*` = kaikki lohkot. / Block names, comma-separated. `*` = all blocks. |
+| **D5** | Entiteettityyppi: `"Blokit"`, `"Tekstit"` tai `"Blokit ja tekstit"` / Entity scope |
+| **Nykyinen** (checkbox) | Tuo nykyisestä avoimesta AutoCAD-piirustuksesta / Import from currently active drawing |
+| **Lista** (checkbox) | Tuo TIEDLISTA-arkin tiedostoluettelosta / Import from file list on TIEDLISTA sheet |
 
-- Pre-fill default paths by editing `$DefaultExcelFilesPath` and `$DefaultModulePath` at the top.
-- Module names to update are defined in `$moduleNames` array (default: Module1, Module2, Module3).
-- See `Logs/AUTOMATIONS_LOG.md` for technical details on the VBComponents.Import issue.
+Ulostulosarakkeet: PATH, DWG, BLOCK, HANDLE, XCord, YCord, Layer + yksi sarake per attribuuttitagi.
 
-## Version History
+### Vie tiedot (VieDATA) / Export Data
 
-See `Logs/CHANGELOG_64bit_and_perf.md` for detailed change history.
+Kirjoittaa muokatut attribuuttiarvot takaisin lohkoihin HANDLE-tunnisteen avulla.
 
-## Maintenance: VBA cleanup (2025-10-30)
+*Writes edited attribute values back to blocks using the HANDLE identifier.*
 
-- Non-functional cleanup in `Excel/Moduulit/AcadDATA/Koodit.bas`:
-  - Extracted a tiny helper to build DXF type filters (reduces duplication and ReDim Preserve calls).
-  - Removed a couple of unused variables and clarified comments.
-  - No behavior changes; import/export flows and selection logic are identical.
-- Developer notes updated: see `Logs/ACADDATA_DEVELOPER_NOTES.md`.
-- Changelog entry: `Logs/ACADDATA_CLEANUP_2025-10-30.md`.
+- Kutsuu `oBlock.Update` jokaisen lohkon jälkeen — muutokset näkyvät heti ruudulla
+- Kutsuu `oDOC.Regen 1` lopussa kaikkien näkymien päivittämiseksi
+- Käyttää `HeaderMap`-sanakirjaa nopeaan TAG→sarake-hakuun
 
-## Excel: Kytkentälista (DB fetch + printout)
+### Kaksoisnapsautusnavigaatio / Double-click Navigation
 
-The Kytkentälista tool uses two SQL inputs on the faceplate:
+Dataarkilta kaksoisklik riville zoomaa AutoCAD näyttämään kyseisen entiteetin.
 
-- DB1 (body data): populates the main rows for the printout.
-- DB2 (document info): fills Info/Revisions and drives the default Save As location.
+*Double-clicking a row on the data sheet zooms AutoCAD to that entity.*
 
-Inputs
+<details>
+<summary>▶ Kehittäjätiedot / Developer details</summary>
 
-- SQL can target tables or saved Access queries (e.g., `_qryForExcel`) via ODBC.
-- Prefer ANSI-92 wildcards (`%`) in SQL for portability if filtering with LIKE.
+- Dynaamisten lohkojen tunnistus `EffectiveName`-ominaisuuden kautta (anonyymit sisäiset nimet käsitellään oikein)
+- DXF-tyyppisuodatin: `FilterType(0)=0` / `FilterData(0)="INSERT"` (luotettava AutoCAD 2019 late binding -ympäristössä)
+- Debug-jäljitys: `Public Const DEBUG_TRACE As Boolean` tiedostossa `Excel/Moduulit/AcadDATA/Koodit.bas`
+- Lisätiedot: `Logs/ACADDATA_DEVELOPER_NOTES.md` ✅
 
-Save As defaults
+</details>
 
-- Path comes from DB2 WorkPath (header is case-insensitive; common synonyms like `workpath`, `path`, `work_path`, `listpath`, `lists_path`, `savepath`, `targetpath`, `outputpath` are accepted). The path is normalized and ends with `\`.
-- File name comes from DB2 File. If missing, it falls back to the faceplate Body Sheet Name.
-- If the name has no extension, `.xlsx` is appended automatically.
+---
 
-Template population
+## ⚙️ Automaatiot / Automations
 
-- GenPrintout uses template-driven population: copies TEMPLATE blocks per data group (RMAX rows), then maps values from LINKING sheet via comment-based markers.
-- This preserves the template's layout, formatting, and cell linking logic.
-- Each comment marker in the TEMPLATE (created during Checkout) links to a DB1 column; VaihdaLinkit reads these markers and populates cells with corresponding data.
+Automaatioskriptit päivittävät VBA-moduulit tiedostoihin ilman manuaalista kopiointia. Kaikki yksityiskohtaiset ohjeet: [`Automations/README.md`](Automations/README.md).
 
-Diagnostics
+*Automation scripts update VBA modules in files without manual copy-pasting. Full instructions: [`Automations/README.md`](Automations/README.md).*
 
-- After Get Data, the status bar briefly shows row counts per sheet (DB1/DB2). The Immediate Window also prints a summary (view via Ctrl+G).
+| Skripti / Script | Käyttötarkoitus / Purpose |
+|---|---|
+| `Automations/Access_automaatio.ps1` | Päivittää VBA-moduulit .accdb-tietokantaan / Updates VBA modules in .accdb database |
+| `Automations/Access_automaatio_batch.ps1` | Eräajo useille tietokannoille / Batch update for multiple databases |
+| `Automations/Excel_automaatio.ps1` | Päivittää VBA-moduulit .xlsm-työkirjoihin / Updates VBA modules in .xlsm workbooks |
 
-Recent updates (2025-11-03)
+**Esivaatimukset / Prerequisites:**
+1. Aja 64-bittisessä PowerShellissä (x64) — skripti tarkistaa tämän automaattisesti
+2. Microsoft Access/Excel asennettuna
+3. Trust Center: ota käyttöön "Luota VBA-projektin objektimalliin" / "Trust access to the VBA project object model"
 
-- Fixed critical bug in VaihdaLinkit that caused incorrect template population
-- Optimized code: removed dead variables, added constants, improved comments
-- See `Logs/KYTKENTALISTA_OPTIMIZATION_2025-11-03.md` for details
+> ⚠️ **Tärkeää / Important:** Skriptit käyttävät **suoraa koodinkorvausta** eikä `VBComponents.Import()` -metodia. Tämä estää näkymättömän metatietovioittumisen. Katso `Automations/Logs/Access_automaatio_changelog.md`.
+
+---
+
+## 🔧 Vianmääritys / Troubleshooting
+
+### Yleisimmät ongelmat / Most common issues
+
+| Ongelma / Problem | Syy / Cause | Ratkaisu / Fix |
+|---|---|---|
+| "Tietokantaa ei löydy" | Tiedostopolku väärä tai tiedosto siirretty | Tarkista polku faceplate-kentässä |
+| Excel jäätyy Checkout-ajon aikana | Vanha versio (korjattu v2.0) | Varmista käytössä on versio 2.0 |
+| "Provider not found" -virhe | Väärä Office-bittisyys tai puuttuva Access-ajuri | Tarkista Office on 64-bit |
+| AutoCAD ei vastaa tuonnin aikana | Suuri piirustus tai verkkoasema | Odota — älä sulje AutoCADia |
+| PowerShell-skripti ei toimi | 32-bit PowerShell käytössä | Avaa "Windows PowerShell" (ei x86-versiota) |
+
+### Testiohjeet kehittäjille / Test instructions for developers
+
+1. **Access:** Debug → Compile VBA-editorissa, testaa `SniffUser`, `CustomMessage`
+2. **Excel:** Klikkaa "Hae tiedot" → tarkista DB1/DB2 täyttyvät ilman virheitä
+3. **Excel:** Klikkaa "Aja tarkistus" → tarkista Info-arkki täyttyy, ei ERRORS-merkintöjä
+4. **Excel:** Klikkaa "Luo tuloste" → tarkista uusi työkirja luodaan oikein
+
+---
+
+## 👨‍💻 Kehittäjille / For Developers
+
+### Tiedostorakenne / File Structure
+
+```
+Access/              — Access VBA -moduulit / Access VBA modules
+Excel/Moduulit/
+  AcadDATA/          — AutoCAD-integraatiomoduuli / AutoCAD integration module
+  Listojen kyselyt/  — Kytkentälista-kyselymoduulit / Connection list query modules
+AutoCAD/             — AutoCAD DVB-projektit / AutoCAD DVB projects
+Automations/         — PowerShell-automaatioskriptit / PowerShell automation scripts
+  Apuskriptit/       — Skannarit ja apuskriptit / Scanners and helper scripts
+Logs/                — Muutoslokit ja analyysit / Changelogs and analysis docs
+_archive/            — Arkistoidut vanhat dokumentit / Archived old documents
+```
+
+### Tekniset viitedokumentit / Technical Reference Documents
+
+- `Logs/ACADDATA_DEVELOPER_NOTES.md` — AcadDATA-moduulin kehittäjämuistiinpanot
+- `Logs/FACEPLATE_FEATURES.md` — Faceplate-lomakkeen ominaisuudet
+- `Logs/LISTOJEN_KYSELYT_REFACTORING.md` — Kysely-moduulin refaktorointilogiikka
+- `Logs/REFACTORING_DOCUMENTATION.md` — Projektitason refaktorointidokumentti
+- `Logs/REFACTORING_DOCUMENTATION.md` — Projektitason refaktorointikuvaus (sarakekartoitus dokumentoitu sisällä)
+
+### Tietokanta-ajuri / Database Driver
+
+Kaikki yhteydet käyttävät ajuria `Microsoft.ACE.OLEDB.12.0` automaattisella fallback-logiikalla:
+versio 16.0 → 15.0 → 12.0.
+
+---
+
+## 📋 Muutoshistoria / Changelog
+
+Täydelliset muutoslokit / Full changelogs:
+
+- **Projektin päämuutosloki:** `Logs/CHANGELOG_64bit_and_perf.md`
+- **Viimeisin vaihe:** `Logs/PHASE3_PHASE4_WORKSPACE_CHANGELOG_2026-03-09.md`
+- **Access MAINEQ:** `Access/MAINEQ/Logs/MAINEQ_changelog.md`
+- **Access PIPE:** `Access/PIPE/Logs/PIPE_changelog.md`
+- **Access LoopCircuit:** `Access/LoopCircuit/Logs/LoopCircuit_changelog.md`
+- **Access FunctionDiagrams:** `Access/FunctionDiagrams/Logs/FunctionDiagrams_changelog.md`
+- **Access DOCUMENTS:** `Access/DOCUMENTS/Logs/DOCUMENTS_changelog.md`
+- **Excel AcadDATA:** `Excel/Moduulit/AcadDATA/Logs/AcadDATA_changelog.md`
+- **Excel Listojen kyselyt:** `Excel/Moduulit/Listojen kyselyt/Logs/ListojenKyselyt_changelog.md`
+- **AutoCAD:** `AutoCAD/exported/PHASE3_changelog.md`
+- **Automaatiot:** `Automations/Logs/Access_automaatio_changelog.md`, `Automations/Logs/Excel_automaatio_changelog.md`
