@@ -66,6 +66,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 **Problem:** The checkbox control existed on the faceplate but the functionality was commented out in the code.
 
 **Original Code:**
+
 ```vba
 '    If HideLINKING Then
 '      Sheets("LINKING").Visible = False
@@ -77,6 +78,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 ```
 
 **Fixed Code:**
+
 ```vba
   ' Handle LINKING sheet visibility/deletion based on user preference
   On Error Resume Next
@@ -91,6 +93,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 ```
 
 **Changes:**
+
 - Re-enabled the `HideLINKING` checkbox functionality
 - If checked: LINKING sheet is hidden but preserved
 - If unchecked: LINKING sheet is deleted (original behavior)
@@ -101,6 +104,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 **Problem:** The line reading the checkbox value was commented out.
 
 **Fixed in Checkout():**
+
 ```vba
    POSheet = Sheets("Main").Range("C16").Value
    On Error Resume Next
@@ -109,6 +113,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 ```
 
 **Fixed in GenPrintout():**
+
 ```vba
   AddFooter = Sheets("Main").AddFooter.Value
   On Error Resume Next
@@ -117,6 +122,7 @@ Based on the provided screenshot and code review, here's the complete feature st
 ```
 
 **Changes:**
+
 - Added code to read checkbox value in both functions
 - Used `OLEObjects` collection to access the checkbox control
 - Added error handling in case control doesn't exist
@@ -126,20 +132,22 @@ Based on the provided screenshot and code review, here's the complete feature st
 **Problem:** `Checkout()` called `VaihdaInfo("Revisions")` which performed nested loops, slowing down validation.
 
 **Fixed:**
+
 - Removed the call to populate Revisions during Checkout
 - Revisions are only populated during `GenPrintout()` using the fast `PopulateRevisionsSimple()` function
 - Checkout now only validates headers and populates Info sheet
 
 ## Summary of Changes
 
-### Module1.vba Changes:
+### Module1.vba Changes
 
 1. **Line ~388** - Re-enabled HideLINKING checkbox reading in Checkout
 2. **Line ~181** - Added HideLINKING checkbox reading in GenPrintout  
 3. **Line ~346** - Fixed LINKING sheet handling to respect HideLINKING checkbox
 4. **Line ~401** - Updated comment to clarify Checkout only populates Info sheet
 
-### Module2.vba Changes:
+### Module2.vba Changes
+
 - No changes needed - VaihdaInfo still supports Revisions but is not called for it during Checkout
 
 ## Testing Recommendations
@@ -167,11 +175,14 @@ Please test the following scenarios:
 
 ## Original vs. Current Implementation
 
-### Original Behavior (from Access VBA files):
+### Original Behavior (from Access VBA files)
+
 The original code had the LINKING sheet visibility control fully functional. The checkbox would determine whether the LINKING sheet was visible or deleted in the final workbook.
 
-### Current Behavior (after fixes):
+### Current Behavior (after fixes)
+
 Now matches the original behavior - all faceplate controls are functional:
+
 - ✅ All 3 SQL query options work
 - ✅ Add footer checkbox works
 - ✅ Hide LINKING sheet checkbox works
@@ -181,6 +192,7 @@ Now matches the original behavior - all faceplate controls are functional:
 ## Performance Notes
 
 The current implementation maintains the performance optimizations:
+
 - `PopulateRevisionsSimple()` is used for fast Revisions population (O(n) instead of O(n²))
 - Checkout no longer processes Revisions (faster validation)
 - BeginFastMode/EndFastMode minimize screen updates

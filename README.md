@@ -1,4 +1,5 @@
 # Tietokantamigraatio: 32-bit → 64-bit Office VBA
+>
 > Suunnittelijoiden tietokantajärjestelmä päivitetty 64-bittiseksi M365-yhteensopivaksi.
 > *Design system database upgrade to 64-bit M365 compatibility.*
 
@@ -50,6 +51,7 @@ Järjestelmä päivitettiin toimimaan nykyaikaisessa **64-bittisessä Microsoft 
 *The system was updated to work in modern 64-bit Microsoft 365. The previous version only worked in 32-bit Office.*
 
 **Käyttäjälle näkyvät muutokset / Changes visible to users:**
+
 - ✅ Kaikki toiminnot toimivat Microsoft 365 (64-bit) -ympäristössä
 - ✅ Yhteydet tietokantaan ovat nopeampia ja luotettavampia
 - ✅ Automaatioskriptit toimivat 64-bit PowerShellissä
@@ -195,6 +197,7 @@ Automaatioskriptit päivittävät VBA-moduulit tiedostoihin ilman manuaalista ko
 | `Automations/Excel_automaatio.ps1` | Päivittää VBA-moduulit .xlsm-työkirjoihin / Updates VBA modules in .xlsm workbooks |
 
 **Esivaatimukset / Prerequisites:**
+
 1. Aja 64-bittisessä PowerShellissä (x64) — skripti tarkistaa tämän automaattisesti
 2. Microsoft Access/Excel asennettuna
 3. Trust Center: ota käyttöön "Luota VBA-projektin objektimalliin" / "Trust access to the VBA project object model"

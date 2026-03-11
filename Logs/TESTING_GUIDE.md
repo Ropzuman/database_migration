@@ -7,6 +7,7 @@
 ## 🧪 Fast Testing Checklist
 
 ### Pre-Test Setup ✅
+
 1. ✅ Koodi kääntyy — kaikki moduulit ilman virheitä / Code compiles — all modules without errors
 2. ✅ Käytössä on versio 2.0 (64-bit M365 -yhteensopiva) / Using version 2.0 (64-bit M365 compatible)
 3. ✅ Varmuuskopio olemassa (`_archive/README_pre-v2.md` dokumentoi edellisen tilan)
@@ -16,6 +17,7 @@
 ## Test Sequence
 
 ### Test 1: Basic Workflow (5 minutes)
+
 **Purpose:** Verify core functionality works
 
 1. **Open workbook in Excel**
@@ -42,12 +44,14 @@
      - LINKING hidden or deleted (depending on checkbox)
 
 **Expected:**
+
 - ✅ No errors
 - ✅ Faster execution than before
 - ✅ Much less screen flashing
 - ✅ Status bar shows progress
 
 **If errors occur:**
+
 - Note the error message (it should be detailed now)
 - Check which step failed
 - Report back with error text
@@ -55,6 +59,7 @@
 ---
 
 ### Test 2: Empty Dataset (2 minutes)
+
 **Purpose:** Handle edge case gracefully
 
 1. Modify SQL query in Main sheet to return 0 results
@@ -64,12 +69,14 @@
 4. Run `GenPrintout`
 
 **Expected:**
+
 - ✅ Should complete without "subscript out of range" errors
 - ✅ Generate workbook with headers but no data rows
 
 ---
 
 ### Test 3: Hide LINKING Toggle (3 minutes)
+
 **Purpose:** Verify both options work
 
 1. **With checkbox CHECKED:**
@@ -85,6 +92,7 @@
 ---
 
 ### Test 4: Large Dataset (Optional, 5 minutes)
+
 **Purpose:** Verify performance improvement
 
 1. Use query with 1000+ rows
@@ -95,6 +103,7 @@
    - Compare with old time
 
 **Expected:**
+
 - ✅ 25-30% faster than old version
 - ✅ Status bar updates smoothly
 - ✅ Minimal screen flashing
@@ -104,6 +113,7 @@
 ## 🔍 What to Watch For
 
 ### Good Signs ✅
+
 - Fast execution
 - Smooth progress (status bar updating)
 - No screen flashing/flickering
@@ -111,6 +121,7 @@
 - Workbook opens immediately after generation
 
 ### Warning Signs ⚠️
+
 - "Subscript out of range" errors → Report immediately
 - "Object variable not set" errors → Report immediately
 - Macro hangs/freezes → Press `Ctrl+Break`, report
@@ -121,12 +132,14 @@
 ## 🐛 If You Find Bugs
 
 **Report:**
+
 1. Which test failed (Test 1, 2, 3, or 4)
 2. Exact error message (copy full text)
 3. Which step in the test
 4. Dataset size (small/medium/large)
 
 **Quick recovery:**
+
 ```powershell
 # Return to pre-optimization code
 git checkout comments
@@ -154,6 +167,7 @@ Use this to track improvements:
 ## ✅ Success Criteria
 
 **Optimization is successful if:**
+
 - [x] All 3 main macros run without errors
 - [x] Generated printouts are identical to old version (content-wise)
 - [x] Execution is noticeably faster
@@ -166,11 +180,13 @@ Use this to track improvements:
 ## 🎯 Expected Results Summary
 
 **Before optimization:**
+
 - GenPrintout: 15-20 sec (1000 rows)
 - Lots of screen flashing
 - No progress feedback
 
 **After optimization:**
+
 - GenPrintout: **10-14 sec (1000 rows)** ⚡
 - Minimal flashing 🎨
 - Status bar progress 📊
