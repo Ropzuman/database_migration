@@ -266,14 +266,16 @@ Private Sub TeeHTML()
 
     Tagi = Tiedot.Fields("LOOPTAG")
 
-TOUT.WriteLine "<!DOCTYPE HTML PUBLIC ""-//W3C//DTD HTML 4.01 Transitional//EN"">"
-TOUT.WriteLine "<html>"
+TOUT.WriteLine "<!DOCTYPE html>"
+TOUT.WriteLine "<html lang=""fi"">"
 TOUT.WriteLine "<head>"
-TOUT.WriteLine "    <meta http-equiv=""Content-Type"" content=""text/html; charset=ISO-8859-1"">"
-TOUT.WriteLine "    <link type=""text/css"" rel=""stylesheet"" href=""FuncDesc.css"">"
+TOUT.WriteLine "    <meta charset=""ISO-8859-1"">"
+TOUT.WriteLine "    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">"
+TOUT.WriteLine "    <link rel=""stylesheet"" href=""FuncDesc.css"">"
 TOUT.WriteLine "    <title>" & Tiedot.Fields("LoopTAG") & " " & Tiedot.Fields("Description") & "</title>"
 TOUT.WriteLine "</head>"
 TOUT.WriteLine "<body>"
+
 'OTSIKKO - Piirin positio ja nimitys
 TOUT.WriteLine "    <h1 id=""loopname"">"
 TOUT.WriteLine "        <a href=""" & Tiedot.Fields("LOOPTAG") & ".html"" target=""_parent"">" _
