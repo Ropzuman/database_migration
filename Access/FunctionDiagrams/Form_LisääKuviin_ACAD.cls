@@ -129,10 +129,8 @@ If Not Taulu Is Nothing Then
     Set Taulu = Nothing
 End If
 Set db = Nothing
-If Not oAcad Is Nothing Then
-    oAcad.Quit
-    Set oAcad = Nothing
-End If
+' AutoCAD-istuntoa ei suljeta tässä, jotta käyttäjä voi jatkaa työskentelyä tekstien haun jälkeen.
+Set oAcad = Nothing
 On Error GoTo 0
 Debug.Print "HaeTekstit_Click: COMPLETED"
 MsgBox "Valmis", vbInformation, "Päivitä tekstit"
@@ -686,9 +684,7 @@ ErrorHandler:
 Loppu:
     ' Suojataan siivouslohko — vapautetaan kaikki resurssit riippumatta siitä, missä virhe tapahtui
     On Error Resume Next
-    If Not oAcad Is Nothing Then
-        oAcad.Quit   ' Varmistetaan ettei AutoCAD jää taustalle näkymättömäksi prosessiksi
-    End If
+  ' AutoCAD-istuntoa ei suljeta tässä, jotta käyttäjä voi jatkaa työskentelyä kuvien luonnin jälkeen.
 Set oAcad = Nothing
 Set DB = Nothing
 Set Kuvat = Nothing
@@ -1247,7 +1243,7 @@ End If
 
 MsgBox "Revisiosivu(t) tehty", vbOKOnly, "Valmis"
 
-oAcad.Quit
+' AutoCAD-istuntoa ei suljeta tässä, jotta käyttäjä voi jatkaa työskentelyä revisiosivujen luonnin jälkeen.
 Loppu:
 Set oAcad = Nothing
 Set DB = Nothing
