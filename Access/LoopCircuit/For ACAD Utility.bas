@@ -17,6 +17,6 @@ End Type
 #If VBA7 Then
   Private Declare PtrSafe Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
 #Else
-  Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
+  Private Declare PtrSafe Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
 #End If
 

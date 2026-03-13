@@ -46,9 +46,9 @@ End Type
     Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
-    Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 

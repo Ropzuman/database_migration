@@ -12,11 +12,19 @@
 
 ' Windows-rajapinnan kutsut käyttäjänimen ja koneen nimen hakemiseen
 ' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) — ByRef Long, EI LongPtr
+#If VBA7 Then
 Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+#Else
+Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+#End If
+
+Private Const DB_OPEN_TABLE As Long = 1
+
 Function SetStartup()
-    Dim DB As DAO.Database ' Changed to DAO.Database for clarity and best practice
-    Dim taulu As DAO.Recordset ' Changed to DAO.Recordset
+  Dim DB As Object
+  Dim taulu As Object
     Dim NWUserName As String
     Dim CName As String
     Dim BuffSize As Long    ' LPDWORD-yhteensopiva: 32-bittinen arvo
@@ -39,7 +47,7 @@ Function SetStartup()
     End If
         
     Set DB = CurrentDb
-    Set taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    Set taulu = DB.OpenRecordset("UsysUsers", DB_OPEN_TABLE)
     With taulu
       .AddNew
       .Fields(0) = NWUserName    ' Verkkokäyttäjänimi

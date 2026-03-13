@@ -22,11 +22,11 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
-    lCustData As Long
-    lpfnHook As Long
+    lCustData As LongPtr
+    lpfnHook As LongPtr
     lpTemplateName As String
 End Type
-Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
+Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As LongPtr
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
 Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
 Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As LongPtr, ByVal lpBuffer As String) As Long

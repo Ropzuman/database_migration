@@ -7,7 +7,7 @@ Option Explicit
     Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As Long) As Long
 #Else
-    Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
+    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, nSize As Long) As Long
 #End If
 

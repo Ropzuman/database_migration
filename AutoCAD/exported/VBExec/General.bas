@@ -2,7 +2,7 @@ Attribute VB_Name = "General"
 Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
 ' --------- [ CHOOSE FILE ] -----------------
 Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
-Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As Any, ByVal lpWindowName As Any) As Long
+Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As Any, ByVal lpWindowName As Any) As LongPtr
 Public Type OPENFILENAME
     lStructSize As Long
     hwndOwner As LongPtr
@@ -21,7 +21,7 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
-    lCustData As Long
+    lCustData As LongPtr
     lpfnHook As LongPtr
     lpTemplateName As String
 End Type

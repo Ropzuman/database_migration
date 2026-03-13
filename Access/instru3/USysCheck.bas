@@ -32,11 +32,11 @@ Option Explicit
                     Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
-    Private Declare Function api_GetUserName _
+    Private Declare PtrSafe Function api_GetUserName _
                     Lib "advapi32.dll" _
                     Alias "GetUserNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare Function api_GetComputerName _
+    Private Declare PtrSafe Function api_GetComputerName _
                     Lib "kernel32" _
                     Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long

@@ -14,7 +14,7 @@ Option Explicit
 '==========================================================================
 
 ' Kirjautuneen käyttäjän poiminta Windows-rajapinnasta
-Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As LongPtr) As Long
+Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 
 ' --------- [ VALITSE TIEDOSTO -ikkuna ] -----------------
 Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long

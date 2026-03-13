@@ -21,8 +21,8 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
-    lCustData As Long
-    lpfnHook As Long
+    lCustData As LongPtr
+    lpfnHook As LongPtr
     lpTemplateName As String
 End Type
 Public DB As New ADODB.Connection
