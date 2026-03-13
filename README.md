@@ -8,7 +8,7 @@
 ## 📌 Projektin tila / Project Status
 
 > **Versio / Version:** 2.0 — 64-bit M365 Compatible
-> **Viimeksi päivitetty / Last updated:** 11.3.2026
+> **Viimeksi päivitetty / Last updated:** 13.3.2026
 > **Yhteensopivuus / Compatibility:** Microsoft 365 (64-bit), Excel, Access, AutoCAD 2019+
 > **Tila / Status:** ✅ Migraatio valmis — kaikki moduulit testattu
 
@@ -263,6 +263,7 @@ versio 16.0 → 15.0 → 12.0.
 Täydelliset muutoslokit / Full changelogs:
 
 - **Projektin päämuutosloki:** `Logs/CHANGELOG_64bit_and_perf.md`
+- **Access 64-bit Declare -yhteenveto:** `Access/ACCESS_64bit_DECLARE_MIGRATION_SUMMARY.md`
 - **Viimeisin vaihe:** `Logs/PHASE3_PHASE4_WORKSPACE_CHANGELOG_2026-03-09.md`
 - **Access MAINEQ:** `Access/MAINEQ/Logs/MAINEQ_changelog.md`
 - **Access PIPE:** `Access/PIPE/Logs/PIPE_changelog.md`
