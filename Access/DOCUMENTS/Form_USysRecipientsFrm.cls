@@ -8,8 +8,5 @@ Option Explicit
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
 Private Sub Text36_Click()
-  Common = IIf(IsNull(Me.Address.Value), "", Me.Address.Value)
-  CommonOts = "Detail Address:"
-  CommonType = 0
-  DoCmd.OpenForm "USysShowCommon", , , , , acDialog
+  DoCmd.OpenForm "USysShowCommon", , , , , acDialog, IIf(IsNull(Me.Address.Value), "", CStr(Me.Address.Value))
 End Sub

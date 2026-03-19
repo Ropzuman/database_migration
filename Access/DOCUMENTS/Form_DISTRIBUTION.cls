@@ -64,7 +64,7 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
                     taulu.AddNew
                     taulu.Fields(0) = j
                     taulu.Fields(1) = Me.TDistr.Value
-                    taulu.Fields(2) = HaeRevisio(Taulu2.Fields("Rev"))
+                    taulu.Fields(2) = HaeRevisioPaikallinen(Taulu2.Fields("Rev"))
                     taulu.Fields(3) = Nz(Taulu2.Fields("Status"), "")
                     taulu.Update
                 End If
@@ -109,6 +109,24 @@ ErrorHandler:
     Resume Cleanup
 End Sub
 
+Private Function HaeRevisioPaikallinen(ByVal Revisio As Variant) As String
+    Dim RevisioTeksti As String
+    Dim ErotinPos As Long
+
+    If IsNull(Revisio) Then
+        HaeRevisioPaikallinen = ""
+        Exit Function
+    End If
+
+    RevisioTeksti = CStr(Revisio)
+    ErotinPos = InStr(RevisioTeksti & " ", " ")
+    If ErotinPos > 1 Then
+        HaeRevisioPaikallinen = Left$(RevisioTeksti, ErotinPos - 1)
+    Else
+        HaeRevisioPaikallinen = ""
+    End If
+End Function
+
 Private Sub BExit_Click()
   DoCmd.Close
 End Sub
@@ -122,11 +140,9 @@ Private Sub Command23_Click()
 End Sub
 Private Sub Command27_Click()
 ' Luodaan uusi distribuutio
-    Common = ""
     DoCmd.OpenForm "USysNewDISTRIBUTION"
     Me.TDistr.Requery
     Me.Refresh
-    If Common <> "" Then Me.TDistr.Value = Common
 End Sub
 '''
 ' Generate Excel Report for Distribution or All Documents
@@ -134,7 +150,7 @@ End Sub
 ' @param Ehto - Distribution ID filter (if empty, generates report for all documents)
 '''
 Private Sub ExcelRep(Ehto As String)
-    Dim xlApp As Excel.Application
+    Dim xlApp As Object
     Dim DB As DAO.Database
     Dim Polku As String
     
@@ -192,8 +208,7 @@ Private Sub EditDistrib_Click()
   If Me.TDistr.Value = "" Or IsNull(Me.TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else
-    Common = Me.TDistr.Value
-    DoCmd.OpenForm "USysEditDISTRIBUTION", , , , , acDialog
+        DoCmd.OpenForm "USysEditDISTRIBUTION", , , , , acDialog, CStr(Me.TDistr.Value)
     Me.TDistr.Requery
     Me.FRecip.Requery
   End If

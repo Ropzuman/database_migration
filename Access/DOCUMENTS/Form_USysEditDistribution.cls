@@ -7,6 +7,8 @@ Option Explicit
 '            ja mahdollistaa vastaanottajien lisäyksen tai poiston.
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
+Private mDistrID As Long
+
 Private Sub BExit_Click()
   DoCmd.Close
 End Sub
@@ -20,9 +22,22 @@ Private Sub Form_Load()
   Dim taulu As DAO.Recordset
   
   On Error GoTo ErrorHandler
+
+  ' Distribuution tunniste luetaan avaavan lomakkeen OpenArgs-parametrista.
+  If IsNull(Me.OpenArgs) Or Len(Trim$(CStr(Me.OpenArgs))) = 0 Then
+    MsgBox "Distribuution tunniste puuttuu.", vbCritical, "Muokkaa distribuutiota"
+    DoCmd.Close acForm, Me.Name
+    Exit Sub
+  End If
+  If Not IsNumeric(Me.OpenArgs) Then
+    MsgBox "Virheellinen distribuution tunniste.", vbCritical, "Muokkaa distribuutiota"
+    DoCmd.Close acForm, Me.Name
+    Exit Sub
+  End If
+  mDistrID = CLng(Me.OpenArgs)
   
   Set DB = CurrentDb
-  Set taulu = DB.OpenRecordset("SELECT * FROM USySDISTRIBUTION WHERE ID=" & Common, dbOpenSnapshot)
+  Set taulu = DB.OpenRecordset("SELECT * FROM USySDISTRIBUTION WHERE ID=" & mDistrID, dbOpenSnapshot)
   
   If Not taulu.EOF Then
     Me.DistrNo = Nz(taulu.Fields("No"), "")
@@ -33,7 +48,7 @@ Private Sub Form_Load()
     Me.Note = Nz(taulu.Fields("Note"), "")
   End If
 
-  Me.Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & Common
+  Me.Vastaanottajat.RowSource = "SELECT Counter, * FROM USysRecipByDistr WHERE DistrID=" & mDistrID
 Cleanup:
   If Not taulu Is Nothing Then
     Set taulu = Nothing
@@ -79,7 +94,7 @@ Private Sub Lista_DblClick(Cancel As Integer)
     Set Taulu2 = DB.OpenRecordset("USysRecipByDistr", dbOpenTable)
     With Taulu2
       .AddNew
-      .Fields("DistrID") = Common
+      .Fields("DistrID") = mDistrID
       .Fields("Copies") = Kopioita
       .Fields("Unit") = Nz(taulu.Fields("Unit"), "")
       .Fields("Company") = Nz(taulu.Fields("Company"), "")
@@ -113,8 +128,9 @@ ErrorHandler:
     DBEngine.Rollback
   End If
   MsgBox "Error adding recipient: " & Err.Description, vbExclamation, "Add Error"
-  Resume Cleanup
 End Sub
+
+' IsNumeric() — using VBA built-in; private override removed to avoid compile ambiguity.
 
 '''
 ' Vastaanottajat Double Click - Remove recipient from distribution
@@ -167,7 +183,7 @@ Private Sub Valmis_Click()
   Set DB = CurrentDb
   DBEngine.BeginTrans
   
-  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE ID=" & Common
+  SQL = "SELECT * FROM UsysDISTRIBUTION WHERE ID=" & mDistrID
   Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset)
   
   With taulu

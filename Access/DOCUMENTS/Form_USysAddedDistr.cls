@@ -11,11 +11,20 @@ Option Explicit
 Private Sub BOK_Click()
   DoCmd.Close
 End Sub
+
+Private Function LueTempVarTeksti(ByVal Nimi As String) As String
+  On Error GoTo ErrorHandler
+  LueTempVarTeksti = Nz(TempVars(Nimi).Value, "")
+  Exit Function
+ErrorHandler:
+  LueTempVarTeksti = ""
+End Function
 Private Sub Form_Load()
 Dim SQL As String
 Dim taulu As DAO.Recordset
 Dim SentPath As String
 Dim DB As DAO.Database
+Dim CommonPath As String
 On Error GoTo ErrorHandler
 Set DB = CurrentDb
 ' Haetaan projektin Sent-kansion sijainti ProjPaths-taulusta
@@ -24,8 +33,12 @@ Set taulu = DB.OpenRecordset(SQL)
 If Not taulu.EOF Then
   SentPath = taulu.Fields("Path")
 End If
-Me.OHakemisto.Caption = Common
-Me.OHakemisto.HyperlinkAddress = Common
+' Haetaan Common-polku TempVarsista (Form_DOCUMENTS:sta välitetty)
+CommonPath = LueTempVarTeksti("DOC_Common_Text")
+If CommonPath <> "" Then
+  Me.OHakemisto.Caption = CommonPath
+  Me.OHakemisto.HyperlinkAddress = CommonPath
+End If
 Me.SHakemisto.Caption = SentPath
 Me.SHakemisto.HyperlinkAddress = SentPath
 

@@ -1,8 +1,42 @@
 # Muutosloki — Access/DOCUMENTS
 
 **Tiedosto:** `Access/DOCUMENTS/` (koko kansio)
-**Päivämäärä:** 2026-03-09
+**Päivämäärä:** 2026-03-19
 **Haara:** `main`
+
+---
+
+## Muutokset — regressiokorjaus ja refaktorointi (2026-03-19)
+
+### Kriittinen regressiokorjaus: käyttäjänimi palautui aina Unknown
+
+- `Form_USysNewDistribution.cls` / `GetNetworkUserName`: palautuslogiikka korjattu käyttämään jaettua `NetworkUserName()`-funktiota (`ForDocuments.vba`) ja fallbackina `"Unknown"` vain virhetilanteessa.
+- `Form_USysReserve.cls` / `GetNetworkUserName`: sama korjaus kuin yllä.
+- Vaikutus: `SelectedBy`-kenttään ja varausleimoihin tallentuu taas oikea käyttäjänimi.
+
+### Arkkitehtuurimuutos: globaalit välimuuttujat -> TempVars/OpenArgs
+
+- Lomakkeiden välinen tiedonsiirto on siirretty pois globaaleista `Common`/`CurRecord`-tyyppisistä arvoista kohti nimettyjä `TempVars`-avaimia (esim. `DOC_*`).
+- `OpenArgs`-välitys lisätty tunnisteiden ja yksittäisten tekstiarvojen siirtoon (`USysEditDistribution`, `USysOpenFile`, `USysShowCommon`).
+- Vaikutus: pienempi riski ristikkäisille sivuvaikutuksille samanaikaisissa formiavausketjuissa.
+
+### Yhteensopivuusmuutokset ForDocuments-moduuliin
+
+- `ForDocuments.vba`: API-julistukset suojattu `#If VBA7 Then`-ehdoilla 32/64-bit -haarautukseen.
+- Kansiovalinta (`ValitseHakem`) käyttää `Application.FileDialog`-pohjaista toteutusta molemmissa haaroissa.
+- Lisätty yhteisiä asetus-/hakufunktioita revisio- ja common-tekstin välitykseen.
+
+### Tarkennettu käynnistysvakaus
+
+- `GlobalVBAs.vba`: `SetStartup()` palauttaa Boolean-arvon ja tarkistaa `UsysUsers`-taulun olemassaolon ennen lokikirjoitusta.
+- Tarkoitus: AutoExec-käynnistys ei kaadu puuttuvaan tai lukittuun lokitauluun.
+
+### Nopea symbolitarkistus (2026-03-19)
+
+- Ajettiin kansiotason staattinen tarkistus `*.cls/*.vba/*.bas`-tiedostoihin.
+- Tulos: `Option Explicit` puuttuvia tiedostoja **0 kpl**.
+- Duplikaattiproseduurit: löydökset kohdistuivat vain `ForDocuments.vba`-tiedoston `#If VBA7 Then / #Else` -haarojen rinnakkaisiin määrittelyihin (`ValitseHakem`, `DummyFunc`, `BrowseCallbackProc`), jotka ovat tässä toteutuksessa odotettuja eikä niistä synny aktiivisessa haarassa käännösvirhettä.
+- Johtopäätös: tarkistuksessa ei löytynyt uusia toimintakelpoisia `Ambiguous name` / `Variable not defined` -blokkeritasoisia löydöksiä.
 
 ---
 

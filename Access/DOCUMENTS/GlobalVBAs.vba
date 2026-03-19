@@ -13,53 +13,88 @@
 ' Windows-rajapinnan kutsut käyttäjänimen ja koneen nimen hakemiseen
 ' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) — ByRef Long, EI LongPtr
 #If VBA7 Then
-Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
-Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-Private Declare PtrSafe Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 
 Private Const DB_OPEN_TABLE As Long = 1
 
-Function SetStartup()
-  Dim DB As Object
-  Dim taulu As Object
-    Dim NWUserName As String
-    Dim CName As String
-    Dim BuffSize As Long    ' LPDWORD-yhteensopiva: 32-bittinen arvo
-    Dim NBuffer As String
-    
-    BuffSize = 256
-    NBuffer = Space$(BuffSize)
-    
-    If api_GetUserName(NBuffer, BuffSize) Then
-      NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
-    Else
-      NWUserName = "Unknown"
-    End If
-    BuffSize = 256
-    NBuffer = Space$(BuffSize)
-    If api_GetComputerName(NBuffer, BuffSize) Then
-      CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
-    Else
-      CName = "Unknown"
-    End If
-        
-    Set DB = CurrentDb
-    Set taulu = DB.OpenRecordset("UsysUsers", DB_OPEN_TABLE)
+Public Function SetStartup() As Boolean
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
+  Dim NWUserName As String
+  Dim CName As String
+  Dim BuffSize As Long    ' LPDWORD-yhteensopiva: 32-bittinen arvo
+  Dim NBuffer As String
+
+  On Error GoTo ErrorHandler
+
+  BuffSize = 256
+  NBuffer = Space$(BuffSize)
+  If api_GetUserName(NBuffer, BuffSize) Then
+    NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+  Else
+    NWUserName = "Unknown"
+  End If
+
+  BuffSize = 256
+  NBuffer = Space$(BuffSize)
+  If api_GetComputerName(NBuffer, BuffSize) Then
+    CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+  Else
+    CName = "Unknown"
+  End If
+
+  Set DB = CurrentDb
+
+  ' AutoExec ei saa kaatua, vaikka lokitaulu puuttuisi tai olisi lukittu.
+  If TauluOnOlemassa(DB, "UsysUsers") Then
+    Set taulu = DB.OpenRecordset("UsysUsers", dbOpenDynaset)
     With taulu
       .AddNew
-      .Fields(0) = NWUserName    ' Verkkokäyttäjänimi
-      .Fields(1) = CurrentUser()  ' Tietokantakäyttäjänimi
-      .Fields(2) = CName          ' Koneen nimi
-      .Fields(3) = Now            ' Kirjautumishetki
+      .Fields(0) = NWUserName     ' Verkkokäyttäjänimi
+      .Fields(1) = CurrentUser()   ' Tietokantakäyttäjänimi
+      .Fields(2) = CName           ' Koneen nimi
+      .Fields(3) = Now             ' Kirjautumishetki
       .Update
     End With
+  End If
+
+Cleanup:
+  On Error Resume Next
+  If Not taulu Is Nothing Then
     taulu.Close
     Set taulu = Nothing
-    DB.Close
-    Set DB = Nothing
+  End If
+  Set DB = Nothing
+  On Error GoTo 0
+  SetStartup = True
+  Exit Function
+
+ErrorHandler:
+  ' Käynnistyksen pitää jatkua myös virhetilanteissa.
+  Resume Cleanup
+End Function
+
+Private Function TauluOnOlemassa(ByVal DB As DAO.Database, ByVal TaulunNimi As String) As Boolean
+  Dim T As DAO.TableDef
+
+  On Error GoTo ErrorHandler
+  For Each T In DB.TableDefs
+    If StrComp(T.Name, TaulunNimi, vbTextCompare) = 0 Then
+      TauluOnOlemassa = True
+      Exit Function
+    End If
+  Next T
+
+  TauluOnOlemassa = False
+  Exit Function
+
+ErrorHandler:
+  TauluOnOlemassa = False
 End Function
 Public Function Yhdista(T1 As String, T2 As String, T3 As String) As String
 ' Yhdistää dokumentin nimikenttä yhdeksi sarakkeeksi.

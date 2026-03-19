@@ -8,18 +8,24 @@ Option Explicit
 '            Tarkistaa asiakkaan numeron varauksen ennen tallennusta.
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
+Private Const TV_DOC_NEW_COUNTER As String = "DOC_NewRecordCounter"
+Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
+
 Public SelDept As String
 Public Varaaja As String
+
+' Def* defaults (DefDName1, DefDName2, DefDName3, DefArea, DefSort, DefPages, DefPath, DefRev)
+' and MRev* revision fields are Public globals declared in ForDocuments.vba — no local copies needed.
 Private Sub ChoosePath_Click()
 Dim Hakemisto As String
-  Hakemisto = ValitseHakem(Me.hWnd, IIf(IsNull(Me.TPath.Value), "", Me.TPath.Value))
+  Hakemisto = ValitseHakemPaikallinen(IIf(IsNull(Me.TPath.Value), "", Me.TPath.Value))
   If Hakemisto <> "" Then
     Me.TPath.Value = Hakemisto
   End If
 End Sub
 Private Sub Form_Load()
 Dim taulu As DAO.Recordset
-  Varaaja = NetworkUserName
+  Varaaja = GetNetworkUserName()
 ' Käytetään viimeksi lisätyn dokumentin tietoja uuden pohjaksi
   Set taulu = CurrentDb.OpenRecordset("SELECT Path FROM ProjInfo")
   Me.TDocName1.Value = IIf(DefDName1 <> "", DefDName1, Null)
@@ -86,7 +92,7 @@ Private Sub TalletaNappi_Click()
         .Fields("Pages") = Me.TPages.Value
         .Fields("WorkPath") = Me.TPath.Value
         .Fields("Note") = Me.TNote.Value
-        CurRecord = .Fields("Counter")            'Otetaan ylös Counter-fieldin arvo, jotta voidaan palata kyseiseen recordiin pääformissa
+        AsetaTempVar TV_DOC_NEW_COUNTER, CStr(.Fields("Counter"))
         .Update
       End With
       taulu.Close
@@ -105,6 +111,58 @@ Private Sub TalletaNappi_Click()
 '--------------------------------------------------
       DoCmd.Close
 End Sub
+
+Private Sub AsetaTempVar(ByVal Nimi As String, ByVal Arvo As String)
+  On Error Resume Next
+  TempVars.Remove Nimi
+  On Error GoTo 0
+  TempVars.Add Nimi, Arvo
+End Sub
+
+Private Function ValitseHakemPaikallinen(Optional ByVal AloitusPolku As String = "") As String
+  Dim Dlg As Object
+  Dim Polku As String
+
+  On Error GoTo ErrorHandler
+
+  Set Dlg = Application.FileDialog(4)
+  With Dlg
+    .Title = "Choose path:"
+    .AllowMultiSelect = False
+    If AloitusPolku <> "" Then .InitialFileName = AloitusPolku
+    If .Show <> -1 Then
+      ValitseHakemPaikallinen = ""
+      GoTo Cleanup
+    End If
+    Polku = CStr(.SelectedItems(1))
+  End With
+
+  If Polku <> "" Then
+    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
+  End If
+  ValitseHakemPaikallinen = Polku
+
+Cleanup:
+  Set Dlg = Nothing
+  Exit Function
+
+ErrorHandler:
+  ValitseHakemPaikallinen = ""
+  Resume Cleanup
+End Function
+
+Private Function LueTempVarTeksti(ByVal Nimi As String) As String
+  On Error GoTo ErrorHandler
+  LueTempVarTeksti = Nz(TempVars(Nimi).Value, "")
+  Exit Function
+ErrorHandler:
+  LueTempVarTeksti = ""
+End Function
+
+Private Function GetNetworkUserName() As String
+  ' Delegates to the public NetworkUserName() declared in ForDocuments.vba
+  GetNetworkUserName = NetworkUserName()
+End Function
 
 Private Sub TDiscipline_Change()
   MuutaNumero
@@ -126,8 +184,14 @@ Private Sub MuutaNumero()
   End If
 End Sub
 Private Sub AvaaRevisio()
-  Common = "ENSIMMAINEN"
-  Revisioteksti = IIf(IsNull(Me.TRev.Value), "", Me.TRev.Value)
+  ' Tallennetaan nykyinen revisio TempVarsiin, jotta USysRevText voi lukea ja kirjoittaa sen
+  AsetaTempVar TV_DOC_REV_TEXT, IIf(IsNull(Me.TRev.Value), "", CStr(Me.TRev.Value))
   DoCmd.OpenForm "USysRevText", , , , , acDialog
-  Me.TRev.Value = Revisioteksti
+  ' Luetaan päivitetty revisio takaisin TempVars:sta
+  Dim UusiRev As String
+  UusiRev = LueTempVarTeksti(TV_DOC_REV_TEXT)
+  If UusiRev <> "" Then
+    Me.TRev.Value = UusiRev
+  End If
 End Sub
+

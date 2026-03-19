@@ -1,6 +1,7 @@
 Option Compare Database
 Option Explicit
 '==========================================================================
+Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
 ' LOMAKE   : Form_USysRevText
 ' SOVELLUS : DOCUMENTS — Revisiotekstin muokkaus
 ' KUVAUS   : Hallinnoi dokumentin revisiohistoriaa. Revisiot tallennetaan
@@ -10,15 +11,21 @@ Option Explicit
 '==========================================================================
 Public Alku As String
 Public Loppu As String
+
+' MRevRev, MRevDrawn, MRevChecked, MRevApproved, MRevDescription, and Revisioteksti
+' are Public globals declared in ForDocuments.vba — no local copies needed.
 Private Sub Form_Resize()
-  If Revisioteksti <> "" Then
-    Me.Lista.RowSource = Replace(CStr(Revisioteksti), vbCrLf, ";")
+  Dim RevTeksti As String
+
+  RevTeksti = HaeRevisioTekstiTyoskentely()
+  If RevTeksti <> "" Then
+    Me.Lista.RowSource = Replace(CStr(RevTeksti), vbCrLf, ";")
     Me.Lista.SetFocus
     Me.Lista.ListIndex = 0
-    If InStr(Revisioteksti, vbCrLf) Then
-      NaytaRev Left$(Revisioteksti, InStr(Revisioteksti, vbCrLf) - 1), 0
+    If InStr(RevTeksti, vbCrLf) Then
+      NaytaRev Left$(RevTeksti, InStr(RevTeksti, vbCrLf) - 1), 0
     Else
-      NaytaRev CStr(Revisioteksti), 0
+      NaytaRev CStr(RevTeksti), 0
     End If
   Else
     AddNew_Click
@@ -69,6 +76,7 @@ Dim koe As String
      MRevApproved = Me.Approved.Value
      MRevDescription = Me.Description.Value
      Revisioteksti = Replace(Me.Lista.RowSource, ";", vbCrLf)
+     AsetaTempVarPaikallinen TV_DOC_REV_TEXT, Revisioteksti
    End If
  End If
  DoCmd.Close
@@ -144,3 +152,24 @@ Private Sub Tyhjenna()
   Me.Approved.Value = ""
   Me.Description.Value = ""
 End Sub
+
+Private Function HaeRevisioTekstiTyoskentely() As String
+  ' Käytetään TempVars-välitystä revisiotekstin välittämiseen
+  HaeRevisioTekstiTyoskentely = LueTempVarTekstiPaikallinen(TV_DOC_REV_TEXT)
+End Function
+
+Private Sub AsetaTempVarPaikallinen(ByVal Nimi As String, ByVal Arvo As String)
+  On Error Resume Next
+  TempVars.Remove Nimi
+  On Error GoTo 0
+  TempVars.Add Nimi, Arvo
+End Sub
+
+Private Function LueTempVarTekstiPaikallinen(ByVal Nimi As String) As String
+  On Error GoTo ErrorHandler
+  LueTempVarTekstiPaikallinen = Nz(TempVars(Nimi).Value, "")
+  Exit Function
+
+ErrorHandler:
+  LueTempVarTekstiPaikallinen = ""
+End Function

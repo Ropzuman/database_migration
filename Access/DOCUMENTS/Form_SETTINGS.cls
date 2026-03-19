@@ -44,9 +44,9 @@ End Sub
 Private Sub PoimiPolku(Kentta As Control)
 Dim Hakemisto As String
   If IsNull(Kentta.Value) Then
-    Hakemisto = ValitseHakem(Me.hWnd)
+    Hakemisto = ValitseHakemPaikallinen("")
   Else
-    Hakemisto = ValitseHakem(Me.hWnd, Kentta.Value)
+    Hakemisto = ValitseHakemPaikallinen(Kentta.Value)
   End If
   If Hakemisto <> "" Then Kentta.Value = Hakemisto
 End Sub
@@ -54,3 +54,35 @@ End Sub
 Private Sub TPath_DblClick(Cancel As Integer)
   PoimiPolku Me.TPath
 End Sub
+
+Private Function ValitseHakemPaikallinen(Optional ByVal AloitusPolku As String = "") As String
+  Dim Dlg As Object
+  Dim Polku As String
+
+  On Error GoTo ErrorHandler
+
+  Set Dlg = Application.FileDialog(4)
+  With Dlg
+    .Title = "Choose path:"
+    .AllowMultiSelect = False
+    If AloitusPolku <> "" Then .InitialFileName = AloitusPolku
+    If .Show <> -1 Then
+      ValitseHakemPaikallinen = ""
+      GoTo Cleanup
+    End If
+    Polku = CStr(.SelectedItems(1))
+  End With
+
+  If Polku <> "" Then
+    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
+  End If
+  ValitseHakemPaikallinen = Polku
+
+Cleanup:
+  Set Dlg = Nothing
+  Exit Function
+
+ErrorHandler:
+  ValitseHakemPaikallinen = ""
+  Resume Cleanup
+End Function

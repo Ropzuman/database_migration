@@ -10,7 +10,7 @@ Option Explicit
 Public SelDept As String
 Public Varaaja As String
 Private Sub Form_Load()
-  Varaaja = NetworkUserName
+  Varaaja = GetNetworkUserName()
 End Sub
 Private Sub Peruuta_Click()
   DoCmd.Close
@@ -78,3 +78,12 @@ Private Sub MuodostaNumero()
   ' Muodostetaan asiakkaan piirustunumero valituista kenttien arvoista
   Me.TClientNo.Caption = Me.TPaperSize.Value & "-2090-210-" & Me.TDiscipline.Value & "-" & Me.TNumber.Value
 End Sub
+
+Private Function GetNetworkUserName() As String
+  ' Hakee verkkokäyttäjänimen käyttäjää varaajana
+  On Error GoTo FallbackHandler
+  GetNetworkUserName = NetworkUserName()
+  Exit Function
+FallbackHandler:
+  GetNetworkUserName = "Unknown"
+End Function

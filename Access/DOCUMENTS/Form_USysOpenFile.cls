@@ -9,7 +9,7 @@ Option Explicit
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
 Dim Hakem As String
-Dim fso As New FileSystemObject
+Dim fso As Object
 Private Sub Command4_Click()
   DoCmd.Close
 End Sub
@@ -38,11 +38,27 @@ Private Sub Form_Load()
   Dim Tiedostot As String
   Dim Rivit As String
   Dim Osoitin As Long
+  Dim DokumenttiID As Long
   
   On Error GoTo ErrorHandler
+
+  Set fso = CreateObject("Scripting.FileSystemObject")
+
+  ' Dokumentin tunniste välitetään avaavalta lomakkeelta OpenArgs-parametrissa.
+  If IsNull(Me.OpenArgs) Or Len(Trim$(CStr(Me.OpenArgs))) = 0 Then
+    MsgBox "Dokumentin tunniste puuttuu.", vbCritical, "Avaa tiedosto"
+    DoCmd.Close acForm, Me.Name
+    Exit Sub
+  End If
+  If Not IsNumeric(Me.OpenArgs) Then
+    MsgBox "Virheellinen dokumentin tunniste.", vbCritical, "Avaa tiedosto"
+    DoCmd.Close acForm, Me.Name
+    Exit Sub
+  End If
+  DokumenttiID = CLng(Me.OpenArgs)
   
   Set DB = CurrentDb
-  Set taulu = DB.OpenRecordset("SELECT File, WorkPath FROM DOCUMENTS WHERE Counter=" & Common, dbOpenSnapshot)
+  Set taulu = DB.OpenRecordset("SELECT File, WorkPath FROM DOCUMENTS WHERE Counter=" & DokumenttiID, dbOpenSnapshot)
   
   If Not taulu.EOF Then
     Tiedostot = Nz(taulu.Fields(0).Value, "") & vbCrLf
@@ -88,3 +104,5 @@ Private Sub Tied_DblClick(Cancel As Integer)
       MsgBox "File not found: " & Hakem & Me.Tied.Value, vbCritical, "Open File"
   End If
 End Sub
+
+' IsNumeric() — using VBA built-in; private override removed to avoid compile ambiguity.

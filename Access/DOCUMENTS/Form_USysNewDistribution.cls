@@ -23,7 +23,7 @@ Private Sub Form_Load()
   On Error GoTo ErrorHandler
 
   ' Haetaan nykyinen Windows-käyttäjätunnus omien valintojen tunnistamiseksi
-  Kayttaja = NetworkUserName
+  Kayttaja = GetNetworkUserName()
 
   Set DB = CurrentDb
   ' Nollataan VAIN tämän käyttäjän aiemmat unohtuneet valinnat —
@@ -79,7 +79,7 @@ SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.Item
         ' Merkitään valituksi ja kirjataan valitsijan käyttäjätunnus monikäyttäjätuen takaamiseksi
         taulu.Fields("To Distribution") = True
         taulu.Fields("Copies") = Kopioita
-        taulu.Fields("SelectedBy") = NetworkUserName
+        taulu.Fields("SelectedBy") = GetNetworkUserName()
       End If
     End If
     taulu.Update
@@ -108,7 +108,6 @@ Private Sub Valmis_Click()
   Dim DB As DAO.Database
   Dim taulu As DAO.Recordset
   Dim Taulu2 As DAO.Recordset
-  Dim Hakemisto As String
   Dim DistrID As Long
   Dim inTransaction As Boolean
   Dim Kayttaja As String
@@ -117,7 +116,7 @@ Private Sub Valmis_Click()
   inTransaction = False
 
   Set DB = CurrentDb
-  Kayttaja = NetworkUserName
+  Kayttaja = GetNetworkUserName()
 
   ' Tarkistetaan valinnat vain tämän käyttäjän rivien perusteella
   Set taulu = DB.OpenRecordset("SELECT * FROM USysRecipients WHERE [To Distribution] = Yes AND SelectedBy = '" & Replace(Kayttaja, "'", "") & "';")
@@ -150,8 +149,6 @@ Private Sub Valmis_Click()
   taulu.Close
   Set taulu = Nothing
 
-  Hakemisto = aReplace(Me.DistrNo) & "\"
-
   ' Aloitetaan transaktio: molemmat taulut päivitetään atomaarisesti
   DBEngine.BeginTrans
   inTransaction = True
@@ -183,8 +180,6 @@ Private Sub Valmis_Click()
 
   DBEngine.CommitTrans
   inTransaction = False
-
-  Common = Hakemisto
   DoCmd.Close
 
 Cleanup:
@@ -208,3 +203,15 @@ ErrorHandler:
   MsgBox "Error saving distribution: " & Err.Description, vbCritical, "Database Error"
   Resume Cleanup
 End Sub
+
+Private Function GetNetworkUserName() As String
+  ' Hakee verkkokäyttäjänimen tai palauttaa Unknown
+  On Error GoTo FallbackHandler
+  GetNetworkUserName = NetworkUserName()
+  Exit Function
+
+FallbackHandler:
+  GetNetworkUserName = "Unknown"
+End Function
+
+' IsNumeric() — using VBA built-in; private override removed to avoid compile ambiguity.
