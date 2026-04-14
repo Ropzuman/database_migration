@@ -132,32 +132,30 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     Dim TTIEDOT As String
     Dim oPohja As Word.Document
     Dim FS As New FileSystemObject
+    Dim sTagiEnnen As String
     
     On Error GoTo ErrorHandler
-   
+    
     Suomeksi = False
-'  If Me.FKieli.Value = 2 Then Suomeksi = True
+    ' If Me.FKieli.Value = 2 Then Suomeksi = True
 
     PoimiAsetukset
     Samaan = False
     Eka = True
-    If Kaikki Then
-'    If MsgBox("Tehdäänkä yhteen tiedostoon?", vbYesNo) = vbYes Then
-'      Samaan = True
-'    End If
-    End If
     
-    ' Varmistetaan, että tulostuspolku on määritelty ja hakemisto on olemassa
+    ' Jos Kaikki = True, voidaan tässä kysyä halutaanko kaikki yhteen tiedostoon
+    ' (Samaan-muuttujan asetus vaatii omat koodipolkunsa)
+
+    ' Varmistetaan, että tulostuspolku on määritelty
     If POLKU = "" Then
-        MsgBox "OUTPUTPATH on tyhjä SETTINGS-taulussa. Tarkista taulun sisältö.", vbExclamation, "TeeSelostus"
+        MsgBox "OUTPUTPATH on tyhjä SETTINGS-taulussa.", vbExclamation, "TeeSelostus"
         Exit Sub
     End If
-    If Me.FTyyppi <> 1 Then  ' HTML-polku: tarkistetaan hakemiston olemassaolo
-        If Not FS.FolderExists(POLKU) Then
-            MsgBox "Tulostushakemistoa ei löydy:" & vbCrLf & POLKU & vbCrLf & _
-                   "Luo hakemisto ensin tai korjaa SETTINGS.OUTPUTPATH.", vbExclamation, "TeeSelostus"
-            Exit Sub
-        End If
+
+    ' Tarkistetaan hakemiston olemassaolo
+    If Not FS.FolderExists(POLKU) Then
+        MsgBox "Tulostushakemistoa ei löydy:" & vbCrLf & POLKU, vbExclamation, "TeeSelostus"
+        Exit Sub
     End If
     
     ' Valitaan tietolähde lomakepohjan tyypin mukaan
@@ -167,76 +165,72 @@ Private Sub TeeSelostus(Kaikki As Boolean)
         TTIEDOT = "TIEDOT_MOOTTORIT"
     End If
   
-    If Me.FTyyppi = 1 Then 'WORD
-        Set oWord = CreateObject("Word.Application") ' oTemplate.Application
+    ' Alustetaan Word tarvittaessa
+    If Me.FTyyppi = 1 Then 
+        Set oWord = CreateObject("Word.Application")
         oWord.Visible = True
-    Else
-    
     End If
     
+    ' Avataan tietuejoukko (Recordset)
     If Kaikki Then
         Set Tiedot = CurrentDb.OpenRecordset(TTIEDOT)
     Else
-        If Me.LomakePohja.Value = 1 Then
-            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
-        Else
-            Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
-        End If
+        Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
     End If
     
+    ' --- PÄÄSILMUKKA ---
     If Samaan Then
+        ' Kirjoitus yhteen suureen tiedostoon
         Set oTemplate = oWord.Documents.Open(POHJA)
         Nimi = POLKU & DOCNO & "_KAIKKI.docx"
         oTemplate.SaveAs Nimi
         Set oPohja = oWord.Documents.Open(POHJA, , True)
         oTemplate.Activate
+        
         Do While Not Tiedot.EOF
-            MuutaTiedot
+            MuutaTiedot ' Käsittelee yhden piirin ja siirtää kursorin seuraavaan
             oPohja.Activate
             oWord.Selection.WholeStory
             oWord.Selection.Copy
             oTemplate.Activate
-            oWord.Selection.EndKey wdStory
-            oWord.Selection.InsertBreak wdPageBreak
+            oWord.Selection.EndKey 6 ' wdStory
+            oWord.Selection.InsertBreak 7 ' wdPageBreak
             oWord.Selection.Paste
+            DoEvents ' Estää jäätymisen
         Loop
     Else
+        ' Kirjoitus erillisiin tiedostoihin (Yksi tiedosto per piiri)
         Do While Not Tiedot.EOF
-            Dim sTagiEnnen As String
-            sTagiEnnen = Tiedot.Fields("LoopTAG")
-            If Me.FTyyppi = 1 Then 'Word versiot
-                Set oTemplate = oWord.Documents.Open(POHJA)
-                Nimi = POLKU & DOCNO & "_" & sTagiEnnen & ".docx"
-                MuutaTiedot
-                oTemplate.SaveAs Nimi
-                If Kaikki Then oTemplate.Close False
-                ' Turvasilmukka Word-polulle: varmistetaan eteneminen vaikka MuutaTiedot ei edistäisi
-                Do While Not Tiedot.EOF
-                    If Tiedot.Fields("LoopTAG") <> sTagiEnnen Then Exit Do
-                    Tiedot.MoveNext
-                Loop
-            Else  'HTML versiot
-                Set TOUT = FS.CreateTextFile(POLKU & sTagiEnnen & ".html")
-                TeeHTML
-                TOUT.Close
-                ' Turvasilmukka: jos TeeHTML ei edennyt (virhe keskeyttänyt MoveNext-kutsun),
-                ' hypätään käsin tämän piirin kaikki jäljellä olevat rivit
-                Do While Not Tiedot.EOF
-                    If Tiedot.Fields("LoopTAG") <> sTagiEnnen Then Exit Do
-                    Tiedot.MoveNext
-                Loop
+            sTagiEnnen = Nz(Tiedot.Fields("LoopTAG"), "")
+            
+            If sTagiEnnen = "" Then
+                Tiedot.MoveNext ' Ohitetaan tyhjät tagit
+            Else
+                If Me.FTyyppi = 1 Then ' WORD-versiot
+                    Set oTemplate = oWord.Documents.Open(POHJA)
+                    Nimi = POLKU & DOCNO & "_" & sTagiEnnen & ".docx"
+                    
+                    ' HUOM: MuutaTiedot hoitaa kursorin siirron piirin loppuun (MoveNext)
+                    MuutaTiedot 
+                    
+                    oTemplate.SaveAs Nimi
+                    If Kaikki Then oTemplate.Close False
+                Else  ' HTML-versiot
+                    Set TOUT = FS.CreateTextFile(POLKU & sTagiEnnen & ".html")
+                    TeeHTML ' Varmista, että tämäkin sisältää LoopTAG-kohtaisen MoveNext-silmukan
+                    TOUT.Close
+                End If
             End If
+            DoEvents ' Sallii Windowsin väliprosessoinnin (estää "Ei vastaa" -tilan)
         Loop
     End If
     
-    MsgBox "Valmis"
+    MsgBox "Valmis", vbInformation
     Exit Sub
-    
+
 ErrorHandler:
-    MsgBox "Virhe kuvausten luonnissa: " & Err.Description, vbExclamation
-    If Not Tiedot Is Nothing Then Tiedot.Close
-    If Not oTemplate Is Nothing Then oTemplate.Close False
-    If Not oWord Is Nothing Then oWord.Quit False
+    MsgBox "Virhe TeeSelostus-ajossa: " & Err.Description, vbCritical
+    If Not oWord Is Nothing Then oWord.Visible = True
 End Sub
 
 '================================================================================
