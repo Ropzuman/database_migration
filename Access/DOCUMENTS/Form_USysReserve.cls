@@ -80,9 +80,10 @@ Private Sub MuodostaNumero()
 End Sub
 
 Private Function GetNetworkUserName() As String
-  ' Hakee verkkokäyttäjänimen käyttäjää varaajana
+  ' Luetaan käyttäjänimi suoraan ympäristömuuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
   On Error GoTo FallbackHandler
-  GetNetworkUserName = NetworkUserName()
+  GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
+  If GetNetworkUserName = "" Then GoTo FallbackHandler
   Exit Function
 FallbackHandler:
   GetNetworkUserName = "Unknown"

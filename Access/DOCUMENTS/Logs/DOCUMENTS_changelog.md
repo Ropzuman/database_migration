@@ -6,6 +6,28 @@
 
 ---
 
+## Muutokset — undefined-muuttujien stabilointi ja kommenttiauditointi (2026-04-23)
+
+### Kriittiset muutokset
+
+- `Form_USysAddDocument.cls`: poistettu riippuvuus `Def*`-globaaleista oletusarvoissa. Oletusarvot luetaan ja kirjoitetaan nyt `TempVars`-avaimilla (`DOC_Def_*`).
+- `Form_USysAddDocument.cls`: korjattu kirjoitusvirhe `UusiRevF` → `UusiRev`.
+- `Form_USysReserve.cls`: `GetNetworkUserName` ei enää vaadi ulkoista `NetworkUserName()`-funktiota; käyttäjätunnus haetaan paikallisesti `Environ$("USERNAME")`-arvosta, fallback `"Unknown"`.
+- `Form_USysNewDistribution.cls`: sama käyttäjätunnuksen haku kuin yllä (`Environ$("USERNAME")` + fallback `"Unknown"`).
+- `Form_USysRevText.cls`: poistettu riippuvuus `MRev*`- ja `Revisioteksti`-globaaleista. Revisiotila pidetään paikallisissa muuttujissa ja välitetään edelleen `TempVars`-avaimella `DOC_Rev_Text`.
+
+### Kommentit ja viimeistely
+
+- Muokattujen kohtien kommentit yhtenäistetty suomeksi (`ä`/`ö`) tiedostoissa `Form_USysAddDocument.cls`, `Form_USysReserve.cls`, `Form_USysNewDistribution.cls` ja `Form_USysRevText.cls`.
+- `Form_USysNewDistribution.cls`: tapahtumablokkien englanninkieliset otsikkokommentit päivitetty suomenkielisiksi ja sisältöä täsmennetty.
+
+### Vaikutus
+
+- Käännösvirheiden siirtyminen moduulista toiseen vähenee, koska lomakkeet eivät enää nojaa yhtä herkästi ulkoisiin globaaleihin nimiin.
+- Dokumenttien lisäyksen, varauksen ja distribuution tallennuksen liiketoimintalogiikkaa ei muutettu.
+
+---
+
 ## Muutokset — regressiokorjaus ja refaktorointi (2026-03-19)
 
 ### Kriittinen regressiokorjaus: käyttäjänimi palautui aina Unknown

@@ -11,9 +11,14 @@ Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
 '==========================================================================
 Public Alku As String
 Public Loppu As String
+Private PaikallinenRev As String
+Private PaikallinenDrawn As String
+Private PaikallinenChecked As String
+Private PaikallinenApproved As String
+Private PaikallinenDescription As String
+Private PaikallinenRevisioteksti As String
 
-' MRevRev, MRevDrawn, MRevChecked, MRevApproved, MRevDescription, and Revisioteksti
-' are Public globals declared in ForDocuments.vba — no local copies needed.
+' Revisiokenttien tila pidetään paikallisena, jotta lomake toimii ilman ulkoisia globaaleja.
 Private Sub Form_Resize()
   Dim RevTeksti As String
 
@@ -70,13 +75,13 @@ Dim koe As String
      MsgBox "Letter ""/""  is not allowed!", vbCritical, "Save revision"
      Exit Sub
    Else
-     MRevRev = Me.Rev.Value
-     MRevDrawn = Me.Drawn.Value
-     MRevChecked = Me.Checked.Value
-     MRevApproved = Me.Approved.Value
-     MRevDescription = Me.Description.Value
-     Revisioteksti = Replace(Me.Lista.RowSource, ";", vbCrLf)
-     AsetaTempVarPaikallinen TV_DOC_REV_TEXT, Revisioteksti
+     PaikallinenRev = Nz(Me.Rev.Value, "")
+     PaikallinenDrawn = Nz(Me.Drawn.Value, "")
+     PaikallinenChecked = Nz(Me.Checked.Value, "")
+     PaikallinenApproved = Nz(Me.Approved.Value, "")
+     PaikallinenDescription = Nz(Me.Description.Value, "")
+     PaikallinenRevisioteksti = Replace(Me.Lista.RowSource, ";", vbCrLf)
+     AsetaTempVarPaikallinen TV_DOC_REV_TEXT, PaikallinenRevisioteksti
    End If
  End If
  DoCmd.Close
@@ -87,13 +92,18 @@ Dim UusiRev As String
   Loppu = Me.Lista.RowSource
  ' Lasketaan uuden revision kirjain edellisen perusteella
   If Loppu <> "" Then
-    MRevRev = Left$(Me.Lista.RowSource, InStr(Me.Lista.RowSource, " ") - 1)
-      MRevRev = Chr(Asc(MRevRev) + 1)
+    PaikallinenRev = Left$(Me.Lista.RowSource, InStr(Me.Lista.RowSource, " ") - 1)
+      PaikallinenRev = Chr(Asc(PaikallinenRev) + 1)
   Else
-    MRevRev = "0"
+    PaikallinenRev = "0"
   End If
+  ' Käytetään lomakkeen kenttien arvoja uuden revision oletustietoina.
+  PaikallinenDrawn = Nz(Me.Drawn.Value, "")
+  PaikallinenChecked = Nz(Me.Checked.Value, "")
+  PaikallinenApproved = Nz(Me.Approved.Value, "")
+  PaikallinenDescription = Nz(Me.Description.Value, "")
   
-  UusiRev = MRevRev & " " & Date & "/" & MRevDrawn & "/" & MRevChecked & "/" & MRevApproved & "/" & MRevDescription
+  UusiRev = PaikallinenRev & " " & Date & "/" & PaikallinenDrawn & "/" & PaikallinenChecked & "/" & PaikallinenApproved & "/" & PaikallinenDescription
   Me.Lista.RowSource = UusiRev & ";" & Me.Lista.RowSource
   Me.TOtsikko.Caption = "New Revision"
   Me.Lista.SetFocus

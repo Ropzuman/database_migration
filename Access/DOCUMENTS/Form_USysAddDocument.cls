@@ -10,12 +10,19 @@ Option Explicit
 '==========================================================================
 Private Const TV_DOC_NEW_COUNTER As String = "DOC_NewRecordCounter"
 Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
+Private Const TV_DOC_DEF_DNAME1 As String = "DOC_Def_DName1"
+Private Const TV_DOC_DEF_DNAME2 As String = "DOC_Def_DName2"
+Private Const TV_DOC_DEF_DNAME3 As String = "DOC_Def_DName3"
+Private Const TV_DOC_DEF_AREA As String = "DOC_Def_Area"
+Private Const TV_DOC_DEF_SORT As String = "DOC_Def_Sort"
+Private Const TV_DOC_DEF_PAGES As String = "DOC_Def_Pages"
+Private Const TV_DOC_DEF_PATH As String = "DOC_Def_Path"
+Private Const TV_DOC_DEF_REV As String = "DOC_Def_Rev"
 
 Public SelDept As String
 Public Varaaja As String
 
-' Def* defaults (DefDName1, DefDName2, DefDName3, DefArea, DefSort, DefPages, DefPath, DefRev)
-' and MRev* revision fields are Public globals declared in ForDocuments.vba — no local copies needed.
+' Oletusarvot luetaan ja kirjoitetaan TempVarsiin, jolloin lomake ei riipu Def*-globaaleista.
 Private Sub ChoosePath_Click()
 Dim Hakemisto As String
   Hakemisto = ValitseHakemPaikallinen(IIf(IsNull(Me.TPath.Value), "", Me.TPath.Value))
@@ -25,15 +32,27 @@ Dim Hakemisto As String
 End Sub
 Private Sub Form_Load()
 Dim taulu As DAO.Recordset
+Dim OletusNimi1 As String
+Dim OletusNimi2 As String
+Dim OletusNimi3 As String
+Dim OletusSivut As String
+Dim OletusPolku As String
+Dim OletusRev As String
   Varaaja = GetNetworkUserName()
 ' Käytetään viimeksi lisätyn dokumentin tietoja uuden pohjaksi
+  OletusNimi1 = LueTempVarTeksti(TV_DOC_DEF_DNAME1)
+  OletusNimi2 = LueTempVarTeksti(TV_DOC_DEF_DNAME2)
+  OletusNimi3 = LueTempVarTeksti(TV_DOC_DEF_DNAME3)
+  OletusSivut = LueTempVarTeksti(TV_DOC_DEF_PAGES)
+  OletusPolku = LueTempVarTeksti(TV_DOC_DEF_PATH)
+  OletusRev = LueTempVarTeksti(TV_DOC_DEF_REV)
   Set taulu = CurrentDb.OpenRecordset("SELECT Path FROM ProjInfo")
-  Me.TDocName1.Value = IIf(DefDName1 <> "", DefDName1, Null)
-  Me.TDocName2.Value = IIf(DefDName2 <> "", DefDName2, Null)
-  Me.TDocName3.Value = IIf(DefDName3 <> "", DefDName3, Null)
-  Me.TPages.Value = IIf(DefPages <> "", DefPages, 1)
-  Me.TPath.Value = IIf(DefPath <> "", DefPath, taulu("Path"))
-  Me.TRev.Value = IIf(DefRev <> "", DefRev, Null)
+  Me.TDocName1.Value = IIf(OletusNimi1 <> "", OletusNimi1, Null)
+  Me.TDocName2.Value = IIf(OletusNimi2 <> "", OletusNimi2, Null)
+  Me.TDocName3.Value = IIf(OletusNimi3 <> "", OletusNimi3, Null)
+  Me.TPages.Value = IIf(OletusSivut <> "", OletusSivut, 1)
+  Me.TPath.Value = IIf(OletusPolku <> "", OletusPolku, taulu("Path"))
+  Me.TRev.Value = IIf(OletusRev <> "", OletusRev, Null)
   Set taulu = Nothing
 '--------------------------------------------------
 End Sub
@@ -100,14 +119,14 @@ Private Sub TalletaNappi_Click()
       Set taulu = Nothing
       Set DB = Nothing
 ' Tallennetaan viimeksi lisätyn dokumentin tiedot seuraavan pohjaksi
-      DefDName1 = Nz(Me.TDocName1.Value)
-      DefDName2 = Nz(Me.TDocName2.Value)
-      DefDName3 = Nz(Me.TDocName3.Value)
-      DefArea = Nz(Me.TArea.Value)
-      DefSort = Nz(Me.TPick2.Value)
-      DefPages = Nz(Me.TPages.Value)
-      DefPath = Nz(Me.TPath.Value)
-      DefRev = Nz(Me.TRev.Value)
+  AsetaTempVar TV_DOC_DEF_DNAME1, Nz(Me.TDocName1.Value, "")
+  AsetaTempVar TV_DOC_DEF_DNAME2, Nz(Me.TDocName2.Value, "")
+  AsetaTempVar TV_DOC_DEF_DNAME3, Nz(Me.TDocName3.Value, "")
+  AsetaTempVar TV_DOC_DEF_AREA, Nz(Me.TArea.Value, "")
+  AsetaTempVar TV_DOC_DEF_SORT, Nz(Me.TPick2.Value, "")
+  AsetaTempVar TV_DOC_DEF_PAGES, Nz(Me.TPages.Value, "")
+  AsetaTempVar TV_DOC_DEF_PATH, Nz(Me.TPath.Value, "")
+  AsetaTempVar TV_DOC_DEF_REV, Nz(Me.TRev.Value, "")
 '--------------------------------------------------
       DoCmd.Close
 End Sub
@@ -160,8 +179,13 @@ ErrorHandler:
 End Function
 
 Private Function GetNetworkUserName() As String
-  ' Delegates to the public NetworkUserName() declared in ForDocuments.vba
-  GetNetworkUserName = NetworkUserName()
+  On Error GoTo FallbackUnknown
+  ' Luetaan käyttäjänimi suoraan ympäristömuuttujasta, jotta lomake ei riipu ulkoisesta moduulifunktiosta.
+  GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
+  If GetNetworkUserName = "" Then GoTo FallbackUnknown
+  Exit Function
+FallbackUnknown:
+  GetNetworkUserName = "Unknown"
 End Function
 
 Private Sub TDiscipline_Change()

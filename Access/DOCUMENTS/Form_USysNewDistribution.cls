@@ -12,10 +12,11 @@ Private Sub BExit_Click()
   DoCmd.Close
 End Sub
 
-'''
-' Form Load Event - Initialize distribution form
-' OPTIMIZED 2025-11-09: Added explicit DAO typing, error handling
-'''
+'==========================================================================
+' Tapahtuma: Form_Load
+' KUVAUS  : Alustaa uuden distribuution lomakkeen tilan.
+'           Nollaa vain nykyisen käyttäjän aiemmat valinnat.
+'==========================================================================
 Private Sub Form_Load()
   Dim DB As DAO.Database
   Dim Kayttaja As String
@@ -49,10 +50,11 @@ Private Sub Lisaa_Click()
    Me.Lista.Requery
 End Sub
 
-'''
-' Lista Double Click - Toggle recipient selection for distribution
-' OPTIMIZED 2025-11-09: Added error handling, explicit DAO typing, null-checking
-'''
+'==========================================================================
+' Tapahtuma: Lista_DblClick
+' KUVAUS  : Lisää tai poistaa vastaanottajan käyttäjän nykyisestä
+'           distribuutiovalinnasta.
+'==========================================================================
 Private Sub Lista_DblClick(Cancel As Integer)
   Dim DB As DAO.Database
   Dim taulu As DAO.Recordset
@@ -205,13 +207,15 @@ ErrorHandler:
 End Sub
 
 Private Function GetNetworkUserName() As String
-  ' Hakee verkkokäyttäjänimen tai palauttaa Unknown
+  ' Luetaan käyttäjänimi suoraan ympäristömuuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
   On Error GoTo FallbackHandler
-  GetNetworkUserName = NetworkUserName()
+  GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
+  If GetNetworkUserName = "" Then GoTo FallbackHandler
   Exit Function
 
 FallbackHandler:
   GetNetworkUserName = "Unknown"
 End Function
 
-' IsNumeric() — using VBA built-in; private override removed to avoid compile ambiguity.
+' IsNumeric() käyttää VBA:n sisäänrakennettua toteutusta.
+' Yksityinen ylikirjoitus poistettiin käännösepäselvyyden estämiseksi.
