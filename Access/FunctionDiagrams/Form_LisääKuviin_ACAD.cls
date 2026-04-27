@@ -144,91 +144,108 @@ ErrorHandler:
     Resume Loppu
 End Sub
 
-
 Private Sub HaeValitutTekstit_Click()
-On Error GoTo ErrorHandler
-Debug.Print "HaeValitutTekstit_Click: Starting selected text extraction"
-Dim Tied As String
-Dim Polku As String
-Dim Taulu As DAO.Recordset
-Dim Blokki As Object '(AcadBlockReference - muutettu late binding)
-Dim oAcad As Object '(AutoCAD.AcadApplication - muutettu late binding)
-Dim oDoc As Object '(AutoCAD.AcadDocument - muutettu late binding)
-Dim Joukko As Object '(AcadSelectionSet - muutettu late binding)
-Dim BlockArray As Variant       'Array muuttuja Blokkia varten
-Dim i As Integer, j As Integer  'Indeksimuuttuja
-Dim FilterType(0) As Integer
-Dim FilterData(0) As Variant
-Dim Hakemisto As String
+    ' Virheen käsittely ja lokitus
+    On Error GoTo ErrorHandler
+    Debug.Print "HaeValitutTekstit_Click: Starting selected text extraction"
 
-          FilterType(0) = 0
-          FilterData(0) = "INSERT"
+    ' Vakiomäärittely late bindingia varten (Tapa 1)
+    Const acSelectionSetPrevious As Integer = 3
 
-Ajastin = Timer
-Debug.Print "  Timer started"
+    Dim Tied As String
+    Dim Polku As String
+    Dim Taulu As DAO.Recordset
+    Dim Blokki As Object '(AcadBlockReference)
+    Dim oAcad As Object '(AutoCAD.AcadApplication)
+    Dim oDoc As Object '(AutoCAD.AcadDocument)
+    Dim Joukko As Object '(AcadSelectionSet)
+    Dim BlockArray As Variant
+    Dim i As Integer, j As Integer
+    Dim FilterType(0) As Integer
+    Dim FilterData(0) As Variant
+    Dim Hakemisto As String
+    Dim Ajastin As Double
 
+    ' Suodatin: haetaan vain blokkeja (INSERT)
+    FilterType(0) = 0
+    FilterData(0) = "INSERT"
 
-Set oAcad = GetObject(, "AutoCAD.Application")
-Debug.Print "  AutoCAD connection established"
-Polku = Me.PohjaHakem.Value
-If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
-Tied = Dir(Polku & "*.dwg")
+    Ajastin = Timer
+    Debug.Print "  Timer started"
 
-'CurrentDb.Execute "DELETE * FROM Blokit"
-
-Set Taulu = CurrentDb.OpenRecordset("Blokit")
-
-  Set oDoc = oAcad.ActiveDocument
-  Hakemisto = oDoc.PATH
-  Set Joukko = oDoc.ActiveSelectionSet
-  Joukko.Clear
-
-
-     Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
-
-
-     If Joukko.Count = 0 Then
-       MsgBox "Kuvasta ei löytynyt valittuja blokkeja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
-     End If '     Joukko.Select acSelectionSetPrevious,,,
+    ' Yhteys AutoCADiin
+    Set oAcad = GetObject(, "AutoCAD.Application")
+    Debug.Print "  AutoCAD connection established"
     
-  For i = 0 To Joukko.Count - 1
-    If Joukko(i).EntityName = "AcDbBlockReference" Then
-      Set Blokki = Joukko(i)
+    Polku = Me.PohjaHakem.Value
+    If Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
+    Tied = Dir(Polku & "*.dwg")
+
+    ' Avataan tietokantataulu
+    Set Taulu = CurrentDb.OpenRecordset("Blokit")
+
+    Set oDoc = oAcad.ActiveDocument
+    Hakemisto = oDoc.Path
     
-    Debug.Print "  Processing block: " & Blokki.Name
-    CurrentDb.Execute "DELETE * FROM Blokit WHERE Block='" & Blokki.Name & "'"
-
-     
-      If Blokki.HasAttributes Then            'Tarkistetaan että blokilla on attribuutteja
-        BlockArray = Blokki.GetAttributes     'Otetaan atribuutit talteen muuttujaan
-        For j = 0 To UBound(BlockArray)
-        Taulu.AddNew
-        Taulu.Fields("Block").Value = Blokki.Name
-        Taulu.Fields("ATAG").Value = BlockArray(j).TagString
-        Taulu.Fields("VALUE").Value = BlockArray(j).TextString
-        Taulu.Fields("Path").Value = Hakemisto
-        Taulu.Update
-        Next j
-      End If
-      End If
- Next i
-    
-Taulu.Close
-Set oAcad = Nothing
-MsgBox "Valmis", vbInformation, "Päivitä tekstit"
-Set Taulu = Nothing
-
-Debug.Print "HaeValitutTekstit_Click: COMPLETED successfully"
-Exit Sub
-
-ErrorHandler:
-    Debug.Print "*** ERROR in HaeValitutTekstit_Click: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    ' Hallitaan valintajoukkoa
     On Error Resume Next
-    If Not Taulu Is Nothing Then Taulu.Close
+    Set Joukko = oDoc.SelectionSets.Item("TempJoukko")
+    If Err.Number <> 0 Then
+        Set Joukko = oDoc.SelectionSets.Add("TempJoukko")
+    Else
+        Joukko.Clear
+    End If
+    On Error GoTo ErrorHandler
+
+    ' Valitaan aiemmin valitut objektit (tässä käytetään nyt määriteltyä vakiota 3)
+    Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
+
+    If Joukko.Count = 0 Then
+        MsgBox "Kuvasta ei löytynyt valittuja blokkeja, jotka täyttäisivät ehdon!", vbCritical, "Tuo DATA"
+        GoTo CleanUp
+    End If
+    
+    Debug.Print "  Found " & Joukko.Count & " blocks. Processing..."
+
+    ' Käydään läpi valitut blokit
+    For i = 0 To Joukko.Count - 1
+        If Joukko(i).EntityName = "AcDbBlockReference" Then
+            Set Blokki = Joukko(i)
+            
+            Debug.Print "  Processing block: " & Blokki.Name
+            
+            ' Poistetaan vanhat tiedot kyseisestä blokista (jos tarpeen)
+            CurrentDb.Execute "DELETE * FROM Blokit WHERE Block='" & Blokki.Name & "'"
+
+            If Blokki.HasAttributes Then
+                BlockArray = Blokki.GetAttributes
+                For j = 0 To UBound(BlockArray)
+                    Taulu.AddNew
+                    Taulu.Fields("Block").Value = Blokki.Name
+                    Taulu.Fields("ATAG").Value = BlockArray(j).TagString
+                    Taulu.Fields("VALUE").Value = BlockArray(j).TextString
+                    Taulu.Fields("Path").Value = Hakemisto
+                    Taulu.Update
+                Next j
+            End If
+        End If
+    Next i
+
+CleanUp:
+    Taulu.Close
+    Joukko.Delete ' Poistetaan tilapäinen valintajoukko muistista
     Set oAcad = Nothing
     Set Taulu = Nothing
-    MsgBox "Virhe tekstien haussa: " & Err.Description, vbCritical
+    
+    MsgBox "Valmis! Aikaa kului " & Round(Timer - Ajastin, 2) & " sekuntia.", vbInformation, "Päivitä tekstit"
+    Debug.Print "HaeValitutTekstit_Click: COMPLETED successfully"
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Virhe tapahtui: " & Err.Description, vbExclamation, "Virhe " & Err.Number
+    Debug.Print "ERROR in HaeValitutTekstit_Click: " & Err.Description
+    If Not Taulu Is Nothing Then Taulu.Close
+    Resume CleanUp
 End Sub
 
 Private Sub PaivitaDocRev_Click()
