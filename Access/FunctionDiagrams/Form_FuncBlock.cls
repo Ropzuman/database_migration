@@ -9,7 +9,7 @@ Option Explicit
 '            SelectValue_Enter päivittävät listalaatikon lähteen attribuutin
 '            tyypin mukaan (FTAGI, REFFROM, REFTO tai yleinen arvo).
 ' DIPLE    : Option Explicit; Set Taulu/DB = Nothing muistivuodon ehkäisyyn.
-' PÄIVITETTY: 2026-03-03
+' PÄIVITETTY: 2026-03-03  
 '==========================================================================
 
 Private Sub NEWVALUE_DblClick(Cancel As Integer)
@@ -44,6 +44,9 @@ Taulu.Fields("atag") = tagi
 Taulu.Fields("value") = taginarvo
 Taulu.Fields("TagID") = tagiid
 Taulu.Update
+
+' Päivitetään näkyvä attribuuttilista heti tallennuksen jälkeen, jotta uusi rivi näkyy lomakkeella
+Me.Requery
 
 ' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
 Set Taulu = Nothing

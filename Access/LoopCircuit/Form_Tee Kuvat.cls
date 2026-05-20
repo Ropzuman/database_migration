@@ -78,7 +78,7 @@ Private Sub HaeTekstit_Click()
     Tied = Dir(Polku & "*.dwg")
     
     Set db = CurrentDb
-    db.Execute "DELETE * FROM Blokit WHERE PATH='" & Replace(Me.PohjaHakem.Value, "'", "''") & "'"
+    db.Execute "DELETE * FROM Blokit WHERE Path='" & Replace(Polku, "'", "''") & "'", dbFailOnError
     
     Set Taulu = db.OpenRecordset("Blokit", dbOpenDynaset)
     
@@ -141,6 +141,8 @@ Private Sub HaeValitutTekstit_Click()
     Dim Hakemisto As String
     Dim Rivi As Long
     Dim db As DAO.Database
+    Dim JoukkoNimi As String
+    Const acSelectionSetPrevious As Integer = 3
     
     On Error GoTo ErrHandler
     
@@ -154,10 +156,18 @@ Private Sub HaeValitutTekstit_Click()
     Set oDoc = oAcad.ActiveDocument
     Hakemisto = oDoc.Path
     
-    Set Joukko = oDoc.ActiveSelectionSet
-    Joukko.Clear
-    
-    Joukko.Select 4, , , FilterType, FilterData ' acSelectionSetPrevious = 4
+    JoukkoNimi = "TempJoukko_TeeKuvat"
+    On Error Resume Next
+    Set Joukko = oDoc.SelectionSets.Item(JoukkoNimi)
+    If Err.Number <> 0 Then
+        Err.Clear
+        Set Joukko = oDoc.SelectionSets.Add(JoukkoNimi)
+    Else
+        Joukko.Clear
+    End If
+    On Error GoTo ErrHandler
+
+    Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
     
     If Joukko.Count = 0 Then
         MsgBox "Kuvasta ei löytynyt valittuja blokkeja!", vbCritical, "Tuo DATA"
@@ -171,7 +181,7 @@ Private Sub HaeValitutTekstit_Click()
         If Joukko(i).EntityName = "AcDbBlockReference" Then
             Set Blokki = Joukko(i)
             
-            db.Execute "DELETE * FROM Blokit WHERE Block='" & Replace(Blokki.Name, "'", "''") & "'"
+            db.Execute "DELETE * FROM Blokit WHERE Block='" & Replace(Blokki.Name, "'", "''") & "' AND Path='" & Replace(Hakemisto, "'", "''") & "'", dbFailOnError
             
             If Blokki.HasAttributes Then
                 BlockArray = Blokki.GetAttributes
@@ -193,6 +203,10 @@ Cleanup:
     If Not Taulu Is Nothing Then
         Taulu.Close
         Set Taulu = Nothing
+    End If
+    If Not Joukko Is Nothing Then
+        Joukko.Delete
+        Set Joukko = Nothing
     End If
     Set db = Nothing
     Set oAcad = Nothing
