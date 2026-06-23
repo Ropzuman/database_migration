@@ -519,15 +519,25 @@ Sub PopulateRevisionsSimple()
 ' 27.2.2026 - Rajoitettu On Error Resume Next -käyttö
 '''
 Dim ws As Worksheet
-Dim r As Long, startRow As Long
-Dim revIdCol As Long, revDateCol As Long, designerCol As Long
-Dim checkerCol As Long, approverCol As Long, descCol As Long
+Dim r As Long
 Dim i As Long
 Dim arrSize As Long
 Dim spacePos As Long, slashPos As Long
 Dim revParts() As String
 Dim revText As String
 Dim slashParts() As String
+Dim remainder As String
+Dim token As Variant
+Dim descText As String
+Dim revIdCols As Collection
+Dim revDateCols As Collection
+Dim designerCols As Collection
+Dim checkerCols As Collection
+Dim approverCols As Collection
+Dim descCols As Collection
+Dim col As Variant
+Dim roleIndex As Long
+Dim partIndex As Long
 
   Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Täytetään Revisions-sheet"
 
@@ -556,83 +566,204 @@ Dim slashParts() As String
   End If
   
   Debug.Print "  DIRevArr-koko: " & arrSize
+
+  Set revIdCols = New Collection
+  Set revDateCols = New Collection
+  Set designerCols = New Collection
+  Set checkerCols = New Collection
+  Set approverCols = New Collection
+  Set descCols = New Collection
   
-  ' Etsitään sarakkeet hakemalla kommenttimerkit ensimmäisestä 20 rivistä
-  ' Tämä on yksinkertainen heuristiikka -  säädä jos templaten rakenne eroaa
-  startRow = 0
+  ' Etsitään revisiomarkkerit hakemalla kommentit ensimmäisestä 20 rivistä.
+  ' Tämä on kevyt heuristiikka - säädä jos templaten rakenne eroaa.
+  Dim revIdRow As Long, revDateRow As Long, designerRow As Long
+  Dim checkerRow As Long, approverRow As Long, descRow As Long
+  revIdRow = 0: revDateRow = 0: designerRow = 0
+  checkerRow = 0: approverRow = 0: descRow = 0
+
   For r = 1 To 20
     For i = 1 To 10 ' Check first 10 columns
       On Error Resume Next
-      If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell
+      If ws.Cells(r, i).Comment Is Nothing Then GoTo NextCell2
       On Error GoTo 0
-      
-      Select Case LCase(ws.Cells(r, i).Comment.Text)
+
+      ' Normalize comment text (remove CR/LF and trim)
+      Dim ctext As String
+      ctext = LCase(Replace(Replace(Trim(ws.Cells(r, i).Comment.Text), vbCr, ""), vbLf, ""))
+
+      Select Case ctext
         Case "revid"
-          revIdCol = i: If startRow = 0 Then startRow = r
+          revIdCols.Add i: If revIdRow = 0 Then revIdRow = r
         Case "revdate"
-          revDateCol = i: If startRow = 0 Then startRow = r
+          revDateCols.Add i: If revDateRow = 0 Then revDateRow = r
         Case "designer"
-          designerCol = i: If startRow = 0 Then startRow = r
+          designerCols.Add i: If designerRow = 0 Then designerRow = r
         Case "checker"
-          checkerCol = i: If startRow = 0 Then startRow = r
+          checkerCols.Add i: If checkerRow = 0 Then checkerRow = r
         Case "approver"
-          approverCol = i: If startRow = 0 Then startRow = r
+          approverCols.Add i: If approverRow = 0 Then approverRow = r
         Case "desc"
-          descCol = i: If startRow = 0 Then startRow = r
+          descCols.Add i: If descRow = 0 Then descRow = r
       End Select
-NextCell:
+NextCell2:
     Next i
   Next r
-  
+
   ' Jos sarakkeita ei löytynyt, poistu
-  If startRow = 0 Then
+  If revIdRow = 0 And revDateRow = 0 And designerRow = 0 And checkerRow = 0 And approverRow = 0 And descRow = 0 Then
     Debug.Print "  VAROITUS: Ei löytynyt revisiomarkkereita - ohitetaan"
     Exit Sub
   End If
-  
-  Debug.Print "  Revisiotiedot alkavat riviltä " & startRow
-  
-  ' Kirjoitetaan revisiodata suoraan - rajattu On Error Resume Next vain parsing-osaan
-  r = startRow
-  
+
+  Debug.Print "  Revisiomarkkerit löytyivät riveiltä: revid=" & revIdRow & ", revdate=" & revDateRow & ", designer=" & designerRow
+
+  ' Jos merkintärivit eroavat, käytetään pienintä (ylin) rivinumeroa yhteisenä aloituksena
+  Dim commonStart As Long
+  commonStart = 0
+  If revIdRow > 0 Then commonStart = IIf(commonStart = 0, revIdRow, Application.Min(commonStart, revIdRow))
+  If revDateRow > 0 Then commonStart = IIf(commonStart = 0, revDateRow, Application.Min(commonStart, revDateRow))
+  If designerRow > 0 Then commonStart = IIf(commonStart = 0, designerRow, Application.Min(commonStart, designerRow))
+  If checkerRow > 0 Then commonStart = IIf(commonStart = 0, checkerRow, Application.Min(commonStart, checkerRow))
+  If approverRow > 0 Then commonStart = IIf(commonStart = 0, approverRow, Application.Min(commonStart, approverRow))
+  If descRow > 0 Then commonStart = IIf(commonStart = 0, descRow, Application.Min(commonStart, descRow))
+
+  If commonStart = 0 Then
+    Debug.Print "  VAROITUS: Ei yhteistä aloitusriviä löytynyt - ohitetaan"
+    Exit Sub
+  End If
+
+  Debug.Print "  Käytetään yhteistä aloitusriviä: " & commonStart
+
+  ' Kirjoitetaan revisiodata käyttäen yhteistä aloitusriviä ja säilytetään aiempi käänteinen järjestys
+  Dim rId As Long, rDate As Long, rDesigner As Long, rChecker As Long, rApprover As Long, rDesc As Long
+  rId = commonStart: rDate = commonStart: rDesigner = commonStart
+  rChecker = commonStart: rApprover = commonStart: rDesc = commonStart
+
+  Dim written As Long: written = 0
   For i = UBound(DIRevArr) To LBound(DIRevArr) Step -1
     If DIRevArr(i) <> "" Then
       revText = DIRevArr(i)
-      
+      written = written + 1
+
       ' Parse revid (first part before space)
-      On Error Resume Next
-      If revIdCol > 0 And InStr(revText, " ") > 0 Then
+      If InStr(revText, " ") > 0 Then
         revParts = Split(revText, " ")
-        If UBound(revParts) >= 0 Then ws.Cells(r, revIdCol).Value = revParts(0)
-      End If
-      On Error GoTo 0
-      
-      ' Parse revdate (between space and /)
-      If revDateCol > 0 And InStr(revText, " ") > 0 And InStr(revText, "/") > 0 Then
-        spacePos = InStr(revText, " ")
-        slashPos = InStr(revText, "/")
-        If slashPos > spacePos Then
-          ws.Cells(r, revDateCol).Value = Mid(revText, spacePos + 1, slashPos - spacePos - 1)
+        If UBound(revParts) >= 0 Then
+          For Each col In revIdCols
+            ws.Cells(rId, CLng(col)).Value = revParts(0)
+          Next col
         End If
       End If
-      
-      ' Parse designer, checker, approver, desc (slash-delimited parts)
-      On Error Resume Next
-      If InStr(revText, "/") > 0 Then
-        slashParts = Split(revText, "/")
-        If designerCol > 0 And UBound(slashParts) >= 1 Then ws.Cells(r, designerCol).Value = slashParts(1)
-        If checkerCol > 0 And UBound(slashParts) >= 2 Then ws.Cells(r, checkerCol).Value = slashParts(2)
-        If approverCol > 0 And UBound(slashParts) >= 3 Then ws.Cells(r, approverCol).Value = slashParts(3)
-        If descCol > 0 And UBound(slashParts) >= 4 Then ws.Cells(r, descCol).Value = slashParts(4)
+
+      ' Parse revdate (väliosan ja ensimmäisen /-merkin väli) ja kirjoita kaikkiin date-sarakkeisiin.
+      spacePos = InStr(revText, " ")
+      slashPos = InStr(revText, "/")
+      If spacePos > 0 And slashPos > spacePos Then
+        If slashPos > spacePos Then
+          For Each col In revDateCols
+            ws.Cells(rDate, CLng(col)).Value = Trim(Mid(revText, spacePos + 1, slashPos - spacePos - 1))
+          Next col
+        End If
       End If
-      On Error GoTo 0
-      
-      r = r + 1
+
+      ' Parse designer, checker, approver, desc käyttäen kiinteitä slash-paikkoja.
+      ' Tyhjät kentät pitää säilyttää tyhjinä, jotta kuvaus ei siirry väärään sarakkeeseen.
+      If slashPos > 0 Then
+        remainder = Mid(revText, slashPos + 1)
+        slashParts = Split(remainder, "/")
+
+        ' slashParts(0) = Designer, (1) = Checker, (2) = Approver, (3) = Description
+        If UBound(slashParts) >= 0 Then
+          token = Trim(slashParts(0))
+          If token <> "" Then
+            For Each col In designerCols
+              ws.Cells(rDesigner, CLng(col)).Value = token
+            Next col
+          End If
+        End If
+
+        If UBound(slashParts) >= 1 Then
+          token = Trim(slashParts(1))
+          If token <> "" Then
+            For Each col In checkerCols
+              ws.Cells(rChecker, CLng(col)).Value = token
+            Next col
+          End If
+        End If
+
+        If UBound(slashParts) >= 2 Then
+          token = Trim(slashParts(2))
+          If token <> "" Then
+            For Each col In approverCols
+              ws.Cells(rApprover, CLng(col)).Value = token
+            Next col
+          End If
+        End If
+
+        descText = ""
+        If UBound(slashParts) >= 3 Then
+          descText = Trim(slashParts(3))
+        End If
+        If descText <> "" Then
+          For Each col In descCols
+            ws.Cells(rDesc, CLng(col)).Value = descText
+          Next col
+        End If
+      End If
+
+      ' Increment all row counters so rows remain aligned
+      rId = rId + 1: rDate = rDate + 1: rDesigner = rDesigner + 1
+      rChecker = rChecker + 1: rApprover = rApprover + 1: rDesc = rDesc + 1
     End If
   Next i
+
+  Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Valmis - kirjoitettiin " & written & " revisioriviä"
   
-  Debug.Print Format(Now, "hh:mm:ss") & " [PopulateRevisionsSimple] Valmis - kirjoitettiin " & (r - startRow) & " revisioriviä"
-  
+End Sub
+Sub PrintRevisionDiagnostics()
+  '''
+  ' PrintRevisionDiagnostics: Tulostaa DIRevArr:n sisällön ja Revisions-sheetin
+  ' revisiomarkkerien sijainnit (ei tee muutoksia taulukkoon).
+  ' Käytä debug-ikkunaa (Immediate, Ctrl+G) nähdäksesi tulosteet.
+  '''
+  Dim ws As Worksheet
+  Dim i As Long, r As Long
+  Dim ctext As String
+
+  Debug.Print "[PrintRevisionDiagnostics] Aloitetaan diagnostikka"
+
+  On Error Resume Next
+  Set ws = Sheets("Revisions")
+  On Error GoTo 0
+  If ws Is Nothing Then
+    Debug.Print "  VAROITUS: Revisions-sheet puuttuu"
+    Exit Sub
+  End If
+
+  ' DIRevArr sisältö
+  If Not IsArray(DIRevArr) Then
+    Debug.Print "  VAROITUS: DIRevArr ei ole taulukko tai tyhjä"
+  Else
+    Debug.Print "  DIRevArr sisältö (index:value):"
+    For i = LBound(DIRevArr) To UBound(DIRevArr)
+      Debug.Print "    [" & i & "] = '" & DIRevArr(i) & "'"
+    Next i
+  End If
+
+  Debug.Print "  Etsitään revisiomarkkereita Revisions-sheetin ensimmäisiltä riveiltä"
+  For r = 1 To 20
+    For i = 1 To 10
+      On Error Resume Next
+      If Not ws.Cells(r, i).Comment Is Nothing Then
+        ctext = ws.Cells(r, i).Comment.Text
+        ctext = LCase(Replace(Replace(Trim(ctext), vbCr, ""), vbLf, ""))
+        Debug.Print "    Löytyi marker '" & ctext & "' osoitteessa " & ws.Cells(r, i).Address(False, False) & " (r=" & r & ", c=" & i & ")"
+      End If
+      On Error GoTo 0
+    Next i
+  Next r
+
+  Debug.Print "[PrintRevisionDiagnostics] Valmis"
 End Sub
 Sub TeeLinkingKommentit()
 '''

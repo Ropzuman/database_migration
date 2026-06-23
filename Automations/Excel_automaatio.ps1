@@ -23,6 +23,14 @@
 # - Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 # - Suorita "polku tiedostoon"\"tiedoston_nimi".ps1
 
+# Script parameters: allow non-interactive runs when paths/selections are supplied.
+param(
+    [string]$ModulePath,
+    [string]$ExcelFilesPath,
+    [string]$Selection,
+    [switch]$AutoRun
+)
+
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
 if ([System.IntPtr]::Size -ne 8) {
     Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
@@ -48,18 +56,29 @@ try {
     $DefaultModulePath = ''
     $DefaultExcelFilesPath = ''
 
+    # If parameters supplied, prefer them over defaults
+    if (-not [string]::IsNullOrWhiteSpace($ModulePath)) { $DefaultModulePath = $ModulePath }
+    if (-not [string]::IsNullOrWhiteSpace($ExcelFilesPath)) { $DefaultExcelFilesPath = $ExcelFilesPath }
+
     Write-Host "`nVAIHE 1: Moduulien lähde" -ForegroundColor Magenta
     $defaultModuleDisplay = if ([string]::IsNullOrWhiteSpace($DefaultModulePath)) { "(ei oletusta asetettu)" } else { $DefaultModulePath }
     Write-Host "Oletuspolku moduuleille: $defaultModuleDisplay" -ForegroundColor Cyan
-    $inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (.bas) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputModule)) {
-        if ([string]::IsNullOrWhiteSpace($DefaultModulePath)) {
-            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultModulePath skriptin alussa."
-            throw "No module path provided"
-        }
+    # If ModulePath parameter/default exists, don't prompt
+    if (-not [string]::IsNullOrWhiteSpace($DefaultModulePath)) {
         $modulePath = $DefaultModulePath
+        Write-Host "Käytetään moduulipolkua: $modulePath" -ForegroundColor Cyan
     }
-    else { $modulePath = $inputModule }
+    else {
+        $inputModule = Read-Host -Prompt 'Lisää polku moduulitiedostoille (.bas) (paina Enter käyttääksesi oletusta)'
+        if ([string]::IsNullOrWhiteSpace($inputModule)) {
+            if ([string]::IsNullOrWhiteSpace($DefaultModulePath)) {
+                Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultModulePath skriptin alussa."
+                throw "No module path provided"
+            }
+            $modulePath = $DefaultModulePath
+        }
+        else { $modulePath = $inputModule }
+    }
 
     if (-not (Test-Path $modulePath -PathType Container)) {
         Write-Error "Moduulikansiota ei löydy: $modulePath"
@@ -69,15 +88,22 @@ try {
     Write-Host "`nVAIHE 2: Päivitettävät Excel-tiedostot" -ForegroundColor Magenta
     $defaultExcelDisplay = if ([string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) { "(ei oletusta asetettu)" } else { $DefaultExcelFilesPath }
     Write-Host "Oletuspolku Excel-tiedostoille: $defaultExcelDisplay" -ForegroundColor Cyan
-    $inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (.xlsm) (paina Enter käyttääksesi oletusta)'
-    if ([string]::IsNullOrWhiteSpace($inputExcel)) {
-        if ([string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) {
-            Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultExcelFilesPath skriptin alussa."
-            throw "No Excel files path provided"
-        }
+    # If ExcelFilesPath parameter/default exists, don't prompt
+    if (-not [string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) {
         $excelFilesPath = $DefaultExcelFilesPath
+        Write-Host "Käytetään Excel-kansiota: $excelFilesPath" -ForegroundColor Cyan
     }
-    else { $excelFilesPath = $inputExcel }
+    else {
+        $inputExcel = Read-Host -Prompt 'Lisää polku Excel-tiedostoille (.xlsm) (paina Enter käyttääksesi oletusta)'
+        if ([string]::IsNullOrWhiteSpace($inputExcel)) {
+            if ([string]::IsNullOrWhiteSpace($DefaultExcelFilesPath)) {
+                Write-Error "Polkua ei annettu eikä oletusta ole asetettu. Aseta `$DefaultExcelFilesPath skriptin alussa."
+                throw "No Excel files path provided"
+            }
+            $excelFilesPath = $DefaultExcelFilesPath
+        }
+        else { $excelFilesPath = $inputExcel }
+    }
 
     if (-not (Test-Path $excelFilesPath -PathType Container)) {
         Write-Error "Excel-tiedostojen kansiota ei löydy: $excelFilesPath"
@@ -109,9 +135,58 @@ try {
 
     # --- 4. Käsittele kaikki .xlsm tiedostot ---
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [TYÖKIRJAT] Haetaan .xlsm-tiedostot kohteesta: $excelFilesPath" -ForegroundColor Cyan
-    $xlsmFiles = Get-ChildItem -Path $excelFilesPath -Filter "*.xlsm"
+
+    # Selection logic: prefer explicit $Selection param; if -AutoRun provided and no selection, process all files
+    if (-not [string]::IsNullOrWhiteSpace($Selection)) {
+        $selection = $Selection
+        Write-Host "Käytetään parametrina annettua valintaa: $selection" -ForegroundColor Cyan
+    }
+    elseif ($AutoRun) {
+        # AutoRun without selection => process all .xlsm files
+        $selection = "*.xlsm"
+        Write-Host "AutoRun käytössä: käsitellään kaikki .xlsm-tiedostot kansiossa." -ForegroundColor Cyan
+    }
+    else {
+        # Kysytään käyttäjältä suoraan tiedostoa tai wildcardia. Tyhjä vastaus peruuttaa suorittamisen.
+        $selection = Read-Host -Prompt 'Anna tiedostonimi tai wildcard (esim. MyFile.xlsm tai *kysely*.xlsm). Tyhjä = peruuta'
+        if ([string]::IsNullOrWhiteSpace($selection)) {
+            Write-Host "Peruutetaan: ei valittua tiedostoa." -ForegroundColor Yellow
+            return
+        }
+    }
+
+    if ($selection -match '[\\/:]') {
+        # Käyttäjä antoi täyden polun
+        if (Test-Path $selection) {
+            $xlsmFiles = @((Get-Item -Path $selection))
+        }
+        else {
+            Write-Error "Tiedostoa ei löydy: $selection"
+            return
+        }
+    }
+    elseif ($selection -match '[*?]') {
+        $xlsmFiles = @(Get-ChildItem -Path $excelFilesPath -Filter $selection)
+    }
+    else {
+        $candidate = Join-Path $excelFilesPath $selection
+        if (Test-Path $candidate) {
+            $xlsmFiles = @((Get-Item -Path $candidate))
+        }
+        else {
+            # Yritetään myös osittaisella nimellä jos suora nimi ei löytynyt
+            $xlsmFiles = @(Get-ChildItem -Path $excelFilesPath -Filter "*$selection*")
+        }
+    }
+
+    if ($xlsmFiles.Count -eq 0) {
+        Write-Error "Ei löydetty yhtään tiedostoa hakuehdoilla: $selection"
+        return
+    }
+
     $totalFiles = $xlsmFiles.Count
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $totalFiles työkirjaa käsiteltäväksi." -ForegroundColor Green
+    Write-Host "HUOM: Moduulien kirjoittaminen vaatii työkirjojen avaamisen VBProject-rajapinnan kautta. Avataan tiedostot yksi kerrallaan, näkyvyyttä ei aseteta." -ForegroundColor Yellow
     
     $currentFileIndex = 0
     $wbSuccess = 0; $wbSkipped = 0; $wbFailed = 0
@@ -136,33 +211,17 @@ try {
             Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Vain luku -attribuutin poisto epäonnistui. Jatketaan silti."
         }
 
-        # 2. Avaa työkirja (Retry-logiikalla lukkojen kiertämiseksi)
-        do {
-            try {
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan työkirja..."
-                # Parametrit: (FileName, UpdateLinks, ReadOnly)
-                $workbook = $excel.Workbooks.Open(
-                    $workbookPath, 
-                    $false,       # 2: UpdateLinks (False, ei null)
-                    $false        # 3: ReadOnly (Pakotetaan avaamaan kirjoitusoikeudella)
-                )
-                $isOpened = $true
-                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja avattu onnistuneesti."
-            }
-            catch {
-                $retryCount++
-                if ($retryCount -lt $maxRetries) {
-                    Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Avaus epäonnistui: $($_.Exception.Message). Yritetään uudelleen $retryDelaySeconds sekunnin kuluttua (Yritys $retryCount / $maxRetries)."
-                    Start-Sleep -Seconds $retryDelaySeconds
-                }
-                else {
-                    Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen jälkeen. Jätetään käsittelemättä."
-                    $isOpened = $false
-                    $wbSkipped++
-                    break  # Ei throw — ForEach-Object jatkaa seuraavaan tiedostoon
-                }
-            }
-        } while (-not $isOpened -and $retryCount -lt $maxRetries)
+        try {
+            Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan työkirja..."
+            $workbook = $excel.Workbooks.Open($workbookPath, $false, $false)
+            $isOpened = $true
+            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja avattu onnistuneesti."
+        }
+        catch {
+            Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ VIRHE: Tiedostoa ei voitu avata: $($_.Exception.Message). Jätetään käsittelemättä."
+            $isOpened = $false
+            $wbSkipped++
+        }
     
         # Käsittely jatkuu vain, jos tiedosto avattiin onnistuneesti
         if ($isOpened) {
@@ -199,7 +258,8 @@ try {
                         # try-finally takaa Close()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
                         $reader = $null
                         try {
-                            $reader = [System.IO.StreamReader]::new($fullModulePath, [System.Text.Encoding]::UTF8, $true)
+                            # Use New-Object for broader PowerShell compatibility instead of ::new()
+                            $reader = New-Object System.IO.StreamReader ($fullModulePath, [System.Text.Encoding]::UTF8, $true)
                             $moduleContent = $reader.ReadToEnd()
                         }
                         finally {
@@ -250,7 +310,17 @@ try {
                         }
                         
                         # Ota vain VBA-koodi (ilman header-rivejä)
-                        $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
+                        if ($codeStartIndex -lt $lines.Count) {
+                            if ($codeStartIndex -eq ($lines.Count - 1)) {
+                                $cleanCode = $lines[$codeStartIndex].Trim()
+                            }
+                            else {
+                                $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
+                            }
+                        }
+                        else {
+                            $cleanCode = ''
+                        }
                         
                         if ([string]::IsNullOrWhiteSpace($cleanCode)) {
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          ⚠ VAROITUS: Tiedosto $name on tyhjä tai sisältää vain headerit. Ohitetaan." -ForegroundColor Yellow
@@ -332,30 +402,15 @@ try {
                 try {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KORVAUS] Nimetään väliaikainen tiedosto lopulliseksi..."
                     Rename-Item -Path $tempWorkbookPath -NewName (Split-Path $workbookPath -Leaf) -Force -ErrorAction Stop
-                    # Onnistui — varmuuskopio poistetaan
                     Remove-Item -Path $backupPath -Force -ErrorAction SilentlyContinue
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tiedosto $workbookPath päivitetty onnistuneesti!" -ForegroundColor Green
                     $wbSuccess++
                 }
                 catch {
-                    # Tallennetaan alkuperäinen virheviesti ennen palautusyritystä — muuten palautusvirhe korvaa sen
-                    $renameError = $_.Exception.Message
-                    Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ Uudelleennimeäminen epäonnistui: $renameError"
+                    Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ Uudelleennimeäminen epäonnistui: $($_.Exception.Message)"
                     Write-Warning "   Yritetään palauttaa alkuperäinen varmuuskopiosta: $backupPath"
-                    try {
-                        Move-Item -Path $backupPath -Destination $workbookPath -Force -ErrorAction Stop
-                        Write-Host "   ✓ Alkuperäinen palautettu onnistuneesti." -ForegroundColor Green
-                    }
-                    catch {
-                        # Palautuskin epäonnistui — kerrotaan operaattorille tiedostojen tila selkeästi
-                        Write-Error "   ✗ KRIITTINEN: Palautus epäonnistui myös: $($_.Exception.Message)"
-                        Write-Error "   Tiedostot levyllä:"
-                        Write-Error "     Varmuuskopio (alkuperäinen): $backupPath"
-                        Write-Error "     Päivitetty (nimeämätön):     $tempWorkbookPath"
-                        Write-Error "   Nimeä päivitetty tiedosto manuaalisesti alkuperäiseksi tai palauta varmuuskopio."
-                    }
-                    # Uudelleenheitä ALKUPERÄINEN nimivirhe, ei palautusvirhe
-                    throw [System.Exception]::new("Rename failed: $renameError", $_.Exception)
+                    Move-Item -Path $backupPath -Destination $workbookPath -Force -ErrorAction SilentlyContinue
+                    throw [System.Exception]::new("Rename failed: $($_.Exception.Message)", $_.Exception)
                 }
 
             }

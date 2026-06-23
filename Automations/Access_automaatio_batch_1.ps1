@@ -1,6 +1,6 @@
 ﻿# Access_automaatio_Batch.ps1
 # Eräajo, joka päivittää kaikki tietokannat kerralla alikansioista.
-# Kysyy polut (Moduulit ensin, ilman oletuksia) ja lisää automaattisesti uudet moduulit.
+# Sisältää Shift-ohituksen AutoExec- ja käynnistysmakrojen estämiseksi.
 
 $ErrorActionPreference = 'Stop'
 
@@ -9,6 +9,13 @@ if ([System.IntPtr]::Size -ne 8) {
     return
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä. Aloitetaan eräajo.`n" -ForegroundColor Green
+
+# --- Win32 API Shift-näppäimen simulointiin ---
+$signature = @'
+[DllImport("user32.dll")]
+public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+'@
+$kb = Add-Type -MemberDefinition $signature -Name "Win32KB" -Namespace "Win32" -PassThru
 
 # --- 1. Polkujen kysely (ILMAN OLETUKSIA) ---
 
@@ -33,7 +40,8 @@ try {
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [ALUSTUS] Luodaan Access COM-objekti..." -ForegroundColor Cyan
     $access = New-Object -ComObject Access.Application
     $access.Visible = $false
-    $access.AutomationSecurity = 1
+    # 3 = msoAutomationSecurityForceDisable (estää kääntämisen avattaessa)
+    $access.AutomationSecurity = 3 
 
     $dbFiles = Get-ChildItem -Path $DatabasesRoot -Filter "*.accdb"
     
@@ -96,15 +104,23 @@ try {
 
             do {
                 try {
+                    # Painetaan Shift pohjaan
+                    $kb::keybd_event(0x10, 0, 0, 0)
+                    Start-Sleep -Milliseconds 200
+
                     $access.OpenCurrentDatabase($dbPath, $false, "")
                     $kantaAvattu = $true
                     $access.Visible = $false
-                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu."
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu Shift-ohituksella."
                 }
                 catch {
                     $retryCount++
                     if ($retryCount -lt $maxRetries) { Start-Sleep -Seconds $retryDelaySeconds }
                     else { throw $_ }
+                }
+                finally {
+                    # Vapautetaan Shift aina
+                    $kb::keybd_event(0x10, 0, 2, 0)
                 }
             } while (-not $kantaAvattu -and $retryCount -lt $maxRetries)
 
@@ -253,7 +269,7 @@ finally {
                 $accessProcess = Get-Process | Where-Object { $_.MainWindowHandle -eq $accessWindowHandle -and $_.Name -eq "MSACCESS" }
             }
             
-            Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Suljetaan Access hallitusti..." -ForegroundColor Gray
+            Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Suljetaan Access..." -ForegroundColor Gray
             $access.Quit()
             
             # Odotetaan hetki (max 2 sekuntia), että prosessi sulkeutuu itse
@@ -264,7 +280,7 @@ finally {
             }
         } 
         catch { 
-            Write-Warning "Hallittu sulkeminen epäonnistui tai Access oli jo kiinni: $($_.Exception.Message)"
+            Write-Warning "Sulkeminen epäonnistui tai Access oli jo kiinni: $($_.Exception.Message)"
         }
         finally {
             # Jos prosessi roikkuu edelleen pystyssä, tapetaan se väkisin ID:n perusteella

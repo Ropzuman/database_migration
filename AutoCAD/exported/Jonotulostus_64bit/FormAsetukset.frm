@@ -43,7 +43,7 @@ Private Sub gsbinary_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
     Set objFile = New FileDialogs
     objFile.OwnerHwnd = ThisDrawing.HWND
 
-    objFile.Title = "Valitse GhostScript bin‰‰ri"
+    objFile.Title = "Valitse GhostScript bin√§√§ri"
     objFile.StartInDir = GSPath.Value & "\bin"
     objFile.Filter = strFilter
     'return a valid filename
