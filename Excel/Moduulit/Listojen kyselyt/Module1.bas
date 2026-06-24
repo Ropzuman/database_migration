@@ -106,6 +106,18 @@ Private Sub EndFastMode()
 End Sub
 
 '''
+' OnkoTekstisummaaSarake: Palauttaa True jos footer-markerille pitää laskea
+' esiintymät SUM:n sijaan. Nämä sarakkeet sisältävät tekstimerkkejä kuten x,
+' PROFINET tai muita ei-numeerisia arvoja.
+' ''
+Private Function OnkoTekstisummaaSarake(ByVal Marker As String) As Boolean
+  Select Case UCase$(Replace(Trim$(Marker), "&&", ""))
+    Case "BUS", "LOCAL", "SOFTWARE"
+      OnkoTekstisummaaSarake = True
+  End Select
+End Function
+
+'''
 ' LuoADODBYhteys: Hakee toimivan ADODB-yhteyden kokeilemalla ACE OLE DB -moottoriversiota prioriteettijärjestyksessä.
 ' Käyttää Mode=Read -yhteysparametria (adModeRead) estääkseen kirjoitusoperaatiot arkkitehtuuritasolla.
 ' Palauttaa avatun ADODB.Connection-objektin tai Nothing jos kaikki yritykset epäonnistuvat.
@@ -674,7 +686,11 @@ Sub GenPrintout()
     For Each c In destSheet.Range(destSheet.Cells(ViimRivi, 1), destSheet.Cells(ViimRivi + PFEnd - PFStart, Sarakkeita))
       If Len(CStr(c.Value)) >= 2 Then
         If Left(CStr(c.Value), 2) = "&&" Then
-          c.Formula = "=SUM(" & destSheet.Cells(PHEnd, c.Column).Address(False, False) & ":" & destSheet.Cells(ViimRivi - 1, c.Column).Address(False, False) & ")"
+          If OnkoTekstisummaaSarake(CStr(c.Value)) Then
+            c.Formula = "=COUNTA(" & destSheet.Cells(PHEnd, c.Column).Address(False, False) & ":" & destSheet.Cells(ViimRivi - 1, c.Column).Address(False, False) & ")"
+          Else
+            c.Formula = "=SUM(" & destSheet.Cells(PHEnd, c.Column).Address(False, False) & ":" & destSheet.Cells(ViimRivi - 1, c.Column).Address(False, False) & ")"
+          End If
         End If
       End If
     Next c
