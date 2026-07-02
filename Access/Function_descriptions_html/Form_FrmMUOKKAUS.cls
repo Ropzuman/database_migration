@@ -484,9 +484,11 @@ Private Function MuutaLinkit(Tieto As String) As String
         If OS = 0 Then
             Exit Do
         End If
+      DESC = ""
         OS2 = InStr(OS, MuutaLinkit, " ")
         OS3 = InStr(MuutaLinkit, "}")
-        If OS2 > OS3 Then OS2 = OS3
+      If OS3 = 0 Then Exit Do
+      If OS2 = 0 Or OS2 > OS3 Then OS2 = OS3
         POS = Mid$(MuutaLinkit, OS + 1, OS2 - OS - 1)
         If OS2 < OS3 Then
             DESC = " " & Mid$(MuutaLinkit, OS2 + 1, OS3 - OS2 - 1)
