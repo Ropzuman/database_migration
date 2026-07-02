@@ -173,9 +173,9 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     
     ' Avataan tietuejoukko (Recordset)
     If Kaikki Then
-        Set Tiedot = CurrentDb.OpenRecordset(TTIEDOT)
+      Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " ORDER BY LOOPTAG, AreaCode, LoopNo")
     Else
-        Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "'")
+      Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "' ORDER BY AreaCode, LoopNo")
     End If
     
     ' --- PÄÄSILMUKKA ---
@@ -188,6 +188,14 @@ Private Sub TeeSelostus(Kaikki As Boolean)
         oTemplate.Activate
         
         Do While Not Tiedot.EOF
+          sTagiEnnen = Nz(Tiedot.Fields("LoopTAG"), "")
+          If sTagiEnnen = "" Then
+            Tiedot.MoveNext
+          ElseIf Not RyhmassaOnSisaltoa(TTIEDOT, sTagiEnnen) Then
+            Do While Not Tiedot.EOF And Nz(Tiedot.Fields("LoopTAG"), "") = sTagiEnnen
+              Tiedot.MoveNext
+            Loop
+          Else
             MuutaTiedot ' Käsittelee yhden piirin ja siirtää kursorin seuraavaan
             oPohja.Activate
             oWord.Selection.WholeStory
@@ -197,6 +205,7 @@ Private Sub TeeSelostus(Kaikki As Boolean)
             oWord.Selection.InsertBreak 7 ' wdPageBreak
             oWord.Selection.Paste
             DoEvents ' Estää jäätymisen
+          End If
         Loop
     Else
         ' Kirjoitus erillisiin tiedostoihin (Yksi tiedosto per piiri)
@@ -205,6 +214,11 @@ Private Sub TeeSelostus(Kaikki As Boolean)
             
             If sTagiEnnen = "" Then
                 Tiedot.MoveNext ' Ohitetaan tyhjät tagit
+          ElseIf Not RyhmassaOnSisaltoa(TTIEDOT, sTagiEnnen) Then
+            ' Ryhmässä on vain tunnistetiedot, joten tiedostoa ei luoda
+            Do While Not Tiedot.EOF And Nz(Tiedot.Fields("LoopTAG"), "") = sTagiEnnen
+              Tiedot.MoveNext
+            Loop
             Else
                 If Me.FTyyppi = 1 Then ' WORD-versiot
                     Set oTemplate = oWord.Documents.Open(POHJA)
@@ -232,6 +246,43 @@ ErrorHandler:
     MsgBox "Virhe TeeSelostus-ajossa: " & Err.Description, vbCritical
     If Not oWord Is Nothing Then oWord.Visible = True
 End Sub
+
+'================================================================================
+' Funktio: RyhmassaOnSisaltoa
+' Tarkoitus: Tarkistaa, sisältääkö nykyinen LoopTAG-ryhmä muutakin kuin tunnistetiedot
+' Parametrit:
+'   TTIEDOT — Tietolähteen nimi
+'   Tagi    — Tarkistettava LoopTAG
+' Palauttaa:
+'   True, jos ryhmässä on jotakin tulostettavaa sisältöä
+'================================================================================
+Private Function RyhmassaOnSisaltoa(TTIEDOT As String, Tagi As String) As Boolean
+  Dim Tarkistus As DAO.Recordset
+  Dim Hakuehto As String
+
+  On Error GoTo ErrorHandler
+
+  Hakuehto = "SELECT * FROM " & TTIEDOT & " WHERE LoopTAG='" & Replace(Tagi, "'", "''") & "'"
+  Set Tarkistus = CurrentDb.OpenRecordset(Hakuehto)
+
+  Do While Not Tarkistus.EOF
+    If Len(Trim$(Nz(Tarkistus.Fields("Function"), ""))) > 0 Then
+      RyhmassaOnSisaltoa = True
+      Exit Do
+    End If
+
+    Tarkistus.MoveNext
+  Loop
+
+  Tarkistus.Close
+  Set Tarkistus = Nothing
+  Exit Function
+
+ErrorHandler:
+  If Not Tarkistus Is Nothing Then Tarkistus.Close
+  Set Tarkistus = Nothing
+  RyhmassaOnSisaltoa = True
+End Function
 
 '================================================================================
 ' Aliohjelma: TeeHTML
