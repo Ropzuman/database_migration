@@ -277,7 +277,7 @@ Dim TNimi As String
   FD(0) = Me.FROMTOBLOCKS.Value
   Set oDOC = oACAD.Documents.Open(Me.TPolku & Tiedosto)
   Set Joukko = oDOC.SelectionSets.Add("APUFROMTO")
-  Joukko.Select acSelectionSetAll, , , FT, FD
+  Joukko.Select AC_SELECTION_SET_ALL, , , FT, FD
   TNimi = Left$(Tiedosto, Len(Tiedosto) - 4)
   For i = 0 To Joukko.Count - 1
     ATTRIB = Joukko(i).GetAttributes

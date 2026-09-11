@@ -379,7 +379,7 @@ Private Sub AvaaBlokki()
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
   oACAD.ZoomWindow MinPoint, MaxPoint
-  oACAD.ZoomScaled 0.2, acZoomScaledRelative
+  oACAD.ZoomScaled 0.2, 1  ' acZoomScaledRelative late bindingissa
   oBlock.Highlight True
   
   ' Haetaan PIPELINE-attribuutti

@@ -212,7 +212,7 @@ Do While Tied <> ""
     FileCount = FileCount + 1
     Set oDOC = oACAD.Documents.Open(SavePath & Tied, True)
     Set Joukko = oDOC.SelectionSets.Add("iLockAPU")
-    Joukko.Select acSelectionSetAll, , , FT, FD
+    Joukko.Select AC_SELECTION_SET_ALL, , , FT, FD
     For i = 0 To Joukko.Count - 1
       If Joukko(i).HasAttributes Then
         ATTRIB = Joukko(i).GetAttributes
@@ -553,7 +553,7 @@ Private Sub Form_Load()
   If Err <> 0 Then
     Set oDOC = oACAD.Activate
     oDOC.Application.Visible = True
-    oDOC.Application.WindowState = acMax
+    oDOC.Application.WindowState = AC_MAX_WINDOW
   End If
   On Error GoTo 0
   'Haetaan asetukset

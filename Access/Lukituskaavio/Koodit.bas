@@ -4,6 +4,10 @@ Option Explicit
 Public oACAD As Object    ' AcadApplication - muutettu late binding (64-bit)
 Public oDOC As Object     ' AcadDocument - muutettu late binding (64-bit)
 Public BlockPath As String
+Public Const AC_MODEL_SPACE As Long = 0  ' AutoCADin acModelSpace-arvo late bindingia varten
+Public Const AC_MAX_WINDOW As Long = 3   ' AutoCADin acMax-arvo late bindingia varten
+Public Const AC_ZOOM_SCALED_RELATIVE As Long = 1  ' AutoCADin acZoomScaledRelative-arvo
+Public Const AC_SELECTION_SET_ALL As Long = 5  ' AutoCADin acSelectionSetAll-arvo
 Sub KillLinks()
 Dim T As DAO.TableDef
 Dim LinkCount As Long
@@ -83,7 +87,7 @@ TAULUKKO = UCase$(Application.CurrentObjectName)
       If Handle = "" Then
         MsgBox "Kohteen sijainti ei ole tiedossa, vain kuva avattiin.", vbCritical, "Etsi kohde"
       Else
-        oACAD.ActiveDocument.ActiveSpace = acModelSpace
+        oACAD.ActiveDocument.ActiveSpace = AC_MODEL_SPACE
         On Error Resume Next
         Set Entity = oACAD.ActiveDocument.HandleToObject(Handle)
         If Err <> 0 Then
@@ -91,9 +95,9 @@ TAULUKKO = UCase$(Application.CurrentObjectName)
           Err.Clear
         Else
           Entity.GetBoundingBox MinPoint, MaxPoint
-          oACAD.ActiveDocument.WindowState = acMax
+          oACAD.ActiveDocument.WindowState = AC_MAX_WINDOW
           oACAD.ZoomWindow MinPoint, MaxPoint
-          oACAD.ZoomScaled 0.3, acZoomScaledRelative
+          oACAD.ZoomScaled 0.3, AC_ZOOM_SCALED_RELATIVE
           Entity.Highlight True
         End If
         On Error GoTo 0

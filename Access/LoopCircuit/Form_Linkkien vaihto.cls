@@ -79,7 +79,4 @@ Private Function JoKasitelty(ByRef lista As Collection, ByVal nimi As String) As
     Err.Clear
     On Error GoTo 0
 End Function
-    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Linkkien vaihto"
-    Resume Cleanup
-End Sub
 

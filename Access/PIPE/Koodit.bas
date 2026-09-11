@@ -33,6 +33,10 @@ Option Explicit
   Private Declare Function api_GetComputerName Lib "kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 
+Private Const AC_MODEL_SPACE As Long = 0  ' AutoCADin acModelSpace-arvo late bindingia varten
+Private Const AC_MAX_WINDOW As Long = 3   ' AutoCADin acMax-arvo late bindingia varten
+Private Const AC_ZOOM_SCALED_RELATIVE As Long = 1  ' AutoCADin acZoomScaledRelative-arvo
+
 '--------------------------------------------------------------------------------
 ' Aliohjelma: AvaaBlock
 ' Tarkoitus: Avaa ja korostaa AutoCAD-blokki aktiivisesta tietokantatalukosta
@@ -117,7 +121,7 @@ End Sub
 '   4. Zoomataan blokkiin ja korostetaan se
 '   5. Aktivoidaan AutoCAD-ikkuna
 '--------------------------------------------------------------------------------
-Sub AvaaKuvasta(Polku As String, Nimi As String, Handle As String, Info As String)
+Public Sub AvaaKuvasta(Polku As String, Nimi As String, Handle As String, Info As String)
 On Error GoTo ErrorHandler
     Dim oACAD As Object      ' AcadApplication - late binding (64-bit)
     Dim Entity As Object    ' AcadEntity - late binding (64-bit)
@@ -167,7 +171,7 @@ On Error GoTo ErrorHandler
       If Handle = "" Then
         MsgBox "Kohteen  " & Info & " sijainti ei ole tiedossa, vain kuva avattiin.", vbCritical, "Etsi kohde"  ' "Block location unknown"
       Else
-        oACAD.ActiveDocument.ActiveSpace = acModelSpace
+        oACAD.ActiveDocument.ActiveSpace = AC_MODEL_SPACE
         On Error Resume Next
         Set Entity = oACAD.ActiveDocument.HandleToObject(Handle)
         If Err <> 0 Then
@@ -178,9 +182,9 @@ On Error GoTo ErrorHandler
           On Error GoTo ErrorHandler
           ' Zoomataan blokkiin ja korostetaan se
           Entity.GetBoundingBox MinPoint, MaxPoint
-          oACAD.ActiveDocument.WindowState = acMax
+          oACAD.ActiveDocument.WindowState = AC_MAX_WINDOW
           oACAD.ZoomWindow MinPoint, MaxPoint
-          oACAD.ZoomScaled 0.3, acZoomScaledRelative
+          oACAD.ZoomScaled 0.3, AC_ZOOM_SCALED_RELATIVE
           Entity.Highlight True
         End If
       End If

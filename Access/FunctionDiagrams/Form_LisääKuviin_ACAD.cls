@@ -981,7 +981,7 @@ Private Function PoimiHakemisto(AHakem As String) As String
       .lpstrTitle = Otsikko
       .flags = 0
     End With
-    lReturn = GetOpenFileName(OpenFile)
+    lReturn = CLng(GetOpenFileName(OpenFile))
     If lReturn = 0 Then 'Painettiin Cancel painiketta. Palautetaan alkuperäinen hakemisto
        PoimiHakemisto = AHakem
     Else 'Otetaan ylös Tiedostonimi ja Hakemisto
