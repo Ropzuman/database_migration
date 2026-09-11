@@ -18,6 +18,19 @@
 # - EI käytetä AddFromString() - se tuottaa tyhjiä sulkeita () moduulin loppuun DeleteLines-ajon jälkeen.
 # - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
+# KORJATTU (tarkistettu versio):
+#   - AutomationSecurity asetetaan nyt ForceDisable (3) Low (1) sijaan. VBE/VBOM-käyttöoikeus
+#     tulee Access-asetuksen "Trust access to the VBA project object model" kautta, EI
+#     AutomationSecurity-arvosta - se säätelee vain makrojen automaattista suoritusta avattaessa.
+#     Low sallisi myös AutoExec-makron/lomakkeen Form_Open-koodin suorituksen näkymättömässä
+#     Access-istunnossa, mikä voi jumittaa skriptin näkymättömään valintaikkunaan.
+#   - Lisätty Shift-ohitus (kuten eräajoversiossa) lisävarmistukseksi AutoExecia vastaan.
+#   - VBA-lähdetiedostot luetaan nyt oikealla merkistöllä: Access vie .cls/.bas-tiedostot
+#     oletuksena ANSI (Windows-1252) -muodossa, ei UTF-8:na.
+#   - $component ja $codeModule vapautetaan nyt ReleaseComObject:lla jokaisen komponentin
+#     jälkeen (aiemmin vapauttamatta - COM-viitteiden vuoto).
+#   - Lisätty valinnainen kääntövaihe (Debug > Compile) ennen kannan sulkemista.
+
 # --- KRIITTINEN TARKISTUS: Bittisyys ---
 if ([System.IntPtr]::Size -ne 8) {
     Write-Error "VIRHE: Tämä skripti on suoritettava 64-bittisessä (x64) PowerShellissä."
@@ -27,6 +40,31 @@ if ([System.IntPtr]::Size -ne 8) {
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
 
+# --- Win32 API: Shift-näppäimen simulointi AutoExec-makron ohittamiseksi ---
+$signature = @'
+[DllImport("user32.dll")]
+public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+'@
+$win32 = Add-Type -MemberDefinition $signature -Name "Win32Kb" -Namespace "Win32" -PassThru
+
+# Palauttaa tiedoston sisällön oikealla merkistöllä.
+# Access vie VBA-moduulit ANSI:na (Windows-1252) ellei tiedostossa ole BOM-merkkiä,
+# joten pelkkä UTF-8-oletus rikkoo ääkköset (ä, ö, å) hiljaisesti.
+function Read-VbaSourceFile {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
+    }
+    elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        return [System.Text.Encoding]::Unicode.GetString($bytes, 2, $bytes.Length - 2)
+    }
+    else {
+        return [System.Text.Encoding]::GetEncoding(1252).GetString($bytes)
+    }
+}
 
 # Määritellään muuttujat ennalta 'finally'-lohkoa varten
 $access = $null
@@ -105,7 +143,7 @@ try {
     $isOpened = $false
 
     # --- 4. Tiedoston valmistelu ja avaus ---
-    
+
     # Poista 'Vain luku' -attribuutti
     try {
         Set-ItemProperty -Path $databasePath -Name IsReadOnly -Value $false -Force
@@ -119,19 +157,25 @@ try {
     do {
         try {
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan tietokanta..."
-            
-            # Aseta msoAutomationSecurityLow jotta VBA-projektiin päästään käsiksi.
-            # HUOM: Arvo 1 SALLII kaikki makrot — tämä on tarkoituksellista, VBE-rajapinta vaatii sen.
-            # Access on näkymätön ($access.Visible = $false), joten tietoturvariski on rajattu.
-            $access.AutomationSecurity = 1  # msoAutomationSecurityLow — sallii VBA-projektin muokkauksen
-            
+
+            # 3 = msoAutomationSecurityForceDisable: estää makrojen (myös AutoExecin ja
+            # lomakkeiden Form_Open/Load-koodin) automaattisen suorituksen avattaessa.
+            # HUOM: Tämä EI estä pääsyä VBA-projektiin - se hallitaan erikseen Access-asetuksen
+            # "Trust access to the VBA project object model" kautta, joka pitää olla päällä
+            # koneella jolla skripti ajetaan.
+            $access.AutomationSecurity = 3
+
+            # Painetaan Shift pohjaan lisävarmistukseksi AutoExecia vastaan
+            $win32::keybd_event(0x10, 0, 0, [UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 200
+
             # OpenCurrentDatabase(FilePath, [Exclusive], [Password])
             $access.OpenCurrentDatabase($databasePath, $false, "")
             $isOpened = $true
-            
+
             # KRIITTINEN: OpenCurrentDatabase() resetoi Visible-arvon, asetetaan uudelleen
             $access.Visible = $false
-            
+
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu onnistuneesti (Startup ohitettu)."
         }
         catch {
@@ -145,11 +189,15 @@ try {
                 throw $_ # Heitetään virhe pää-try-lohkolle
             }
         }
+        finally {
+            # Vapautetaan Shift aina, onnistui avaus tai ei
+            $win32::keybd_event(0x10, 0, 2, [UIntPtr]::Zero)
+        }
     } while (-not $isOpened -and $retryCount -lt $maxRetries)
 
     # --- 5. VBA-komponenttien käsittely ---
     if ($isOpened) {
-        
+
         try {
             # Kytke Accessin sisäiset varoitukset pois päältä
             $access.DoCmd.SetWarnings($false)
@@ -169,7 +217,7 @@ try {
                 Write-Host "     3. Tiedoston Ominaisuudet - Salli eli Unblock, jos se on ladattu verkosta"
                 throw "VBA Project is null. Check Access Trust Center settings."
             }
-            
+
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ VBA-projekti avattu onnistuneesti." -ForegroundColor Green
 
             # 5.1 Päivitä komponenttien sisältö suoraan (välttää Import-metatietojen ongelman)
@@ -199,24 +247,12 @@ try {
                     $failureCount++
                     continue
                 }
-                
+
+                $component = $null
+                $codeModule = $null
                 try {
-                    # Lue .bas/.cls-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
-                    # Get-Content -Encoding UTF8 voi PS 5.1:ssä palauttaa BOM:n (U+FEFF) merkkijonon ensimmäisenä merkkinä
-                    # try-finally takaa Dispose()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
-                    $reader = $null
-                    try {
-                        $reader = [System.IO.StreamReader]::new($fullModulePath, [System.Text.Encoding]::UTF8, $true)
-                        $moduleContent = $reader.ReadToEnd()
-                    }
-                    finally {
-                        if ($null -ne $reader) { $reader.Dispose(); $reader = $null }
-                    }
-                    # Poistetaan BOM varmuuden vuoksi, jos StreamReader ei sitä poistanut
-                    if ($moduleContent.Length -gt 0 -and [int][char]$moduleContent[0] -eq 0xFEFF) {
-                        $moduleContent = $moduleContent.Substring(1)
-                    }
-                    
+                    $moduleContent = Read-VbaSourceFile -Path $fullModulePath
+
                     # PARANNETTU HEADER-PARSAUS:
                     # Poista VBA-tiedoston header-rivit (.cls: VERSION, BEGIN/END, Attribute; .bas: Attribute)
                     # Säilytetään varsinainen VBA-koodi (Option Explicit, Declare, Function, Sub, Dim, jne.)
@@ -268,9 +304,8 @@ try {
                         continue
                     }
                     $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
-                    
+
                     # Etsi tai luo komponentti
-                    $component = $null
                     try {
                         $component = $vbaProject.VBComponents.Item($name)
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ Komponentti löytyi, päivitetään sisältö..."
@@ -284,7 +319,7 @@ try {
                             $failureCount++
                             continue
                         }
-                        
+
                         # Luo uusi moduuli/luokka
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ! Komponenttia ei löytynyt, luodaan uusi..."
                         $component = $vbaProject.VBComponents.Add($componentType)
@@ -294,15 +329,15 @@ try {
                     # Tyhjennä vanha koodi ja lisää uusi
                     $codeModule = $component.CodeModule
                     $oldLineCount = $codeModule.CountOfLines
-                    
+
                     if ($oldLineCount -gt 0) {
                         $codeModule.DeleteLines(1, $oldLineCount)
                     }
-                    
+
                     # Lisää uusi koodi InsertLines-menetelmällä riville 1.
                     # EI käytetä AddFromString() - se tuottaa tyhjiä sulkeita () moduulin loppuun.
                     $codeModule.InsertLines(1, $cleanCode)
-                    
+
                     $newLineCount = $codeModule.CountOfLines
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)" -ForegroundColor Green
                     $successCount++
@@ -314,8 +349,13 @@ try {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')             Stack: $($_.ScriptStackTrace)" -ForegroundColor Yellow
                     $failureCount++
                 }
+                finally {
+                    # Vapautetaan tämän komponentin COM-viitteet ennen seuraavaan siirtymistä.
+                    if ($null -ne $codeModule) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($codeModule) | Out-Null }
+                    if ($null -ne $component) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($component) | Out-Null }
+                }
             }
-            
+
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [KOMPONENTIT] Kaikki komponentit käsitelty."
             Write-Host ""
             Write-Host "$(Get-Date -Format 'HH:mm:ss') === YHTEENVETO ===" -ForegroundColor Cyan
@@ -323,19 +363,29 @@ try {
             if ($failureCount -gt 0) {
                 Write-Host "  Epäonnistuneet: $failureCount" -ForegroundColor Red
             }
-            
+
+            # 5.2 Käännetään ja tallennetaan moduulit ennen sulkemista, jotta rikkinäinen liitetty
+            # koodi näkyy tässä lokissa eikä jää huomaamatta seuraavaan manuaaliseen avaukseen asti.
+            # 126 = acCmdCompileAndSaveAllModules (tarkistettu erikseen — vääriä RunCommand-arvoja
+            # on aiemmin päätynyt tähän koodikantaan, joten arvoa ei pidä muuttaa ilman varmistusta).
+            try {
+                $access.RunCommand(126)
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Moduulit käännetty ja tallennettu." -ForegroundColor DarkGreen
+            }
+            catch {
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ Kääntäminen epäonnistui - tarkista moduulit käsin (Debug → Compile): $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+
             # 5.3 Tallenna ja sulje
             # HUOM: CloseCurrentDatabase() tallentaa automaattisesti VBA-projektin.
-            # RunCommand($acCmdSaveDatabase) aiheuttaa COM-virheen jos VBA:ssa syntax-virheitä!
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    [TALLENNUS] Suljetaan ja tallennetaan tietokanta..."
 
             # Laita varoitukset takaisin päälle
             $access.DoCmd.SetWarnings($true)
-            
+
             # CloseCurrentDatabase tallentaa VBA-projektin automaattisesti
             $access.CloseCurrentDatabase()
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tiedosto $databasePath päivitetty onnistuneesti!" -ForegroundColor Green
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ HUOM: Tarkista VBA syntax-virheet manuaalisesti (Debug → Compile VBA Project)" -ForegroundColor Yellow
 
         }
         catch {
@@ -347,7 +397,7 @@ try {
             try {
                 if ($null -ne $access) {
                     $access.DoCmd.SetWarnings($true)
-                    $access.CloseCurrentDatabase() 
+                    $access.CloseCurrentDatabase()
                 }
             }
             catch {
@@ -362,7 +412,7 @@ catch {
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [FATAL] KRIITTINEN VIRHE SKRIPTIN SUORITUKSESSA" -ForegroundColor Red
     Write-Error $_.Exception.Message
     Write-Host "$(Get-Date -Format 'HH:mm:ss')    Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor Yellow
-    
+
 }
 finally {
     # --- 6. PAKOTETTU SIIVOUS ---
@@ -370,7 +420,7 @@ finally {
     # Tämä estää "zombie" (jumittuneiden) Access-prosessien syntymisen.
 
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Siivotaan ja suljetaan Access-prosessi..." -ForegroundColor Magenta
-    
+
     # Suljetaan Access ensin — tämä mitätöi lasten COM-viittaukset (VBProject ym.) turvallisesti
     if ($null -ne $access) {
         try {
@@ -398,6 +448,6 @@ finally {
 
     Remove-Variable access -ErrorAction SilentlyContinue
     Remove-Variable vbaProject -ErrorAction SilentlyContinue
-    
+
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Siivous valmis." -ForegroundColor Green
 }

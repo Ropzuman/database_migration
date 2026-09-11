@@ -13,15 +13,34 @@
 # - Tämä skripti KORVAA moduulien sisällön suoraan CodeModule-rajapinnan kautta.
 # - EI käytetä VBComponents.Import()-funktiota, koska se lisää näkymättömiä metatietoja moduuleihin.
 # - Import() aiheuttaa moduulien toimintahäiriöitä (käyttäytyy eri tavalla kuin manuaalisesti kopioidut).
-# - Nykyinen toteutus: lue .bas-tiedosto → poista headerit → kirjoita puhdas koodi AddFromString()-funktiolla.
+# - Nykyinen toteutus: lue .bas-tiedosto → poista headerit → kirjoita puhdas koodi InsertLines(1, ...)-funktiolla.
 # - Tämä vastaa manuaalista kopioi-liitä -toimintoa VBA-editorissa.
 
-# - HUOM: Kun muutoksia ajetaan verkkosijaintiin, pitää käyttää verkkosijainnin nimeä \\proense01\projektit\ 
+# - HUOM: Kun muutoksia ajetaan verkkosijaintiin, pitää käyttää verkkosijainnin nimeä \\proense01\projektit\
 # - esim. "\\proense01\projektit\24PRO260 Vermo Lämmönsiirrinasema\Z\tools\Projektin listojen excel-kyselyt 64bit WORK IN PROGRESS"
 
 # Muokatun tiedoston voi tallentaa muodossa .ps1 haluamaansa sijaintiin ja suorittaa  seuraavasti:
 # - Avaa PowerShell Administratorina ja suorita komento Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 # - Suorita "polku tiedostoon"\"tiedoston_nimi".ps1
+
+# KORJATTU (tarkistettu versio):
+#   - AutomationSecurity asetetaan nyt ForceDisable (3) heti COM-objektin luonnin jälkeen.
+#     Aiemmin sitä ei asetettu lainkaan, jolloin työkirjan mahdollinen Workbook_Open-makro
+#     saattoi laukaista näkymättömän ($excel.Visible=$false) turvavaroitusikkunan ja jumittaa
+#     skriptin ikuisesti. DisplayAlerts=$false EI suojaa tältä - se koskee vain Excelin omia
+#     ilmoitusikkunoita (esim. tallennusvahvistus), ei makroturvavaroitusta.
+#   - Työkirjan avaukseen on nyt oikeasti käytössä retry-silmukka. Aiemmin $maxRetries ja
+#     $retryDelaySeconds olivat määriteltyjä muuttujia joita ei koskaan käytetty - avaus
+#     yritettiin vain kerran, jolloin OneDrive-lukko esti käsittelyn heti ilman uudelleenyritystä.
+#   - VBA-lähdetiedostot luetaan nyt oikealla merkistöllä (ANSI-fallback UTF-8:n sijaan ilman BOM:ia).
+#   - CodeModule.AddFromString() korvattu InsertLines(1, ...):lla. AddFromString liittää koodin
+#     moduulin loppuun implisiittiseen tyhjään tilaan, mikä voi tuottaa tyhjiä sulkeita () tai
+#     rikkinäisen moduulin lopun DeleteLines-ajon jälkeen - täsmälleen se ongelma joka on jo
+#     dokumentoitu ja korjattu Access_automaatio.ps1:ssä, muttei aiemmin tässä skriptissä.
+#   - Poistettu koko $cleanCode-merkkijonon .Trim() - se söi myös rivinvaihdon tiedoston lopusta,
+#     mikä johtaa samaan syntaksivirhe-riskiin kuin AddFromString-ongelma. Nyt vain TrimEnd()
+#     rivinvaihdoille ja aina yksi CRLF perään, kuten Access-skriptissä.
+#   - $module ja $codeModule vapautetaan nyt ReleaseComObject:lla jokaisen moduulin jälkeen.
 
 # Script parameters: allow non-interactive runs when paths/selections are supplied.
 param(
@@ -40,6 +59,25 @@ if ([System.IntPtr]::Size -ne 8) {
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä." -ForegroundColor Green
 
+# Palauttaa tiedoston sisällön oikealla merkistöllä.
+# Excel/Access vievät VBA-moduulit ANSI:na (Windows-1252) ellei tiedostossa ole BOM-merkkiä,
+# joten pelkkä UTF-8-oletus rikkoo ääkköset (ä, ö, å) hiljaisesti.
+function Read-VbaSourceFile {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
+    }
+    elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        return [System.Text.Encoding]::Unicode.GetString($bytes, 2, $bytes.Length - 2)
+    }
+    else {
+        return [System.Text.Encoding]::GetEncoding(1252).GetString($bytes)
+    }
+}
+
 # Määritellään muuttujat ennalta 'finally'-lohkoa varten
 $excel = $null
 
@@ -49,6 +87,10 @@ try {
     $excel = New-Object -ComObject Excel.Application
     $excel.Visible = $false
     $excel.DisplayAlerts = $false
+    # 3 = msoAutomationSecurityForceDisable — estää makrojen (esim. Workbook_Open) automaattisen
+    # suorituksen työkirjaa avattaessa. Ilman tätä oletusarvo voi näyttää näkymättömän
+    # turvavaroitusikkunan, joka jumittaa skriptin ikuisesti ($excel.Visible=$false).
+    $excel.AutomationSecurity = 3
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Excel-objekti luotu." -ForegroundColor Green
 
     # --- 2. Polkujen kysely (UUSI JÄRJESTYS: Ensin moduulit, sitten kohteet) ---
@@ -187,7 +229,7 @@ try {
     $totalFiles = $xlsmFiles.Count
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Löytyi $totalFiles työkirjaa käsiteltäväksi." -ForegroundColor Green
     Write-Host "HUOM: Moduulien kirjoittaminen vaatii työkirjojen avaamisen VBProject-rajapinnan kautta. Avataan tiedostot yksi kerrallaan, näkyvyyttä ei aseteta." -ForegroundColor Yellow
-    
+
     $currentFileIndex = 0
     $wbSuccess = 0; $wbSkipped = 0; $wbFailed = 0
     $modSuccess = 0; $modFailed = 0
@@ -201,7 +243,7 @@ try {
         $retryCount = 0
         $isOpened = $false
         $workbook = $null
-        
+
         # 1. Poistaa tiedoston Vain luku -attribuutin (IsReadOnly = $false).
         try {
             Set-ItemProperty -Path $workbookPath -Name IsReadOnly -Value $false -Force
@@ -211,32 +253,47 @@ try {
             Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Vain luku -attribuutin poisto epäonnistui. Jatketaan silti."
         }
 
-        try {
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan työkirja..."
-            $workbook = $excel.Workbooks.Open($workbookPath, $false, $false)
-            $isOpened = $true
-            Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja avattu onnistuneesti."
+        # Varoitus (ei este) jos Excelin oma lukkotiedosto löytyy - työkirja voi olla auki toisaalla
+        $lockFile = Join-Path (Split-Path $workbookPath -Parent) ("~$" + (Split-Path $workbookPath -Leaf))
+        if (Test-Path $lockFile) {
+            Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Lukkotiedosto löytyi ($lockFile) - työkirja saattaa olla auki toisaalla. Yritetään silti."
         }
-        catch {
-            Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ VIRHE: Tiedostoa ei voitu avata: $($_.Exception.Message). Jätetään käsittelemättä."
-            $isOpened = $false
-            $wbSkipped++
-        }
-    
+
+        # Avaa työkirja retry-logiikalla (esim. OneDrive-synkronoinnin väliaikaiset lukot)
+        do {
+            try {
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    [AVAUS] Avataan työkirja (yritys $($retryCount + 1)/$maxRetries)..."
+                $workbook = $excel.Workbooks.Open($workbookPath, $false, $false)
+                $isOpened = $true
+                Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Työkirja avattu onnistuneesti."
+            }
+            catch {
+                $retryCount++
+                if ($retryCount -lt $maxRetries) {
+                    Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Avaus epäonnistui: $($_.Exception.Message). Yritetään uudelleen (Yritys $retryCount / $maxRetries)."
+                    Start-Sleep -Seconds $retryDelaySeconds
+                }
+                else {
+                    Write-Error "$(Get-Date -Format 'HH:mm:ss')    ✗ VIRHE: Tiedostoa ei voitu avata $maxRetries yrityksen jälkeen: $($_.Exception.Message). Jätetään käsittelemättä."
+                    $wbSkipped++
+                }
+            }
+        } while (-not $isOpened -and $retryCount -lt $maxRetries)
+
         # Käsittely jatkuu vain, jos tiedosto avattiin onnistuneesti
         if ($isOpened) {
-            
+
             try {
                 # Tarkista, onko VBA-projekti käytettävissä (riippuu Trust Center -asetuksista)
                 $vbaProject = $workbook.VBProject
-                
+
                 # KRIITTINEN TARKISTUS: Trust Center -asetukset
                 if ($null -eq $vbaProject) {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✗ KRIITTINEN VIRHE: VBA-projektiin ei päästy käsiksi (palautti null)." -ForegroundColor Red
                     Write-Host "     SYY: Excelin turva-asetukset estävät tämän. Tarkista Trust Center -asetukset." -ForegroundColor Yellow
                     throw "VBA Project is null. Check Excel Trust Center settings."
                 }
-                
+
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ VBA-projekti avattu." -ForegroundColor Green
 
                 # 3. Päivitä moduulien sisältö suoraan (välttää Import-metatietojen ongelman)
@@ -245,31 +302,18 @@ try {
                     $name = $modInfo.Name
                     $fullModulePath = $modInfo.Path
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')       [KÄSITTELY] $name ($($modInfo.Extension))" -ForegroundColor Cyan
-                    
+
                     if (-not (Test-Path $fullModulePath)) {
                         Write-Error "$(Get-Date -Format 'HH:mm:ss')  ✗ VIRHE: Uutta moduulitiedostoa $fullModulePath ei löydy. Ohitetaan päivitys."
-                        $modFailed++ 
+                        $modFailed++
                         continue
                     }
-                    
+
+                    $module = $null
+                    $codeModule = $null
                     try {
-                        # Lue .bas- tai .cls-tiedoston sisältö StreamReaderilla — käsittelee UTF-8 BOM:n automaattisesti
-                        # Get-Content -Encoding UTF8 voi PS 5.1:ssä palauttaa BOM:n merkkijonon ensimmäisenä merkkinä
-                        # try-finally takaa Close()-kutsun myös ReadToEnd()-poikkeuksen sattuessa (tiedostokahva ei jää auki)
-                        $reader = $null
-                        try {
-                            # Use New-Object for broader PowerShell compatibility instead of ::new()
-                            $reader = New-Object System.IO.StreamReader ($fullModulePath, [System.Text.Encoding]::UTF8, $true)
-                            $moduleContent = $reader.ReadToEnd()
-                        }
-                        finally {
-                            if ($null -ne $reader) { $reader.Close(); $reader = $null }
-                        }
-                        # Poistetaan BOM varmuuden vuoksi (U+FEFF), jos StreamReader ei sitä poistanut
-                        if ($moduleContent.Length -gt 0 -and [int][char]$moduleContent[0] -eq 0xFEFF) {
-                            $moduleContent = $moduleContent.Substring(1)
-                        }
-                        
+                        $moduleContent = Read-VbaSourceFile -Path $fullModulePath
+
                         # PARANNETTU HEADER-PARSAUS:
                         # Poista VBA-tiedoston header-rivit (Attribute VB_Name jne.)
                         # .cls-tiedostoissa poistetaan myös VERSION...CLASS ja BEGIN...END-lohko
@@ -278,11 +322,11 @@ try {
                         $codeStartIndex = 0
                         $inHeader = $true
                         $inBeginBlock = $false  # .cls-tiedoston BEGIN...END-lohkon seuranta
-                        
+
                         # Käy läpi rivejä ja tunnista header-lohkon loppu
                         for ($i = 0; $i -lt $lines.Count; $i++) {
                             $line = $lines[$i].Trim()
-                            
+
                             if ($inHeader) {
                                 if ($inBeginBlock) {
                                     # Ollaan BEGIN...END-lohkossa — ohitetaan rivit kunnes END löytyy
@@ -290,7 +334,7 @@ try {
                                     $codeStartIndex = $i + 1
                                 }
                                 # Header-rivit (poistetaan):
-                                elseif ($line -match "^Attribute\s+VB_(Name|GlobalNameSpace|Creatable|PredeclaredId|Exposed)" -or 
+                                elseif ($line -match "^Attribute\s+VB_(Name|GlobalNameSpace|Creatable|PredeclaredId|Exposed)" -or
                                     $line -match "^VERSION\s+" -or
                                     $line -eq "") {
                                     # Jatka header-lohkossa
@@ -308,27 +352,26 @@ try {
                                 }
                             }
                         }
-                        
-                        # Ota vain VBA-koodi (ilman header-rivejä)
-                        if ($codeStartIndex -lt $lines.Count) {
-                            if ($codeStartIndex -eq ($lines.Count - 1)) {
-                                $cleanCode = $lines[$codeStartIndex].Trim()
-                            }
-                            else {
-                                $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n").Trim()
-                            }
+
+                        # Ota vain VBA-koodi (ilman header-rivejä).
+                        # KRIITTINEN: ÄLÄ käytä .Trim() koko merkkijonolle - se poistaa myös
+                        # rivinvaihdon tiedoston lopusta ja voi aiheuttaa syntax-virheen moduulin
+                        # loppuun (sama juurisyy kuin AddFromString-empty-parens-ongelmassa).
+                        if ($codeStartIndex -gt ($lines.Count - 1)) {
+                            $cleanCode = ""
                         }
                         else {
-                            $cleanCode = ''
+                            $cleanCode = ($lines[$codeStartIndex..($lines.Count - 1)] -join "`r`n")
                         }
-                        
+
                         if ([string]::IsNullOrWhiteSpace($cleanCode)) {
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          ⚠ VAROITUS: Tiedosto $name on tyhjä tai sisältää vain headerit. Ohitetaan." -ForegroundColor Yellow
+                            $modFailed++
                             continue
                         }
-                        
+                        $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
+
                         # Etsi tai luo moduuli (tyyppi määräytyy tiedostopäätteen mukaan)
-                        $module = $null
                         try {
                             $module = $vbaProject.VBComponents.Item($name)
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ Moduuli löytyi, päivitetään sisältö..."
@@ -341,27 +384,36 @@ try {
                             $module = $vbaProject.VBComponents.Add($moduleType)
                             $module.Name = $name
                         }
-                        
+
                         # Tyhjennä vanha koodi ja aseta uusi
                         $codeModule = $module.CodeModule
                         $oldLineCount = $codeModule.CountOfLines
-                        
+
                         if ($oldLineCount -gt 0) {
                             $codeModule.DeleteLines(1, $oldLineCount)
                         }
-                        $codeModule.AddFromString($cleanCode)
-                        
+
+                        # KRIITTINEN: AddFromString liittää koodin moduulin loppuun implisiittiseen
+                        # tyhjään tilaan, mikä voi tuottaa tyhjiä sulkeita () tai rikkinäisen lopun
+                        # DeleteLines-ajon jälkeen. InsertLines(1, ...) kirjoittaa riville 1 sen sijaan.
+                        $codeModule.InsertLines(1, $cleanCode)
+
                         $newLineCount = $codeModule.CountOfLines
                         Write-Host "$(Get-Date -Format 'HH:mm:ss')          ✓ VALMIS: $name ($oldLineCount → $newLineCount riviä)" -ForegroundColor Green
                         $modSuccess++
-                        
+
                     }
                     catch {
                         Write-Error "$(Get-Date -Format 'HH:mm:ss')          ✗ VIRHE: Moduulin $name päivitys epäonnistui: $($_.Exception.Message)"
                         $modFailed++
                     }
+                    finally {
+                        # Vapautetaan tämän moduulin COM-viitteet ennen seuraavaan siirtymistä.
+                        if ($null -ne $codeModule) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($codeModule) | Out-Null }
+                        if ($null -ne $module) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($module) | Out-Null }
+                    }
                 }
-                
+
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    [MODUULIT] Kaikki moduulit käsitelty."
 
                 # 4. Tallenna väliaikaiseen tiedostoon, korvaa atomisesti
@@ -419,7 +471,7 @@ try {
                 $wbFailed++
                 Write-Error "$(Get-Date -Format 'HH:mm:ss') ✗ VIRHE VBA-käsittelyssä tai tallennuksessa/korvauksessa: $($_.Exception.Message)"
                 Write-Host "$(Get-Date -Format 'HH:mm:ss')    Virhetyyppi: $($_.Exception.GetType().FullName)" -ForegroundColor Yellow
-                
+
                 # Jos $workbook ei ole null, se tarkoittaa että tallennus/sulku ei ehtinyt ajua
                 if ($workbook -ne $null) {
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ Suljetaan työkirja tallentamatta virhetilanteen vuoksi."
@@ -436,7 +488,7 @@ try {
             }
         } # end if ($isOpened)
     } # end ForEach-Object
-    
+
     Write-Host ""
     Write-Host "$(Get-Date -Format 'HH:mm:ss') === YHTEENVETO ===" -ForegroundColor Cyan
     Write-Host "  Työkirjat: $wbSuccess onnistui / $wbSkipped ohitettu / $wbFailed epäonnistui" -ForegroundColor $(if ($wbFailed -gt 0 -or $wbSkipped -gt 0) { 'Yellow' } else { 'Green' })
@@ -455,7 +507,7 @@ finally {
     # Tämä estää "zombie" (jumittuneiden) Excel-prosessien syntymisen.
 
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Siivotaan ja suljetaan Excel-prosessi..." -ForegroundColor Magenta
-    
+
     # Sulje Excel-sovellus
     if ($null -ne $excel) {
         try {
@@ -465,23 +517,23 @@ finally {
         catch {
             Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Excel.Quit() epäonnistui (prosessi oli ehkä jo kaatunut)."
         }
-        
+
         Start-Sleep -Milliseconds 500
-        
+
         try {
             [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
             Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Excel COM-objekti vapautettu."
         }
         catch { <# Hiljainen #> }
     }
-    
+
     Remove-Variable excel -ErrorAction SilentlyContinue
 
     # Pakotetaan roskienkeruu COM-viitteiden välittömäksi vapauttamiseksi
     # Ilman tätä Excel.exe voi jäädä prosessilistalle kunnes GC ajaa automaattisesti
     [System.GC]::Collect()
     [System.GC]::WaitForPendingFinalizers()
-    
+
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Siivous valmis." -ForegroundColor Green
 }
 

@@ -1,6 +1,17 @@
 ﻿# Access_automaatio_Batch.ps1
 # Eräajo, joka päivittää kaikki tietokannat kerralla alikansioista.
-# Kysyy polut (Moduulit ensin, ilman oletuksia) ja lisää automaattisesti uudet moduulit.
+# Sisältää Shift-ohituksen AutoExec- ja käynnistysmakrojen estämiseksi.
+#
+# KORJATTU (tarkistettu versio):
+#   - Tietokantojen haku on nyt rekursiivinen (-Recurse), kuten kommentti aina väitti.
+#   - VBA-lähdetiedostot luetaan oikealla merkistöllä: Access vie .cls/.bas-tiedostot
+#     oletuksena ANSI (Windows-1252) -muodossa, ei UTF-8:na. Pelkkä UTF-8-oletus
+#     rikkoo ääkköset (ä, ö, å) hiljaisesti ilman virheilmoitusta.
+#   - Access-prosessin pakkosulkeminen ei enää perustu Process.MainWindowHandle-
+#     osumaan (joka on lähes aina 0 kun Visible=$false) vaan PID:iin, joka haetaan
+#     COM-ikkunakahvasta GetWindowThreadProcessId-kutsulla.
+#   - Lisätty valinnainen kääntövaihe (Debug > Compile) ennen kannan sulkemista.
+#   - Lisätty varoitus, jos moduulikansiossa on saman niminen tiedosto useaan kertaan.
 
 $ErrorActionPreference = 'Stop'
 
@@ -9,6 +20,35 @@ if ([System.IntPtr]::Size -ne 8) {
     return
 }
 Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Ajetaan 64-bittisessä PowerShellissä. Aloitetaan eräajo.`n" -ForegroundColor Green
+
+# --- Win32 API: Shift-näppäimen simulointi + ikkovan omistavan prosessin PID ---
+$signature = @'
+[DllImport("user32.dll")]
+public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+[DllImport("user32.dll")]
+public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+'@
+$win32 = Add-Type -MemberDefinition $signature -Name "Win32Helpers" -Namespace "Win32" -PassThru
+
+# Palauttaa tiedoston sisällön oikealla merkistöllä.
+# Access vie VBA-moduulit ANSI:na (Windows-1252) ellei tiedostossa ole BOM-merkkiä,
+# joten pelkkä UTF-8-oletus rikkoo ääkköset hiljaisesti.
+function Read-VbaSourceFile {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
+    }
+    elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        return [System.Text.Encoding]::Unicode.GetString($bytes, 2, $bytes.Length - 2)
+    }
+    else {
+        return [System.Text.Encoding]::GetEncoding(1252).GetString($bytes)
+    }
+}
 
 # --- 1. Polkujen kysely (ILMAN OLETUKSIA) ---
 
@@ -33,12 +73,15 @@ try {
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [ALUSTUS] Luodaan Access COM-objekti..." -ForegroundColor Cyan
     $access = New-Object -ComObject Access.Application
     $access.Visible = $false
-    $access.AutomationSecurity = 1
+    # 3 = msoAutomationSecurityForceDisable (estää kääntämisen avattaessa)
+    $access.AutomationSecurity = 3
 
-    $dbFiles = Get-ChildItem -Path $DatabasesRoot -Filter "*.accdb"
-    
+    # HUOM: haku on rekursiivinen, jotta alikansioissa olevat kannat löytyvät
+    # (skriptin oma kuvaus lupaa tämän).
+    $dbFiles = Get-ChildItem -Path $DatabasesRoot -Filter "*.accdb" -Recurse
+
     if ($dbFiles.Count -eq 0) {
-        throw "Kansiosta $DatabasesRoot ei löytynyt yhtään .accdb -tiedostoa."
+        throw "Kansiosta $DatabasesRoot (tai sen alikansioista) ei löytynyt yhtään .accdb -tiedostoa."
     }
 
     Write-Host "$(Get-Date -Format 'HH:mm:ss') Löydettiin $($dbFiles.Count) tietokantaa. Aloitetaan käsittely.`n" -ForegroundColor Cyan
@@ -69,8 +112,12 @@ try {
 
         # Etsitään moduulit alikansioita myöten
         $componentMap = @{}
-        @(Get-ChildItem -Path $modulePath -Filter "*.cls" -Recurse) | ForEach-Object { $componentMap[$_.BaseName] = $_ }
-        @(Get-ChildItem -Path $modulePath -Filter "*.bas" -Recurse) | ForEach-Object { $componentMap[$_.BaseName] = $_ }
+        foreach ($file in @(Get-ChildItem -Path $modulePath -Filter "*.cls" -Recurse) + @(Get-ChildItem -Path $modulePath -Filter "*.bas" -Recurse)) {
+            if ($componentMap.ContainsKey($file.BaseName)) {
+                Write-Host "  ⚠ VAROITUS: Löytyi kaksi tiedostoa nimellä '$($file.BaseName)' - käytetään: $($file.FullName) (ohitettu: $($componentMap[$file.BaseName].FullName))" -ForegroundColor Yellow
+            }
+            $componentMap[$file.BaseName] = $file
+        }
 
         if ($componentMap.Count -eq 0) {
             Write-Host "  ⚠ Kansiossa $modulePath (tai alikansioissa) ei ole VBA-tiedostoja. Ohitetaan." -ForegroundColor Yellow
@@ -96,15 +143,23 @@ try {
 
             do {
                 try {
+                    # Painetaan Shift pohjaan
+                    $win32::keybd_event(0x10, 0, 0, [UIntPtr]::Zero)
+                    Start-Sleep -Milliseconds 200
+
                     $access.OpenCurrentDatabase($dbPath, $false, "")
                     $kantaAvattu = $true
                     $access.Visible = $false
-                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu."
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Tietokanta avattu Shift-ohituksella."
                 }
                 catch {
                     $retryCount++
                     if ($retryCount -lt $maxRetries) { Start-Sleep -Seconds $retryDelaySeconds }
                     else { throw $_ }
+                }
+                finally {
+                    # Vapautetaan Shift aina
+                    $win32::keybd_event(0x10, 0, 2, [UIntPtr]::Zero)
                 }
             } while (-not $kantaAvattu -and $retryCount -lt $maxRetries)
 
@@ -133,13 +188,7 @@ try {
                         elseif ($name -match "^(Form_|Report_)") { $isBoundComponent = $true; $componentType = 100 }
                         else { $componentType = 2 }
 
-                        $reader = [System.IO.StreamReader]::new($fullModulePath, [System.Text.Encoding]::UTF8, $true)
-                        $moduleContent = $reader.ReadToEnd()
-                        $reader.Dispose()
-
-                        if ($moduleContent.Length -gt 0 -and [int][char]$moduleContent[0] -eq 0xFEFF) {
-                            $moduleContent = $moduleContent.Substring(1)
-                        }
+                        $moduleContent = Read-VbaSourceFile -Path $fullModulePath
 
                         $lines = $moduleContent -split "`r?`n"
                         $codeStartIndex = 0
@@ -166,7 +215,7 @@ try {
                             $dbFail++
                             continue
                         }
-                        
+
                         $cleanCode = $cleanCode.TrimEnd([char]13, [char]10) + "`r`n"
 
                         # TARKISTUS: Löytyykö vanha vai luodaanko uusi
@@ -182,11 +231,11 @@ try {
 
                         $codeModule = $component.CodeModule
                         $oldLineCount = $codeModule.CountOfLines
-                        
+
                         if ($oldLineCount -gt 0) { $codeModule.DeleteLines(1, $oldLineCount) }
-                        
+
                         $codeModule.InsertLines(1, $cleanCode)
-                        
+
                         if ($isNewModule) {
                             $dbNew++
                             Write-Host "$(Get-Date -Format 'HH:mm:ss')          + Lisätty uusi: $name" -ForegroundColor DarkCyan
@@ -205,7 +254,17 @@ try {
                         if ($null -ne $component) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($component) | Out-Null }
                     }
                 }
-                
+
+                # Käännetään ja tallennetaan kaikki moduulit ennen sulkemista, jotta rikkinäinen
+                # liitetty koodi näkyy raportissa eikä jää huomaamatta seuraavaan avaukseen asti.
+                try {
+                    $access.RunCommand(126) # acCmdCompileAndSaveAllModules
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Moduulit käännetty ja tallennettu." -ForegroundColor DarkGreen
+                }
+                catch {
+                    Write-Host "$(Get-Date -Format 'HH:mm:ss')    ⚠ Kääntäminen epäonnistui - tarkista moduulit käsin: $($_.Exception.Message)" -ForegroundColor Yellow
+                }
+
                 $raportti += [PSCustomObject]@{ Kanta = $dbName; Tila = "OK"; Onnistuneet = $dbSuccess; Uudet = $dbNew; Virheet = $dbFail }
             }
         }
@@ -216,14 +275,14 @@ try {
         finally {
             if ($null -ne $vbaProject) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($vbaProject) | Out-Null }
             if ($null -ne $vbe) { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($vbe) | Out-Null }
-            
+
             if ($kantaAvattu) {
                 try {
                     $access.DoCmd.SetWarnings($true)
                     $access.CloseCurrentDatabase()
                     Write-Host "$(Get-Date -Format 'HH:mm:ss')    ✓ Kanta suljettu ja tallennettu." -ForegroundColor DarkGreen
                 }
-                catch { 
+                catch {
                     Write-Warning "$(Get-Date -Format 'HH:mm:ss')    ⚠ Kannan sulkeminen epäonnistui."
                 }
             }
@@ -243,36 +302,47 @@ catch {
 }
 finally {
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Siivotaan Access-prosessi..." -ForegroundColor Magenta
-    
+
     if ($null -ne $access) {
+        $accessProcess = $null
         try {
-            # Haetaan prosessin ID talteen ennen sulkemisyritystä hätävaraksi
-            try { $accessWindowHandle = $access.hWnd } catch { $accessWindowHandle = 0 }
-            
-            if ($accessWindowHandle -ne 0) {
-                $accessProcess = Get-Process | Where-Object { $_.MainWindowHandle -eq $accessWindowHandle -and $_.Name -eq "MSACCESS" }
+            # Haetaan prosessin PID ikkunakahvasta - toimii myös kun Visible=$false,
+            # toisin kuin Process.MainWindowHandle-vertailu (joka on tällöin lähes aina 0).
+            $accessPid = 0
+            try {
+                $accessWindowHandle = [IntPtr]$access.hWnd
+                if ($accessWindowHandle -ne [IntPtr]::Zero) {
+                    $pidOut = [uint32]0
+                    [void]$win32::GetWindowThreadProcessId($accessWindowHandle, [ref]$pidOut)
+                    $accessPid = $pidOut
+                }
+            } catch { $accessPid = 0 }
+
+            if ($accessPid -ne 0) {
+                $accessProcess = Get-Process -Id $accessPid -ErrorAction SilentlyContinue
             }
-            
-            Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Suljetaan Access hallitusti..." -ForegroundColor Gray
+
+            Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Suljetaan Access..." -ForegroundColor Gray
             $access.Quit()
-            
+
             # Odotetaan hetki (max 2 sekuntia), että prosessi sulkeutuu itse
             $counter = 0
             while ($accessProcess -and -not $accessProcess.HasExited -and $counter -lt 20) {
                 Start-Sleep -Milliseconds 100
                 $counter++
+                $accessProcess.Refresh()
             }
-        } 
-        catch { 
-            Write-Warning "Hallittu sulkeminen epäonnistui tai Access oli jo kiinni: $($_.Exception.Message)"
+        }
+        catch {
+            Write-Warning "Sulkeminen epäonnistui tai Access oli jo kiinni: $($_.Exception.Message)"
         }
         finally {
-            # Jos prosessi roikkuu edelleen pystyssä, tapetaan se väkisin ID:n perusteella
+            # Jos prosessi roikkuu edelleen pystyssä, tapetaan se väkisin PID:n perusteella
             if ($null -ne $accessProcess -and -not $accessProcess.HasExited) {
                 Write-Host "$(Get-Date -Format 'HH:mm:ss') [CLEANUP] Access ei sulkeutunut. Pakkolopetetaan prosessi (PID: $($accessProcess.Id))..." -ForegroundColor Yellow
                 Stop-Process -Id $accessProcess.Id -Force -ErrorAction SilentlyContinue
             }
-            
+
             # Vapautetaan COM-objektin viittaukset muistista
             try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($access) | Out-Null } catch {}
             $access = $null
@@ -282,6 +352,6 @@ finally {
     # Pakotetaan .NET-roskienkeruu ajoon
     [System.GC]::Collect()
     [System.GC]::WaitForPendingFinalizers()
-    
+
     Write-Host "$(Get-Date -Format 'HH:mm:ss') [OK] Eräajo suoritettu ja siivous valmis." -ForegroundColor Green
 }
