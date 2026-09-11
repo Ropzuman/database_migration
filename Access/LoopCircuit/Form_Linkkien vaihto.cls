@@ -1,89 +1,84 @@
 Option Compare Database
 Option Explicit
-
-' Päivitetty 2025-10-22: Eksplisiittinen DAO, virheenkäsittely, siivottu logiikka
+Private Const POISSULJETTU_TAULU As String = "MotorData"
+Private Const LINKITETTY_TAULU_TYYPPI As Long = 6
 
 Private Sub Command0_Click()
-    Dim i As Long
-    Dim Polku As String
-    Dim Polku2 As String
-    Dim Nimi As String
-    Dim Taul As DAO.Recordset
-    Dim Taulu As String
-    Dim UpdateCount As Long
-    Dim db As DAO.Database
-    Dim DbName As String
+    Dim Polku As String, Polku2 As String, Nimi As String
+    Dim Kohdetiedosto As String, Taulu As String
+    Dim Taul As DAO.Recordset, db As DAO.Database, tdf As DAO.TableDef
+    Dim kasitellyt As New Collection, epaonnistuneet As String
+    Dim viimeinenKauttaviiva As Long
+    Dim virhenumero As Long, virhekuvaus As String
 
-    On Error GoTo ErrHandler
-
-    ' Haetaan nykyinen tietokannan hakemistopolku
+    On Error GoTo ErrorHandler
     Set db = CurrentDb
-    DbName = db.Name
-    Polku = Left$(DbName, Len(DbName) - Len(Dir(DbName)))
-
-    ' Haetaan linkitetyt taulut (MotorData jätetään pois)
+    Polku = Left$(db.Name, Len(db.Name) - Len(Dir$(db.Name)))
     Set Taul = db.OpenRecordset( _
         "SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects " & _
-        "WHERE ([Database] Is Not Null) AND ([Name] Not Like 'MotorData')")
-
-    UpdateCount = 0
-    Dim Epäonnistuneet As String
-    Epäonnistuneet = ""
+        "WHERE ([Database] Is Not Null) AND ([Name] Not Like '" & POISSULJETTU_TAULU & "') " & _
+        "AND ([Type] = " & LINKITETTY_TAULU_TYYPPI & ")", dbOpenSnapshot, dbForwardOnly)
 
     Do While Not Taul.EOF
-        If Taul.Fields("Name") <> Taulu Then
-            ' Poimitaan polku ja tiedostonimi Database-kentästä
-            For i = Len(Taul.Fields("Database")) To 1 Step -1
-                If Mid$(Taul.Fields("Database"), i, 1) = "\" Then
-                    Polku2 = LCase$(Left$(Taul.Fields("Database"), i))
-                    Nimi = Mid$(Taul.Fields("Database"), i + 1)
-                    Exit For
+        Taulu = Taul.Fields("Name")
+        If Not JoKasitelty(kasitellyt, Taulu) Then
+            kasitellyt.Add Taulu, Taulu
+            viimeinenKauttaviiva = InStrRev(Taul.Fields("Database"), "\")
+            If viimeinenKauttaviiva > 0 Then
+                Polku2 = LCase$(Left$(Taul.Fields("Database"), viimeinenKauttaviiva))
+                Nimi = Mid$(Taul.Fields("Database"), viimeinenKauttaviiva + 1)
+                If Polku2 <> LCase$(Polku) Then
+                    Kohdetiedosto = Polku & Nimi
+                    If Len(Dir$(Kohdetiedosto)) = 0 Then
+                        epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei löydy: " & Kohdetiedosto & ")" & vbCrLf
+                    Else
+                        Set tdf = db.TableDefs(Taulu)
+                        tdf.Connect = ";DATABASE=" & Kohdetiedosto
+                        On Error Resume Next
+                        tdf.RefreshLink
+                        If Err.Number <> 0 Then
+                            epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (" & Err.Description & ")" & vbCrLf
+                            Err.Clear
+                        End If
+                        On Error GoTo ErrorHandler
+                        Set tdf = Nothing
+                    End If
                 End If
-            Next i
-
-            ' Linkataan uudelleen, jos polku poikkeaa nykyisestä
-            If Polku2 <> LCase$(Polku) Then
-                Taulu = Taul.Fields("Name")
-
-                ' Poistetaan vanha linkki ja luodaan uusi nykyisellä polulla
-                db.Execute "DROP TABLE [" & Taulu & "]"
-
-                On Error Resume Next
-                DoCmd.TransferDatabase acLink, "Microsoft Access", Polku & Nimi, _
-                    acTable, Taulu, Taulu, False
-
-                If Err.Number = 0 Then
-                    UpdateCount = UpdateCount + 1
-                Else
-                    ' Kirjataan epäonnistuneet taulut käyttäjälle näytettäväksi
-                    Epäonnistuneet = Epäonnistuneet & Taulu & " (" & Err.Description & ")" & vbCrLf
-                End If
-
-                Err.Clear
-                On Error GoTo ErrHandler
             End If
         End If
         Taul.MoveNext
     Loop
 
-Cleanup:
-    On Error Resume Next
-    If Not Taul Is Nothing Then
-        Taul.Close
-        Set Taul = Nothing
-    End If
-    ' HUOM: CurrentDb-objektia ei suljeta — se on aktiivinen tietokanta
+    Taul.Close
+    Set Taul = Nothing
     Set db = Nothing
-    On Error GoTo 0
-
-    MsgBox "Valmis - Päivitetty " & UpdateCount & " taulukkoa.", vbInformation, "Linkkien vaihto"
-    ' Ilmoitetaan epäonnistuneista linkityksistä, jos sellaisia löytyi
-    If Epäonnistuneet <> "" Then
-        MsgBox "Seuraavien taulujen linkitys epäonnistui:" & vbCrLf & Epäonnistuneet, vbExclamation, "Linkkien vaihto"
+    If Len(epaonnistuneet) > 0 Then
+        MsgBox "Osa taulujen linkeistä ei päivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
+    Else
+        MsgBox "Valmis", vbInformation
     End If
     Exit Sub
 
-ErrHandler:
+ErrorHandler:
+    virhenumero = Err.Number
+    virhekuvaus = Err.Description
+    On Error Resume Next
+    If Not Taul Is Nothing Then Taul.Close
+    Set Taul = Nothing
+    Set tdf = Nothing
+    Set db = Nothing
+    On Error GoTo 0
+    MsgBox "Virhe tauluyhteyksien päivityksessä (" & virhenumero & "): " & virhekuvaus, vbCritical
+End Sub
+
+Private Function JoKasitelty(ByRef lista As Collection, ByVal nimi As String) As Boolean
+    On Error Resume Next
+    Dim testi As Variant
+    testi = lista(nimi)
+    JoKasitelty = (Err.Number = 0)
+    Err.Clear
+    On Error GoTo 0
+End Function
     MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Linkkien vaihto"
     Resume Cleanup
 End Sub

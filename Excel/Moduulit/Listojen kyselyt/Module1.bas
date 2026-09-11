@@ -90,6 +90,29 @@ Private Sub BeginFastMode()
   On Error GoTo 0
 End Sub
 
+Private Function LueBooleanControl(ByVal SheetName As String, ByVal ControlName As String, Optional ByVal DefaultValue As Boolean = False) As Boolean
+  Dim ws As Worksheet
+  Dim ctrl As OLEObject
+  On Error Resume Next
+  Set ws = ThisWorkbook.Sheets(SheetName)
+  If Not ws Is Nothing Then
+    Set ctrl = ws.OLEObjects(ControlName)
+    If Not ctrl Is Nothing Then
+      If IsObject(ctrl.Object) Then
+        LueBooleanControl = CBool(ctrl.Object.Value)
+      Else
+        LueBooleanControl = DefaultValue
+      End If
+    Else
+      LueBooleanControl = DefaultValue
+    End If
+  Else
+    LueBooleanControl = DefaultValue
+  End If
+  Err.Clear
+  On Error GoTo 0
+End Function
+
 '''
 ' EndFastMode: Palauttaa Excel UI:n ja laskenta-asetukset aiempaan tilaansa.
 '''
@@ -467,27 +490,44 @@ Sub GenPrintout()
   Dim lastCell As Range
   Dim templateRange As Range
   Dim stagingSheet As Worksheet     ' Fix1: cross-WB staging (1 kopio loopille)
+  Dim wsLinking As Worksheet
   
-  On Error GoTo GenPrintoutError
+  On Error GoTo 0
   BeginFastMode
   
   ' Haetaan POSheet-nimi faceplatesta
+  On Error Resume Next
   POSheet = Sheets("Main").Range("C16").Value
+  If Err.Number <> 0 Then
+    Debug.Print "  [GenPrintout] POSheet-luku epäonnistui: " & Err.Number & " - " & Err.Description
+    Err.Clear
+    POSheet = "Printout"
+  End If
+  On Error GoTo 0
   If Trim(POSheet) = "" Then POSheet = "Printout" ' Oletusnimi jos ei asetettu
   Debug.Print "  POSheet nimi: " & POSheet
   
   ' Varmistetaan että dokumentin tiedot ovat ajantasalla (polku/nimi DB2:sta)
   On Error Resume Next
   If Trim(DocInfo.Path) = "" Or Trim(DocInfo.File) = "" Then HaeDocTiedot
-  On Error GoTo GenPrintoutError
+  If Err.Number <> 0 Then Debug.Print "  [GenPrintout] HaeDocTiedot virhe: " & Err.Number & " - " & Err.Description
+  Err.Clear
+  On Error GoTo 0
   
   Application.StatusBar = "Alustetaan tulosteen generointi..."
     
-  ' Haetaan käyttäjän asetukset faceplatesta
-  AddFooter = Sheets("Main").AddFooter.Value
+  ' Haetaan käyttäjän asetukset faceplatesta turvallisesti
+  Debug.Print "  Luetaan Main-sheetin kontrollit..."
   On Error Resume Next
-  HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
-  On Error GoTo GenPrintoutError
+  AddFooter = LueBooleanControl("Main", "AddFooter", False)
+  HideLINKING = LueBooleanControl("Main", "HLINKING", False)
+  If Err.Number <> 0 Then
+    Debug.Print "  [GenPrintout] Main-kontrollien luku epäonnistui: " & Err.Number & " - " & Err.Description
+    Err.Clear
+    AddFooter = False
+    HideLINKING = False
+  End If
+  On Error GoTo 0
   Debug.Print "  AddFooter: " & AddFooter & ", HideLINKING: " & HideLINKING
     
   ' Asetetaan työkirjaviittaukset
@@ -520,18 +560,46 @@ Sub GenPrintout()
   ' Luodaan uusi työkirja kopioimalla Info-sheet
   ' Korjattu: ActiveWorkbook voi pettää jos lisäosa aktivoi toisen työkirjan Copy-operaation jälkeen.
   ' Workbooks(Workbooks.Count) viittaa aina juuri lisättyyn työkirjaan turvallisesti.
+  Debug.Print "  [GenPrintout] STEP 1: Copy Info-sheet"
+  On Error Resume Next
   srcWB.Sheets("Info").Copy
+  If Err.Number <> 0 Then
+    Debug.Print "  [GenPrintout] Info-sheet Copy epäonnistui: " & Err.Number & " - " & Err.Description
+    Err.Clear
+    MsgBox "Info-sheetin kopiointi epäonnistui: " & Err.Description, vbCritical, "Printout Generation Error"
+    Exit Sub
+  End If
   Set destWB = Workbooks(Workbooks.Count)
   destWB.Sheets(1).Cells.ClearComments
+  Debug.Print "  [GenPrintout] STEP 1 OK: uusi työkirja luotu"
+  On Error GoTo 0
   
   ' Kopioidaan TEMPLATE, Legend ja Revisions uuteen työkirjaan
-  srcWB.Sheets("TEMPLATE").Copy After:=destWB.Sheets(1)
-  destWB.Sheets(2).Name = POSheet
-  Set destSheet = destWB.Sheets(POSheet)
-  
-  srcWB.Sheets("Legend").Copy After:=destWB.Sheets(2)
-  srcWB.Sheets("Revisions").Copy After:=destWB.Sheets(1)
-  
+  Debug.Print "  [GenPrintout] STEP 2: copy TEMPLATE/Legend/Revisions"
+  On Error Resume Next
+  Dim srcTemplate As Worksheet, srcLegend As Worksheet, srcRevisions As Worksheet
+  Set srcTemplate = srcWB.Worksheets("TEMPLATE")
+  Set srcLegend = srcWB.Worksheets("Legend")
+  Set srcRevisions = srcWB.Worksheets("Revisions")
+  If srcTemplate Is Nothing Or srcLegend Is Nothing Or srcRevisions Is Nothing Then
+    Debug.Print "  [GenPrintout] Puuttuva source-sheet: TEMPLATE=" & (srcTemplate Is Nothing) & ", Legend=" & (srcLegend Is Nothing) & ", Revisions=" & (srcRevisions Is Nothing)
+    Err.Clear
+    MsgBox "Puuttuva source-sheet tietolähdetyökirjasta: TEMPLATE, Legend tai Revisions. Tarkista työkalun sisäinen Excel-taulukko.", vbCritical, "Printout Generation Error"
+    Exit Sub
+  End If
+  On Error GoTo 0
+
+  srcTemplate.Copy After:=destWB.Worksheets(1)
+  If destWB.Worksheets.Count < 2 Then
+    MsgBox "Työkirjassa ei luotu odotettua templaten kopiointisheettiä.", vbCritical, "Printout Generation Error"
+    Exit Sub
+  End If
+  destWB.Worksheets(2).Name = POSheet
+  Set destSheet = destWB.Worksheets(POSheet)
+
+  srcLegend.Copy After:=destWB.Worksheets(destWB.Worksheets.Count)
+  srcRevisions.Copy After:=destWB.Worksheets(1)
+  Debug.Print "  [GenPrintout] STEP 2 OK: sheets copied"
   Application.StatusBar = "Täytetään revisiot..."
   PopulateRevisionsSimple
   
@@ -610,7 +678,9 @@ Sub GenPrintout()
   Application.DisplayAlerts = False
   On Error Resume Next
   destWB.Sheets("__STAGING__").Delete
-  On Error GoTo GenPrintoutError
+  If Err.Number <> 0 Then Debug.Print "  [GenPrintout] __STAGING__ delete virhe: " & Err.Number & " - " & Err.Description
+  Err.Clear
+  On Error GoTo 0
   Application.DisplayAlerts = True
 
   ' Yksi cross-WB kopio — kaikki loopin kopiot tapahtuvat tästä eteenpäin saman WB:n sisällä
@@ -660,7 +730,9 @@ Sub GenPrintout()
   Application.DisplayAlerts = False
   On Error Resume Next
   stagingSheet.Delete
-  On Error GoTo GenPrintoutError
+  If Err.Number <> 0 Then Debug.Print "  [GenPrintout] stagingSheet delete virhe: " & Err.Number & " - " & Err.Description
+  Err.Clear
+  On Error GoTo 0
   Application.DisplayAlerts = True
   Set stagingSheet = Nothing
   Debug.Print "  Staging-sheet poistettu"
@@ -700,18 +772,31 @@ Sub GenPrintout()
   Application.StatusBar = "Viimeistellään..."
   destSheet.Cells.ClearComments
   
-  ' Käsitellään LINKING-sheetin näkyvyys/poisto
+  ' Käsitellään LINKING-sheetin näkyvyys/poisto turvallisesti
   On Error Resume Next
-  If HideLINKING Then
-    destWB.Sheets("LINKING").Visible = False
-    Debug.Print "  LINKING-sheet piilotettu"
-  Else
-    Application.DisplayAlerts = False
-    destWB.Sheets("LINKING").Delete
-    Debug.Print "  LINKING-sheet poistettu"
-    Application.DisplayAlerts = True
+  Set wsLinking = Nothing
+  Set wsLinking = destWB.Sheets("LINKING")
+  If Err.Number <> 0 Then
+    Debug.Print "  [GenPrintout] LINKING-sheet lookup virhe: " & Err.Number & " - " & Err.Description
+    Err.Clear
   End If
-  On Error GoTo GenPrintoutError
+  If Not wsLinking Is Nothing Then
+    If HideLINKING Then
+      wsLinking.Visible = False
+      Debug.Print "  LINKING-sheet piilotettu"
+    Else
+      Application.DisplayAlerts = False
+      wsLinking.Delete
+      If Err.Number <> 0 Then Debug.Print "  [GenPrintout] LINKING delete virhe: " & Err.Number & " - " & Err.Description
+      Err.Clear
+      Application.DisplayAlerts = True
+      Debug.Print "  LINKING-sheet poistettu"
+    End If
+  Else
+    Debug.Print "  LINKING-sheet puuttuu - ohitetaan näkyvyys/poisto"
+  End If
+  Set wsLinking = Nothing
+  On Error GoTo 0
   
   destSheet.Activate
   Application.StatusBar = False
@@ -725,7 +810,11 @@ Sub GenPrintout()
   On Error Resume Next
     defPath = Trim(DocInfo.Path & "")
     defName = Trim(DocInfo.File & "")
-  On Error GoTo GenPrintoutError
+  If Err.Number <> 0 Then
+    Debug.Print "  [GenPrintout] Path/File-luku virhe: " & Err.Number & " - " & Err.Description
+    Err.Clear
+  End If
+  On Error GoTo 0
   
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
   If Right$(defPath, 1) <> "\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
@@ -739,8 +828,10 @@ Sub GenPrintout()
   
   Debug.Print "  Ehdotettu tiedostonimi: " & defPath & defName
   Oletus = defPath & defName
+  Debug.Print "  [GenPrintout] STEP 9: InputBox save name"
   Tiedosto = InputBox("Give The File Name", "Save File", Oletus)
   If Tiedosto <> "" Then
+    Debug.Print "  [GenPrintout] STEP 10: SaveAs start -> " & Tiedosto
     destWB.BuiltinDocumentProperties("Title").Value = POSheet
     ' Valitaan tallennusformaatti tiedostopäätteen mukaan — .xlsm vaatii makropohjaisen formaatin
     If LCase(Right$(Tiedosto, 5)) = ".xlsm" Then
@@ -858,9 +949,7 @@ Dim wsErrors As Worksheet
   
   ' Haetaan vakiot faceplatesta
   POSheet = Sheets("Main").Range("C16").Value
-  On Error Resume Next
-  HideLINKING = Sheets("Main").OLEObjects("HLINKING").Object.Value
-  On Error GoTo CheckoutError
+  HideLINKING = LueBooleanControl("Main", "HLINKING", False)
   Debug.Print "  POSheet: " & POSheet & ", HideLINKING: " & HideLINKING
   
   ' Tyhjennetään kommentit TEMPLATEsta

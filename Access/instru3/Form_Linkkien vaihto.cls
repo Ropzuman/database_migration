@@ -1,6 +1,9 @@
 Option Compare Database
 Option Explicit
 
+Private Const POISSULJETTU_TAULU As String = "MotorData"
+Private Const LINKITETTY_TAULU_TYYPPI As Long = 6
+
 '================================================================================
 ' Form: Linkkien vaihto (Link Updater)
 ' Purpose: Update linked table paths to current database directory
@@ -33,7 +36,7 @@ Option Explicit
 '   3. For each linked table:
 '      - Extract filename from current link path
 '      - Compare directory paths
-'      - If paths differ, drop and recreate link to current directory
+'      - If paths differ, refresh the link to the current directory
 '   4. Preserve table name and structure
 '
 ' Notes:
@@ -41,7 +44,7 @@ Option Explicit
 '   - Uses case-insensitive path comparison
 '   - Prevents duplicate relinking of same table
 '   - MotorData table excluded from relinking (special handling needed)
-'   - Uses DoCmd.TransferDatabase to recreate links
+'   - Uses TableDef.RefreshLink to update links without dropping tables
 '--------------------------------------------------------------------------------
 Private Sub Command0_Click()
 On Error GoTo ErrorHandler
@@ -54,12 +57,17 @@ On Error GoTo ErrorHandler
     Dim Taul As DAO.Recordset  ' MSysObjects query results
     Dim Taulu As String  ' Current table name being processed
     Dim tdf As DAO.TableDef  ' Linkitetyn taulun määritys päivitystä varten
+    Dim db As DAO.Database
+    Dim Kohdetiedosto As String
+    Dim virhenumero As Long
+    Dim virhekuvaus As String
 
     ' Get current database directory path
-    Polku = Left$(CurrentDb.Name, Len(CurrentDb.Name) - Len(Dir(CurrentDb.Name)))
+    Set db = CurrentDb
+    Polku = Left$(db.Name, Len(db.Name) - Len(Dir$(db.Name)))
     
     ' Query for all linked tables (excluding MotorData)
-    Set Taul = CurrentDb.OpenRecordset("SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects WHERE (([Database] Is Not Null) AND ([Name] Not Like 'MotorData'))")
+    Set Taul = db.OpenRecordset("SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects WHERE (([Database] Is Not Null) AND ([Name] Not Like '" & POISSULJETTU_TAULU & "') AND ([Type] = " & LINKITETTY_TAULU_TYYPPI & "))", dbOpenSnapshot, dbForwardOnly)
     
     ' Process each linked table
     Do While Not Taul.EOF
@@ -78,17 +86,22 @@ On Error GoTo ErrorHandler
             If Polku2 <> LCase$(Polku) Then
                 Taulu = Taul.Fields("Name")
                 
-                ' Päivitetään linkki turvallisesti — RefreshLink ei riko taulua eikä sen relaatioita
-                Set tdf = CurrentDb.TableDefs(Taulu)
-                tdf.Connect = ";DATABASE=" & Polku & Nimi
-                On Error Resume Next
-                tdf.RefreshLink
-                If Err.Number <> 0 Then
-                    MsgBox "Virhe päivitettäessä taulua " & tdf.Name & ": " & Err.Description, vbExclamation, "Linkin päivitysvirhe"
+                Kohdetiedosto = Polku & Nimi
+                If Len(Dir$(Kohdetiedosto)) = 0 Then
+                    MsgBox "Tietokantatiedostoa ei löydy:" & vbCrLf & Kohdetiedosto, vbExclamation, "Linkitysvirhe"
+                Else
+                    ' Päivitetään linkki rikkomatta taulua tai sen relaatioita.
+                    Set tdf = db.TableDefs(Taulu)
+                    tdf.Connect = ";DATABASE=" & Kohdetiedosto
+                    On Error Resume Next
+                    tdf.RefreshLink
+                    If Err.Number <> 0 Then
+                        MsgBox "Virhe päivitettäessä taulua " & tdf.Name & ": " & Err.Description, vbExclamation, "Linkin päivitysvirhe"
+                    End If
+                    Err.Clear
+                    On Error GoTo ErrorHandler
+                    Set tdf = Nothing
                 End If
-                Err.Clear
-                On Error GoTo ErrorHandler
-                Set tdf = Nothing
             End If
         End If
         Taul.MoveNext
@@ -97,14 +110,18 @@ On Error GoTo ErrorHandler
     ' Cleanup
     Taul.Close
     Set Taul = Nothing
+    Set db = Nothing
     MsgBox "Valmis", vbInformation, "Link Update"  ' "Ready"
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error updating links: " & Err.Description, vbCritical, "Link Update"
+    virhenumero = Err.Number
+    virhekuvaus = Err.Description
     On Error Resume Next
     If Not Taul Is Nothing Then Taul.Close
     Set Taul = Nothing
     Set tdf = Nothing
+    Set db = Nothing
     On Error GoTo 0
+    MsgBox "Virhe tauluyhteyksien päivityksessä (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub
