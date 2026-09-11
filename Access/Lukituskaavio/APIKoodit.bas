@@ -10,9 +10,9 @@ Option Explicit
     Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
-    Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+  Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
@@ -49,12 +49,21 @@ Public Type OPENFILENAME
 #End If
     lpTemplateName As String
 End Type
+#If VBA7 Then
 Private Declare PtrSafe Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As LongPtr
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As LongPtr)
 Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
 Private Declare PtrSafe Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As LongPtr, ByVal lpBuffer As String) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
+#Else
+Private Declare Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
+Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal pvoid As Long)
+Private Declare Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+#End If
 Private Type BrowseInfo
+#If VBA7 Then
     hOwner      As LongPtr
     pIDLRoot       As LongPtr
     pszDisplayName As LongPtr
@@ -62,13 +71,28 @@ Private Type BrowseInfo
     ulFlags        As Long
     lpfn           As LongPtr
     lParam         As LongPtr
+#Else
+    hOwner      As Long
+    pIDLRoot       As Long
+    pszDisplayName As Long
+    lpszTitle      As Long
+    ulFlags        As Long
+    lpfn           As Long
+    lParam         As Long
+#End If
     iImage         As Long
 End Type
 Public CDialogPath As String
 
+#If VBA7 Then
 Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As String
   Dim lpIDList As LongPtr
   Dim lpSelPath As LongPtr
+#Else
+Public Function ValitseHakem(Handle As Long, Optional StartPath As String) As String
+  Dim lpIDList As Long
+  Dim lpSelPath As Long
+#End If
   Dim ThePath As String
   Dim Otsikko As String
   Dim tBrowseInfo As BrowseInfo
@@ -115,6 +139,7 @@ Public Function ValitseHakem(Handle As LongPtr, Optional StartPath As String) As
     End If
     ValitseHakem = ThePath
 End Function
+#If VBA7 Then
 Public Function BrowseCallbackProc(ByVal hWnd As LongPtr, ByVal uMsg As Long, ByVal lParam As LongPtr, ByVal lpData As LongPtr) As LongPtr
   Const BFFM_INITIALIZED = 1
   Const BFFM_SETSELECTION = &H466
@@ -131,6 +156,20 @@ End Function
 Public Function DummyFunc(ByVal param As LongPtr) As LongPtr
   DummyFunc = param
 End Function
+#Else
+Public Function BrowseCallbackProc(ByVal hWnd As Long, ByVal uMsg As Long, ByVal lParam As Long, ByVal lpData As Long) As Long
+  Const BFFM_INITIALIZED = 1
+  Const BFFM_SETSELECTION = &H466
+  Dim retval As Long
+  On Error Resume Next
+  If uMsg = BFFM_INITIALIZED Then retval = SendMessage(hWnd, BFFM_SETSELECTION, True, ByVal CDialogPath)
+  BrowseCallbackProc = 0
+  Err.Clear
+End Function
+Public Function DummyFunc(ByVal param As Long) As Long
+  DummyFunc = param
+End Function
+#End If
 Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
 ' Avaa tiedostovalintaikkuna tietokantapolun hakemiseksi
     Dim OpenFile As OPENFILENAME
@@ -142,7 +181,11 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
     Dim Filtteri As String
     Dim AHakem As String
     Dim Polku As String
+  #If VBA7 Then
     Dim WHandle As LongPtr
+  #Else
+    Dim WHandle As Long
+  #End If
     
     WHandle = Application.hWndAccessApp
     If Nimi <> "" Then

@@ -23,11 +23,11 @@ Option Explicit
 ' Huom: nSize on Long (32-bit DWORD), ei LongPtr — vältetään Type Mismatch
 '---------------------------------------------
 #If VBA7 Then
-    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare PtrSafe Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
-    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare PtrSafe Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, nSize As Long) As Long
+  Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+  Private Declare Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 
 '================================================================================
@@ -41,8 +41,8 @@ Option Explicit
 '   UsysUsers-tauluun aikaleiman kera.
 '================================================================================
 Function SniffUser()
-    Dim DB As DAO.Database
-    Dim Taulu As DAO.Recordset
+    Dim DB As Object
+    Dim Taulu As Object
     Dim NWUserName As String
     Dim CName As String
     Dim BuffSize As Long
@@ -71,7 +71,7 @@ Function SniffUser()
        
     ' Kirjataan tiedot tietokantaan
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    Set Taulu = DB.OpenRecordset("UsysUsers", 1)
     
     With Taulu
         .AddNew

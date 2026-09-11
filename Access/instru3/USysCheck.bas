@@ -32,11 +32,11 @@ Option Explicit
                     Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
-    Private Declare PtrSafe Function api_GetUserName _
+  Private Declare Function api_GetUserName _
                     Lib "advapi32.dll" _
                     Alias "GetUserNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare PtrSafe Function api_GetComputerName _
+    Private Declare Function api_GetComputerName _
                     Lib "kernel32" _
                     Alias "GetComputerNameW" _
                     (ByVal lpBuffer As String, nSize As Long) As Long
@@ -55,8 +55,8 @@ Option Explicit
 '--------------------------------------------------------------------------------
 Function SniffUser()
 On Error GoTo ErrorHandler
-    Dim DB As DAO.Database  ' Tietokantaviittaus
-    Dim Taulu As DAO.Recordset  ' UsysUsers-taulun recordset
+    Dim DB As Object  ' Tietokantaviittaus ilman käännösaikaista DAO-viitettä
+    Dim Taulu As Object  ' UsysUsers-taulun recordset ilman käännösaikaista DAO-viitettä
     Dim NWUserName As String  ' Verkkokäyttäjänimi Windowsista
     Dim CName As String  ' Tietokoneen nimi Windowsista
     Dim BuffSize As Long  ' Puskurin koko API-kutsuille
@@ -83,7 +83,7 @@ On Error GoTo ErrorHandler
        
     ' Kirjoitetaan kirjautumisrivi seurantatauluun
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    Set Taulu = DB.OpenRecordset("UsysUsers", 1)  ' 1 = dbOpenTable
     With Taulu
         .AddNew
         .Fields(0) = NWUserName     'Käyttäjänimi verkossa

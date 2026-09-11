@@ -13,15 +13,23 @@ Option Explicit
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
 
-' Kirjautuneen käyttäjän poiminta Windows-rajapinnasta
+' Windows-rajapinnan kutsut 32- ja 64-bittisille VBA-versioille
+#If VBA7 Then
 Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-
-' --------- [ VALITSE TIEDOSTO -ikkuna ] -----------------
-Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
+Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As LongPtr
+#Else
+Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
+#End If
 Public Type OPENFILENAME
     lStructSize As Long
+#If VBA7 Then
     hwndOwner As LongPtr
     hInstance As LongPtr
+#Else
+    hwndOwner As Long
+    hInstance As Long
+#End If
     lpstrFilter As String
     lpstrCustomFilter As String
     nMaxCustFilter As Long
@@ -36,8 +44,13 @@ Public Type OPENFILENAME
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
+#If VBA7 Then
     lCustData As LongPtr
     lpfnHook As LongPtr
+#Else
+    lCustData As Long
+    lpfnHook As Long
+#End If
     lpTemplateName As String
 End Type
 

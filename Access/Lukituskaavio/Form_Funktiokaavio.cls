@@ -80,7 +80,7 @@ DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
 'sql = "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""
 
-CurrentDb.Execute "UPDATE Control SET Sel = '" & KAYTTAJA() & "' WHERE AreaCode = """ & Me!Muokkaus0.VALUE & """ And LoopNo = """ & Me!Muokkaus4.VALUE & """ And TagID = """ & Me!Muokkaus3.VALUE & """"
+CurrentDb.Execute "UPDATE Control SET Sel = '" & Replace(Environ$("USERNAME"), "'", "''") & "' WHERE AreaCode = """ & Replace(Me!Muokkaus0.VALUE, """", """"") & """ And LoopNo = """ & Replace(Me!Muokkaus4.VALUE, """", """"") & """ And TagID = """ & Replace(Me!Muokkaus3.VALUE, """", """"") & """"
 
 
 'CurrentDb.Execute "UPDATE Control SET Control.Sel = ""x"" WHERE Control.AreaCode = " & Me!Muokkaus0.Value & " And Control.LoopNo = " & Me!Muokkaus4.Value & ""

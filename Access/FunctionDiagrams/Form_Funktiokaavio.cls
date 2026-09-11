@@ -108,7 +108,7 @@ Dim sAreaCode As String, sLoopNo As String, sTagID As String, sUser As String
 sAreaCode = Replace(CStr(Me!Muokkaus0.Value), "'", "''")
 sLoopNo   = Replace(CStr(Me!Muokkaus4.Value), "'", "''")
 sTagID    = Replace(CStr(Me!Muokkaus3.Value), "'", "''")
-sUser     = Replace(KAYTTAJA(), "'", "''")   ' Sel-sarake käyttää yksinkertaisia lainausmerkkejä
+sUser     = Replace(Environ$("USERNAME"), "'", "''")   ' Windows-verkkokäyttäjänimi ilman USysCheck-riippuvuutta
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
 CurrentDb.Execute "UPDATE Control SET Sel = '" & sUser & "' WHERE AreaCode = '" & sAreaCode & "' And LoopNo = '" & sLoopNo & "' And TagID = '" & sTagID & "'", dbFailOnError

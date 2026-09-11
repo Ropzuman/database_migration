@@ -38,14 +38,14 @@ End Type
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 ' (nSize: LongPtr → ByRef Long — Win32 DWORD on 32-bittinen, ei osoitinkokoinen)
 #If VBA7 Then
-    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
-    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
@@ -80,8 +80,8 @@ End Function
 '------------------------------------------------------------------------------
 Function SniffUser()
 On Error GoTo ErrorHandler
-    Dim DB As DAO.Database      ' Tietokantaviittaus
-    Dim Taulu As DAO.Recordset  ' UsysUsers-taulun tietue
+    Dim DB As Object            ' Tietokantaviittaus
+    Dim Taulu As Object         ' UsysUsers-taulun tietue
     Dim NWUserName As String    ' Verkkokäyttäjänimi Windowsista
     Dim CName As String         ' Tietokoneen nimi
     Dim BuffSize As Long        ' Puskurin koko API-kutsulle
@@ -102,7 +102,7 @@ On Error GoTo ErrorHandler
 
     ' Kirjoitetaan kirjautumistietue UsysUsers-tauluun
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    Set Taulu = DB.OpenRecordset("UsysUsers", 1)
     With Taulu
         .AddNew
         .Fields(0) = NWUserName     ' Verkkokäyttäjänimi

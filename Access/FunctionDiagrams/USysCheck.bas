@@ -15,18 +15,29 @@ Option Explicit
 
 ' Windows-rajapinnan kutsut käyttäjänimen ja koneen nimen hakemiseen
 ' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) — ByRef Long, EI LongPtr
+#If VBA7 Then
 Private Declare PtrSafe Function api_GetUserName _
                 Lib "advapi32.dll" _
-                Alias "GetUserNameA" _
+                Alias "GetUserNameW" _
                 (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 Private Declare PtrSafe Function api_GetComputerName _
                 Lib "kernel32" _
-                Alias "GetComputerNameA" _
+                Alias "GetComputerNameW" _
                 (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+#Else
+Private Declare Function api_GetUserName _
+                Lib "advapi32.dll" _
+                Alias "GetUserNameW" _
+                (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+Private Declare Function api_GetComputerName _
+                Lib "kernel32" _
+                Alias "GetComputerNameW" _
+                (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+#End If
 Function SniffUser()
     ' Hakee verkkokäyttäjänimen ja koneen nimen: tallentaa UsysUsers-tauluun
-    Dim DB As DAO.Database
-    Dim Taulu As DAO.Recordset
+    Dim DB As Object
+    Dim Taulu As Object
     Dim NWUserName As String
     Dim CName As String
     Dim BuffSize As Long
@@ -49,7 +60,7 @@ Function SniffUser()
     End If
        
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenTable)
+    Set Taulu = DB.OpenRecordset("UsysUsers", 1)
     With Taulu
         .AddNew
         .Fields(0) = NWUserName     ' Verkkokäyttäjänimi

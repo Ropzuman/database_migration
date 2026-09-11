@@ -41,14 +41,14 @@ End Type
 ' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
 #If VBA7 Then
     ' KORJATTU: GetUserNameA palauttaa BOOL (32-bit) ja nSize on DWORD — molemmat ovat Long, eivät LongPtr
-    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
-    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
+    Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
+    Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
