@@ -29,8 +29,8 @@ Option Explicit
 '   - Hälytysehdot: _HH, _H, _LL, _L sekä _ALARMDESCR
 '
 ' Riippuvuudet:
-'   - Word-automaatio (Microsoft Word Object Library)
-'   - FileSystemObject (Microsoft Scripting Runtime)
+'   - Word-automaatio (myöhäinen sidonta)
+'   - FileSystemObject (myöhäinen sidonta)
 '   - DAO.Recordset
 '   - Lomakkeet: MOTORS subform, PIIRIT subform
 '   - Taulut: TIEDOT_PIIRIT, TIEDOT_MOOTTORIT, SELOSTUKSET
@@ -50,13 +50,21 @@ Dim AUTHOR As String           ' Dokumentin tekijä
 Dim DOCNO As String            ' Dokumenttinumero
 Dim PROJECT_L1 As String       ' Project line 1
 Dim PROJECT_L2 As String       ' Project line 2
-Dim oWord As Word.Application  ' Word application object
-Dim oTemplate As Word.Document ' Word document object
+Dim oWord As Object            ' Word application object (myöhäinen sidonta)
+Dim oTemplate As Object        ' Word document object (myöhäinen sidonta)
 Dim Tiedot As DAO.Recordset    ' Data recordset
 Dim Samaan As Boolean          ' Generate all into one file
 Dim Eka As Boolean             ' First document flag
 Dim Suomeksi As Boolean        ' Finnish language flag
-Dim TOUT As TextStream         ' HTML output file stream
+Dim TOUT As Object             ' HTML output file stream (myöhäinen sidonta)
+
+' Word-kirjaston vakiot pidetään paikallisina, jotta Word-viitettä ei tarvita käännöksessä.
+Private Const wdMainTextStory As Long = 1
+Private Const wdPrimaryHeaderStory As Long = 7
+Private Const wdFindContinue As Long = 1
+Private Const wdReplaceAll As Long = 2
+Private Const wdStory As Long = 6
+Private Const wdPageBreak As Long = 7
 
 '================================================================================
 ' Tapahtumat: Tekstikenttien fokus ja kursoriseuranta
@@ -130,14 +138,16 @@ End Sub
 Private Sub TeeSelostus(Kaikki As Boolean)
     Dim Nimi As String
     Dim TTIEDOT As String
-    Dim oPohja As Word.Document
-    Dim FS As New FileSystemObject
+    Dim oPohja As Object
+    Dim FS As Object
     Dim sTagiEnnen As String
     
     On Error GoTo ErrorHandler
     
     Suomeksi = False
     ' If Me.FKieli.Value = 2 Then Suomeksi = True
+
+    Set FS = CreateObject("Scripting.FileSystemObject")
 
     PoimiAsetukset
     Samaan = False

@@ -16,7 +16,7 @@ Option Explicit
 '   - Käsittelee null-arvot tyhjinä merkkijonoina
 '
 ' Riippuvuudet:
-'   - FileSystemObject (Microsoft Scripting Runtime)
+'   - FileSystemObject (myöhäinen sidonta)
 '   - Taulukko-kontrollissa määritetty kysely tai taulu
 '
 ' Kontrollit:
@@ -57,13 +57,14 @@ Private Sub Command8_Click()
 On Error GoTo ErrorHandler
     Dim DB As DAO.Database  ' Nykyinen tietokanta
     Dim Taulu As DAO.Recordset  ' Lähdedata-recordset
-    Dim FSO As New FileSystemObject  ' Tiedostojärjestelmäobjekti tiedoston luomiseen
+    Dim FSO As Object  ' Tiedostojärjestelmäobjekti tiedoston luomiseen (myöhäinen sidonta)
     Dim Tiedosto As Object  ' CSV-tiedoston kahva
     Dim Path As String  ' Kohdehakemiston polku
     Dim i As Integer  ' Kenttälaskuri
     Dim Osoitin As Long  ' Pilkun sijainti merkkijonossa
     Dim Arvo As String  ' Nykyinen kenttäarvo
     
+    Set FSO = CreateObject("Scripting.FileSystemObject")
     Set DB = CurrentDb
     Path = Me.Hakem.Value
     

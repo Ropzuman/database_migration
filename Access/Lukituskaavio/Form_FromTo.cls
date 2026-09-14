@@ -205,9 +205,10 @@ End Sub
 
 Private Sub Command5_Click()
 'Listataan tiedostot polussa
-Dim FS As New FileSystemObject
+Dim FS As Object
 Dim Tied As String
 Dim i As Integer
+Set FS = CreateObject("Scripting.FileSystemObject")
 If Me.TPolku.Value <> "" Then
   If Right$(Me.TPolku.Value, 1) <> "\" Then
    Me.TPolku.Value = Me.TPolku.Value & "\"

@@ -1,17 +1,26 @@
 Option Compare Database
 Option Explicit
 
+Private Const xlContinuous As Long = 1
+Private Const xlThin As Long = 2
+Private Const xlAutomatic As Long = -4105
+Private Const xlVAlignTop As Long = -4160
+Private Const xlCenter As Long = -4108
+Private Const xlLeft As Long = -4131
+Private Const TemporaryFolder As Long = 2
+
 Private Sub Report_Open(Cancel As Integer)
-Dim xlApp As Excel.Application
-Dim Alue As Excel.Range
-Dim WB As Excel.Workbook
+Dim xlApp As Object
+Dim Alue As Object
+Dim WB As Object
 Dim Tiedot As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
-Dim FSO As New FileSystemObject
+Dim FSO As Object
 Dim Rivi As Integer
 Dim Sar As Integer
 
 On Error GoTo ErrorHandler
 
+Set FSO = CreateObject("Scripting.FileSystemObject")
 Set Tiedot = CurrentDb.OpenRecordset("_qryMAINEQCust")
 Rivi = 9
   

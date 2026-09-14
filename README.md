@@ -80,12 +80,12 @@ Katso täydelliset muutokset: `Logs/CHANGELOG_64bit_and_perf.md`
 1. Kloonaa repository ja säilytä `Access`, `Excel`, `AutoCAD` ja `Automations` -kansiot samassa kokonaisuudessa.
 2. Asenna Microsoft Access Database Engine / ACE OLEDB, jos Excel- tai Access-yhteys ilmoittaa provider-virheen.
 3. Avaa käytettävä Access-kanta ohittaen tarvittaessa käynnistyslomake painamalla `Shift`.
-4. Avaa VBA-editorissa **Tools → References** ja poista kaikki `MISSING:`-viitteet.
+4. Tuo tarvittaessa `Access/AutoCAD_References.bas` Access-kantaan ja suorita makro `PoistaAutoCADReferences`.
 5. Tarkista vähintään `Microsoft Office xx.0 Access database engine Object Library` ja `OLE Automation`.
 6. Tuo aktiivisen tietokannan tarvitsemat moduulit vastaavasta `Access`-alikansiosta.
 7. Suorita **Debug → Compile VBAProject** ennen toiminnallista testausta.
 
-Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. Lähdekoodin päivittäminen ei yksin korjaa puuttuvaa `MISSING:`-viitettä.
+Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. Lähdekoodin päivittäminen ei yksin korjaa puuttuvaa `MISSING:`-viitettä. `PoistaAutoCADReferences` poistaa vain rikkinäiset tai AutoCADin version sidotut viitteet; DAO-, Office- ja OLE Automation -viitteitä ei poisteta.
 
 *Access VBA references are stored inside the database file. Updating exported source files alone does not repair a missing project reference.*
 
@@ -156,6 +156,10 @@ Kytkentälista-työkalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel
 AcadDATA-työkalu lukee lohkoattribuutteja AutoCAD-piirustuksista ja kirjoittaa muutokset takaisin.
 
 *The AcadDATA tool reads block attributes from AutoCAD drawings and writes changes back.*
+
+Accessin AutoCAD-integraatio käyttää myöhäistä sidontaa (`Object`) eikä tarvitse AutoCAD 2019- tai
+AutoCAD 2027 -tyyppikirjastoa. Sama lähdekanta voidaan siksi kääntää molemmissa AutoCAD-ympäristöissä,
+kun vanhat AutoCAD References -viitteet on ensin poistettu `AutoCAD_References.bas`-moduulin avulla.
 
 ### Tuo tiedot (TuoDATA) / Import Data
 

@@ -19,6 +19,17 @@ Status: ✅ Valmis käytettäväksi 64-bit-ympäristössä / Ready for 64-bit en
 - [ ] Expected: No errors
 - [ ] If errors found: Document and report
 
+## Access AutoCAD References
+
+Suorita tämä testi jokaisessa Access-kannassa, joka käyttää AutoCAD-integraatiota, erityisesti PIPE-kannassa.
+
+- [ ] Tuo [AutoCAD_References.bas](../Access/AutoCAD_References.bas) Access-kantaan
+- [ ] Suorita makro `PoistaAutoCADReferences`
+- [ ] Avaa **Tools → References** ja varmista, ettei listassa ole `MISSING:`-viitteitä tai AutoCADin version sidottua tyyppikirjastoa
+- [ ] Suorita **Debug → Compile VBAProject** AutoCAD 2019 -koneella
+- [ ] Suorita **Debug → Compile VBAProject** AutoCAD 2027 -koneella
+- [ ] Testaa PIPE-toiminnot molemmissa ympäristöissä: piirustuksen avaus, blokin poiminta, zoomaus ja tietojen päivitys
+
 ## Test 1: Get Data (HaeData)
 
 **Purpose:** Verify database connection and data retrieval work with optimized code

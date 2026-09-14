@@ -484,7 +484,7 @@ Dim DB As Object ' DAO.Database
 Dim Kuvat As Object ' DAO.Recordset
 Dim DbBlokit As Object ' DAO.Recordset
 Dim Tiedot As Object ' DAO.Recordset
-Dim FSO As New FileSystemObject
+Dim FSO As Object
 Dim Tiedosto As String
 Dim Blokki As Object ' AcadBlockReference
 Dim Attribuutit As Variant
@@ -501,6 +501,7 @@ Dim oAcad As Object 'AutoCAD.AcadApplication
 Dim OS As Long, OS2 As Long
 Dim Kysely As String
 
+Set FSO = CreateObject("Scripting.FileSystemObject")
 Set DB = CurrentDb
 Ajastin = Timer
 LokiPituus = 0
@@ -995,7 +996,7 @@ Private Sub TeeEtusivu_Click()
 Dim DB As Object ' DAO.Database
 Dim Kuvat As Object ' DAO.Recordset
 Dim DbBlokit As Object ' DAO.Recordset
-Dim FSO As New FileSystemObject
+Dim FSO As Object
 Dim Tiedosto As String
 Dim Blokki As Object ' AcadBlockReference
 Dim Attribuutit As Variant
@@ -1010,6 +1011,7 @@ Dim NextPage As String
 Dim CurrPage As String
 ReDim Paikat(1 To 1)
 
+Set FSO = CreateObject("Scripting.FileSystemObject")
 Set DB = CurrentDb
 Ajastin = Timer
 LokiPituus = 0
@@ -1272,10 +1274,12 @@ End Sub
 
 Private Function TallennaUusiKuva(TallNimi As String, Loppu As Boolean, oAcad As Object)
         
-Dim FSO As New FileSystemObject
+Dim FSO As Object
 Dim KuvaNimi As String
 Dim Tiedosto As String
 'Dim oAcad As Object 'AutoCAD.AcadApplication
+
+Set FSO = CreateObject("Scripting.FileSystemObject")
 
         KuvaNimi = Me.KuvaHakem.Value & TallNimi '& "xxx" ' & ".dwg"
         
