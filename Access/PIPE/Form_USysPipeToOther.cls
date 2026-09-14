@@ -1,18 +1,18 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
 ' Lomake: USysPipeToOther
-' Tarkoitus: Linkit√§ laiteblokit putkilinjoihin PIPELINE-attribuutin kautta
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis√§tty
+' Tarkoitus: Linkit‰ laiteblokit putkilinjoihin PIPELINE-attribuutin kautta
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis‰tty
 '
 ' Kuvaus:
 '   Interaktiivinen lomake putkilinjaviittausten asettamiseen laiteblokeille:
-'   - Yhdistyy k√§ynniss√§ olevaan AutoCAD-instanssiin
+'   - Yhdistyy k‰ynniss‰ olevaan AutoCAD-instanssiin
 '   - Suodattaa blokit tyypin mukaan (OpenArgs-parametrin avulla)
-'   - Mahdollistaa navigoinnin blokkien v√§lill√§ (Seuraava, Edellinen, Etsi tyhj√§)
-'   - Poimi putkilinja piirustuksesta tai sy√∂t√§ k√§sin
-'   - P√§ivitt√§√§ PIPELINE/PIPELINENO-attribuutin reaaliajassa
+'   - Mahdollistaa navigoinnin blokkien v‰lill‰ (Seuraava, Edellinen, Etsi tyhj‰)
+'   - Poimi putkilinja piirustuksesta tai syˆt‰ k‰sin
+'   - P‰ivitt‰‰ PIPELINE/PIPELINENO-attribuutin reaaliajassa
 '
 ' Riippuvuudet:
 '   - AutoCAD-sovellus (COM-automaatio)
@@ -23,9 +23,9 @@ Option Explicit
 '   - Pilkuilla erotettu lista (esim. "VALVE,PUMP") - suodattaa useampaan tyyppiin
 '
 ' Kontrollit:
-'   - TPipeline: Putkilinjaviittauksen tekstikentt√§
+'   - TPipeline: Putkilinjaviittauksen tekstikentt‰
 '   - BNext, BPrev: Navigointipainikkeet
-'   - BFind: Etsi seuraava tyhj√§ -painike
+'   - BFind: Etsi seuraava tyhj‰ -painike
 '   - BPickPipeline: Poimi putkilinja piirustuksesta -painike
 '================================================================================
 
@@ -76,7 +76,7 @@ Private Sub OpenPipeline()
       If Kohde.ObjectName = "AcDbBlockReference" Then
         Set oPipeBlock = Kohde
         Nimi = UCase$(oPipeBlock.EffectiveName)
-        ' KORJATTU: Pitk√§n ehtolauseen sijaan luettavampi Select Case (DRY)
+        ' KORJATTU: Pitk‰n ehtolauseen sijaan luettavampi Select Case (DRY)
         Select Case Nimi
           Case "PIPELINE_F", "PIPELINE", "PIPELINE_DATA", "METSO_PIPE", "BAHPIPEL"
             Attrib = oPipeBlock.GetAttributes
@@ -136,7 +136,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: BFind_Click
-' Tarkoitus: Etsii seuraavan laiteblokin, jolla PIPELINE-attribuutti on tyhj√§
+' Tarkoitus: Etsii seuraavan laiteblokin, jolla PIPELINE-attribuutti on tyhj‰
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -144,7 +144,7 @@ Private Sub BFind_Click()
   Do
     i = i + 1
     If i > Joukko.Count - 1 Then
-      If MsgBox("Viimeinen blokki!" & vbCrLf & "Aloitetaanko alusta?", vbYesNo, "Etsi seuraava tyhj√§") = vbYes Then
+      If MsgBox("Viimeinen blokki!" & vbCrLf & "Aloitetaanko alusta?", vbYesNo, "Etsi seuraava tyhj‰") = vbYes Then
          i = 0
       Else
         Exit Do
@@ -156,7 +156,7 @@ Private Sub BFind_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe seuraavan tyhj√§n blokin etsimisess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe seuraavan tyhj‰n blokin etsimisess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
@@ -173,7 +173,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: NextBlock
-' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiert√§√§ alkuun)
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiert‰‰ alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -194,7 +194,7 @@ End Sub
 ' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - P√§ivitett√§v√§ attribuuttiviittaus
+'   oAttrib - P‰ivitett‰v‰ attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -238,7 +238,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: PrevBlock
-' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiert√§√§ loppuun)
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiert‰‰ loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -276,7 +276,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake, yhdistet√§√§n AutoCADiin, suodatetaan laiteblokit
+' Tarkoitus: Alustetaan lomake, yhdistet‰‰n AutoCADiin, suodatetaan laiteblokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -294,7 +294,7 @@ Private Sub Form_Load()
     If Err = 0 Then
        TeeJoukko "APUVALINTA", Joukko
        
-       ' Suodatus OpenArgs-parametrin mukaan: pilkuilla erotettu lista tai yksitt√§inen blokkityyppi
+       ' Suodatus OpenArgs-parametrin mukaan: pilkuilla erotettu lista tai yksitt‰inen blokkityyppi
        If InStr(OpenArgs, ",") Then
           FT(0) = 2
           FD(0) = OpenArgs
@@ -315,7 +315,7 @@ Private Sub Form_Load()
        End If
        
        If Joukko.Count = 0 Then
-         MsgBox "Putkilinjojen blokkeja ei l√∂ytynyt.", vbExclamation
+         MsgBox "Putkilinjojen blokkeja ei lˆytynyt.", vbExclamation
          Err.Raise vbObjectError + 1000
        Else
          AvaaBlokki
@@ -358,7 +358,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: N√§ytt√§√§ ja korostaa nykyisen laiteblokin ja lataa PIPELINE-attribuutin
+' Tarkoitus: N‰ytt‰‰ ja korostaa nykyisen laiteblokin ja lataa PIPELINE-attribuutin
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -375,7 +375,7 @@ Private Sub AvaaBlokki()
     oBlock.Highlight False
   End If
   
-  ' Haetaan ja n√§ytet√§√§n nykyinen blokki
+  ' Haetaan ja n‰ytet‰‰n nykyinen blokki
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
   oACAD.ZoomWindow MinPoint, MaxPoint
@@ -393,26 +393,26 @@ Private Sub AvaaBlokki()
   Next j
   
   If PipeAttrib Is Nothing Then
-    MsgBox "Blokista ei l√∂ytynyt 'PIPELINE'-attribuuttia.", vbCritical, "VIRHE"
+    MsgBox "Blokista ei lˆytynyt 'PIPELINE'-attribuuttia.", vbCritical, "VIRHE"
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe blokin n√§ytt√§misess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe blokin n‰ytt‰misess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: Yhdist√§√§ k√§ynniss√§ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdist‰‰ k‰ynniss‰ olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Yhdistet√§√§n k√§ynniss√§ olevaan AutoCADiin
+  ' Yhdistet‰‰n k‰ynniss‰ olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function
@@ -425,7 +425,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: TPipeline_AfterUpdate
-' Tarkoitus: P√§ivitt√§√§ PIPELINE-attribuutin tekstikent√§n arvon muuttuessa
+' Tarkoitus: P‰ivitt‰‰ PIPELINE-attribuutin tekstikent‰n arvon muuttuessa
 '================================================================================
 Private Sub TPipeline_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -434,5 +434,5 @@ Private Sub TPipeline_AfterUpdate()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe PIPELINE-attribuutin p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe PIPELINE-attribuutin p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub

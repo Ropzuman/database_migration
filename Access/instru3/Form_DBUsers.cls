@@ -1,11 +1,11 @@
 Option Compare Database
 Option Explicit
 
-' K√§ytt√§j√§tietuetyyppi kirjautumisnimien purkamiseen LACCDB-tiedostosta
+' K‰ytt‰j‰tietuetyyppi kirjautumisnimien purkamiseen LACCDB-tiedostosta
 
 Private Type UserRec
-   bMach(1 To 32) As Byte  ' Ensimm√§iset 32 tavua: koneen nimi
-   bUser(1 To 32) As Byte  ' Seuraavat 32 tavua: k√§ytt√§j√§nimi
+   bMach(1 To 32) As Byte  ' Ensimm‰iset 32 tavua: koneen nimi
+   bUser(1 To 32) As Byte  ' Seuraavat 32 tavua: k‰ytt‰j‰nimi
 End Type
 
 Private Sub Command27_Click()
@@ -13,16 +13,16 @@ Private Sub Command27_Click()
     Dim PuhdistettuViesti As String
     Dim PuhdistettuKohde  As String
 
-    Viesti = InputBox("Sy√∂t√§ viesti k√§ytt√§j√§lle " & Me.NetworkName.Value & ":" & vbCrLf & vbCrLf, "L√§het√§ viesti")
+    Viesti = InputBox("Syˆt‰ viesti k‰ytt‰j‰lle " & Me.NetworkName.Value & ":" & vbCrLf & vbCrLf, "L‰het‰ viesti")
 
     If Trim(Viesti) <> "" Then
-        ' Estet√§√§n Command Injection ‚Äî poistetaan lainausmerkit ja Shell-erikoismerkit
+        ' Estet‰‰n Command Injection ó poistetaan lainausmerkit ja Shell-erikoismerkit
         PuhdistettuViesti = Replace(Viesti, """", "'")
         PuhdistettuViesti = Replace(PuhdistettuViesti, "&", "ja")
         PuhdistettuViesti = Replace(PuhdistettuViesti, "|", "")
         PuhdistettuKohde  = Replace(CStr(Nz(Me.NetworkName.Value, "")), " ", "")
 
-        ' K√§ytet√§√§n modernia MSG.EXE-komentoa ‚Äî NET SEND poistettu Windows Vistasta l√§htien
+        ' K‰ytet‰‰n modernia MSG.EXE-komentoa ó NET SEND poistettu Windows Vistasta l‰htien
         Call Shell("msg " & PuhdistettuKohde & " """ & PuhdistettuViesti & """", vbHide)
     End If
 End Sub
@@ -46,14 +46,14 @@ End Sub
 
 '-------------------------------------------------------------------------------------
 '   Funktio  : WhosOn()
-'   Tarkoitus: Lukee *.LACCDB-tiedoston ja palauttaa kirjautuneiden k√§ytt√§jien
-'              ja heid√§n tietokoneensa tiedot.
+'   Tarkoitus: Lukee *.LACCDB-tiedoston ja palauttaa kirjautuneiden k‰ytt‰jien
+'              ja heid‰n tietokoneensa tiedot.
 '
 '              LACCDB-tietueessa on 64 tavua.
 '
-'              Koneen nimi alkaa tavusta 1 ja on null-p√§√§tteinen.
+'              Koneen nimi alkaa tavusta 1 ja on null-p‰‰tteinen.
 '
-'              Kirjautumisnimi alkaa tavusta 33 ja on my√∂s null-p√§√§tteinen.
+'              Kirjautumisnimi alkaa tavusta 33 ja on myˆs null-p‰‰tteinen.
 '
 '-------------------------------------------------------------------------------------
 Private Function WhosOn() As String
@@ -65,23 +65,23 @@ On Error GoTo Err_WhosOn
    Dim SPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' K√§ytt√§j√§tietue, m√§√§ritelty moduulin alussa
+   Dim rUser As UserRec    ' K‰ytt‰j‰tietue, m‰‰ritelty moduulin alussa
    Dim dbCurrent As DAO.Database
 
 ' Haetaan nykyisen tietokannan polku.
 
    Set dbCurrent = CurrentDb
    SPath = dbCurrent.Name
-   ' CurrentDb-viittausta EI suljeta .Close-kutsulla ‚Äî vain Set Nothing
+   ' CurrentDb-viittausta EI suljeta .Close-kutsulla ó vain Set Nothing
    Set dbCurrent = Nothing
 
 ' Rakennetaan LACCDB-tiedoston polku.
 
    SPath = Left(SPath, InStr(1, SPath, ".")) + "LACCDB"
 
-' Tarkistetaan, ett√§ tiedosto on olemassa.
+' Tarkistetaan, ett‰ tiedosto on olemassa.
 
-   X = Dir(SPath)  'Tarkistetaan, ett√§ tiedosto on olemassa
+   X = Dir(SPath)  'Tarkistetaan, ett‰ tiedosto on olemassa
    iLDBFile = FreeFile
 
    Open SPath For Binary Access Read Shared As iLDBFile

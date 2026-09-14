@@ -4,12 +4,12 @@ Option Explicit
 '================================================================================
 ' Moduuli: GeneralCodes
 ' Tarkoitus: Yleiset apufunktiot ja yhteiset muuttujat
-' P√§ivitetty: 2025-11-13 ‚Äî VBA7/64-bit tuki lis√§tty
-'             2026-03-03 ‚Äî Kommentit suomeksi
+' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
+'             2026-03-03 ó Kommentit suomeksi
 '
 ' Kuvaus:
 '   Tarjoaa apufunktiot laitteen revisiomuokkaukseen, taulunselaukseen
-'   sek√§ tila- ja moodi-k√§√§nn√∂ksiin. Sis√§lt√§√§ lomakkeiden v√§list√§
+'   sek‰ tila- ja moodi-k‰‰nnˆksiin. Sis‰lt‰‰ lomakkeiden v‰list‰
 '   kommunikaatiota varten julkisia muuttujia.
 '
 ' Riippuvuudet:
@@ -18,7 +18,7 @@ Option Explicit
 '   - Taulut: MAINEQ, DRIVES, PUMPS, GEARS, TANKS
 '================================================================================
 
-' Julkiset muuttujat lomakkeiden v√§list√§ tiedonsiirtoa varten
+' Julkiset muuttujat lomakkeiden v‰list‰ tiedonsiirtoa varten
 Public oTaulu As DAO.Recordset
 Public PaluuTaulu As Object
 Public KohdeTextBox As TextBox
@@ -72,15 +72,15 @@ End Function
 
 '================================================================================
 ' Funktio: Moodit
-' Tarkoitus: K√§√§nt√§√§ pilkulla eroteltujen moodikolmien koodit kuvaavaksi tekstiksi
+' Tarkoitus: K‰‰nt‰‰ pilkulla eroteltujen moodikolmien koodit kuvaavaksi tekstiksi
 ' Parametrit:
-'   Tieto ‚Äî Pilkulla eroteltu moodi-koodi lista (A, M, E, L)
+'   Tieto ó Pilkulla eroteltu moodi-koodi lista (A, M, E, L)
 ' Palauttaa: Moodi kuvaukset rivinvaihdolla eroteltuina, tai "-" jos Null
 '
 ' Kuvaus:
-'   K√§√§nt√§√§ moodikolmit:
+'   K‰‰nt‰‰ moodikolmit:
 '     A = AUTO, M = MANUAL, E = EXTERNAL, L = LOCAL
-'   Muut koodit pass-through-k√§√§nn√∂s. Palauttaa "-" Null-sy√∂tteen yhteydess√§.
+'   Muut koodit pass-through-k‰‰nnˆs. Palauttaa "-" Null-syˆtteen yhteydess‰.
 '================================================================================
 Function Moodit(Tieto As Variant) As Variant
     Dim Tiedot As Variant

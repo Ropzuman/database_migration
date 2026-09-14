@@ -3,8 +3,8 @@ Option Compare Database
 Option Explicit
 
 ' Poistaa Access VBA -projektista AutoCADin version sidotut tyyppikirjastoviittaukset.
-' Access-kannan lÃ¤hdekoodi kÃ¤yttÃ¤Ã¤ AutoCADia myÃ¶hÃ¤isellÃ¤ sidonnalla, joten viittausta
-' ei tarvita kÃ¤Ã¤nnÃ¶kseen eikÃ¤ sitÃ¤ pidÃ¤ sÃ¤ilyttÃ¤Ã¤ tietokannan References-listassa.
+' Access-kannan lähdekoodi käyttää AutoCADia myöhäisellä sidonnalla, joten viittausta
+' ei tarvita käännökseen eikä sitä pidä säilyttää tietokannan References-listassa.
 Public Sub PoistaAutoCADReferences()
     Dim projekti As Object
     Dim viite As Object
@@ -27,7 +27,7 @@ Public Sub PoistaAutoCADReferences()
         poistettu = poistettu + 1
     Next viite
 
-    MsgBox "Poistettu AutoCAD References -viitteitÃ¤: " & poistettu & vbCrLf & _
+    MsgBox "Poistettu AutoCAD References -viitteitä: " & poistettu & vbCrLf & _
            "Suorita nyt Debug -> Compile VBAProject.", vbInformation, "AutoCAD-viitteet"
 
 Poistu:
@@ -36,8 +36,8 @@ Poistu:
     Exit Sub
 
 Virhe:
-    MsgBox "AutoCAD References -viitteitÃ¤ ei voitu kÃ¤sitellÃ¤: " & Err.Description & vbCrLf & _
-           "Tarkista, ettÃ¤ Trust CenterissÃ¤ on sallittu VBA-projektimallin kÃ¤yttÃ¶.", _
+    MsgBox "AutoCAD References -viitteitä ei voitu käsitellä: " & Err.Description & vbCrLf & _
+           "Tarkista, että Trust Centerissä on sallittu VBA-projektimallin käyttö.", _
            vbExclamation, "AutoCAD-viitteet"
     Resume Poistu
 End Sub
@@ -46,16 +46,16 @@ Private Function OnAutoCADReference(ByVal viite As Object) As Boolean
     Dim nimi As String
     Dim kuvaus As String
     Dim polku As String
-    Dim rikkinÃ¤inen As Boolean
+    Dim rikkinäinen As Boolean
 
     On Error Resume Next
     nimi = UCase$(CStr(viite.Name))
     kuvaus = UCase$(CStr(viite.Description))
     polku = UCase$(CStr(viite.FullPath))
-    rikkinÃ¤inen = CBool(viite.IsBroken)
+    rikkinäinen = CBool(viite.IsBroken)
     On Error GoTo 0
 
-    OnAutoCADReference = rikkinÃ¤inen _
+    OnAutoCADReference = rikkinäinen _
         Or InStr(1, nimi & " " & kuvaus & " " & polku, "AUTOCAD", vbTextCompare) > 0 _
         Or InStr(1, nimi & " " & kuvaus & " " & polku, "ACDB", vbTextCompare) > 0 _
         Or InStr(1, nimi & " " & kuvaus & " " & polku, "AXDB", vbTextCompare) > 0

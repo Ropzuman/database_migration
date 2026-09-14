@@ -48,13 +48,13 @@ TAULUKKO = UCase$(Application.CurrentObjectName)
     Handle = IIf(IsNull(Screen.ActiveDatasheet("HANDLE").VALUE), "", Screen.ActiveDatasheet("HANDLE").VALUE)
     
     If Polku = "" Then
-      MsgBox "Ei ole tietoa miss√§ kuvassa kohde on !", vbCritical, "Etsi kohde"
+      MsgBox "Ei ole tietoa miss‰ kuvassa kohde on !", vbCritical, "Etsi kohde"
       Exit Function
     End If
     On Error Resume Next
-    Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-    If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-      MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"
+    Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+    If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+      MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!" & vbCrLf & "Avaa Autocad ensin.", vbCritical, "Etsi Kohde"
       Set oACAD = Nothing
       Exit Function
     End If
@@ -91,7 +91,7 @@ TAULUKKO = UCase$(Application.CurrentObjectName)
         On Error Resume Next
         Set Entity = oACAD.ActiveDocument.HandleToObject(Handle)
         If Err <> 0 Then
-          MsgBox "Kuvasta ei l√∂ytynyt kohdetta tietokannan tiedoilla (Handle oli v√§√§r√§)!", vbCritical, "Etsi kohde"
+          MsgBox "Kuvasta ei lˆytynyt kohdetta tietokannan tiedoilla (Handle oli v‰‰r‰)!", vbCritical, "Etsi kohde"
           Err.Clear
         Else
           Entity.GetBoundingBox MinPoint, MaxPoint

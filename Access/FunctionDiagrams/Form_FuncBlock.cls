@@ -2,14 +2,14 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_FuncBlock
-' SOVELLUS : FunctionDiagrams ‚Äî Funktiolohkon attribuuttien muokkaus
-' KUVAUS   : Alilomake funktiopiirien yksitt√§isten lohkoattribuuttien
-'            k√§sittelyyn. NEWVALUE_DblClick tallentaa k√§ytt√§j√§n sy√∂tt√§m√§n
+' SOVELLUS : FunctionDiagrams ó Funktiolohkon attribuuttien muokkaus
+' KUVAUS   : Alilomake funktiopiirien yksitt‰isten lohkoattribuuttien
+'            k‰sittelyyn. NEWVALUE_DblClick tallentaa k‰ytt‰j‰n syˆtt‰m‰n
 '            uuden arvon FunBlockAttr-tauluun. NEWVALUE_Enter ja
-'            SelectValue_Enter p√§ivitt√§v√§t listalaatikon l√§hteen attribuutin
+'            SelectValue_Enter p‰ivitt‰v‰t listalaatikon l‰hteen attribuutin
 '            tyypin mukaan (FTAGI, REFFROM, REFTO tai yleinen arvo).
-' DIPLE    : Option Explicit; Set Taulu/DB = Nothing muistivuodon ehk√§isyyn.
-' P√ÑIVITETTY: 2026-03-03  
+' DIPLE    : Option Explicit; Set Taulu/DB = Nothing muistivuodon ehk‰isyyn.
+' PƒIVITETTY: 2026-03-03  
 '==========================================================================
 
 Private Sub NEWVALUE_DblClick(Cancel As Integer)
@@ -45,20 +45,20 @@ Taulu.Fields("value") = taginarvo
 Taulu.Fields("TagID") = tagiid
 Taulu.Update
 
-' P√§ivitet√§√§n n√§kyv√§ attribuuttilista heti tallennuksen j√§lkeen, jotta uusi rivi n√§kyy lomakkeella
+' P‰ivitet‰‰n n‰kyv‰ attribuuttilista heti tallennuksen j‰lkeen, jotta uusi rivi n‰kyy lomakkeella
 Me.Requery
 
-' Vapautetaan DAO-resurssit muistivuodon ehk√§isemiseksi
+' Vapautetaan DAO-resurssit muistivuodon ehk‰isemiseksi
 Set Taulu = Nothing
 Set DB = Nothing
 
-MsgBox "Uusi arvo lis√§tty"
+MsgBox "Uusi arvo lis‰tty"
 
 End Sub
 
 Private Sub NEWVALUE_Enter()
   Dim sAtag As String
-  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion est√§miseksi
+  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion est‰miseksi
   If UCase$(Left$(sAtag, 5)) = "FTAGI" Then
       NEWVALUE.RowSource = "SELECT POS FROM POS_List;"
   ElseIf UCase$(Left$(sAtag, 7)) = "REFFROM" Or UCase$(Left$(sAtag, 5)) = "REFTO" Then
@@ -80,12 +80,12 @@ Dim tagi As String
 Dim Sfx As String
 Dim sAtag As String
 
-  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion est√§miseksi
+  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion est‰miseksi
   SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
   If UCase$(Atag) = "RANGE" Then
       ALUE   = Replace(Me.Parent.Parent.AreaCode, "'", "''")
       looppi = Replace(Me.Parent.Parent.LoopNo,   "'", "''")
-      tagi = "T" ' K√§ytet√§√§n kiinte√§√§ T-tunnistetyyppi√§ alueeseen sidotuissa hauissa
+      tagi = "T" ' K‰ytet‰‰n kiinte‰‰ T-tunnistetyyppi‰ alueeseen sidotuissa hauissa
       Sfx    = Replace(Me.Parent.Suffix,           "'", "''")
       
       SelectValue.BoundColumn = 1

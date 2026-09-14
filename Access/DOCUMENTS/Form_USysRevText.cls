@@ -3,11 +3,11 @@ Option Explicit
 '==========================================================================
 Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
 ' LOMAKE   : Form_USysRevText
-' SOVELLUS : DOCUMENTS ‚Äî Revisiotekstin muokkaus
+' SOVELLUS : DOCUMENTS ó Revisiotekstin muokkaus
 ' KUVAUS   : Hallinnoi dokumentin revisiohistoriaa. Revisiot tallennetaan
-'            puolipisteell√§ eroteltuina merkkijonoina, jotka parsitaan
-'            kenttiin n√§yt√∂ll√§ editointia varten.
-' P√ÑIVITETTY: 2026-03-03
+'            puolipisteell‰ eroteltuina merkkijonoina, jotka parsitaan
+'            kenttiin n‰ytˆll‰ editointia varten.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Public Alku As String
 Public Loppu As String
@@ -18,7 +18,7 @@ Private PaikallinenApproved As String
 Private PaikallinenDescription As String
 Private PaikallinenRevisioteksti As String
 
-' Revisiokenttien tila pidet√§√§n paikallisena, jotta lomake toimii ilman ulkoisia globaaleja.
+' Revisiokenttien tila pidet‰‰n paikallisena, jotta lomake toimii ilman ulkoisia globaaleja.
 Private Sub Form_Resize()
   Dim RevTeksti As String
 
@@ -68,7 +68,7 @@ Private Sub Lista_Click()
 End Sub
 Private Sub Talleta_Click()
 Dim koe As String
- ' Tarkistetaan ett√§ lista ei ole tyhj√§ ennen tallennusta
+ ' Tarkistetaan ett‰ lista ei ole tyhj‰ ennen tallennusta
  If Me.Lista.RowSource <> "" Then
    koe = Me.Rev.Value & Me.Drawn.Value & Me.Checked.Value & Me.Approved.Value & Me.Description.Value
    If InStr(koe, "/") Then
@@ -97,7 +97,7 @@ Dim UusiRev As String
   Else
     PaikallinenRev = "0"
   End If
-  ' K√§ytet√§√§n lomakkeen kenttien arvoja uuden revision oletustietoina.
+  ' K‰ytet‰‰n lomakkeen kenttien arvoja uuden revision oletustietoina.
   PaikallinenDrawn = Nz(Me.Drawn.Value, "")
   PaikallinenChecked = Nz(Me.Checked.Value, "")
   PaikallinenApproved = Nz(Me.Approved.Value, "")
@@ -120,11 +120,11 @@ Dim i As Integer
 Tyhjenna
 Alku = ""
 Loppu = ""
-' Rakennetaan Alku-merkkijono valitun rivin yl√§puolisista riveist√§
+' Rakennetaan Alku-merkkijono valitun rivin yl‰puolisista riveist‰
 For i = 0 To Indeksi - 1
   Alku = Alku & Me.Lista.Column(0, i) & ";"
 Next i
-' Rakennetaan Loppu-merkkijono valitun rivin alapuolisista riveist√§
+' Rakennetaan Loppu-merkkijono valitun rivin alapuolisista riveist‰
 For i = Indeksi + 1 To Me.Lista.ListCount
   Loppu = Loppu & ";" & Me.Lista.Column(0, i)
 Next i
@@ -133,12 +133,12 @@ Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
 Me.Rev.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-' P√§iv√§m√§√§r√§
+' P‰iv‰m‰‰r‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Me.DateFld.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-' Tekij√§
+' Tekij‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Me.Drawn.Value = Left$(Tieto, Osoitin - 1)
@@ -148,7 +148,7 @@ Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Me.Checked.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-' Hyv√§ksyj√§
+' Hyv‰ksyj‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Me.Approved.Value = Left$(Tieto, Osoitin - 1)
@@ -164,7 +164,7 @@ Private Sub Tyhjenna()
 End Sub
 
 Private Function HaeRevisioTekstiTyoskentely() As String
-  ' K√§ytet√§√§n TempVars-v√§lityst√§ revisiotekstin v√§litt√§miseen
+  ' K‰ytet‰‰n TempVars-v‰lityst‰ revisiotekstin v‰litt‰miseen
   HaeRevisioTekstiTyoskentely = LueTempVarTekstiPaikallinen(TV_DOC_REV_TEXT)
 End Function
 

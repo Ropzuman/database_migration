@@ -2,18 +2,18 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_Funktiokaavio
-' SOVELLUS : FunctionDiagrams — Funktiokaavion päälomake
-' KUVAUS   : Päälomake funktio- ja moottoripiirustusjärjestelmälle.
+' SOVELLUS : FunctionDiagrams � Funktiokaavion p��lomake
+' KUVAUS   : P��lomake funktio- ja moottoripiirustusj�rjestelm�lle.
 '            Hallinnoi revisioita (ADDNEWREV), ohjausrivilistauksia
-'            (Command50, Komento47), reseptejä (Komento67, Komento80,
-'            Command83) sekä AutoCAD-indeksisivujen luontia (Command98,
-'            CommandJANI). Lukituskaavioiden sivutiedot päivitetään
-'            Intpage-tauluun (Komento46). Näkymänvaihdot MOTORS/LOOPS
-'            (Komento57, Komento58) sääteltävät RecordSource-kytkinnällä.
+'            (Command50, Komento47), reseptej� (Komento67, Komento80,
+'            Command83) sek� AutoCAD-indeksisivujen luontia (Command98,
+'            CommandJANI). Lukituskaavioiden sivutiedot p�ivitet��n
+'            Intpage-tauluun (Komento46). N�kym�nvaihdot MOTORS/LOOPS
+'            (Komento57, Komento58) s��telt�v�t RecordSource-kytkinn�ll�.
 ' DIPLE    : Option Explicit; moduulitason oAcad/oDoc/BasePath/SavePath;
 '            kuollut api_GetUserName-julistus poistettu; kaikki
 '            On Error GoTo -lohkot yhdenmukaistettu; Set = Nothing kaikkialle.
-' PÄIVITETTY: 2026-03-03
+' P�IVITETTY: 2026-03-03
 '==========================================================================
 
 ' AutoCAD-yhteys ja aktiivinen piirustus (late binding, 64-bit yhteens.)
@@ -21,8 +21,8 @@ Private oAcad   As Object
 Private oDoc    As Object
 
 ' Polkumuuttujat indeksisivujen tallennukseen ja pohjakuviin
-' Nämä tulee asettaa ennen Command98_Click / CommandJANI_Click-kutsujen tekemistä
-' (esim. DLookup SETTINGS-taulusta tai lomakken kenttästä)
+' N�m� tulee asettaa ennen Command98_Click / CommandJANI_Click-kutsujen tekemist�
+' (esim. DLookup SETTINGS-taulusta tai lomakken kentt�st�)
 Private BasePath As String
 Private SavePath As String
 
@@ -59,7 +59,7 @@ LooppiSymb = Me!LoopSymb
 
 If Me!FReV = urev Then
     Debug.Print "  WARNING: Revision already exists: " & urev
-    ' Paluuarvoa ei käytetä — kutsutaan suoraan MsgBox-proseduurina
+    ' Paluuarvoa ei k�ytet� � kutsutaan suoraan MsgBox-proseduurina
     MsgBox "Uusi revisio on jo olemassa!", vbOKOnly
     Exit Sub
 End If
@@ -83,7 +83,7 @@ Me!FReV = urev
 
 Debug.Print "ADDNEWREV_Click: COMPLETED successfully"
 
-' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
+' Vapautetaan DAO-resurssit muistivuodon ehk�isemiseksi
 Set Taulu = Nothing
 Set DB = Nothing
 Exit Sub
@@ -94,7 +94,7 @@ ErrorHandler:
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     Set Taulu = Nothing
     Set DB = Nothing
-    MsgBox "Virhe revision lisäyksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe revision lis�yksess�: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Command50_Click()
@@ -102,13 +102,13 @@ On Error GoTo ErrorHandler
 Debug.Print "Command50_Click: Starting control update operation"
 
 Debug.Print "  AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value & ", TagID: " & Me!Muokkaus3.Value
-' Sanitoidaan syötteet SQL-injektion estämiseksi — yksinkertaiset lainausmerkit
+' Sanitoidaan sy�tteet SQL-injektion est�miseksi � yksinkertaiset lainausmerkit
 ' SQL-merkkijonoarvoissa (Jet/ACE tulkitsee kaksoisheittomerkit sarakenimiksi!)
 Dim sAreaCode As String, sLoopNo As String, sTagID As String, sUser As String
 sAreaCode = Replace(CStr(Me!Muokkaus0.Value), "'", "''")
 sLoopNo   = Replace(CStr(Me!Muokkaus4.Value), "'", "''")
 sTagID    = Replace(CStr(Me!Muokkaus3.Value), "'", "''")
-sUser     = Replace(Environ$("USERNAME"), "'", "''")   ' Windows-verkkokäyttäjänimi ilman USysCheck-riippuvuutta
+sUser     = Replace(Environ$("USERNAME"), "'", "''")   ' Windows-verkkok�ytt�j�nimi ilman USysCheck-riippuvuutta
 DoCmd.SetWarnings False
 DoCmd.OpenQuery ("Control_Poistatulostus")
 CurrentDb.Execute "UPDATE Control SET Sel = '" & sUser & "' WHERE AreaCode = '" & sAreaCode & "' And LoopNo = '" & sLoopNo & "' And TagID = '" & sTagID & "'", dbFailOnError
@@ -129,19 +129,19 @@ ErrorHandler:
     Debug.Print "    AreaCode: " & Me!Muokkaus0.Value & ", LoopNo: " & Me!Muokkaus4.Value
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     DoCmd.SetWarnings True
-    MsgBox "Virhe ohjausrivin päivityksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe ohjausrivin p�ivityksess�: " & Err.Description, vbCritical
 End Sub
 
 
 Private Sub Command83_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+'T�m� p�ivitt�� reseptit kaikkiin piireihin, joissa on k�ytetty tietty� resepti�.
 On Error GoTo ErrorHandler
 Debug.Print "Command83_Click: Starting recipe update operation"
 Dim Vastaus As VbMsgBoxResult
 
 Debug.Print "  RecipeID: " & RECIPES.Form.ID
-Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
-If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+Vastaus = MsgBox("T�m� p�ivitt�� reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireist�, joille on m��ritelty resepti?", vbYesNoCancel, "P�IVIT� VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niist� piireist�, joissa on resepti
   Debug.Print "  Deleting old blocks from Control table"
   CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID
 End If
@@ -149,7 +149,7 @@ If Vastaus <> vbCancel Then
   Debug.Print "  Inserting recipe data into control table"
   CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID
   Debug.Print "  Recipe update completed"
-  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
+  MsgBox "Piirit p�ivitetty!", vbOKOnly, "P�IVIT� VALITTU RESEPTI KAIKKIIN PIIREIHIN"
   Me.Refresh
 End If
 Debug.Print "Command83_Click: COMPLETED successfully"
@@ -159,7 +159,7 @@ ErrorHandler:
     Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    RecipeID: " & RECIPES.Form.ID
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Virhe reseptin päivityksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe reseptin p�ivityksess�: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Command97_Click()
@@ -227,10 +227,10 @@ Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
 
 aX = 30        ' Aloituspiste X
 aY = 285       ' Aloituspiste Y
-PosSivu = 40   ' Position ja sivun välinen etäisyys x-akselilla
-Seuraava = 90  ' Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 35      ' Minimi Y-koordinaatti, johon asti tekstejä tehdään
-MaxX = 333     ' Maksimi X-koordinaatti, johon sarakkeet tehdään ennen sivunvaihtoa
+PosSivu = 40   ' Position ja sivun v�linen et�isyys x-akselilla
+Seuraava = 90  ' Seuraavan positiosarakkeen et�isyys edellisest�
+MinY = 35      ' Minimi Y-koordinaatti, johon asti tekstej� tehd��n
+MaxX = 333     ' Maksimi X-koordinaatti, johon sarakkeet tehd��n ennen sivunvaihtoa
 RiviVali = 5   ' Tekstien riviinjako
 TextSize = 2.5 ' Tekstien koko
 
@@ -245,7 +245,7 @@ Do While Not Taul.EOF
   If edPOS <> Taul.Fields("position") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lisätään ensin otsikot
+        'Lis�t��n ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDoc.ModelSpace.AddText "DESCRIPTION", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
@@ -288,7 +288,7 @@ Loop
   ind = ind + 1
   Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
   oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
-  ' Viimeinen indeksisivu jää auki AutoCAD:issa (alkuperäinen käyttäytyminen)
+  ' Viimeinen indeksisivu j�� auki AutoCAD:issa (alkuper�inen k�ytt�ytyminen)
   ' oDoc.Close
   Debug.Print "Command98_Click: COMPLETED successfully - Index pages created"
   MsgBox "Valmis"
@@ -356,10 +356,10 @@ Do While Not Taul.EOF
       SYMB = Mid$(PIIRI, OS2 + 1)
     End If
     
-    If Intpage.Fields("Ensimmäinenkohteestapage") <> "" Then
-      Intpage.Fields("Ensimmäinenkohteestapage") = Intpage.Fields("Ensimmäinenkohteestapage") & "/" & Taul.Fields("PAGE")
+    If Intpage.Fields("Ensimm�inenkohteestapage") <> "" Then
+      Intpage.Fields("Ensimm�inenkohteestapage") = Intpage.Fields("Ensimm�inenkohteestapage") & "/" & Taul.Fields("PAGE")
     Else
-      Intpage.Fields("Ensimmäinenkohteestapage") = Taul.Fields("PAGE")
+      Intpage.Fields("Ensimm�inenkohteestapage") = Taul.Fields("PAGE")
     End If
     Intpage.Fields("PIIRNRO") = PIIR
     Intpage.Fields("looppisymb") = PIIRI
@@ -375,17 +375,17 @@ Set Taul = Nothing
 Set Intpage = Nothing
 Set DB = Nothing
 Debug.Print "Komento46_Click: COMPLETED successfully"
-MsgBox "Lukituskaavioiden sivutiedot päivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
+MsgBox "Lukituskaavioiden sivutiedot p�ivitetty Intpage taulukkoon.", vbInformation, "Lukituskaavion sivut"
 Exit Sub
 
 ErrorHandler:
     Debug.Print "*** ERROR in Komento46_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    ' Vapautetaan resurssit myös virhetilanteessa
+    ' Vapautetaan resurssit my�s virhetilanteessa
     Set Taul = Nothing
     Set Intpage = Nothing
     Set DB = Nothing
-    MsgBox "Virhe lukituskaaviosivujen päivityksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe lukituskaaviosivujen p�ivityksess�: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Komento47_Click()
@@ -402,11 +402,11 @@ ErrorHandler:
     Debug.Print "*** ERROR in Komento47_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     DoCmd.SetWarnings True
-    MsgBox "Virhe tulostuslistauksen päivityksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe tulostuslistauksen p�ivityksess�: " & Err.Description, vbCritical
 End Sub
 
 Private Sub hae_Click()
-' Siirretään fokus edelliseen kentään (hakukenttä) ja suoritetaan löydä seuraava
+' Siirret��n fokus edelliseen kent��n (hakukentt�) ja suoritetaan l�yd� seuraava
 On Error GoTo Err_hae_Click
 
     Screen.PreviousControl.SetFocus  ' SetFocus ei palauta arvoa - .LoopNo-ketjutus oli virheellinen
@@ -433,7 +433,7 @@ Exit Sub
 ErrorHandler:
     Debug.Print "*** ERROR in Komento57_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Virhe moottorinäkymän avauksessa: " & Err.Description, vbCritical
+    MsgBox "Virhe moottorin�kym�n avauksessa: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Komento58_Click()
@@ -448,7 +448,7 @@ Exit Sub
 ErrorHandler:
     Debug.Print "*** ERROR in Komento58_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Virhe piirinäkymän avauksessa: " & Err.Description, vbCritical
+    MsgBox "Virhe piirin�kym�n avauksessa: " & Err.Description, vbCritical
 End Sub
 
 Private Sub Komento67_Click()
@@ -462,20 +462,20 @@ Dim sSQL As String
 Dim sProcess As String, sCode As String, sAreaCode2 As String, sLoopNo2 As String
 If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
   Debug.Print "  ERROR: Process or Code missing"
-  MsgBox "Syötä ensin Process ja Code reseptille", vbCritical, "Tee resepti"
+  MsgBox "Sy�t� ensin Process ja Code reseptille", vbCritical, "Tee resepti"
   Exit Sub
 End If
 Debug.Print "  Process: " & RProcess.Value & ", Code: " & RCode.Value
 Set DB = CurrentDb
-' Sanitoidaan käyttäjän syöttämät arvot SQL-injektion estämiseksi
+' Sanitoidaan k�ytt�j�n sy�tt�m�t arvot SQL-injektion est�miseksi
 sProcess = Replace(CStr(RProcess.Value), "'", "''")
 sCode    = Replace(CStr(RCode.Value),    "'", "''")
 Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & sProcess & "' and Code = '" & sCode & "'")
-If Not Taul.EOF Then   ' Resepti on jo olemassa — EOF on luotettavampi kuin RecordCount ennen MoveLast-kutsua
+If Not Taul.EOF Then   ' Resepti on jo olemassa � EOF on luotettavampi kuin RecordCount ennen MoveLast-kutsua
   Debug.Print "  ERROR: Recipe already exists"
   Taul.Close
   Set Taul = Nothing
-  MsgBox "Anna reseptille Process ja Code, jota ei ole vielä käytössä.", vbCritical, "Tee resepti"
+  MsgBox "Anna reseptille Process ja Code, jota ei ole viel� k�yt�ss�.", vbCritical, "Tee resepti"
   Exit Sub
 End If
 Debug.Print "  Creating new recipe in RECIPES table"
@@ -484,7 +484,7 @@ Taul.AddNew
 Taul.Fields("PROCESS") = RProcess.Value
 Taul.Fields("CODE") = RCode.Value
 Taul.Fields("INFO") = RInfo.Value
-'Otetaan ylös luodun reseptin ID
+'Otetaan yl�s luodun reseptin ID
 RID = Taul.Fields("ID")
 Taul.Update
 Debug.Print "  New RecipeID: " & RID
@@ -498,7 +498,7 @@ sSQL = "INSERT INTO RECIPE_TMP ( RecipeID, FBlock, LoopSymb, Suffix, Description
 sSQL = sSQL & "SELECT " & RID & " AS ID, Control.FBlock, Control.LoopSymb, Control.Suffix, Control.Description2, Control.BlockPlace, Control.Note, Control.Sivu, Control.Sivuja "
 sSQL = sSQL & "FROM Control WHERE (((Control.AreaCode)='" & sAreaCode2 & "') AND ((Control.LoopNo)='" & sLoopNo2 & "'));"
 DB.Execute sSQL
-'Kirjoitetaan vielä Control taulukkoon, mikä resepti piirillä on käytössä
+'Kirjoitetaan viel� Control taulukkoon, mik� resepti piirill� on k�yt�ss�
 sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " "
 sSQL = sSQL & "WHERE (((Control.AreaCode)='" & sAreaCode2 & "') AND ((Control.LoopNo)='" & sLoopNo2 & "'));"
 DB.Execute sSQL
@@ -522,15 +522,15 @@ End Sub
 
 
 Private Sub Komento80_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
+'T�m� p�ivitt�� reseptit kaikkiin piireihin, joissa on k�ytetty tietty� resepti�.
 On Error GoTo ErrorHandler
 Debug.Print "Komento80_Click: Starting recipe update to all circuits"
 Dim DB As DAO.Database
 Dim Vastaus As VbMsgBoxResult
 
-Vastaus = MsgBox("Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ RESEPTIT KAIKKIIN PIIREIHIN")
+Vastaus = MsgBox("Poistetaanko vanhat blokit piireist�, joille on m��ritelty resepti?", vbYesNoCancel, "P�IVIT� RESEPTIT KAIKKIIN PIIREIHIN")
 
-If Vastaus = vbYes Then ' Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
+If Vastaus = vbYes Then ' Poistetaan ensin kaikki vanhat blokit niist� piireist�, joissa on resepti
   Debug.Print "  Deleting old blocks from Control where RecipeID exists"
   CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null"
 End If
@@ -538,7 +538,7 @@ If Vastaus <> vbCancel Then
   Debug.Print "  Executing RECIPES_ADD query"
   CurrentDb.Execute "RECIPES_ADD"
   Debug.Print "  All circuits updated with recipes"
-  MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ RESEPTIT KAIKKIIN PIIREIHIN"
+  MsgBox "Piirit p�ivitetty!", vbOKOnly, "P�IVIT� RESEPTIT KAIKKIIN PIIREIHIN"
   Me.Refresh
 End If
 Debug.Print "Komento80_Click: COMPLETED successfully"
@@ -547,7 +547,7 @@ Exit Sub
 ErrorHandler:
     Debug.Print "*** ERROR in Komento80_Click: " & Err.Number & " - " & Err.Description
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
-    MsgBox "Virhe reseptien päivityksessä: " & Err.Description, vbCritical
+    MsgBox "Virhe reseptien p�ivityksess�: " & Err.Description, vbCritical
 End Sub
 Private Sub CommandJANI_Click()
 ' Luodaan indeksisivut Intpage-taulun tiedoista AutoCAD-piirustuksiin
@@ -572,7 +572,7 @@ Dim edPiir As String
 
 IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
 Debug.Print "  IndexBase: " & IndexBase
-' Varmistetaan AutoCAD-yhteys — CommandJANI voidaan ajaa itsenäisesti
+' Varmistetaan AutoCAD-yhteys � CommandJANI voidaan ajaa itsen�isesti
 If oAcad Is Nothing Then
     Set oAcad = GetObject(, "AutoCAD.Application")
     Debug.Print "  AutoCAD connection established (CommandJANI)"
@@ -592,10 +592,10 @@ Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
 
 aX = 30        ' Aloituspiste X
 aY = 275       ' Aloituspiste Y
-PosSivu = 40   ' Position ja sivun välinen etäisyys x-akselilla
-Seuraava = 90  ' Seuraavan positiosarakkeen etäisyys edellisestä
-MinY = 40      ' Minimi Y-koordinaatti, johon asti tekstejä tehdään
-MaxX = 333     ' Maksimi X-koordinaatti, johon sarakkeet tehdään ennen sivunvaihtoa
+PosSivu = 40   ' Position ja sivun v�linen et�isyys x-akselilla
+Seuraava = 90  ' Seuraavan positiosarakkeen et�isyys edellisest�
+MinY = 40      ' Minimi Y-koordinaatti, johon asti tekstej� tehd��n
+MaxX = 333     ' Maksimi X-koordinaatti, johon sarakkeet tehd��n ennen sivunvaihtoa
 RiviVali = 5   ' Tekstien riviinjako
 TextSize = 2.5 ' Tekstien koko
 
@@ -610,7 +610,7 @@ Do While Not Taul.EOF
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lisätään ensin otsikot
+        'Lis�t��n ensin otsikot
         oDoc.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDoc.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1

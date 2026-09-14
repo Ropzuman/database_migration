@@ -3,57 +3,57 @@ Option Explicit
 
 '================================================================================
 ' Lomake: MOTORS subform (Moottorit-alilomake)
-' Tarkoitus: Laiteviittauksen lisÃ¤Ã¤misapuri pÃ¤Ã¤lomakkeen tekstikenttiin
-' PÃ¤ivitetty: 2025-11-13 â€” VirheenkÃ¤sittely ja null-suojaus lisÃ¤tty
-'             2026-03-03 â€” Me.-etuliite, SelStart-suojaus (Virhe 2185)
+' Tarkoitus: Laiteviittauksen lisäämisapuri päälomakkeen tekstikenttiin
+' Päivitetty: 2025-11-13 — Virheenkäsittely ja null-suojaus lisätty
+'             2026-03-03 — Me.-etuliite, SelStart-suojaus (Virhe 2185)
 '
 ' Kuvaus:
-'   Alilomake laiteviittausten lisÃ¤Ã¤miseksi pÃ¤Ã¤lomakkeen tekstikenttiin.
-'   KÃ¤yttÃ¤Ã¤ {Osasto-Laitenro-Laitetyyppi-Liite}-muotoa.
+'   Alilomake laiteviittausten lisäämiseksi päälomakkeen tekstikenttiin.
+'   Käyttää {Osasto-Laitenro-Laitetyyppi-Liite}-muotoa.
 '
 ' Riippuvuudet:
-'   - PÃ¤Ã¤lomake, jossa KohdeTextBox ja CLoppuun-ohjaimet
+'   - Päälomake, jossa KohdeTextBox ja CLoppuun-ohjaimet
 '   - Julkinen Kursori-muuttuja (kursorin sijainti)
 '   - Ohjaimet: TEKSTI, Department, Eqseq, EqType, Suffix
 '================================================================================
 
 '================================================================================
 ' Aliohjelma: LisaaTeksti
-' Tarkoitus: LisÃ¤Ã¤ laiteviittaus kursorin kohdalle tai kentÃ¤n loppuun
+' Tarkoitus: Lisää laiteviittaus kursorin kohdalle tai kentän loppuun
 '
 ' Kuvaus:
-'   LisÃ¤Ã¤ tekstin {hakasulkeissa} nykyiseen kursorin sijaintiin tai kentÃ¤n
-'   loppuun. KÃ¤sittelee null-arvot ja yllapitÃ¤Ã¤ kursorin sijainnin.
-' Huom: SelStart vaatii fokuksen â€” kietotaan virheensuojauksen sisÃ¤Ã¤n (Virhe 2185)
+'   Lisää tekstin {hakasulkeissa} nykyiseen kursorin sijaintiin tai kentän
+'   loppuun. Käsittelee null-arvot ja yllapitää kursorin sijainnin.
+' Huom: SelStart vaatii fokuksen — kietotaan virheensuojauksen sisään (Virhe 2185)
 '================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
     Dim Loppu As String
     Dim KohdeTeksti As String
-    Dim TurvallinenKursori As Long  ' Rajattu kursori â€” ei voi ylitÃ¤Ã¤ tekstin pituutta
+    Dim TurvallinenKursori As Long  ' Rajattu kursori — ei voi ylitää tekstin pituutta
 
     On Error GoTo ErrorHandler
 
     If Not KohdeTextBox Is Nothing Then
         KohdeTeksti = Nz(KohdeTextBox.Value, "")
-        ' Rajataan kursori tekstin pituuden sisÃ¤Ã¤n â€” estÃ¤Ã¤ Left$/Mid$-virheet fokuksenvaihdon jÃ¤lkeen
+        ' Rajataan kursori tekstin pituuden sisään — estää Left$/Mid$-virheet fokuksenvaihdon jälkeen
         TurvallinenKursori = Kursori
         If TurvallinenKursori > Len(KohdeTeksti) Then TurvallinenKursori = Len(KohdeTeksti)
         If TurvallinenKursori < 0 Then TurvallinenKursori = 0
 
         If Form.Parent.CLoppuun = True Then
-            ' LisÃ¤tÃ¤Ã¤n kentÃ¤n loppuun
+            ' Lisätään kentän loppuun
             Alku = KohdeTeksti
             Loppu = ""
         Else
-            ' LisÃ¤tÃ¤Ã¤n kursorin kohtaan
+            ' Lisätään kursorin kohtaan
             Alku = Left$(KohdeTeksti, TurvallinenKursori)
             Loppu = Mid$(KohdeTeksti, TurvallinenKursori + 1)
         End If
 
         KohdeTextBox.Value = Alku & " {" & Me.TEKSTI.Value & "}" & Loppu
         KohdeTextBox.SetFocus
-        ' SelStart ja SelLength vaativat fokuksen â€” estÃ¤tÃ¤Ã¤n Virhe 2185
+        ' SelStart ja SelLength vaativat fokuksen — estätään Virhe 2185
         On Error Resume Next
         KohdeTextBox.SelStart = TurvallinenKursori + Len(Me.TEKSTI.Value) + 3
         KohdeTextBox.SelLength = 0
@@ -64,7 +64,7 @@ Private Sub LisaaTeksti()
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Virhe tekstin lisÃ¤yksessÃ¤: " & Err.Description, vbExclamation
+    MsgBox "Virhe tekstin lisäyksessä: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub Department_DblClick(Cancel As Integer)

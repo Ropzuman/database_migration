@@ -2,14 +2,14 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' MODUULI  : For ACAD Utility
-' SOVELLUS : FunctionDiagrams ‚Äî AutoCAD-apurakenteet
-' KUVAUS   : M√§√§rittelee moduulitason tietotyypit ja Windows-rajapinnan
+' SOVELLUS : FunctionDiagrams ó AutoCAD-apurakenteet
+' KUVAUS   : M‰‰rittelee moduulitason tietotyypit ja Windows-rajapinnan
 '            API-kutsut AutoCAD-yhteyden koordinaattilaskentaa varten.
-'            iPoint-rakenne pit√§√§ sis√§ll√§√§n XYZ-koordinaatit blokkien
+'            iPoint-rakenne pit‰‰ sis‰ll‰‰n XYZ-koordinaatit blokkien
 '            insertointipaikkojen hallintaan. GetCursorPos-kutsu mahdollistaa
 '            hiiren sijainnin hakemisen Windows GDI -rajapinnasta.
 ' DIPLE    : 64-bittinen siirto (PtrSafe-julistukset), M365-yhteydensp.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 ' Insertointipaikkarakenne AutoCAD-koordinaateille (X, Y, Z)
@@ -18,7 +18,7 @@ Public Type iPoint
 End Type
 Public Paikat() As iPoint
 
-' Hiiren kursorin sijainnin m√§√§ritt√§minen Windows-rajapinnasta
+' Hiiren kursorin sijainnin m‰‰ritt‰minen Windows-rajapinnasta
 Private Type POINTAPI
     X As Long
     Y As Long

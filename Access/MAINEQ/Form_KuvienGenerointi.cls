@@ -16,9 +16,9 @@ Dim i As Integer
 Dim j As Integer
 Dim Spositio  As String
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-  MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+  MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If
@@ -31,7 +31,7 @@ Do While Not Kuvat.EOF
   Talletus = Kuvat.Fields("Hakemisto").Value & Kuvat.Fields("PiirNro").Value & "_INDICE.DWG"
   'Avataan kuva
   Set oDoc = oAcad.Documents.Open(Pohja)
-  'Haetaan kuvaan lis√§tt√§v√§t revisiot
+  'Haetaan kuvaan lis‰tt‰v‰t revisiot
   i = 1
   LisaaTeksti i, 0, "01/INDICE"
   LisaaTeksti i, 1, "X"
@@ -154,9 +154,9 @@ Dim DB As DAO.Database  ' Updated 2025-11-11: Added DAO prefix for early binding
 Dim i As Integer, Maara As Integer
 
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-  MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+  MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If
@@ -171,7 +171,7 @@ oAcad.Preferences.System.SingleDocumentMode = False
 Do While Not Kuvat.EOF
   i = i + 1
   Set Tiedot = DB.OpenRecordset("SELECT HNDL, Tieto FROM qryKuviin WHERE TalletusKuva='" & Kuvat("Talletuskuva").Value & "'")
-  SysCmd acSysCmdSetStatus, "K√§sittelee kuvaa (" & i & "/" & Maara & "): " & Kuvat("Talletuskuva").Value & "..."
+  SysCmd acSysCmdSetStatus, "K‰sittelee kuvaa (" & i & "/" & Maara & "): " & Kuvat("Talletuskuva").Value & "..."
   oAcad.Documents.Close
   Set oDoc = oAcad.Documents.Open(Kuvat("Avaa").Value, True)
   Do While Not Tiedot.EOF

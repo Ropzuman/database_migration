@@ -56,7 +56,7 @@ On Error GoTo ErrorHandler
     Dim s As Integer  ' Counter (unused)
     Dim Taul As DAO.Recordset  ' MSysObjects query results
     Dim Taulu As String  ' Current table name being processed
-    Dim tdf As DAO.TableDef  ' Linkitetyn taulun m√§√§ritys p√§ivityst√§ varten
+    Dim tdf As DAO.TableDef  ' Linkitetyn taulun m‰‰ritys p‰ivityst‰ varten
     Dim db As DAO.Database
     Dim Kohdetiedosto As String
     Dim virhenumero As Long
@@ -88,15 +88,15 @@ On Error GoTo ErrorHandler
                 
                 Kohdetiedosto = Polku & Nimi
                 If Len(Dir$(Kohdetiedosto)) = 0 Then
-                    MsgBox "Tietokantatiedostoa ei l√∂ydy:" & vbCrLf & Kohdetiedosto, vbExclamation, "Linkitysvirhe"
+                    MsgBox "Tietokantatiedostoa ei lˆydy:" & vbCrLf & Kohdetiedosto, vbExclamation, "Linkitysvirhe"
                 Else
-                    ' P√§ivitet√§√§n linkki rikkomatta taulua tai sen relaatioita.
+                    ' P‰ivitet‰‰n linkki rikkomatta taulua tai sen relaatioita.
                     Set tdf = db.TableDefs(Taulu)
                     tdf.Connect = ";DATABASE=" & Kohdetiedosto
                     On Error Resume Next
                     tdf.RefreshLink
                     If Err.Number <> 0 Then
-                        MsgBox "Virhe p√§ivitett√§ess√§ taulua " & tdf.Name & ": " & Err.Description, vbExclamation, "Linkin p√§ivitysvirhe"
+                        MsgBox "Virhe p‰ivitett‰ess‰ taulua " & tdf.Name & ": " & Err.Description, vbExclamation, "Linkin p‰ivitysvirhe"
                     End If
                     Err.Clear
                     On Error GoTo ErrorHandler
@@ -123,5 +123,5 @@ ErrorHandler:
     Set tdf = Nothing
     Set db = Nothing
     On Error GoTo 0
-    MsgBox "Virhe tauluyhteyksien p√§ivityksess√§ (" & virhenumero & "): " & virhekuvaus, vbCritical
+    MsgBox "Virhe tauluyhteyksien p‰ivityksess‰ (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub

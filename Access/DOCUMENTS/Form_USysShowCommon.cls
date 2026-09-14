@@ -6,12 +6,12 @@ Private Const TV_DOC_COMMON_TEXT As String = "DOC_Common_Text"
 Private Const TV_DOC_COMMON_TITLE As String = "DOC_Common_Title"
 Private Const TV_DOC_COMMON_TYPE As String = "DOC_Common_Type"
 ' LOMAKE   : Form_USysShowCommon
-' SOVELLUS : DOCUMENTS ‚Äî Yleisk√§ytt√∂inen tekstin n√§ytt√∂/muokkaus
-' KUVAUS   : Yleisk√§ytt√∂inen teksti-ikkuna lomakkeiden v√§liseen tiedonsiirtoon.
-'            CommonType 0 = n√§yt√§ ainoastaan (Locked), 1 = muokkaa.
-'            SetFocus-kutsu on kosmeettinen ‚Äî kaatumattomuuden vuoksi
+' SOVELLUS : DOCUMENTS ó Yleisk‰yttˆinen tekstin n‰yttˆ/muokkaus
+' KUVAUS   : Yleisk‰yttˆinen teksti-ikkuna lomakkeiden v‰liseen tiedonsiirtoon.
+'            CommonType 0 = n‰yt‰ ainoastaan (Locked), 1 = muokkaa.
+'            SetFocus-kutsu on kosmeettinen ó kaatumattomuuden vuoksi
 '            suojattu On Error Resume Next -lohkolla.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 Private Sub BCancel_Click()
@@ -27,7 +27,7 @@ Private Sub BOK_Click()
 End Sub
 
 Private Sub Form_Load()
-  ' Jos OpenArgs on annettu, n√§ytet√§√§n teksti suoraan ilman globaaleja v√§limuuttujia.
+  ' Jos OpenArgs on annettu, n‰ytet‰‰n teksti suoraan ilman globaaleja v‰limuuttujia.
   If Not IsNull(Me.OpenArgs) Then
     Me.Otsikko.Caption = "Detail Address:"
     Me.Caption = "Detail Address:"
@@ -50,7 +50,7 @@ Private Sub Form_Load()
     Me.BCancel.Visible = True
     Me.BOK.Caption = "OK"
     Me.Teksti.Locked = False
-    ' SetFocus on kosmeettinen toiminto ‚Äî suojataan kaatumiselta
+    ' SetFocus on kosmeettinen toiminto ó suojataan kaatumiselta
     On Error Resume Next
     Me.Teksti.SetFocus
     On Error GoTo 0

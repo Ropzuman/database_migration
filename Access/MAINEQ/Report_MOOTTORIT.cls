@@ -32,14 +32,14 @@ Private Sub Report_Open(Cancel As Integer)
     Set Tiedot = CurrentDb.OpenRecordset("_qryMOTOR", dbOpenSnapshot)
     Rivi = 10
 
-    If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest√§√§ noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
-        ' Tarkistetaan mallitiedoston olemassaolo ennen Excel-k√§ynnistyst√§
+    If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest‰‰ noin minuutin.", vbYesNo, "Moottorilista") = vbYes Then
+        ' Tarkistetaan mallitiedoston olemassaolo ennen Excel-k‰ynnistyst‰
         If Dir(TemplatePath) = "" Then
-            MsgBox "Excel-mallitiedostoa ei l√∂ydy:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
+            MsgBox "Excel-mallitiedostoa ei lˆydy:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
             GoTo Cleanup
         End If
 
-        SysCmd acSysCmdSetStatus, "K√§ynnist√§√§ Exceli√§..."
+        SysCmd acSysCmdSetStatus, "K‰ynnist‰‰ Exceli‰..."
         Set xlApp = CreateObject("Excel.Application")
         Set WB = xlApp.Workbooks.Open(TemplatePath, , True)
         SysCmd acSysCmdSetStatus, "Vie tietoa Exceliin..."
@@ -72,7 +72,7 @@ Private Sub Report_Open(Cancel As Integer)
 Cleanup:
     On Error Resume Next
     SysCmd acSysCmdClearStatus
-    ' Vapautetaan kaikki COM-objektit ‚Äî est√§√§ haamuprosessit
+    ' Vapautetaan kaikki COM-objektit ó est‰‰ haamuprosessit
     If Not Tiedot Is Nothing Then Tiedot.Close
     Set Alue = Nothing
     Set WB = Nothing

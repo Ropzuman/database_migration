@@ -1,4 +1,4 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
@@ -6,42 +6,42 @@ Private Const POISSULJETTU_TAULU As String = "MotorData"
 Private Const LINKITETTY_TAULU_TYYPPI As Long = 6
 
 ' Lomake: Linkkien vaihto
-' Tarkoitus: P√§ivitt√§√§ linkitettyjen taulujen polut nykyiseen tietokannan hakemistoon
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki lis√§tty
+' Tarkoitus: P‰ivitt‰‰ linkitettyjen taulujen polut nykyiseen tietokannan hakemistoon
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki lis‰tty
 '
 ' Kuvaus:
 '   Apulomake ulkoisten taulujen uudelleenlinkitykseen nykyiseen hakemistoon:
-'   - Skannaa MSysObjects-j√§rjestelm√§taulun linkitetyist√§ tauluista
-'   - Poimii tietokannan tiedostonimen nykyisest√§ linkityspolusta
-'   - Linkitt√§√§ taulun samaan tiedostoon nykyisess√§ hakemistossa
-'   - Est√§√§ v√§√§r√§√§n hakemistoon osoittavat linkit tietokannan siirron j√§lkeen
+'   - Skannaa MSysObjects-j‰rjestelm‰taulun linkitetyist‰ tauluista
+'   - Poimii tietokannan tiedostonimen nykyisest‰ linkityspolusta
+'   - Linkitt‰‰ taulun samaan tiedostoon nykyisess‰ hakemistossa
+'   - Est‰‰ v‰‰r‰‰n hakemistoon osoittavat linkit tietokannan siirron j‰lkeen
 '
 ' Riippuvuudet:
-'   - MSysObjects-j√§rjestelm√§taulu (Accessin sis√§inen)
+'   - MSysObjects-j‰rjestelm‰taulu (Accessin sis‰inen)
 '   - Linkitetyt Access-tietokantataulut
 '
-' K√§ytt√∂tapaus:
-'   Kun tietokanta siirret√§√§n uuteen kansioon, linkitetyt taulut osoittavat
-'   edelleen vanhaan sijaintiin. T√§m√§ lomake p√§ivitt√§√§ kaikki linkit nykyiseen
+' K‰yttˆtapaus:
+'   Kun tietokanta siirret‰‰n uuteen kansioon, linkitetyt taulut osoittavat
+'   edelleen vanhaan sijaintiin. T‰m‰ lomake p‰ivitt‰‰ kaikki linkit nykyiseen
 '   hakemistoon.
 '================================================================================
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Command0_Click
-' Tarkoitus: Linkitt√§√§ kaikki ulkoiset taulut nykyiseen tietokannan hakemistoon
+' Tarkoitus: Linkitt‰‰ kaikki ulkoiset taulut nykyiseen tietokannan hakemistoon
 ' Toiminta:
 '   1. Haetaan nykyinen tietokannan hakemistopolku
-'   2. Kysell√§√§n MSysObjects-taulusta kaikki linkitetyt taulut
+'   2. Kysell‰‰n MSysObjects-taulusta kaikki linkitetyt taulut
 '   3. Jokaiselle linkitetylle taululle:
-'      - Poimitaan tiedostonimi nykyisest√§ linkityspolusta
+'      - Poimitaan tiedostonimi nykyisest‰ linkityspolusta
 '      - Vertaillaan hakemistopolkuja
-'      - Jos polut eroavat, linkki p√§ivitet√§√§n nykyiseen hakemistoon
-'   4. S√§ilytet√§√§n taulun nimi ja rakenne
+'      - Jos polut eroavat, linkki p‰ivitet‰‰n nykyiseen hakemistoon
+'   4. S‰ilytet‰‰n taulun nimi ja rakenne
 ' Huom:
-'   - Linkitt√§√§ uudelleen vain, jos l√§hdehakemisto eroaa nykyisest√§
-'   - K√§ytt√§√§ kirjainkoosta riippumatonta polkuvertailua
-'   - Est√§√§ saman taulun kaksinkertaisen uudelleenlinkityksen
-'   - K√§ytt√§√§ TableDef.RefreshLink-menetelm√§√§ linkkien p√§ivitt√§miseen
+'   - Linkitt‰‰ uudelleen vain, jos l‰hdehakemisto eroaa nykyisest‰
+'   - K‰ytt‰‰ kirjainkoosta riippumatonta polkuvertailua
+'   - Est‰‰ saman taulun kaksinkertaisen uudelleenlinkityksen
+'   - K‰ytt‰‰ TableDef.RefreshLink-menetelm‰‰ linkkien p‰ivitt‰miseen
 '--------------------------------------------------------------------------------
 Private Sub Command0_Click()
   Dim Polku As String, Polku2 As String, Nimi As String
@@ -70,7 +70,7 @@ Private Sub Command0_Click()
         If Polku2 <> LCase$(Polku) Then
           Kohdetiedosto = Polku & Nimi
           If Len(Dir$(Kohdetiedosto)) = 0 Then
-            epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei l√∂ydy: " & Kohdetiedosto & ")" & vbCrLf
+            epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei lˆydy: " & Kohdetiedosto & ")" & vbCrLf
           Else
             Set tdf = db.TableDefs(Taulu)
             tdf.Connect = ";DATABASE=" & Kohdetiedosto
@@ -93,7 +93,7 @@ Private Sub Command0_Click()
   Set Taul = Nothing
   Set db = Nothing
   If Len(epaonnistuneet) > 0 Then
-    MsgBox "Osa taulujen linkeist√§ ei p√§ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
+    MsgBox "Osa taulujen linkeist‰ ei p‰ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
   Else
     MsgBox "Valmis", vbInformation
   End If
@@ -108,7 +108,7 @@ ErrorHandler:
   Set tdf = Nothing
   Set db = Nothing
   On Error GoTo 0
-  MsgBox "Virhe tauluyhteyksien p√§ivityksess√§ (" & virhenumero & "): " & virhekuvaus, vbCritical
+  MsgBox "Virhe tauluyhteyksien p‰ivityksess‰ (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub
 
 Private Function JoKasitelty(ByRef lista As Collection, ByVal nimi As String) As Boolean

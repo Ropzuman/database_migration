@@ -4,26 +4,26 @@ Option Explicit
 '================================================================================
 ' Lomake: SizingOut
 ' Tarkoitus: Vie kyselytulokset CSV-tiedostoon suomalaisella lukumuotoilulla
-' P√§ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis√§tty
+' P‰ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis‰tty
 '             2026-03-03 - Me.-etuliitteet ja kommentit suomeksi
 '
 ' Kuvaus:
 '   Vie tietokantakyselyn tai -taulun puolipisteeroitettuun CSV-tiedostoon:
-'   - K√§ytt√§j√§ valitsee kyselyn/taulun, hakemiston ja tiedostonimen
-'   - Muuntaa desimaalipilkut pisteiksi (suomalainen ‚Üí kansainv√§linen muoto)
-'   - Ympy r√∂i kaikki arvot lainausmerkeill√§
-'   - Avaa kohdehakemiston Explorerissa viennin j√§lkeen
-'   - K√§sittelee null-arvot tyhjin√§ merkkijonoina
+'   - K‰ytt‰j‰ valitsee kyselyn/taulun, hakemiston ja tiedostonimen
+'   - Muuntaa desimaalipilkut pisteiksi (suomalainen -> kansainv‰linen muoto)
+'   - Ympy rˆi kaikki arvot lainausmerkeill‰
+'   - Avaa kohdehakemiston Explorerissa viennin j‰lkeen
+'   - K‰sittelee null-arvot tyhjin‰ merkkijonoina
 '
 ' Riippuvuudet:
-'   - FileSystemObject (my√∂h√§inen sidonta)
-'   - Taulukko-kontrollissa m√§√§ritetty kysely tai taulu
+'   - FileSystemObject (myˆh‰inen sidonta)
+'   - Taulukko-kontrollissa m‰‰ritetty kysely tai taulu
 '
 ' Kontrollit:
 '   - Taulukko: TextBox kyselyn/taulun nimelle (oletus: qryValveSizingOut)
 '   - Hakem: TextBox kohdehakemiston polkua varten
-'   - FileName: TextBox tiedostonimelle (ilman .csv-p√§√§tett√§)
-'   - Command8: Painike viennin k√§ynnist√§miseen
+'   - FileName: TextBox tiedostonimelle (ilman .csv-p‰‰tett‰)
+'   - Command8: Painike viennin k‰ynnist‰miseen
 '================================================================================
 
 '--------------------------------------------------------------------------------
@@ -31,90 +31,90 @@ Option Explicit
 ' Tarkoitus: Vie valittu kysely/taulu CSV-tiedostoon
 '
 ' Prosessi:
-'   1. Tarkistetaan, ett√§ kohdehakemisto on olemassa
-'   2. Avataan l√§hde-kysely/taulu recordset-muodossa
+'   1. Tarkistetaan, ett‰ kohdehakemisto on olemassa
+'   2. Avataan l‰hde-kysely/taulu recordset-muodossa
 '   3. Luodaan CSV-tiedosto kohdepolkuun
 '   4. Iteroidaan kaikki rivit:
-'      - Kirjoitetaan ensimm√§inen kentt√§ (lainausmerkeiss√§)
-'      - Kirjoitetaan loput kent√§t puolipisteell√§ eroteltuina
+'      - Kirjoitetaan ensimm‰inen kentt‰ (lainausmerkeiss‰)
+'      - Kirjoitetaan loput kent‰t puolipisteell‰ eroteltuina
 '      - Muunnetaan desimaalipilkut pisteiksi
-'      - Null-arvot kirjoitetaan tyhjin√§ merkkijonoina
+'      - Null-arvot kirjoitetaan tyhjin‰ merkkijonoina
 '   5. Suljetaan tiedosto ja avataan kohdehakemisto
 '
 ' CSV-muoto:
 '   - Puolipisteerotteinen (;)
-'   - Kaikki arvot lainausmerkeiss√§ ("arvo")
-'   - Desimaalierotin: piste (.) eik√§ pilkku (,)
+'   - Kaikki arvot lainausmerkeiss‰ ("arvo")
+'   - Desimaalierotin: piste (.) eik‰ pilkku (,)
 '   - Rivinloppu: CRLF (Windows-standardi)
 '
 ' Huomiot:
-'   - Varmistaa, ett√§ hakemistopolku p√§√§ttyy kenoviivaan
-'   - Muuntaa suomalaisen desimaaliformaatin kansainv√§liseksi
-'   - Avaa hakemiston k√§ytt√§j√§n helpottamiseksi
-'   - Kattava virheenk√§sittely siivouksineen
+'   - Varmistaa, ett‰ hakemistopolku p‰‰ttyy kenoviivaan
+'   - Muuntaa suomalaisen desimaaliformaatin kansainv‰liseksi
+'   - Avaa hakemiston k‰ytt‰j‰n helpottamiseksi
+'   - Kattava virheenk‰sittely siivouksineen
 '--------------------------------------------------------------------------------
 Private Sub Command8_Click()
 On Error GoTo ErrorHandler
     Dim DB As DAO.Database  ' Nykyinen tietokanta
-    Dim Taulu As DAO.Recordset  ' L√§hdedata-recordset
-    Dim FSO As Object  ' Tiedostoj√§rjestelm√§objekti tiedoston luomiseen (my√∂h√§inen sidonta)
+    Dim Taulu As DAO.Recordset  ' L‰hdedata-recordset
+    Dim FSO As Object  ' Tiedostoj‰rjestelm‰objekti tiedoston luomiseen (myˆh‰inen sidonta)
     Dim Tiedosto As Object  ' CSV-tiedoston kahva
     Dim Path As String  ' Kohdehakemiston polku
-    Dim i As Integer  ' Kentt√§laskuri
+    Dim i As Integer  ' Kentt‰laskuri
     Dim Osoitin As Long  ' Pilkun sijainti merkkijonossa
-    Dim Arvo As String  ' Nykyinen kentt√§arvo
+    Dim Arvo As String  ' Nykyinen kentt‰arvo
     
     Set FSO = CreateObject("Scripting.FileSystemObject")
     Set DB = CurrentDb
     Path = Me.Hakem.Value
     
-    ' Varmistetaan, ett√§ polku p√§√§ttyy kenoviivaan
+    ' Varmistetaan, ett‰ polku p‰‰ttyy kenoviivaan
     If Right$(Path, 1) <> "\" Then
         Path = Path & "\"
     End If
     
-    ' Tarkistetaan, ett√§ kohdehakemisto on olemassa
+    ' Tarkistetaan, ett‰ kohdehakemisto on olemassa
     If Not FSO.FolderExists(Path) Then
         MsgBox "Hakemistoa: " & Path & " ei ollut", vbCritical, "Vientivirhe"
         Exit Sub
     End If
     
-    ' Avataan l√§hde-kysely/taulu
+    ' Avataan l‰hde-kysely/taulu
     Set Taulu = DB.OpenRecordset("SELECT * FROM " & Me.Taulukko.Value)
     
     ' Luodaan CSV-tiedosto kohdepolkuun
     Set Tiedosto = FSO.CreateTextFile(Path & Me.FileName.Value & ".csv")
     
-    ' Vied√§√§n kaikki rivit
+    ' Vied‰‰n kaikki rivit
     Do While Not Taulu.EOF
-        ' Kirjoitetaan ensimm√§inen kentt√§ lainausmerkeiss√§
+        ' Kirjoitetaan ensimm‰inen kentt‰ lainausmerkeiss‰
         Tiedosto.Write """" & Taulu.Fields(0).Value & """"
         
-        ' Kirjoitetaan loput kent√§t puolipisteell√§ eroteltuina
+        ' Kirjoitetaan loput kent‰t puolipisteell‰ eroteltuina
         For i = 1 To Taulu.Fields.Count - 1
-            ' K√§sitell√§√§n null-arvot tyhjin√§
+            ' K‰sitell‰‰n null-arvot tyhjin‰
             If IsNull(Taulu.Fields(i).Value) Then
                 Arvo = ""
             Else
                 Arvo = Taulu.Fields(i).Value
                 
-                ' Muunnetaan desimaalipilkku pisteeksi (FI ‚Üí kansainv√§linen)
+                ' Muunnetaan desimaalipilkku pisteeksi (FI -> kansainv‰linen)
                 Osoitin = InStr(Arvo, ",")
                 If Osoitin <> 0 Then
                     Arvo = Left$(Arvo, Osoitin - 1) & "." & Mid$(Arvo, Osoitin + 1)
                 End If
             End If
             
-            ' Formula Injection -esto: lis√§t√§√§n heittomerkki vaarallisten =-@-alkuisten arvojen eteen
+            ' Formula Injection -esto: lis‰t‰‰n heittomerkki vaarallisten =-@-alkuisten arvojen eteen
             If Arvo <> "" Then
                 If Left$(Arvo, 1) = "=" Or Left$(Arvo, 1) = "@" Or _
                    Left$(Arvo, 1) = "+" Or Left$(Arvo, 1) = "-" Then
                     Arvo = "'" & Arvo
                 End If
             End If
-            ' RFC 4180: tuplaa lainausmerkit ‚Äî est√§√§ CSV-rakenteen rikkoutumisen (yksi " ‚Üí "")
+            ' RFC 4180: tuplaa lainausmerkit ó est‰‰ CSV-rakenteen rikkoutumisen (yksi " -> "")
             Arvo = Replace(Nz(Arvo, ""), """", """""")
-            ' Kirjoitetaan kentt√§arvo lainausmerkeiss√§, puolipisteeroteltu
+            ' Kirjoitetaan kentt‰arvo lainausmerkeiss‰, puolipisteeroteltu
             Tiedosto.Write ";""" & Arvo & """"    
         Next i
         
@@ -130,13 +130,13 @@ On Error GoTo ErrorHandler
     Set Tiedosto = Nothing
     Set FSO = Nothing
     
-    ' Ilmoitetaan k√§ytt√§j√§lle ja avataan hakemisto
+    ' Ilmoitetaan k‰ytt‰j‰lle ja avataan hakemisto
     MsgBox "Valmis", vbInformation, "Vienti valmis"
     Call Shell("EXPLORER " & Path, vbNormalFocus)
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Virhe tiedon vienniss√§: " & Err.Description, vbCritical, "Vientivirhe"
+    MsgBox "Virhe tiedon vienniss‰: " & Err.Description, vbCritical, "Vientivirhe"
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
@@ -152,7 +152,7 @@ End Sub
 '
 ' Oletukset:
 '   - Taulukko (Kysely/taulu): qryValveSizingOut
-'   - Hakem (Hakemisto): K√§ytt√§j√§n m√§√§ritett√§v√§
+'   - Hakem (Hakemisto): K‰ytt‰j‰n m‰‰ritett‰v‰
 '
 ' Huomiot:
 '   - Oletuskysely kohdistuu venttiilien mitoitusdatan vientiin

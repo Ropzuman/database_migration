@@ -20,19 +20,19 @@ Private Sub Report_Open(Cancel As Integer)
     Set Tiedot = CurrentDb.OpenRecordset("_qryMAINEQCust", dbOpenSnapshot)
 
     If Tiedot.EOF Then
-        MsgBox "Ei viet√§v√§√§ dataa kyselyss√§ _qryMAINEQCust.", vbInformation, "P√§√§laiteluettelo"
+        MsgBox "Ei viet‰v‰‰ dataa kyselyss‰ _qryMAINEQCust.", vbInformation, "P‰‰laiteluettelo"
         Cancel = True
         GoTo Cleanup
     End If
 
-    If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest√§√§ noin minuutin.", vbYesNo, "P√§√§laiteluettelo") = vbYes Then
-        ' Tarkistetaan mallitiedoston olemassaolo ennen Excel-k√§ynnistyst√§
+    If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest‰‰ noin minuutin.", vbYesNo, "P‰‰laiteluettelo") = vbYes Then
+        ' Tarkistetaan mallitiedoston olemassaolo ennen Excel-k‰ynnistyst‰
         If Dir(TemplatePath) = "" Then
-            MsgBox "Excel-mallitiedostoa ei l√∂ydy:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
+            MsgBox "Excel-mallitiedostoa ei lˆydy:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
             GoTo Cleanup
         End If
 
-        SysCmd acSysCmdSetStatus, "K√§ynnist√§√§ Exceli√§..."
+        SysCmd acSysCmdSetStatus, "K‰ynnist‰‰ Exceli‰..."
         Set xlApp = CreateObject("Excel.Application")
         xlApp.ScreenUpdating = False
         Set WB = xlApp.Workbooks.Open(TemplatePath, , True)
@@ -64,16 +64,16 @@ Private Sub Report_Open(Cancel As Integer)
         xlApp.ScreenUpdating = True
         xlApp.Visible = True
 
-        ' Tallennetaan v√§liaikaiskansioon
+        ' Tallennetaan v‰liaikaiskansioon
         Set FSO = CreateObject("Scripting.FileSystemObject")
-        WB.SaveAs FSO.GetSpecialFolder(2).Path & "\P√§√§laiteluettelo.xls"
-        MsgBox "P√§√§laiteluettelo generoitu Exceliin.", vbInformation, "P√§√§laiteluettelo"
+        WB.SaveAs FSO.GetSpecialFolder(2).Path & "\P‰‰laiteluettelo.xls"
+        MsgBox "P‰‰laiteluettelo generoitu Exceliin.", vbInformation, "P‰‰laiteluettelo"
     End If
 
 Cleanup:
     On Error Resume Next
     SysCmd acSysCmdClearStatus
-    ' Vapautetaan kaikki COM-objektit ‚Äî est√§√§ haamuprosessit
+    ' Vapautetaan kaikki COM-objektit ó est‰‰ haamuprosessit
     Set Alue = Nothing
     Set WS = Nothing
     If Not Tiedot Is Nothing Then Tiedot.Close
@@ -84,7 +84,7 @@ Cleanup:
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Virhe p√§√§laiteluettelon luonnissa: " & Err.Description, vbCritical, "Virhe " & Err.Number
+    MsgBox "Virhe p‰‰laiteluettelon luonnissa: " & Err.Description, vbCritical, "Virhe " & Err.Number
     ' Suljetaan piilotettu Excel-prosessi virhetilanteessa
     If Not xlApp Is Nothing Then
         On Error Resume Next

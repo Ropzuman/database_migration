@@ -3,58 +3,58 @@ Option Explicit
 
 '================================================================================
 ' Lomake: CopyLoops
-' Tarkoitus: Tuo looppirivej√§ ja laitetaulukoita ulkoisesta Access-tietokannasta
-' P√§ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis√§tty
+' Tarkoitus: Tuo looppirivej‰ ja laitetaulukoita ulkoisesta Access-tietokannasta
+' P‰ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis‰tty
 '             2026-03-03 - Me.-etuliitteet ja kommentit suomeksi
 '
 ' Kuvaus:
-'   Looppien tuontity√∂kalu, joka:
-'   - Linkitt√§√§ ulkoiseen instru3-tietokantaan
-'   - N√§ytt√§√§ saatavilla olevat loopit l√§hdetietokannasta
+'   Looppien tuontityˆkalu, joka:
+'   - Linkitt‰‰ ulkoiseen instru3-tietokantaan
+'   - N‰ytt‰‰ saatavilla olevat loopit l‰hdetietokannasta
 '   - Tuo valitut loopit LOOPS-taulukkoon
 '   - Tuo laiterivit devTbl*-taulukoista
-'   - Est√§√§ duplikaattilooppien tuonnin
+'   - Est‰‰ duplikaattilooppien tuonnin
 '   - Antaa yksityiskohtaisen tilapalautteen
 '
 ' Riippuvuudet:
 '   - LOOPS-taulu (looppien kohdetaulu)
-'   - LOOPLINK-v√§liaikainen linkitetty taulu
+'   - LOOPLINK-v‰liaikainen linkitetty taulu
 '   - devTable-taulu (laitteiden kohdetaulu)
-'   - devTbl*-taulut (l√§hteen laitetaulut ulkoisessa tietokannassa)
+'   - devTbl*-taulut (l‰hteen laitetaulut ulkoisessa tietokannassa)
 '   - comdlg32.dll (Windows Common Dialog tiedostovalintaan)
 '
 ' Kontrollit:
 '   - Kanta: TextBox tietokannan polkua varten
-'   - Loopit: Alilomake, joka n√§ytt√§√§ saatavilla olevat loopit
+'   - Loopit: Alilomake, joka n‰ytt‰‰ saatavilla olevat loopit
 '   - TTiedot: TextBox tilaviesteille
-'   - ValitseKanta: Painike l√§hdetietokannan valintaan
+'   - ValitseKanta: Painike l‰hdetietokannan valintaan
 '   - HaeLoopit: Painike looppien tuontiin
 '   - Ulos: Painike lomakkeen sulkemiseen
 '================================================================================
 
-' Moduulitason muuttuja l√§hdetietokantayhteydelle ‚Äì pysyy auki koko session ajan
+' Moduulitason muuttuja l‰hdetietokantayhteydelle ñ pysyy auki koko session ajan
 Dim LahdeDB As DAO.Database
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Form_Unload
-' Tarkoitus: Siivotaan v√§liaikaiset taulut ja yhteydet lomakkeen sulkeutuessa
+' Tarkoitus: Siivotaan v‰liaikaiset taulut ja yhteydet lomakkeen sulkeutuessa
 '
 ' Prosessi:
-'   1. Poistetaan v√§liaikainen LOOPLINK-taulu, jos se on olemassa
-'   2. Suljetaan l√§hdetietokantayhteys
-'   3. Tyhjennet√§√§n kaikki objektiviittaukset
+'   1. Poistetaan v‰liaikainen LOOPLINK-taulu, jos se on olemassa
+'   2. Suljetaan l‰hdetietokantayhteys
+'   3. Tyhjennet‰‰n kaikki objektiviittaukset
 '
 ' Huomiot:
-'   - Resume Next est√§√§ virheen, jos taulua ei l√∂ydy
+'   - Resume Next est‰‰ virheen, jos taulua ei lˆydy
 '   - Suoritetaan aina lomakkeen sulkeutuessa
-'   - Varmistaa, ettei j√§√§ avoimia v√§liaikaistauluja tai yhteyksi√§
+'   - Varmistaa, ettei j‰‰ avoimia v‰liaikaistauluja tai yhteyksi‰
 '--------------------------------------------------------------------------------
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
-    ' Vapautetaan alilomakkeen lukitukset ennen taulun poistoa ‚Äî est√§√§ Access-kaatumisen
+    ' Vapautetaan alilomakkeen lukitukset ennen taulun poistoa ó est‰‰ Access-kaatumisen
     Me.Loopit.Form.RecordSource = ""
     DoEvents  ' Annetaan Accessille hetki vapauttaa tiedostolukot
-    CurrentDb.TableDefs.Delete "LOOPLINK"  ' Poistetaan v√§liaikainen LOOPLINK-taulu
+    CurrentDb.TableDefs.Delete "LOOPLINK"  ' Poistetaan v‰liaikainen LOOPLINK-taulu
     Err.Clear
     If Not LahdeDB Is Nothing Then
         LahdeDB.Close
@@ -64,35 +64,35 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 '--------------------------------------------------------------------------------
 ' Tapahtuma: HaeLoopit_Click
-' Tarkoitus: Tuo valitut loopit ja laitedata l√§hdetietokannasta
+' Tarkoitus: Tuo valitut loopit ja laitedata l‰hdetietokannasta
 '
 ' Prosessi:
-'   1. Tarkistetaan, ett√§ l√§hdetietokanta on valittu
+'   1. Tarkistetaan, ett‰ l‰hdetietokanta on valittu
 '   2. Kopioidaan loopit LOOPLINK-taulusta LOOPS-taulukkoon
-'   3. Iteroidaan kaikki devTbl*-taulut l√§hdetietokannassa
+'   3. Iteroidaan kaikki devTbl*-taulut l‰hdetietokannassa
 '   4. Tuodaan laiterivit valituille loopeille
-'   5. Asetetaan TABLEName-kentt√§ tuoduille laiteriveille
+'   5. Asetetaan TABLEName-kentt‰ tuoduille laiteriveille
 '   6. Seurataan duplikaatit ja annetaan tilapalaute
 '
 ' Parametrit:
-'   - K√§ytt√§√§ Loopit-alilomaketta l√§hteen√§ (linkitetty LOOPLINK-tauluun)
+'   - K‰ytt‰‰ Loopit-alilomaketta l‰hteen‰ (linkitetty LOOPLINK-tauluun)
 '   - Tuo LOOPS- ja devTable-tauluihin
 '
 ' Huomiot:
-'   - Est√§√§ duplikaattilooppien tuonnin (tarkistaa LOOPS-taulusta ensin)
+'   - Est‰‰ duplikaattilooppien tuonnin (tarkistaa LOOPS-taulusta ensin)
 '   - Tuo devTbl*- ja devTable-tauluista (kirjainkoosta riippumaton)
 '   - Sulkee devTblCommon-taulun pois tuonnista
-'   - Antaa yksityiskohtaisia tilaviestej√§ TTiedot-tekstikentt√§√§n
-'   - K√§ytt√§√§ SysCmd-funktiota edistymisen n√§ytt√§miseen
+'   - Antaa yksityiskohtaisia tilaviestej‰ TTiedot-tekstikentt‰‰n
+'   - K‰ytt‰‰ SysCmd-funktiota edistymisen n‰ytt‰miseen
 '--------------------------------------------------------------------------------
 Private Sub HaeLoopit_Click()
 On Error GoTo ErrorHandler
-    Dim OliJo As String  ' Ker√§√§ jo olemassa olevat (duplikaatti)loopit
-    Dim LahdeTaulu As DAO.Recordset  ' L√§hteen laitetaulun recordset
+    Dim OliJo As String  ' Ker‰‰ jo olemassa olevat (duplikaatti)loopit
+    Dim LahdeTaulu As DAO.Recordset  ' L‰hteen laitetaulun recordset
     Dim KohdeTaulu As DAO.Recordset  ' Kohdetaulun recordset (nykyinen tietokanta)
     Dim Kopioitavat() As String  ' Kopioitavien looppien lista (muoto: "AreaCode-LoopNo")
     Dim i As Integer, j As Integer, a As Integer  ' Silmukkalaskurit
-    Dim Taulukko As String  ' K√§sitelt√§v√§n taulun nimi
+    Dim Taulukko As String  ' K‰sitelt‰v‰n taulun nimi
     
     Debug.Print "========================================"
     Debug.Print "HaeLoopit: Starting loop copy operation"
@@ -110,7 +110,7 @@ On Error GoTo ErrorHandler
     Debug.Print "Source DB: " & LahdeDB.Name
   
   'Kopioidaan ensin loopit LOOPS-taulukkoon
-  Me.TTiedot.Value = ""  ' Tyhjennet√§√§n tilatieto
+  Me.TTiedot.Value = ""  ' Tyhjennet‰‰n tilatieto
   
   Debug.Print "Copying selected loops to LOOPS table..."
   
@@ -155,7 +155,7 @@ On Error GoTo ErrorHandler
       Set LahdeTaulu = LahdeDB.OpenRecordset(Taulukko)
       
       ' Iterate through all records in source device table
-      Do While Not LahdeTaulu.EOF  'K√§yd√§√§n l√§pi kaikki laitetaulukon rivit
+      Do While Not LahdeTaulu.EOF  'K‰yd‰‰n l‰pi kaikki laitetaulukon rivit
         ' Check if this record belongs to one of the imported loops
         For j = 1 To UBound(Kopioitavat)  'Tarkistetaan, kuuluuko rivi kopioitaviin looppeihin
           If Kopioitavat(j) = LahdeTaulu.Fields("AreaCode").Value & "-" & LahdeTaulu.Fields("LoopNo").Value Then
@@ -166,7 +166,7 @@ On Error GoTo ErrorHandler
               KohdeTaulu.Fields(LahdeTaulu.Fields(a).Name).Value = LahdeTaulu.Fields(a).Value
               If Err <> 0 Then
                 ' Log field copy errors
-                Me.TTiedot.Value = Me.TTiedot.Value & "Ongelma kent√§ss√§: " & LahdeDB.TableDefs(i).Name & "!" & LahdeTaulu.Fields(a).Name
+                Me.TTiedot.Value = Me.TTiedot.Value & "Ongelma kent‰ss‰: " & LahdeDB.TableDefs(i).Name & "!" & LahdeTaulu.Fields(a).Name
                 Err.Clear
               End If
             Next a
@@ -235,35 +235,35 @@ Private Sub Ulos_Click()
 End Sub
 '--------------------------------------------------------------------------------
 ' Tapahtuma: ValitseKanta_Click
-' Tarkoitus: Avaa tiedostovalintaikkuna l√§hde-Access-tietokannan valintaan
+' Tarkoitus: Avaa tiedostovalintaikkuna l‰hde-Access-tietokannan valintaan
 '
 ' Prosessi:
-'   1. M√§√§ritell√§√§n alkuhakemisto (nykyinen tai aiemmin valittu kansio)
-'   2. N√§ytet√§√§n Windows Common Dialog -tiedostovalinta
-'   3. Tallennetaan valittu polku Kanta-tekstikentt√§√§n
+'   1. M‰‰ritell‰‰n alkuhakemisto (nykyinen tai aiemmin valittu kansio)
+'   2. N‰ytet‰‰n Windows Common Dialog -tiedostovalinta
+'   3. Tallennetaan valittu polku Kanta-tekstikentt‰‰n
 '   4. Avataan tietokantayhteys (tallennetaan LahdeDB-moduulimuuttujaan)
-'   5. Poistetaan mahdollinen olemassa oleva LOOPLINK-v√§liaikainen taulu
-'   6. Luodaan uusi LOOPLINK, joka viittaa l√§hteen Loops-tauluun
-'   7. Asetetaan alilomakkeen tietol√§hde n√§ytt√§m√§√§n saatavilla olevat loopit
+'   5. Poistetaan mahdollinen olemassa oleva LOOPLINK-v‰liaikainen taulu
+'   6. Luodaan uusi LOOPLINK, joka viittaa l‰hteen Loops-tauluun
+'   7. Asetetaan alilomakkeen tietol‰hde n‰ytt‰m‰‰n saatavilla olevat loopit
 '
 ' Huomiot:
-'   - K√§ytt√§√§ GetOpenFileName-APIa comdlg32.dll:st√§
+'   - K‰ytt‰‰ GetOpenFileName-APIa comdlg32.dll:st‰
 '   - Suodattaa vain .accdb-tiedostot
-'   - Luo v√§liaikaisen linkitetyn taulun looppien selailua varten
-'   - L√§hdetietokanta pysyy auki, kunnes lomake sulkeutuu
+'   - Luo v‰liaikaisen linkitetyn taulun looppien selailua varten
+'   - L‰hdetietokanta pysyy auki, kunnes lomake sulkeutuu
 '   - LOOPLINK poistetaan Form_Unload-tapahtumassa
 '--------------------------------------------------------------------------------
 Private Sub ValitseKanta_Click()
 On Error GoTo ErrorHandler
     ' Avataan Office-natiivi tiedostovalintaikkuna tietokannan valitsemiseksi
     Dim fd As Object                   ' FileDialog-objekti
-    Dim ValittuTiedosto As String      ' K√§ytt√§j√§n valitsema tiedostopolku
+    Dim ValittuTiedosto As String      ' K‰ytt‰j‰n valitsema tiedostopolku
     Dim AHakem As String               ' Alkuhakemisto dialogille
-    Dim Linkki As DAO.TableDef         ' V√§liaikaisen linkitetyn taulun m√§√§ritys
+    Dim Linkki As DAO.TableDef         ' V‰liaikaisen linkitetyn taulun m‰‰ritys
 
     Debug.Print "ValitseKanta: Opening database selection dialog"
 
-    ' M√§√§ritet√§√§n alkuhakemisto aiemmin valitusta tai nykykannasta
+    ' M‰‰ritet‰‰n alkuhakemisto aiemmin valitusta tai nykykannasta
     If InStr(Nz(Me.Kanta.Value), "\") Then
         AHakem = Me.Kanta.Value
     Else
@@ -289,7 +289,7 @@ On Error GoTo ErrorHandler
         Me.Kanta.Value = ValittuTiedosto
         Debug.Print "  Valittu tietokanta: " & ValittuTiedosto
 
-        ' Avataan l√§hdetietokantayhteys
+        ' Avataan l‰hdetietokantayhteys
         Set LahdeDB = OpenDatabase(ValittuTiedosto)
         Debug.Print "  Tietokanta avattu onnistuneesti"
 
@@ -299,14 +299,14 @@ On Error GoTo ErrorHandler
         Err.Clear
         On Error GoTo ErrorHandler
 
-        ' Luodaan linkitetty taulu l√§hteen Loops-tauluun
+        ' Luodaan linkitetty taulu l‰hteen Loops-tauluun
         Set Linkki = CurrentDb.CreateTableDef("LOOPLINK")
         Linkki.Connect = ";DATABASE=" & ValittuTiedosto
         Linkki.SourceTableName = "Loops"
         CurrentDb.TableDefs.Append Linkki
         Set Linkki = Nothing
 
-        ' N√§ytet√§√§n saatavilla olevat loopit alilomakkeessa
+        ' N‰ytet‰‰n saatavilla olevat loopit alilomakkeessa
         Me.Loopit.Form.RecordSource = "SELECT * FROM LOOPLINK"
     End If
     Me.Refresh
@@ -322,19 +322,19 @@ ErrorHandler:
 End Sub
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Form_Resize
-' Tarkoitus: S√§√§t√§√§ alilomakkeen koko lomakkeen ikkunakoon muuttuessa
+' Tarkoitus: S‰‰t‰‰ alilomakkeen koko lomakkeen ikkunakoon muuttuessa
 '
 ' Prosessi:
 '   - Muutetaan Loopit-alilomakkeen leveys vastaamaan lomakeikkunaa
-'   - S√§√§det√§√§n korkeus, jos pystysuunnassa on riitt√§v√§sti tilaa
+'   - S‰‰det‰‰n korkeus, jos pystysuunnassa on riitt‰v‰sti tilaa
 '
 ' Huomiot:
-'   - Yll√§pit√§√§ 400 twipsin marginaalin oikealla puolella
-'   - Korkeus s√§√§det√§√§n vain, jos ikkuna on yli 3300 twipsi√§ korkea
-'   - Tarjoaa mukautuvan k√§ytt√∂liittym√§n looppien katseluun
+'   - Yll‰pit‰‰ 400 twipsin marginaalin oikealla puolella
+'   - Korkeus s‰‰det‰‰n vain, jos ikkuna on yli 3300 twipsi‰ korkea
+'   - Tarjoaa mukautuvan k‰yttˆliittym‰n looppien katseluun
 '--------------------------------------------------------------------------------
 Private Sub Form_Resize()
-  Me.Loopit.Width = Me.WindowWidth - 400  ' S√§ilytet√§√§n oikea marginaali
+  Me.Loopit.Width = Me.WindowWidth - 400  ' S‰ilytet‰‰n oikea marginaali
   If Me.WindowHeight > 3300 Then
     Me.Loopit.Height = Me.WindowHeight - 3300  ' Suurennetaan korkeus, kun tilaa on
   End If

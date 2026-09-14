@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysDocs
-' SOVELLUS : DOCUMENTS â€” Dokumenttien alaformi
-' KUVAUS   : NÃ¤yttÃ¤Ã¤ dokumentin nimen, huomautuksen ja revisiotekstin
+' SOVELLUS : DOCUMENTS — Dokumenttien alaformi
+' KUVAUS   : Näyttää dokumentin nimen, huomautuksen ja revisiotekstin
 '            USysShowCommon-dialogin kautta.
-' PÃ„IVITETTY: 2026-03-03
+' PÄIVITETTY: 2026-03-03
 '==========================================================================
 Private Const TV_DOC_COMMON_TEXT As String = "DOC_Common_Text"
 Private Const TV_DOC_COMMON_TITLE As String = "DOC_Common_Title"

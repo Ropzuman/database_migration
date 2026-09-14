@@ -105,10 +105,10 @@ suffix_afterupdate
 End Sub
 
 Private Sub ExtData_Click()
-'Avaa formin, jossa on lisÃ¤tiedot
+'Avaa formin, jossa on lisätiedot
 'Dim stDocName As String
 'Dim stDocNamePu As String
-' EI KÃ„YTÃ–SSÃ„
+' EI KÄYTÖSSÄ
 'stDocNamePu = "PumpsSubform"
 '    If Me.EqGroup.Value = "Pumps" Then
 '    Pumps

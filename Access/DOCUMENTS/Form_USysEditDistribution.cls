@@ -1,11 +1,11 @@
-ï»¿Option Compare Database
+Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysEditDistribution
-' SOVELLUS : DOCUMENTS â€” Distribuution muokkaus
+' SOVELLUS : DOCUMENTS — Distribuution muokkaus
 ' KUVAUS   : Lataa olemassa olevan distribuution tiedot muokkauslomakkeelle
-'            ja mahdollistaa vastaanottajien lisÃ¤yksen tai poiston.
-' PÃ„IVITETTY: 2026-03-03
+'            ja mahdollistaa vastaanottajien lisäyksen tai poiston.
+' PÄIVITETTY: 2026-03-03
 '==========================================================================
 Private mDistrID As Long
 
@@ -64,7 +64,7 @@ ErrorHandler:
   Resume Cleanup
 End Sub
 Private Sub Lisaa_Click()
-'LisÃ¤Ã¤ uusi vastaanottaja
+'Lisää uusi vastaanottaja
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
    Me.Lista.Requery
 End Sub
@@ -130,7 +130,7 @@ ErrorHandler:
   MsgBox "Error adding recipient: " & Err.Description, vbExclamation, "Add Error"
 End Sub
 
-' IsNumeric() â€” using VBA built-in; private override removed to avoid compile ambiguity.
+' IsNumeric() — using VBA built-in; private override removed to avoid compile ambiguity.
 
 '''
 ' Vastaanottajat Double Click - Remove recipient from distribution

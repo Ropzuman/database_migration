@@ -10,7 +10,7 @@ Private Sub LoppuKoodi1_DblClick(Cancel As Integer)
     origType = IIf(IsNull(Forms!motortypes!MotorType), "", Forms!motortypes!MotorType)
 
     If InStr(1, origType, ".") > 0 Then
-        ' Korvataan VAIN ENSIMM√ÑINEN piste (Count:=1) ‚Äî est√§√§ usean pisteen vahingollisen korvauksen
+        ' Korvataan VAIN ENSIMMƒINEN piste (Count:=1) ó est‰‰ usean pisteen vahingollisen korvauksen
         UusiTyyppi = Replace(origType, ".", endCode, 1, 1)
         Forms!motortypes!MotorType = UusiTyyppi
         If IsLoaded("SiemensConstrCodeLastPosition") Then
@@ -20,7 +20,7 @@ Private Sub LoppuKoodi1_DblClick(Cancel As Integer)
         If IsLoaded("SiemensConstrCodeLastPosition") Then
             DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
         End If
-        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkiss√§ ei ollut pistett√§." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
+        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkiss‰ ei ollut pistett‰." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
     End If
 End Sub
 
@@ -33,7 +33,7 @@ Private Sub LoppuKoodi2_DblClick(Cancel As Integer)
     origType = IIf(IsNull(Forms!motortypes!MotorType), "", Forms!motortypes!MotorType)
 
     If InStr(1, origType, ".") > 0 Then
-        ' Korvataan VAIN ENSIMM√ÑINEN piste (Count:=1) ‚Äî est√§√§ usean pisteen vahingollisen korvauksen
+        ' Korvataan VAIN ENSIMMƒINEN piste (Count:=1) ó est‰‰ usean pisteen vahingollisen korvauksen
         UusiTyyppi = Replace(origType, ".", endCode, 1, 1)
         Forms!motortypes!MotorType = UusiTyyppi
         If IsLoaded("SiemensConstrCodeLastPosition") Then
@@ -43,6 +43,6 @@ Private Sub LoppuKoodi2_DblClick(Cancel As Integer)
         If IsLoaded("SiemensConstrCodeLastPosition") Then
             DoCmd.Close acForm, "SiemensConstrCodeLastPosition"
         End If
-        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkiss√§ ei ollut pistett√§." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
+        MsgBox "Koodia ei muutettu!" & vbCrLf & "Tyyppimerkiss‰ ei ollut pistett‰." & vbCrLf & "Tarkista luettelosta!", vbExclamation, "Huomio"
     End If
 End Sub

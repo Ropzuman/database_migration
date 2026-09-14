@@ -107,14 +107,14 @@ Dim oAttrib As Variant
 On Error GoTo ErrorHandler
 
   AppActivate oACAD.Caption
-  'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
+  'oDOC.SendCommand "^C^C" & vbCrLf  'Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
   oDOC.Utility.GetEntity Valinta, Point, "Choose Device..."
   
   If Valinta.ObjectName = "AcDbBlockReference" Then
     Set Asetukset = CurrentDb.OpenRecordset("SETTINGS")
     BlockNimi = UCase$(Valinta.Name)
-    Do While Not Asetukset.EOF 'Tarkistetaan ett√§ blokin nimi l√∂ytyy luettelosta
-      If UCase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then   'L√∂yty
+    Do While Not Asetukset.EOF 'Tarkistetaan ett‰ blokin nimi lˆytyy luettelosta
+      If UCase$(Asetukset.Fields("[VALUE]")) = BlockNimi Then   'Lˆyty
         Oikea = True
         Exit Do
       End If
@@ -273,11 +273,11 @@ Set oDOC = oACAD.Documents.Open(BasePath & IndexBase & ".dwg")
 aX = 30        'Aloituspiste Xl
 
 aY = 275       'Aloituspiste Y
-PosSivu = 40   'Position ja sivun v√§linen et√§isyys x akselilla
-Seuraava = 90  'Seuraavan positiosarakkeen et√§isyys edellisest√§
-MinY = 40      'Mini Y koordinaatti johon asti tekstej√§ tehd√§√§n
-MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehd√§√§n ennen sivunvaihtoa
-RiviVali = 5   'Tekstien riviv√§li
+PosSivu = 40   'Position ja sivun v‰linen et‰isyys x akselilla
+Seuraava = 90  'Seuraavan positiosarakkeen et‰isyys edellisest‰
+MinY = 40      'Mini Y koordinaatti johon asti tekstej‰ tehd‰‰n
+MaxX = 333     'Maksimi X koordinaatti, johon sarakkeita tehd‰‰n ennen sivunvaihtoa
+RiviVali = 5   'Tekstien riviv‰li
 TextSize = 2.5 'Tekstien koko
 
 
@@ -293,7 +293,7 @@ End If
   If edPOS <> Taul.Fields("TEXT_4") Then
     If Sivut <> "" Then
       If Piste(1) = aY Then
-        'Lis√§t√§√§n ensin otsikot
+        'Lis‰t‰‰n ensin otsikot
         oDOC.ModelSpace.AddText "POSITION", Piste, TextSize + 0.5
         oDOC.ModelSpace.AddText "PAGE", Piste2, TextSize + 0.5
         Piste(1) = Piste(1) - RiviVali - 1
@@ -362,12 +362,12 @@ ErrorHandler:
 End Sub
 
 Private Sub Command89_Click()
-'Tyhjenn√§ IN
+'Tyhjenn‰ IN
   Tyhjenna "IN"
 End Sub
 
 Private Sub Command90_Click()
-'Tyhjenn√§ OUT
+'Tyhjenn‰ OUT
   Tyhjenna "OUT"
 End Sub
 
@@ -378,11 +378,11 @@ Dim iPoint(2) As Double
 Dim BName As String
 Dim Piste As String
 Dim PointBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
-On Error GoTo Virhe 'T√§ytyy olla, jos GetPoint ei toimikaan
+On Error GoTo Virhe 'T‰ytyy olla, jos GetPoint ei toimikaan
   
   AppActivate oACAD.Caption
-  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
-  'K√§sket√§√§n klikata jotain pistett√§
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
+  'K‰sket‰‰n klikata jotain pistett‰
 Virhe:
 
   gPoint = oDOC.Utility.GetPoint(, "Set start point")
@@ -393,10 +393,10 @@ Virhe:
 '---------------------------------------------------------
   Piste = DoubleToPoint(CDbl(iPoint(0))) & "," & DoubleToPoint(CDbl(iPoint(1)))
   BName = BlockPath & "POINT.DWG"
-  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
+  'oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
   Set PointBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
-  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingiss√§
+  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingiss‰
   Dim InsPointP As Variant
   InsPointP = PointBlock.InsertionPoint
   With PointBlock
@@ -432,7 +432,7 @@ Dim i As Integer
   On Error Resume Next
   
   AppActivate oACAD.Caption
-'  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
+'  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
   
   
 '  For i = 0 To oDOC.Layers.Count - 1
@@ -448,17 +448,17 @@ Dim i As Integer
     Do
       Piste = oDOC.Utility.GetPoint(sPoint, "Set end point or end drawing")
       If Err <> 0 Then
-        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yht√§k√§√§n viiva oli piirretty
-        Else 'Lopetettiin, piirret√§√§n viivan p√§√§
-        '------- VIIVJEN P√Ñ√ÑT ---------
+        If ViimViiva Is Nothing Then 'Lopetettiin ennen kuin yht‰k‰‰n viiva oli piirretty
+        Else 'Lopetettiin, piirret‰‰n viivan p‰‰
+        '------- VIIVJEN PƒƒT ---------
         
-        Err.Clear 'Tyhjennet√§√§n GetPoint-virhe ennen viivap√§√§-kutsuja
+        Err.Clear 'Tyhjennet‰‰n GetPoint-virhe ennen viivap‰‰-kutsuja
         ViivaPaa ALKU, BNameA, LyhennysA
         ViivaPaa LOPPU, BNameL, LyhennysL
 
-        If ALKU <> 4 Then 'Piirret√§√§n alkuun joku symboli.
-            ' KORJATTU: .StartPoint palauttaa Variant-taulukon late bindingiss√§ -
-            ' suora indeksointi .StartPoint(0) heitt√§√§ virheen 451 (maskautui Resume Next)
+        If ALKU <> 4 Then 'Piirret‰‰n alkuun joku symboli.
+            ' KORJATTU: .StartPoint palauttaa Variant-taulukon late bindingiss‰ -
+            ' suora indeksointi .StartPoint(0) heitt‰‰ virheen 451 (maskautui Resume Next)
             Dim StartPt As Variant
             StartPt = EkaViiva.StartPoint
             iPoint(0) = StartPt(0)
@@ -470,8 +470,8 @@ Dim i As Integer
             oDOC.ModelSpace.InsertBlock iPoint, BNameA, 1, 1, 1, Rotation
         End If
         
-        If LOPPU <> 4 Then 'Piirret√§√§n loppuun joku symboli
-            ' KORJATTU: .EndPoint palauttaa Variant-taulukon late bindingiss√§
+        If LOPPU <> 4 Then 'Piirret‰‰n loppuun joku symboli
+            ' KORJATTU: .EndPoint palauttaa Variant-taulukon late bindingiss‰
             Dim EndPt As Variant
             EndPt = ViimViiva.EndPoint
             iPoint(0) = EndPt(0)
@@ -485,7 +485,7 @@ Dim i As Integer
         Set EkaViiva = Nothing
         Set ViimViiva = Nothing
         
-        '------- VIIVAN P√Ñ√Ñ ---------
+        '------- VIIVAN Pƒƒ ---------
         End If
         AppActivate CurrentDb.Properties("AppTitle").VALUE
         Exit Do
@@ -511,7 +511,7 @@ If Merkki = 1 Then 'Nuoli
 ElseIf Merkki = 2 Then 'Nuoli ja Not merkki
   Blokki = BlockPath & "NOTARROW.DWG"
   Lyhennys = 7.5
-ElseIf Merkki = 3 Then 'Piste - KORJATTU: k√§ytet√§√§n parametria Merkki, ei ALKU-lomakekentt√§√§
+ElseIf Merkki = 3 Then 'Piste - KORJATTU: k‰ytet‰‰n parametria Merkki, ei ALKU-lomakekentt‰‰
   Blokki = BlockPath & "POINT.DWG"
   Lyhennys = 0
 Else
@@ -532,16 +532,16 @@ End Sub
 
 Private Sub Form_Load()
 
-'Yhdistet√§√§n ensin AutoCADiin
+'Yhdistet‰‰n ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-  If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+  If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
     
     Set oACAD = CreateObject("AutoCad.Application")
     
     If oACAD Is Nothing Then
-        MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+        MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
         Set oACAD = Nothing
         Unload Me
         Exit Sub
@@ -611,25 +611,25 @@ Dim iPoint(2) As Double
 Dim gPoint As Variant
 Dim Piste As String
 On Error GoTo Virhe
-'Liitet√§√§n ensin blokki kuvaan
+'Liitet‰‰n ensin blokki kuvaan
   Set oDOC = oACAD.ActiveDocument
   
   If Dir(BlockPath & Blokki.VALUE & ".dwg") = "" Then
-    MsgBox "Insertoitavaa blokkia ei l√∂ytynyt", vbCritical, "Insertoi"
+    MsgBox "Insertoitavaa blokkia ei lˆytynyt", vbCritical, "Insertoi"
     Exit Sub
   End If
   
   AppActivate oACAD.Caption
-  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett√§ ollaan poistuttu komennosta
+  oDOC.SendCommand Chr(27) & Chr(27) 'Varmistetaan ett‰ ollaan poistuttu komennosta
   
 'AutoCAD etsii itse pisteen
-'K√§sket√§√§n klikata jotain pistett√§
+'K‰sket‰‰n klikata jotain pistett‰
 Virhe:
   gPoint = oDOC.Utility.GetPoint(, "Set start point")
   Err.Clear
   On Error GoTo ErrorHandler
   
-  ' Tarkistetaan, ett√§ k√§ytt√§j√§ valitsi pisteen eik√§ perunut
+  ' Tarkistetaan, ett‰ k‰ytt‰j‰ valitsi pisteen eik‰ perunut
   If IsEmpty(gPoint) Or IsNull(gPoint) Then
     AppActivate CurrentDb.Properties("AppTitle").VALUE
     Exit Sub
@@ -643,10 +643,10 @@ Virhe:
   Set oBlock = oDOC.ModelSpace.InsertBlock(iPoint, BName, 1, 1, 1, 0)
   'Kirjoitetaan arvot textboxeista
   KirjoitaAttribuutit
-  'Annetaan komentorivikomento jolla saadaan siirretty√§ blokkia haluttuun paikkaan
+  'Annetaan komentorivikomento jolla saadaan siirretty‰ blokkia haluttuun paikkaan
   oDOC.SendCommand "(command ""move"" ""last"" """" """ & Piste & """)" & vbCr
-  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingiss√§ - indeksointi
-  ' suoraan .InsertionPoint(0) heitt√§√§ virheen 451; tallennetaan ensin muuttujaan
+  ' KORJATTU: InsertionPoint palauttaa Variant-taulukon late bindingiss‰ - indeksointi
+  ' suoraan .InsertionPoint(0) heitt‰‰ virheen 451; tallennetaan ensin muuttujaan
   Dim InsPoint As Variant
   InsPoint = oBlock.InsertionPoint
   With oBlock
@@ -672,7 +672,7 @@ Virhe:
 ErrorHandler:
   Set oBlock = Nothing
   AppActivate CurrentDb.Properties("AppTitle").VALUE
-  MsgBox "Virhe blokin insertoinnissa: " & Err.Description, vbExclamation, "Lis√§ys"
+  MsgBox "Virhe blokin insertoinnissa: " & Err.Description, vbExclamation, "Lis‰ys"
 End Sub
 Private Function DoubleToPoint(ByVal Piste As Double) As String
 Dim APU As String
@@ -694,9 +694,9 @@ Private Function Arvo(Tieto As Variant) As String
 End Function
 Private Sub TaytaTextBoxit(oAttrib As Variant)
 Dim i As Integer
-'Tyhjennet√§√§n ensin kaikki textBoxit
+'Tyhjennet‰‰n ensin kaikki textBoxit
   TyhjennaKentat
-  For i = 0 To UBound(oAttrib)  'K√§yd√§√§n l√§pi kaikki blokin attribuutit
+  For i = 0 To UBound(oAttrib)  'K‰yd‰‰n l‰pi kaikki blokin attribuutit
     With oAttrib(i)
       Select Case Left$(UCase$(.TagString), Len(.TagString) - 1)
         Case "TXT", "TEXT_"
@@ -848,8 +848,8 @@ End Sub
 
 
 Private Sub astC_Click()
-' Lis√§t√§√§n l√§mp√∂tilayksikk√∂ ¬∞C tekstikentt√§√§n
-Text_5.VALUE = Text_5.VALUE & " ¬∞C"
+' Lis‰t‰‰n l‰mpˆtilayksikkˆ ∞C tekstikentt‰‰n
+Text_5.VALUE = Text_5.VALUE & " ∞C"
 End Sub
 
 Private Sub OPEN_LIMIT_F_Click()
@@ -906,7 +906,7 @@ T_IN1.VALUE = ""
 T_IN2.VALUE = ""
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
-Text_2.VALUE = "K√ÑY"
+Text_2.VALUE = "KƒY"
 T_OUT1.VALUE = ""
 T_OUT2.VALUE = ""
 T_OUT3.VALUE = ""
@@ -914,8 +914,8 @@ T_OUT4.VALUE = ""
 Blokki.VALUE = "TRANSITION2"
 End Sub
 Private Sub uS_cm_Click()
-' Lis√§t√§√§n johtokykyasikk√∂ ¬µS/cm tekstikentt√§√§n
-Text_5.VALUE = Text_5.VALUE & " ¬µS/cm"
+' Lis‰t‰‰n johtokykyasikkˆ µS/cm tekstikentt‰‰n
+Text_5.VALUE = Text_5.VALUE & " µS/cm"
 End Sub
 Private Sub S_cm_Click()
 Text_5.VALUE = Text_5.VALUE & " mS/cm"
@@ -1025,7 +1025,7 @@ T_IN2.VALUE = ""
 T_IN3.VALUE = ""
 T_IN4.VALUE = ""
 Text_1.VALUE = ""
-Text_2.VALUE = "H√§t√§seispainike 1"
+Text_2.VALUE = "H‰t‰seispainike 1"
 Text_3.VALUE = "ERITILAT"
 Text_4.VALUE = ""
 T_OUT1.VALUE = ""

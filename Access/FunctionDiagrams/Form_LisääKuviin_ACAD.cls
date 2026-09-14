@@ -4,7 +4,7 @@ Option Explicit
 #If VBA7 Then
     Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 #Else
-    Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+    Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 #End If
 '==========================================================================
 ' LOMAKE   : Form_LisääKuviin_ACAD
@@ -74,7 +74,7 @@ Dim Nimi As String
 Dim Taulu As DAO.Recordset
 Dim oEnt As Object '(acadentity - muutettu late binding)
 Dim oAcad As Object '(AutoCAD.AcadApplication - muutettu late binding)
-Dim db As DAO.Database
+Dim DB As DAO.Database
 
 Ajastin = Timer
 Debug.Print "  Timer started"
@@ -96,9 +96,9 @@ Debug.Print "  Path: " & Polku
 Tied = Dir(Polku & "*.dwg")
 Debug.Print "  Clearing Blokit table for path: " & Polku
 ' Poistetaan vain kyseisen hakemiston blokit — suojaa muiden projektien data
-Set db = CurrentDb
-db.Execute "DELETE * FROM Blokit WHERE Path='" & Replace(Polku, "'", "''") & "'", dbFailOnError
-Set Taulu = db.OpenRecordset("Blokit", dbOpenDynaset)
+Set DB = CurrentDb
+DB.Execute "DELETE * FROM Blokit WHERE Path='" & Replace(Polku, "'", "''") & "'", dbFailOnError
+Set Taulu = DB.OpenRecordset("Blokit", dbOpenDynaset)
 Debug.Print "  Processing DWG files..."
 Do While Tied <> ""
   Nimi = Left$(Tied, Len(Tied) - 4)
@@ -128,7 +128,7 @@ If Not Taulu Is Nothing Then
     Taulu.Close
     Set Taulu = Nothing
 End If
-Set db = Nothing
+Set DB = Nothing
 ' AutoCAD-istuntoa ei suljeta tässä, jotta käyttäjä voi jatkaa työskentelyä tekstien haun jälkeen.
 Set oAcad = Nothing
 On Error GoTo 0
@@ -185,7 +185,7 @@ Private Sub HaeValitutTekstit_Click()
     Set Taulu = CurrentDb.OpenRecordset("Blokit")
 
     Set oDoc = oAcad.ActiveDocument
-    Hakemisto = oDoc.Path
+    Hakemisto = oDoc.PATH
     
     ' Hallitaan valintajoukkoa
     On Error Resume Next
@@ -484,7 +484,7 @@ Dim DB As Object ' DAO.Database
 Dim Kuvat As Object ' DAO.Recordset
 Dim DbBlokit As Object ' DAO.Recordset
 Dim Tiedot As Object ' DAO.Recordset
-Dim FSO As Object
+Dim FSO As New FileSystemObject
 Dim Tiedosto As String
 Dim Blokki As Object ' AcadBlockReference
 Dim Attribuutit As Variant
@@ -501,7 +501,6 @@ Dim oAcad As Object 'AutoCAD.AcadApplication
 Dim OS As Long, OS2 As Long
 Dim Kysely As String
 
-Set FSO = CreateObject("Scripting.FileSystemObject")
 Set DB = CurrentDb
 Ajastin = Timer
 LokiPituus = 0
@@ -982,7 +981,7 @@ Private Function PoimiHakemisto(AHakem As String) As String
       .lpstrTitle = Otsikko
       .flags = 0
     End With
-    lReturn = CLng(GetOpenFileName(OpenFile))
+    lReturn = GetOpenFileName(OpenFile)
     If lReturn = 0 Then 'Painettiin Cancel painiketta. Palautetaan alkuperäinen hakemisto
        PoimiHakemisto = AHakem
     Else 'Otetaan ylös Tiedostonimi ja Hakemisto
@@ -996,7 +995,7 @@ Private Sub TeeEtusivu_Click()
 Dim DB As Object ' DAO.Database
 Dim Kuvat As Object ' DAO.Recordset
 Dim DbBlokit As Object ' DAO.Recordset
-Dim FSO As Object
+Dim FSO As New FileSystemObject
 Dim Tiedosto As String
 Dim Blokki As Object ' AcadBlockReference
 Dim Attribuutit As Variant
@@ -1011,7 +1010,6 @@ Dim NextPage As String
 Dim CurrPage As String
 ReDim Paikat(1 To 1)
 
-Set FSO = CreateObject("Scripting.FileSystemObject")
 Set DB = CurrentDb
 Ajastin = Timer
 LokiPituus = 0
@@ -1274,12 +1272,10 @@ End Sub
 
 Private Function TallennaUusiKuva(TallNimi As String, Loppu As Boolean, oAcad As Object)
         
-Dim FSO As Object
+Dim FSO As New FileSystemObject
 Dim KuvaNimi As String
 Dim Tiedosto As String
 'Dim oAcad As Object 'AutoCAD.AcadApplication
-
-Set FSO = CreateObject("Scripting.FileSystemObject")
 
         KuvaNimi = Me.KuvaHakem.Value & TallNimi '& "xxx" ' & ".dwg"
         

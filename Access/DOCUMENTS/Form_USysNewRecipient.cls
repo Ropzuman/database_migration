@@ -1,11 +1,11 @@
-ï»¿Option Compare Database
+Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysNewRecipient
-' SOVELLUS : DOCUMENTS â€” Uuden vastaanottajan lisÃ¤ys
-' KUVAUS   : LisÃ¤Ã¤ tai hakee vastaanottajatietoja USysRecipients-tauluun.
+' SOVELLUS : DOCUMENTS — Uuden vastaanottajan lisäys
+' KUVAUS   : Lisää tai hakee vastaanottajatietoja USysRecipients-tauluun.
 '            Lista_DblClick lataa valitun vastaanottajan tiedot kenttiin.
-' PÃ„IVITETTY: 2026-03-03
+' PÄIVITETTY: 2026-03-03
 '==========================================================================
 Private Sub BExit_Click()
   DoCmd.Close

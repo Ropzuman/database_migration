@@ -1,12 +1,12 @@
 Option Compare Database
 Option Explicit
 
-' KORJATTU: GetUserNameA kirjoittaa DWORD:n (32-bit) ‚Äî nSize on ByRef Long, ei LongPtr
+' KORJATTU: GetUserNameA kirjoittaa DWORD:n (32-bit) ó nSize on ByRef Long, ei LongPtr
 #If VBA7 Then
     Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     ' --------- [ CHOOSE FILE ] -----------------
-    ' KORJATTU: GetOpenFileName palauttaa BOOL/osoitteen ‚Äî LongPtr 64-bittisell√§
+    ' KORJATTU: GetOpenFileName palauttaa BOOL/osoitteen ó LongPtr 64-bittisell‰
     Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
         (pOpenfilename As OPENFILENAME) As LongPtr
 #Else
@@ -16,7 +16,7 @@ Option Explicit
         (pOpenfilename As OPENFILENAME) As Long
 #End If
 
-' UDT m√§√§ritell√§√§n ehdollisen k√§√§nn√∂ksen ulkopuolella (Access-lomakeyhteensopivuus)
+' UDT m‰‰ritell‰‰n ehdollisen k‰‰nnˆksen ulkopuolella (Access-lomakeyhteensopivuus)
 Public Type OPENFILENAME
     lStructSize As Long
 #If VBA7 Then
@@ -212,8 +212,8 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
     End With
     lReturn = GetOpenFileName(OpenFile)
     If lReturn = 0 Then
-        'Painettiin Cancel painiketta. Ei tehd√§ mit√§√§n
-    Else 'Otetaan yl√∂s Tiedostonimi ja Hakemisto
+        'Painettiin Cancel painiketta. Ei tehd‰ mit‰‰n
+    Else 'Otetaan ylˆs Tiedostonimi ja Hakemisto
        ValitseTiedosto = Left(OpenFile.lpstrFile, InStr(OpenFile.lpstrFile, Chr(0)) - 1)
     End If
 

@@ -3,14 +3,14 @@ Option Explicit
 
 '================================================================================
 ' Moduuli: USysCheck
-' Tarkoitus: K√§ytt√§j√§seuranta ja validointity√∂kalut
-' P√§ivitetty: 2025-11-13 ‚Äî VBA7/64-bit tuki lis√§tty
-'             2026-03-03 ‚Äî Poistettu virheellinen DB.Close CurrentDb-viittaukselta
-'             2026-03-06 ‚Äî Kentt√§indeksit korvattu nimetyill√§ sarakkeilla (yll√§pidett√§vyys)
+' Tarkoitus: K‰ytt‰j‰seuranta ja validointityˆkalut
+' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
+'             2026-03-03 ó Poistettu virheellinen DB.Close CurrentDb-viittaukselta
+'             2026-03-06 ó Kentt‰indeksit korvattu nimetyill‰ sarakkeilla (yll‰pidett‰vyys)
 '
 ' Kuvaus:
-'   Kirjaa tietokantaan kirjautuvat k√§ytt√§j√§t tallentamalla verkkok√§ytt√§j√§nimen,
-'   tietokannan k√§ytt√§j√§nimen, tietokoneen nimen ja aikaleiman UsysUsers-tauluun.
+'   Kirjaa tietokantaan kirjautuvat k‰ytt‰j‰t tallentamalla verkkok‰ytt‰j‰nimen,
+'   tietokannan k‰ytt‰j‰nimen, tietokoneen nimen ja aikaleiman UsysUsers-tauluun.
 '
 ' Riippuvuudet:
 '   - Windows API (advapi32.dll, Kernel32)
@@ -19,8 +19,8 @@ Option Explicit
 '================================================================================
 
 '---------------------------------------------
-' Windows API -esittelyt ‚Äî 64-bit-yhteensopiva
-' Huom: nSize on Long (32-bit DWORD), ei LongPtr ‚Äî v√§ltet√§√§n Type Mismatch
+' Windows API -esittelyt ó 64-bit-yhteensopiva
+' Huom: nSize on Long (32-bit DWORD), ei LongPtr ó v‰ltet‰‰n Type Mismatch
 '---------------------------------------------
 #If VBA7 Then
     Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
@@ -32,12 +32,12 @@ Option Explicit
 
 '================================================================================
 ' Funktio: SniffUser
-' Tarkoitus: Kirjaa nykyisen k√§ytt√§j√§n tiedot UsysUsers-tauluun
+' Tarkoitus: Kirjaa nykyisen k‰ytt‰j‰n tiedot UsysUsers-tauluun
 ' Palauttaa: Ei paluuarvoa
 '
 ' Kuvaus:
-'   Hakee verkkok√§ytt√§j√§nimen ja tietokoneen nimen Windows API:lta,
-'   yhdist√§√§ ne Access CurrentUser() -funktioon, ja kirjaa tiedot
+'   Hakee verkkok‰ytt‰j‰nimen ja tietokoneen nimen Windows API:lta,
+'   yhdist‰‰ ne Access CurrentUser() -funktioon, ja kirjaa tiedot
 '   UsysUsers-tauluun aikaleiman kera.
 '================================================================================
 Function SniffUser()
@@ -53,7 +53,7 @@ Function SniffUser()
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     
-    ' Haetaan Windows-verkkok√§ytt√§j√§nimi
+    ' Haetaan Windows-verkkok‰ytt‰j‰nimi
     If api_GetUserName(NBuffer, BuffSize) Then
       NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
     Else
@@ -75,25 +75,25 @@ Function SniffUser()
     
     With Taulu
         .AddNew
-        .Fields("Verkkotunnus") = NWUserName     ' Windows-verkkok√§ytt√§j√§nimi
-        .Fields("AccessTunnus") = CurrentUser()  ' Access-tietokannan k√§ytt√§j√§nimi
+        .Fields("Verkkotunnus") = NWUserName     ' Windows-verkkok‰ytt‰j‰nimi
+        .Fields("AccessTunnus") = CurrentUser()  ' Access-tietokannan k‰ytt‰j‰nimi
         .Fields("KoneenNimi")   = CName          ' Tietokoneen nimi
         .Fields("Aikaleima")    = Now             ' Kirjaushetki
         .Update
     End With
     
-    ' Suljetaan oikein ‚Äî .Close ennen Set Nothing (DAO-s√§√§nt√∂)
+    ' Suljetaan oikein ó .Close ennen Set Nothing (DAO-s‰‰ntˆ)
     Taulu.Close
     Set Taulu = Nothing
-    ' CurrentDb-viittausta EI suljeta .Close-kutsulla ‚Äî vain Set Nothing
+    ' CurrentDb-viittausta EI suljeta .Close-kutsulla ó vain Set Nothing
     Set DB = Nothing
     Exit Function
     
 ErrorHandler:
-    ' Hiljainen virheenk√§sittely ‚Äî ei keskeytet√§ sovelluksen toimintaa
+    ' Hiljainen virheenk‰sittely ó ei keskeytet‰ sovelluksen toimintaa
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing
-    ' CurrentDb-viittausta EI suljeta .Close-kutsulla ‚Äî vain Set Nothing
+    ' CurrentDb-viittausta EI suljeta .Close-kutsulla ó vain Set Nothing
     Set DB = Nothing
 End Function

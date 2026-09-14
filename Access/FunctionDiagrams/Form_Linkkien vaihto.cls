@@ -2,16 +2,16 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_Linkkien vaihto
-' SOVELLUS : FunctionDiagrams ‚Äî Tietokantayhteyksien p√§ivitys
-' KUVAUS   : P√§ivitt√§√§ kaikki linkitetyt taulut nykyiseen hakemistoon.
-'            Lukee MSysObjects-j√§rjestelm√§taulusta linkitettyjen taulujen
-'            polut, vertaa nykyiseen kannan sijaintiin ja uudelleenlinkitt√§√§
-'            poikkeamat TableDef.RefreshLink-menetelm√§ll√§. Tarvitaan kun kanta
-'            siirret√§√§n uuteen hakemistoon.
-' HUOM     : K√§sittelee vain Jet/ISAM-tyyppisi√§ linkitettyj√§ tauluja
-'            (MSysObjects.Type = 6). ODBC-linkit eiv√§t ole polkumuotoisia
-'            eik√§ niit√§ pid√§ sy√∂tt√§√§ polun j√§sennykseen.
-' P√ÑIVITETTY: 2026-03-03 (tarkistettu ja korjattu)
+' SOVELLUS : FunctionDiagrams ó Tietokantayhteyksien p‰ivitys
+' KUVAUS   : P‰ivitt‰‰ kaikki linkitetyt taulut nykyiseen hakemistoon.
+'            Lukee MSysObjects-j‰rjestelm‰taulusta linkitettyjen taulujen
+'            polut, vertaa nykyiseen kannan sijaintiin ja uudelleenlinkitt‰‰
+'            poikkeamat TableDef.RefreshLink-menetelm‰ll‰. Tarvitaan kun kanta
+'            siirret‰‰n uuteen hakemistoon.
+' HUOM     : K‰sittelee vain Jet/ISAM-tyyppisi‰ linkitettyj‰ tauluja
+'            (MSysObjects.Type = 6). ODBC-linkit eiv‰t ole polkumuotoisia
+'            eik‰ niit‰ pid‰ syˆtt‰‰ polun j‰sennykseen.
+' PƒIVITETTY: 2026-03-03 (tarkistettu ja korjattu)
 '==========================================================================
 
 Private Const POISSULJETTU_TAULU As String = "MotorData"
@@ -29,8 +29,8 @@ Dim Taul As DAO.Recordset
 Dim Taulu As String
 Dim db As DAO.Database
 Dim tdf As DAO.TableDef
-Dim kasitellyt As New Collection      ' jo k√§sitellyt taulujen nimet
-Dim epaonnistuneet As String          ' RefreshLink-kutsussa ep√§onnistuneet taulut
+Dim kasitellyt As New Collection      ' jo k‰sitellyt taulujen nimet
+Dim epaonnistuneet As String          ' RefreshLink-kutsussa ep‰onnistuneet taulut
 Dim viimeinenKauttaviiva As Long
 Dim Kohdetiedosto As String
 Dim virhenumero As Long
@@ -51,14 +51,14 @@ Debug.Print "  Processing linked tables..."
 Do While Not Taul.EOF
   Taulu = Taul.Fields("Name")
 
-  ' Ohita taulu jos se on jo k√§sitelty (esim. useampi rivi samalle nimelle)
+  ' Ohita taulu jos se on jo k‰sitelty (esim. useampi rivi samalle nimelle)
   If Not JoKasitelty(kasitellyt, Taulu) Then
     kasitellyt.Add Taulu, Taulu
     Debug.Print "  Checking table: " & Taulu
 
     viimeinenKauttaviiva = InStrRev(Taul.Fields("Database"), "\")
     If viimeinenKauttaviiva = 0 Then
-      ' Ei tunnistettua tiedostopolkua (esim. ODBC-linkki) - ohitetaan turvallisuussyist√§
+      ' Ei tunnistettua tiedostopolkua (esim. ODBC-linkki) - ohitetaan turvallisuussyist‰
       Debug.Print "  SKIPPED (no file path found, not a Jet link?): " & Taul.Fields("Database")
     Else
       Polku2 = LCase$(Left$(Taul.Fields("Database"), viimeinenKauttaviiva))
@@ -70,9 +70,9 @@ Do While Not Taul.EOF
         Kohdetiedosto = Polku & Nimi
         If Len(Dir$(Kohdetiedosto)) = 0 Then
           Debug.Print "  Link update FAILED: target database not found: " & Kohdetiedosto
-          epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei l√∂ydy: " & Kohdetiedosto & ")" & vbCrLf
+          epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei lˆydy: " & Kohdetiedosto & ")" & vbCrLf
         Else
-          ' P√§ivit√§ yhteys rikkomatta taulun rakennetta tai relaatioita.
+          ' P‰ivit‰ yhteys rikkomatta taulun rakennetta tai relaatioita.
           Set tdf = db.TableDefs(Taulu)
           tdf.Connect = ";DATABASE=" & Kohdetiedosto
 
@@ -102,7 +102,7 @@ Set db = Nothing
 
 If Len(epaonnistuneet) > 0 Then
   Debug.Print "Command0_Click: COMPLETED WITH ERRORS"
-  MsgBox "Osa taulujen linkeist√§ ei p√§ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
+  MsgBox "Osa taulujen linkeist‰ ei p‰ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
 Else
   Debug.Print "Command0_Click: COMPLETED successfully - All table links updated"
   MsgBox "Valmis"
@@ -122,7 +122,7 @@ ErrorHandler:
     Set tdf = Nothing
     Set db = Nothing
     On Error GoTo 0
-    MsgBox "Virhe tauluyhteyksien p√§ivityksess√§ (" & virhenumero & "): " & virhekuvaus, vbCritical
+    MsgBox "Virhe tauluyhteyksien p‰ivityksess‰ (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub
 
 ' Palauttaa True jos taulun nimi on jo listassa (Collection-pohjainen haku).

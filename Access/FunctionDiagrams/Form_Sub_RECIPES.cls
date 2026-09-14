@@ -2,15 +2,15 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_Sub_RECIPES
-' SOVELLUS : FunctionDiagrams ‚Äî Reseptinvalinta-alilomake
-' KUVAUS   : Funktiokaavion RECIPES-alilomake. Mik√§ tahansa kentt√§
+' SOVELLUS : FunctionDiagrams ó Reseptinvalinta-alilomake
+' KUVAUS   : Funktiokaavion RECIPES-alilomake. Mik‰ tahansa kentt‰
 '            (CODE, ID, INFO, PROCESS) kaksoisnapsautettuna kutsuu
-'            ReseptiKayttoon()-proseduuria. Se tarkistaa k√§ytt√§j√§lt√§
-'            vahvistuksen ja lis√§√§ Control-tauluun vain ne blokit,
-'            joita piirille ei viel√§ ole m√§√§ritelty ‚Äî olemassa olevia
+'            ReseptiKayttoon()-proseduuria. Se tarkistaa k‰ytt‰j‰lt‰
+'            vahvistuksen ja lis‰‰ Control-tauluun vain ne blokit,
+'            joita piirille ei viel‰ ole m‰‰ritelty ó olemassa olevia
 '            blokkeja ei ylikirjoiteta.
-' DIPLE    : Option Explicit; On Error GoTo + Set DB = Nothing lis√§tty.
-' P√ÑIVITETTY: 2026-03-03
+' DIPLE    : Option Explicit; On Error GoTo + Set DB = Nothing lis‰tty.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 Private Sub CODE_DblClick(Cancel As Integer)
@@ -28,8 +28,8 @@ Private Sub PROCESS_DblClick(Cancel As Integer)
   ReseptiKayttoon
 End Sub
 Private Sub ReseptiKayttoon()
-' Ottaa valitun reseptin k√§ytt√∂√∂n t√§lle piirille.
-' Lis√§√§ Control-tauluun vain uudet blokit (jo olemassa oleviin ei kosketa).
+' Ottaa valitun reseptin k‰yttˆˆn t‰lle piirille.
+' Lis‰‰ Control-tauluun vain uudet blokit (jo olemassa oleviin ei kosketa).
 On Error GoTo ErrorHandler
 Dim TAreaCOde As String
 Dim TLoopNo As String
@@ -39,12 +39,12 @@ Dim sSQL As String
 TAreaCOde = Me.Parent.AreaCode
 TLoopNo = Me.Parent.LoopNo
 Set DB = CurrentDb
-If MsgBox("Otetaanko resepti (" & Me.PROCESS & " " & Me.CODE & ") k√§ytt√∂√∂n t√§lle piirille " & TAreaCOde & "-" & TLoopNo & "?", vbOKCancel, "Ota resepti k√§ytt√∂√∂n") = vbOK Then
+If MsgBox("Otetaanko resepti (" & Me.PROCESS & " " & Me.CODE & ") k‰yttˆˆn t‰lle piirille " & TAreaCOde & "-" & TLoopNo & "?", vbOKCancel, "Ota resepti k‰yttˆˆn") = vbOK Then
   ' Kirjataan valittu RecipeID piirilomakkeeseen
   Me.Parent.RecipeID = Me.ID
   Me.Parent.Refresh
   
-  ' Lis√§t√§√§n Control-tauluun vain blokit, joita piirille ei viel√§ ole m√§√§ritelty
+  ' Lis‰t‰‰n Control-tauluun vain blokit, joita piirille ei viel‰ ole m‰‰ritelty
   sSQL = "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) "
   sSQL = sSQL & "SELECT Loops_With_Recipes.RecipeID, Loops_With_Recipes.AreaCode, Loops_With_Recipes.LoopNo, Loops_With_Recipes.FBlock, Loops_With_Recipes.LoopSymb, Loops_With_Recipes.Suffix, Loops_With_Recipes.BlockPlace, Loops_With_Recipes.Description2, Loops_With_Recipes.Note, Loops_With_Recipes.Sivu, Loops_With_Recipes.Sivuja "
   sSQL = sSQL & "FROM Loops_With_Recipes LEFT JOIN Control ON (Loops_With_Recipes.FBlock = Control.FBlock) AND (Loops_With_Recipes.Suffix = Control.Suffix) AND (Loops_With_Recipes.LoopSymb = Control.LoopSymb) AND (Loops_With_Recipes.LoopNo = Control.LoopNo) AND (Loops_With_Recipes.AreaCode = Control.AreaCode) AND (Loops_With_Recipes.RecipeID = Control.RecipeID) "
@@ -62,5 +62,5 @@ ErrorHandler:
     Debug.Print "    AreaCode: " & TAreaCOde & ", LoopNo: " & TLoopNo
     Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
     Set DB = Nothing
-    MsgBox "Virhe reseptin k√§ytt√∂√∂notossa: " & Err.Description, vbCritical
+    MsgBox "Virhe reseptin k‰yttˆˆnotossa: " & Err.Description, vbCritical
 End Sub

@@ -2,12 +2,12 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_DISTRIBUTION
-' SOVELLUS : DOCUMENTS ‚Äî Distribuutioiden hallinta
-' KUVAUS   : Hallinnoi l√§hetysten (distribuutioiden) luontia, dokumenttien
-'            lis√§√§mist√§ distribuutioihin, TRANSMITTAL-raportin tulostusta
-'            sek√§ Excel-raporttien generointia. K√§ytt√§√§ transaktioita
+' SOVELLUS : DOCUMENTS ó Distribuutioiden hallinta
+' KUVAUS   : Hallinnoi l‰hetysten (distribuutioiden) luontia, dokumenttien
+'            lis‰‰mist‰ distribuutioihin, TRANSMITTAL-raportin tulostusta
+'            sek‰ Excel-raporttien generointia. K‰ytt‰‰ transaktioita
 '            atomaarisuuden takaamiseksi.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 '''
@@ -101,7 +101,7 @@ Cleanup:
     Exit Sub
     
 ErrorHandler:
-' Per√§ytet√§√§n transaktio virhetilanteessa
+' Per‰ytet‰‰n transaktio virhetilanteessa
     On Error Resume Next
     DBEngine.Rollback
     On Error GoTo 0
@@ -175,7 +175,7 @@ Private Sub ExcelRep(Ehto As String)
     
 Cleanup:
     If Not xlApp Is Nothing Then
-        ' Suljetaan Excel-prosessi ‚Äì ilman Quit-kutsua Excel j√§√§ taustalle zombina
+        ' Suljetaan Excel-prosessi ñ ilman Quit-kutsua Excel j‰‰ taustalle zombina
         On Error Resume Next
         xlApp.Quit
         On Error GoTo 0
@@ -204,7 +204,7 @@ DoCmd.OpenForm "Reserve Number"
 End Sub
 
 Private Sub EditDistrib_Click()
-  ' Muokataan vastaanottajia kyseisess√§ l√§hetyksess√§
+  ' Muokataan vastaanottajia kyseisess‰ l‰hetyksess‰
   If Me.TDistr.Value = "" Or IsNull(Me.TDistr.Value) Then
     MsgBox "Select Distribution First!", vbCritical, "Error!"
   Else

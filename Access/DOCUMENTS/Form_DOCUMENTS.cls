@@ -2,11 +2,11 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_DOCUMENTS
-' SOVELLUS : DOCUMENTS ‚Äî Dokumenttirekisterin p√§√§lomake
-' KUVAUS   : P√§√§lomake dokumenttien hallintaan: uusien dokumenttien lis√§ys,
+' SOVELLUS : DOCUMENTS ó Dokumenttirekisterin p‰‰lomake
+' KUVAUS   : P‰‰lomake dokumenttien hallintaan: uusien dokumenttien lis‰ys,
 '            revisioiden muokkaus, tiedostojen avaus, distribuutioiden
-'            hallinta sek√§ asiakkaan piirustunumeron varaus.
-' P√ÑIVITETTY: 2026-03-03
+'            hallinta sek‰ asiakkaan piirustunumeron varaus.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Const TV_DOC_CURRENT_COUNTER As String = "DOC_CurrentCounter"
 Private Const TV_DOC_DIST_REV As String = "DOC_AddToDistr_Rev"
@@ -29,7 +29,7 @@ Private Sub Add_Distr_Click()
   End If
 End Sub
 Private Sub AvaaTiedosto_Click()
-' Avaa dokumenttiin liitetyn tiedoston tai n√§ytt√§√§ tiedostolistan dialogi
+' Avaa dokumenttiin liitetyn tiedoston tai n‰ytt‰‰ tiedostolistan dialogi
 Dim fso As Object
 Dim Avattava As String
 
@@ -53,7 +53,7 @@ End If
 Set fso = Nothing
 End Sub
 Private Sub ClientDwg_Click()
-  ' Varaa asiakkaan piirustunumero, jos ei viel√§ varattuna
+  ' Varaa asiakkaan piirustunumero, jos ei viel‰ varattuna
   If IsNull(Me.ClientNo.Value) Then
     DoCmd.OpenForm "USysReserve", , , "Counter = " & Me.Counterfield.Value, , acDialog
     Me.Refresh
@@ -80,7 +80,7 @@ Private Sub LisaaUusi_Click()
   End If
 End Sub
 Private Sub CPath_Click()
-' Avataan hakemiston valinta -dialogi k√§ytt√∂polun asettamiseksi
+' Avataan hakemiston valinta -dialogi k‰yttˆpolun asettamiseksi
 Dim Hakemisto As String
   Hakemisto = ValitseHakemPaikallinen(IIf(IsNull(Me.WorkPath.Value), "", Me.WorkPath.Value))
   If Hakemisto <> "" Then
@@ -140,7 +140,7 @@ Private Sub Note_Click()
   Me.Note.Value = IIf(HaeCommonPaikallinen() = "", Null, HaeCommonPaikallinen())
 End Sub
 Private Sub OpenPath_Click()
-' Avaa ty√∂hakemiston Windows Explorerissa
+' Avaa tyˆhakemiston Windows Explorerissa
 Dim fso As Object
 
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -164,7 +164,7 @@ Private Sub Rev_Click()
   MuutaRevisio
 End Sub
 Private Sub MuutaRevisio()
-  ' Avataan revisioeditori ja tallennetaan tulos Rev-kentt√§√§n
+  ' Avataan revisioeditori ja tallennetaan tulos Rev-kentt‰‰n
   AsetaTempVar TV_DOC_REV_TEXT, Nz(Me.Rev.Value, "")
   DoCmd.OpenForm "USysRevText", , , , , acDialog
   If LueTempVarTeksti(TV_DOC_REV_TEXT) <> "" Then
@@ -174,7 +174,7 @@ Private Sub MuutaRevisio()
 End Sub
 
 Private Function ValitseHakemPaikallinen(Optional ByVal AloitusPolku As String = "") As String
-  ' K√§ytet√§√§n paikallista kansiovalitsinta, jotta k√§√§nn√∂s ei riipu ulkoisen moduulin n√§kyvyydest√§.
+  ' K‰ytet‰‰n paikallista kansiovalitsinta, jotta k‰‰nnˆs ei riipu ulkoisen moduulin n‰kyvyydest‰.
   Dim Dlg As Object
   Dim Polku As String
 

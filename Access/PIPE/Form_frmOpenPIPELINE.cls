@@ -1,17 +1,17 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
 ' Lomake: frmOpenPIPELINE
 ' Tarkoitus: Monisegmenttisten putkilinjojen segmentinvalitsin
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki lis√§tty
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki lis‰tty
 '
 ' Kuvaus:
-'   Kun putkilinja ulottuu useisiin piirustuksiin, t√§ll√§ lomakkeella valitaan segmentti:
-'   - N√§ytt√§√§ putkilinjasegmenttien listan PIPELINEDATA-taulukosta
-'   - N√§ytt√§√§ polun, piirustuksen, alueen, linjan, FROM ja TO kullekin segmentille
+'   Kun putkilinja ulottuu useisiin piirustuksiin, t‰ll‰ lomakkeella valitaan segmentti:
+'   - N‰ytt‰‰ putkilinjasegmenttien listan PIPELINEDATA-taulukosta
+'   - N‰ytt‰‰ polun, piirustuksen, alueen, linjan, FROM ja TO kullekin segmentille
 '   - Opens selected drawing and zooms to pipeline block
-'   - Avautuu automaattisesti, jos vain 2 segmentti√§ (yksi on otsikkorivi)
+'   - Avautuu automaattisesti, jos vain 2 segmentti‰ (yksi on otsikkorivi)
 '
 ' Riippuvuudet:
 '   - PIPELINEDATA-taulukko (tuotu putkilinjadata)
@@ -44,19 +44,19 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake ja t√§ytet√§√§n putkilinjasegmenttilista
+' Tarkoitus: Alustetaan lomake ja t‰ytet‰‰n putkilinjasegmenttilista
 '
 ' Toiminta:
-'   1. J√§sennet√§√§n OpenArgs (aluekoodi ja linjanumero)
+'   1. J‰sennet‰‰n OpenArgs (aluekoodi ja linjanumero)
 '   2. Rakennetaan SQL-kysely PIPELINEDATA-taulukkoon
-'   3. T√§ytet√§√§n Lista-listaruutu tuloksilla
-'   4. Jos vain 2 rivi√§ (otsikko + 1 segmentti), avataan automaattisesti
-'   5. Jos dataa ei l√∂ydy, n√§ytet√§√§n virhe ja suljetaan
+'   3. T‰ytet‰‰n Lista-listaruutu tuloksilla
+'   4. Jos vain 2 rivi‰ (otsikko + 1 segmentti), avataan automaattisesti
+'   5. Jos dataa ei lˆydy, n‰ytet‰‰n virhe ja suljetaan
 '
 ' Huom:
 '   - Avattava OpenArgs-parametrilla muotoiltuna "Alue,LinjaNo"
-'   - Valitsee ensimm√§isen segmentin automaattisesti (rivi 1)
-'   - N√§ytt√§√§ virheen, jos lomake avataan v√§√§rin
+'   - Valitsee ensimm‰isen segmentin automaattisesti (rivi 1)
+'   - N‰ytt‰‰ virheen, jos lomake avataan v‰‰rin
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
 On Error GoTo ErrorHandler
@@ -66,12 +66,12 @@ Dim Linja As String
 Dim Parametrit As Variant
 
   If IsNull(Me.OpenArgs) Then
-     MsgBox "Avaa t√§m√§ lomake putkilinjataulukon kautta," & vbCrLf & "painamalla Add-Ins valikosta 'Etsi kohde'", vbCritical, "Virhe"
+     MsgBox "Avaa t‰m‰ lomake putkilinjataulukon kautta," & vbCrLf & "painamalla Add-Ins valikosta 'Etsi kohde'", vbCritical, "Virhe"
      DoCmd.Close acForm, "frmOpenPIPELINE", acSaveNo
      Exit Sub
   End If
   
-  ' J√§sennet√§√§n OpenArgs-parametrit
+  ' J‰sennet‰‰n OpenArgs-parametrit
   Parametrit = Split(Me.OpenArgs, ",")
   If UBound(Parametrit) <> 1 Then
     MsgBox "Virheelliset parametrit", vbCritical, "Virhe"
@@ -96,7 +96,7 @@ Dim Parametrit As Variant
     MsgBox "Putkilinjatietoja ei ole tuotu virtauskaavioista", vbCritical, "Virhe"
     DoCmd.Close acForm, "frmOpenPIPELINE", acSaveNo
   Else
-    ' Useita segmentej√§, valitaan ensimm√§inen
+    ' Useita segmentej‰, valitaan ensimm‰inen
     Lista.Selected(1) = True
   End If
   Exit Sub
@@ -110,7 +110,7 @@ End Sub
 ' Tarkoitus: Avaa valittu putkilinjasegmentti AutoCADissa
 '
 ' Parametrit:
-'   Sulje - Boolean, True = suljetaan lomake avauksen j√§lkeen
+'   Sulje - Boolean, True = suljetaan lomake avauksen j‰lkeen
 '
 ' Toiminta:
 '   1. Poimitaan valitun rivin tiedot Lista-listaruudusta
@@ -119,7 +119,7 @@ End Sub
 '   4. Suljetaan lomake tarvittaessa
 '
 ' Huom:
-'   - Lista.ListIndex on 0-pohjainen, lis√§t√§√§n 1 otsikon ohittamiseksi
+'   - Lista.ListIndex on 0-pohjainen, lis‰t‰‰n 1 otsikon ohittamiseksi
 '   - Sarakeindeksit: 0=PATH, 1=ImpFileID, 2=Handles, 3=DEP, 5=LINENO
 '--------------------------------------------------------------------------------
 Private Sub AvaaValittu(Sulje As Boolean)

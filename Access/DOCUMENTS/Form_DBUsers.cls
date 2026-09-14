@@ -2,14 +2,14 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_DBUsers
-' SOVELLUS : DOCUMENTS ‚Äî Kirjautuneet k√§ytt√§j√§t
-' KUVAUS   : Lukee .laccdb-lukitustiedostosta kirjautuneet k√§ytt√§j√§t
-'            ja n√§ytt√§√§ hei√§t listassa (WhosOn). Mahdollistaa
-'            viestien l√§hettamisen verkkokomennoilla.
-' P√ÑIVITETTY: 2026-03-03
+' SOVELLUS : DOCUMENTS ó Kirjautuneet k‰ytt‰j‰t
+' KUVAUS   : Lukee .laccdb-lukitustiedostosta kirjautuneet k‰ytt‰j‰t
+'            ja n‰ytt‰‰ hei‰t listassa (WhosOn). Mahdollistaa
+'            viestien l‰hettamisen verkkokomennoilla.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
-' UserRec: LDB-tiedoston 64-tavuinen tietue (kone 32 t + k√§ytt√§j√§ 32 t)
+' UserRec: LDB-tiedoston 64-tavuinen tietue (kone 32 t + k‰ytt‰j‰ 32 t)
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
@@ -19,13 +19,13 @@ Private Sub Command27_Click()
   Dim Viesti As String
   Dim TurvallinenViesti As String
 
-  ' Tarkistetaan, ett√§ vastaanottaja on valittu ennen viestin l√§hetyst√§
+  ' Tarkistetaan, ett‰ vastaanottaja on valittu ennen viestin l‰hetyst‰
   If IsNull(Me.NetworkName.Value) Or Me.NetworkName.Value = "" Then Exit Sub
 
   Viesti = InputBox("Send message to user " & Me.NetworkName.Value & vbCrLf & vbCrLf & "Give message:", "Send message")
 
   If Viesti <> "" Then
-    ' Estet√§√§n komentoinjektio poistamalla vaaralliset erikoismerkit
+    ' Estet‰‰n komentoinjektio poistamalla vaaralliset erikoismerkit
     TurvallinenViesti = Replace(Viesti, """", "'")
     TurvallinenViesti = Replace(TurvallinenViesti, "&", " ja ")
     TurvallinenViesti = Replace(TurvallinenViesti, "|", "")
@@ -132,7 +132,7 @@ On Error GoTo Err_WhosOn
    WhosOn = sLogins
 
 Exit_WhosOn:
-   ' EI dbCurrent.Close: CurrentDb-viitett√§ ei tule sulkea koodista
+   ' EI dbCurrent.Close: CurrentDb-viitett‰ ei tule sulkea koodista
    If Not dbCurrent Is Nothing Then
       Set dbCurrent = Nothing
    End If

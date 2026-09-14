@@ -24,8 +24,8 @@ Set FSO = CreateObject("Scripting.FileSystemObject")
 Set Tiedot = CurrentDb.OpenRecordset("_qryMAINEQCust")
 Rivi = 9
   
-  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest√§√§ noin minuutin.", vbYesNo, "P√§√§laiteluettelo") = vbYes Then
-    SysCmd acSysCmdSetStatus, "K√§ynnist√§√§ Exceli√§..."
+  If MsgBox("Haluatko generoida Excel listan?" & vbCrLf & "Generointi saattaa kest‰‰ noin minuutin.", vbYesNo, "P‰‰laiteluettelo") = vbYes Then
+    SysCmd acSysCmdSetStatus, "K‰ynnist‰‰ Exceli‰..."
     Set xlApp = CreateObject("Excel.Application")
     Set WB = xlApp.Workbooks.Open("N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\MainEqTEMPLATE.xls", , True)
     SysCmd acSysCmdSetStatus, "Vie tietoa Exceliin..."
@@ -54,8 +54,8 @@ Rivi = 9
     Set Alue = Nothing
     xlApp.ScreenUpdating = True
     xlApp.Visible = True
-    WB.SaveAs FSO.GetSpecialFolder(TemporaryFolder).Path & "\P√§√§laiteluettelo.xls"
-    MsgBox "P√§√§laiteluettelo generoitu Exceliin.", vbInformation, "P√§√§laiteluettelo"
+    WB.SaveAs FSO.GetSpecialFolder(TemporaryFolder).Path & "\P‰‰laiteluettelo.xls"
+    MsgBox "P‰‰laiteluettelo generoitu Exceliin.", vbInformation, "P‰‰laiteluettelo"
   End If
 Set WB = Nothing
 Tiedot.Close
@@ -69,6 +69,6 @@ ErrorHandler:
     If Not Tiedot Is Nothing Then Tiedot.Close: Set Tiedot = Nothing
     If Not xlApp Is Nothing Then Set xlApp = Nothing
     On Error GoTo 0
-    MsgBox "Virhe raportin generoinnissa: " & Err.Description, vbExclamation, "P√§√§laiteluettelo"
+    MsgBox "Virhe raportin generoinnissa: " & Err.Description, vbExclamation, "P‰‰laiteluettelo"
 End Sub
 

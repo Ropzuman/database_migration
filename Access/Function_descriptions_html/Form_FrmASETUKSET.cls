@@ -4,12 +4,12 @@ Option Explicit
 '================================================================================
 ' Lomake: FrmASETUKSET (Asetukset)
 ' Tarkoitus: Tietokannan konfigurointi ja taulujen linkitys
-' P√§ivitetty: 2025-11-13 ‚Äî VBA7/64-bit tuki lis√§tty
-'             2026-03-03 ‚Äî Me.-etuliite lis√§tty kaikille lomakeohjaimille
+' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
+'             2026-03-03 ó Me.-etuliite lis‰tty kaikille lomakeohjaimille
 '
 ' Kuvaus:
-'   Asetukset-lomake ulkoisten Access-tietokantojen taulujen linkitt√§miseen.
-'   Linkitt√§√§ taulut tietokannoista instru3.accdb, MAINEQ.accdb ja
+'   Asetukset-lomake ulkoisten Access-tietokantojen taulujen linkitt‰miseen.
+'   Linkitt‰‰ taulut tietokannoista instru3.accdb, MAINEQ.accdb ja
 '   FunctionDiagrams.accdb.
 '
 ' Riippuvuudet:
@@ -17,12 +17,12 @@ Option Explicit
 '   - Ulkoiset tietokannat: instru3.accdb, MAINEQ.accdb, FunctionDiagrams.accdb
 '   - Lomakkeet: frmMUOKKAUS
 '   - Moduuli: USysCheck (SniffUser-funktio)
-'   - Ohjaimet: TINSTRU, TMAINEQ, TFUNCDIAG (polkujen tekstikent√§t)
+'   - Ohjaimet: TINSTRU, TMAINEQ, TFUNCDIAG (polkujen tekstikent‰t)
 '================================================================================
 
 '================================================================================
 ' Tapahtuma: Command11_Click
-' Tarkoitus: Avaa p√§√§muokkauslomakkeen ja sulkee asetukset
+' Tarkoitus: Avaa p‰‰muokkauslomakkeen ja sulkee asetukset
 '================================================================================
 Private Sub Command11_Click()
     On Error GoTo ErrorHandler
@@ -35,7 +35,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command2_Click
-' Tarkoitus: Linkitt√§√§ kaikki tarvittavat taulut ulkoisista tietokannoista
+' Tarkoitus: Linkitt‰‰ kaikki tarvittavat taulut ulkoisista tietokannoista
 '================================================================================
 Private Sub Command2_Click()
     On Error GoTo ErrorHandler
@@ -51,26 +51,26 @@ Private Sub Command2_Click()
     Linkkaa "MAINEQ", Me.TMAINEQ.Value
     Linkkaa "DRIVES", Me.TMAINEQ.Value
     
-    ' Toimintakaaviot (toistaiseksi pois k√§yt√∂st√§)
+    ' Toimintakaaviot (toistaiseksi pois k‰ytˆst‰)
     ' Linkkaa "CONTROL", Me.TFUNCDIAG.Value
     
     MsgBox "Taulukot linkattu", vbOKOnly, "Linkkaa taulukot"
     Exit Sub
     
 ErrorHandler:
-    MsgBox "Virhe taulujen linkityksess√§: " & Err.Description, vbExclamation
+    MsgBox "Virhe taulujen linkityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Aliohjelma: Linkkaa
-' Tarkoitus: Linkitt√§√§ ulkoisen taulun nykyiseen tietokantaan
+' Tarkoitus: Linkitt‰‰ ulkoisen taulun nykyiseen tietokantaan
 ' Parametrit:
-'   Taulukko ‚Äî Linkitett√§v√§n taulun nimi
-'   KANTA    ‚Äî Ulkoisen Access-tietokannan t√§ydellinen polku
+'   Taulukko ó Linkitett‰v‰n taulun nimi
+'   KANTA    ó Ulkoisen Access-tietokannan t‰ydellinen polku
 '
 ' Kuvaus:
-'   Poistaa olemassa olevan taulun ensin (jos l√∂ytyy), luo sitten uuden
-'   linkitetyn taulum√§√§rityksen, joka osoittaa ulkoiseen tietokantaan.
+'   Poistaa olemassa olevan taulun ensin (jos lˆytyy), luo sitten uuden
+'   linkitetyn taulum‰‰rityksen, joka osoittaa ulkoiseen tietokantaan.
 '================================================================================
 Private Sub Linkkaa(Taulukko As String, KANTA As String)
     Dim tdf As DAO.TableDef
@@ -79,10 +79,10 @@ Private Sub Linkkaa(Taulukko As String, KANTA As String)
     
     On Error GoTo ErrorHandler
     
-    ' V√§limuistitetaan CurrentDb ‚Äî v√§ltet√§√§n toistuva uuden instanssin luonti per kutsu
+    ' V‰limuistitetaan CurrentDb ó v‰ltet‰‰n toistuva uuden instanssin luonti per kutsu
     Set db = CurrentDb
     
-    ' Poistetaan olemassa oleva taulu ennen uudelleenlinkityst√§
+    ' Poistetaan olemassa oleva taulu ennen uudelleenlinkityst‰
     For i = 0 To db.TableDefs.Count - 1
         If LCase$(db.TableDefs(i).Name) = LCase$(Taulukko) Then
             db.Execute "DROP TABLE [" & Taulukko & "]"
@@ -90,7 +90,7 @@ Private Sub Linkkaa(Taulukko As String, KANTA As String)
         End If
     Next i
     
-    ' Luodaan linkitetty taulum√§√§ritys
+    ' Luodaan linkitetty taulum‰‰ritys
     Set tdf = db.CreateTableDef(Taulukko)
     With tdf
         .Connect = ";DATABASE=" & KANTA
@@ -107,12 +107,12 @@ Private Sub Linkkaa(Taulukko As String, KANTA As String)
 ErrorHandler:
     Set tdf = Nothing
     Set db = Nothing
-    MsgBox "Virhe taulun '" & Taulukko & "' linkityksess√§: " & Err.Description, vbExclamation
+    MsgBox "Virhe taulun '" & Taulukko & "' linkityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustaa lomake oletuspolkiilla ja kirjaa k√§ytt√§j√§n
+' Tarkoitus: Alustaa lomake oletuspolkiilla ja kirjaa k‰ytt‰j‰n
 '================================================================================
 Private Sub Form_Load()
     Dim POLKU As String
@@ -128,7 +128,7 @@ Private Sub Form_Load()
     Me.TMAINEQ.Value = POLKU & "MAINEQ.accdb"
     Me.TFUNCDIAG.Value = POLKU & "FunctionDiagrams.accdb"
     
-    ' Kirjataan k√§ytt√§j√§ lokiin
+    ' Kirjataan k‰ytt‰j‰ lokiin
     Call SniffUser
     
     Exit Sub

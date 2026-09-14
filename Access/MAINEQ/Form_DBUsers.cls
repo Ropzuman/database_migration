@@ -1,7 +1,7 @@
 Option Compare Database
 Option Explicit
 
-' K√§ytt√§j√§tietojen purkamiseen k√§ytettyt√§v√§ tietue
+' K‰ytt‰j‰tietojen purkamiseen k‰ytettyt‰v‰ tietue
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' 1st 32 bytes hold machine name
@@ -9,7 +9,7 @@ Private Type UserRec
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  Viesti = InputBox("L√§het√§ viesti k√§ytt√§j√§lle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "L√§het√§ viesti")
+  Viesti = InputBox("L‰het‰ viesti k‰ytt‰j‰lle " & Me.NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Anna viesti:", "L‰het‰ viesti")
   If Viesti <> "" Then
     Call Shell("net send " & Me.NetworkName.Value & " """ & Viesti & """")
   End If
@@ -55,7 +55,7 @@ On Error GoTo Err_WhosOn
    Dim SPath As String, X As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' K√§ytt√§j√§tietue (m√§√§ritelty yl√§puolella)
+   Dim rUser As UserRec    ' K‰ytt‰j‰tietue (m‰‰ritelty yl‰puolella)
    Dim dbCurrent As DAO.Database
 
 ' Haetaan nykyisen tietokannan polku
@@ -94,7 +94,7 @@ On Error GoTo Err_WhosOn
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"
       End If
-      iStart = iStart + 64 ' Siirryt√§√§n seuraavaan tietueeseen (64 tavua / tietue)
+      iStart = iStart + 64 ' Siirryt‰‰n seuraavaan tietueeseen (64 tavua / tietue)
    Loop
    Close iLDBFile
    WhosOn = sLogins
@@ -104,7 +104,7 @@ Exit_WhosOn:
 
 Err_WhosOn:
    If Err = 68 Then
-      MsgBox "Tiedostoa ei l√∂ytynyt.", 48, "Ei laccdb-tiedostoa"
+      MsgBox "Tiedostoa ei lˆytynyt.", 48, "Ei laccdb-tiedostoa"
    Else
       MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description
       Close iLDBFile

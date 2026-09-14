@@ -2,11 +2,11 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysAddDocument
-' SOVELLUS : DOCUMENTS ‚Äî Uuden dokumentin lis√§ys
-' KUVAUS   : Lis√§√§ uuden dokumentin rekisteriin. K√§ytt√§√§ ed. dokumentin
+' SOVELLUS : DOCUMENTS ó Uuden dokumentin lis‰ys
+' KUVAUS   : Lis‰‰ uuden dokumentin rekisteriin. K‰ytt‰‰ ed. dokumentin
 '            tietoja oletusarvoina nopeuttaakseen sarjalisausta.
 '            Tarkistaa asiakkaan numeron varauksen ennen tallennusta.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Const TV_DOC_NEW_COUNTER As String = "DOC_NewRecordCounter"
 Private Const TV_DOC_REV_TEXT As String = "DOC_Rev_Text"
@@ -39,7 +39,7 @@ Dim OletusSivut As String
 Dim OletusPolku As String
 Dim OletusRev As String
   Varaaja = GetNetworkUserName()
-' K√§ytet√§√§n viimeksi lis√§tyn dokumentin tietoja uuden pohjaksi
+' K‰ytet‰‰n viimeksi lis‰tyn dokumentin tietoja uuden pohjaksi
   OletusNimi1 = LueTempVarTeksti(TV_DOC_DEF_DNAME1)
   OletusNimi2 = LueTempVarTeksti(TV_DOC_DEF_DNAME2)
   OletusNimi3 = LueTempVarTeksti(TV_DOC_DEF_DNAME3)
@@ -118,7 +118,7 @@ Private Sub TalletaNappi_Click()
       DB.Close
       Set taulu = Nothing
       Set DB = Nothing
-' Tallennetaan viimeksi lis√§tyn dokumentin tiedot seuraavan pohjaksi
+' Tallennetaan viimeksi lis‰tyn dokumentin tiedot seuraavan pohjaksi
   AsetaTempVar TV_DOC_DEF_DNAME1, Nz(Me.TDocName1.Value, "")
   AsetaTempVar TV_DOC_DEF_DNAME2, Nz(Me.TDocName2.Value, "")
   AsetaTempVar TV_DOC_DEF_DNAME3, Nz(Me.TDocName3.Value, "")
@@ -180,7 +180,7 @@ End Function
 
 Private Function GetNetworkUserName() As String
   On Error GoTo FallbackUnknown
-  ' Luetaan k√§ytt√§j√§nimi suoraan ymp√§rist√∂muuttujasta, jotta lomake ei riipu ulkoisesta moduulifunktiosta.
+  ' Luetaan k‰ytt‰j‰nimi suoraan ymp‰ristˆmuuttujasta, jotta lomake ei riipu ulkoisesta moduulifunktiosta.
   GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
   If GetNetworkUserName = "" Then GoTo FallbackUnknown
   Exit Function
@@ -211,7 +211,7 @@ Private Sub AvaaRevisio()
   ' Tallennetaan nykyinen revisio TempVarsiin, jotta USysRevText voi lukea ja kirjoittaa sen
   AsetaTempVar TV_DOC_REV_TEXT, IIf(IsNull(Me.TRev.Value), "", CStr(Me.TRev.Value))
   DoCmd.OpenForm "USysRevText", , , , , acDialog
-  ' Luetaan p√§ivitetty revisio takaisin TempVars:sta
+  ' Luetaan p‰ivitetty revisio takaisin TempVars:sta
   Dim UusiRev As String
   UusiRev = LueTempVarTeksti(TV_DOC_REV_TEXT)
   If UusiRev <> "" Then

@@ -1,17 +1,17 @@
-Option Compare Database   ' K√§yt√§ tietokantaj√§rjestyst√§ merkkijonovertailuissa
+Option Compare Database   ' K‰yt‰ tietokantaj‰rjestyst‰ merkkijonovertailuissa
 Option Explicit           ' Muuttujaesittely pakollinen
 '==============================================================================
 ' Moduuli: DataToACAD
 ' Tarkoitus: Luo AutoCAD LISP-tiedostot tietokannassa olevista piirikaaviotiedoista
-' Alkuper√§inen: 1997-02-21 Fr 11:10 /tw
+' Alkuper‰inen: 1997-02-21 Fr 11:10 /tw
 ' Muokattu: 1997-03-19 We 15:46 /tw
 ' Muokattu: 1997-03-21 Fr 16:07 /tw
 ' Muokattu: 1997-07-14 Mo 14:29 /tw
-' P√§ivitetty: 2025-11-11 ‚Äî DAO-tyypit, virheenk√§sittely, kommentit lis√§tty
-' P√§ivitetty: 2026-03-09 ‚Äî CrsRefLink muutettu v√§limuisti-hakuun (N+1-pullonkaula poistettu)
+' P‰ivitetty: 2025-11-11 ó DAO-tyypit, virheenk‰sittely, kommentit lis‰tty
+' P‰ivitetty: 2026-03-09 ó CrsRefLink muutettu v‰limuisti-hakuun (N+1-pullonkaula poistettu)
 '==============================================================================
 
-' --- Moduulitason v√§limuisti CrsRefLisps-haulle ---
+' --- Moduulitason v‰limuisti CrsRefLisps-haulle ---
 ' Ladataan taulukko kerran Dictionary-objektiin; jokainen haku on O(1) levyluvun sijaan
 Private dictCrsRef As Object   ' Scripting.Dictionary
 Private blnCrsRefLoaded As Boolean
@@ -19,17 +19,17 @@ Private blnCrsRefLoaded As Boolean
 '------------------------------------------------------------------------------
 ' Alirutiini: LoadCrsRefCache
 ' Tarkoitus: Lataa CrsRefLisps-taulukon kerran muistiin Dictionary-objektiin.
-'            Kutsutaan laiskasti CrsRefLink-funktiosta ensimm√§isell√§ hakukerralla.
+'            Kutsutaan laiskasti CrsRefLink-funktiosta ensimm‰isell‰ hakukerralla.
 '------------------------------------------------------------------------------
 Private Sub LoadCrsRefCache()
     Dim tble As DAO.Recordset
 
     Set dictCrsRef = CreateObject("Scripting.Dictionary")
-    ' dbOpenForwardOnly on nopein vaihtoehto pelkk√§√§n lukemiseen
+    ' dbOpenForwardOnly on nopein vaihtoehto pelkk‰‰n lukemiseen
     Set tble = CurrentDb.OpenRecordset("CrsRefLisps", dbOpenForwardOnly)
 
     Do Until tble.EOF
-        ' Lis√§t√§√§n vain ensimm√§inen osuma, jos duplikaatteja on
+        ' Lis‰t‰‰n vain ensimm‰inen osuma, jos duplikaatteja on
         If Not dictCrsRef.Exists(CStr(tble!CrsRefID)) Then
             dictCrsRef.Add CStr(tble!CrsRefID), CStr(tble!Lisp)
         End If
@@ -43,29 +43,29 @@ End Sub
 
 '------------------------------------------------------------------------------
 ' Funktio: CrsRefLink
-' Tarkoitus: Hakee LISP-koodin ristiviitetaulukosta v√§limuistin avulla.
-'            Ensimm√§isell√§ kutsulla lataa koko taulukon muistiin; sen j√§lkeen
-'            jokainen haku on O(1)-nopea eik√§ avaa Recordsetia lainkaan.
+' Tarkoitus: Hakee LISP-koodin ristiviitetaulukosta v‰limuistin avulla.
+'            Ensimm‰isell‰ kutsulla lataa koko taulukon muistiin; sen j‰lkeen
+'            jokainen haku on O(1)-nopea eik‰ avaa Recordsetia lainkaan.
 ' Parametrit:
-'   tblnimi - Taulukonnimi (vain "CRSREF" k√§ynnist√§√§ haun)
+'   tblnimi - Taulukonnimi (vain "CRSREF" k‰ynnist‰‰ haun)
 '   teksti  - Haettava ristiviite-ID
-' Palautusarvo: LISP-koodi tai alkuper√§inen teksti, jos ei l√∂ydy
+' Palautusarvo: LISP-koodi tai alkuper‰inen teksti, jos ei lˆydy
 '------------------------------------------------------------------------------
 Function CrsRefLink(tblnimi As String, teksti As String) As String
 On Error GoTo ErrorHandler
 
 If tblnimi = "CRSREF" Then
-    ' Ladataan v√§limuistiin vain ensimm√§isell√§ kerralla
+    ' Ladataan v‰limuistiin vain ensimm‰isell‰ kerralla
     If Not blnCrsRefLoaded Then LoadCrsRefCache
 
     ' Nopea O(1)-haku Dictionary-objektista levyn sijaan
     If dictCrsRef.Exists(teksti) Then
         CrsRefLink = dictCrsRef(teksti)
     Else
-        CrsRefLink = teksti  ' Ei l√∂ydetty ‚Äî palautetaan alkuper√§inen teksti
+        CrsRefLink = teksti  ' Ei lˆydetty ó palautetaan alkuper‰inen teksti
     End If
 Else
-    ' Ei ristiviite ‚Äî palautetaan alkuper√§inen teksti
+    ' Ei ristiviite ó palautetaan alkuper‰inen teksti
     CrsRefLink = teksti
 End If
 
@@ -73,14 +73,14 @@ Exit Function
 
 ErrorHandler:
     MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
-    CrsRefLink = teksti  ' Virhetilanteessa palautetaan alkuper√§inen teksti
+    CrsRefLink = teksti  ' Virhetilanteessa palautetaan alkuper‰inen teksti
 End Function
 
 '------------------------------------------------------------------------------
 ' Funktio: get_filename
-' Tarkoitus: Poimii 8-merkkisen tiedostonimen taulukonnimest√§
+' Tarkoitus: Poimii 8-merkkisen tiedostonimen taulukonnimest‰
 ' Parametrit:
-'   taulnimi - Taulukonnimi (voi sis√§lt√§√§ t√§hti-erottimen)
+'   taulnimi - Taulukonnimi (voi sis‰lt‰‰ t‰hti-erottimen)
 ' Palautusarvo: 8-merkkinen isolla kirjoitettu tiedostonimi
 '------------------------------------------------------------------------------
 Function get_filename(taulnimi As String) As String
@@ -90,10 +90,10 @@ Dim ast As Integer
 
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
-    ' Ei t√§hte√§ ‚Äî otetaan 8 ensimm√§ist√§ merkki√§
+    ' Ei t‰hte‰ ó otetaan 8 ensimm‰ist‰ merkki‰
     get_filename = UCase$(Mid$(taulnimi, 1, 8))
 Else
-    ' T√§hti l√∂ytyi ‚Äî otetaan 8 ensimm√§ist√§ merkki√§ ennen sit√§
+    ' T‰hti lˆytyi ó otetaan 8 ensimm‰ist‰ merkki‰ ennen sit‰
     get_filename = UCase$(Mid$(Mid$(taulnimi, 1, ast - 1), 1, 8))
 End If
 
@@ -106,19 +106,19 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Funktio: inch
-' Tarkoitus: Korvaa lainausmerkit LISP-syntaksin \042-sekvenssill√§
+' Tarkoitus: Korvaa lainausmerkit LISP-syntaksin \042-sekvenssill‰
 ' Parametrit:
-'   a - Merkkijono, joka sis√§lt√§√§ lainausmerkkej√§
-' Palautusarvo: Merkkijono, jossa lainausmerkit korvattu \042-sekvenssill√§
+'   a - Merkkijono, joka sis‰lt‰‰ lainausmerkkej‰
+' Palautusarvo: Merkkijono, jossa lainausmerkit korvattu \042-sekvenssill‰
 '------------------------------------------------------------------------------
 Function inch(a As String) As String
 On Error GoTo ErrorHandler
 
 Dim L As String     ' Lainausmerkki
-Dim E As String     ' K√§sitelt√§v√§ merkkijono
+Dim E As String     ' K‰sitelt‰v‰ merkkijono
 Dim b As Integer    ' Lainausmerkin sijainti
-Dim c As String     ' Merkkijono ennen lainausmerkki√§
-Dim D As String     ' Merkkijono lainausmerkin j√§lkeen
+Dim c As String     ' Merkkijono ennen lainausmerkki‰
+Dim D As String     ' Merkkijono lainausmerkin j‰lkeen
 
 L = Chr(34)  ' Lainausmerkki
 E = a
@@ -126,14 +126,14 @@ E = a
 Do
     b = InStr(1, E, L)
     If b = 0 Then
-        ' Ei lis√§√§ lainausmerkkej√§ ‚Äî palautetaan tulos
+        ' Ei lis‰‰ lainausmerkkej‰ ó palautetaan tulos
         inch = E
         Exit Function
     End If
     ' Jaetaan merkkijono lainausmerkin kohdasta
     c = Mid$(E, 1, b - 1)
     D = Mid$(E, b + 1, Len(a))
-    ' Korvataan lainausmerkki LISP-erikoissekvenssill√§
+    ' Korvataan lainausmerkki LISP-erikoissekvenssill‰
     E = c & "\042" & D
 Loop
 
@@ -141,19 +141,19 @@ Exit Function
 
 ErrorHandler:
     MsgBox "Error in inch: " & Err.Description, vbCritical, "LISP Quote Escaping Error"
-    inch = a  ' Virhetilanteessa palautetaan alkuper√§inen merkkijono
+    inch = a  ' Virhetilanteessa palautetaan alkuper‰inen merkkijono
 End Function
 
 '------------------------------------------------------------------------------
 ' Funktio: makeFiles
-' Tarkoitus: P√§√§orkestraattori ‚Äî luo kaikki AutoCAD LISP-tiedostot tietokannasta
+' Tarkoitus: P‰‰orkestraattori ó luo kaikki AutoCAD LISP-tiedostot tietokannasta
 ' Parametrit:
 '   common - Konfiguraatiotaulun nimi
 ' Toiminta:
 '   1. Lukee asetukset konfiguraatiotaulusta
 '   2. Alustaa .txt-tulostiedostot
 '   3. Luo silmukoimattomat listat
-'   4. Luo silmukoihin perustuvat listat (jos k√§yt√∂ss√§)
+'   4. Luo silmukoihin perustuvat listat (jos k‰ytˆss‰)
 '   5. Sulkee tiedostot asianmukaisesti
 '------------------------------------------------------------------------------
 Function makeFiles(common As String) As Integer
@@ -175,12 +175,12 @@ cmmn.MoveFirst
 suod = cmmn.Fields("Filter")
 direc = cmmn!AcadDirectory  ' Hakemisto, jonne LISP-tiedostot tallennetaan
 
-' Jos vain skriptitiedosto ‚Äî ohitetaan LISP-tiedostojen luonti
+' Jos vain skriptitiedosto ó ohitetaan LISP-tiedostojen luonti
 If cmmn!OnlyScript Then
     GoTo scrtest
 End If
 
-'--- Alustetaan kaikki tulostiedostot avaavalla sulkumerkill√§ ---
+'--- Alustetaan kaikki tulostiedostot avaavalla sulkumerkill‰ ---
 cmmn.MoveFirst
 Do Until cmmn.EOF
     ' Alustetaan silmukoimattomat tiedostot
@@ -210,13 +210,13 @@ Do Until cmmn.EOF
 Loop
 
 cmmn.MoveFirst
-' Jos ei silmukkatauluja ‚Äî hyp√§t√§√§n skriptinluontiin
+' Jos ei silmukkatauluja ó hyp‰t‰‰n skriptinluontiin
 If cmmn!NoLoopIDTables Then
     GoTo scrtest
 End If
 
 '--- Luodaan silmukkaan perustuvat LISP-listat ---
-' N√§m√§ listat suodatetaan silmukka-ID-sarakkeen mukaan
+' N‰m‰ listat suodatetaan silmukka-ID-sarakkeen mukaan
 cmmn.MoveFirst
 Do Until cmmn.EOF
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
@@ -227,27 +227,27 @@ Loop
 
 cmmn.MoveFirst
 
-'--- Suljetaan tiedostot p√§√§tt√§v√§ll√§ sulkumerkill√§ ---
-'--- Suljetaan tiedostot p√§√§tt√§v√§ll√§ sulkumerkill√§ ---
+'--- Suljetaan tiedostot p‰‰tt‰v‰ll‰ sulkumerkill‰ ---
+'--- Suljetaan tiedostot p‰‰tt‰v‰ll‰ sulkumerkill‰ ---
 cmmn.MoveFirst
 Do Until cmmn.EOF
     ' Suljetaan silmukoimattomat tiedostot
     If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' LISP-listan p√§√§tt√§v√§ sulku
+        Print #1, ")"  ' LISP-listan p‰‰tt‰v‰ sulku
         Close #1
     End If
     ' Suljetaan silmukkaan perustuvat tiedostot
     If Not IsNull(cmmn!TablesOrQueries.Value) Then
         Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' LISP-listan p√§√§tt√§v√§ sulku
+        Print #1, ")"  ' LISP-listan p‰‰tt‰v‰ sulku
         Close #1
     End If
     cmmn.MoveNext
 Loop
 
 scrtest:
-' Luodaan AutoCAD-skriptitiedosto er√§ajoa varten
+' Luodaan AutoCAD-skriptitiedosto er‰ajoa varten
 cmmn.MoveFirst
 MakeScript common, suod, cmmn!LoopIDColumn
 
@@ -273,9 +273,9 @@ End Function
 
 '------------------------------------------------------------------------------
 ' Proseduuri: MakeListNoLoopID
-' Tarkoitus: Luo LISP-listat taulukoista/kyselyist√§ ilman silmukka-ID-suodatusta
+' Tarkoitus: Luo LISP-listat taulukoista/kyselyist‰ ilman silmukka-ID-suodatusta
 ' Parametrit:
-'   tanimi - Taulu/kyselynnimi (voi sis√§lt√§√§ * jokerina, esim. "CIRCUIT*")
+'   tanimi - Taulu/kyselynnimi (voi sis‰lt‰‰ * jokerina, esim. "CIRCUIT*")
 '   Hakem  - Tulostushakemiston polku
 '------------------------------------------------------------------------------
 Sub MakeListNoLoopID(tanimi As String, Hakem As String)
@@ -284,7 +284,7 @@ On Error GoTo ErrorHandler
 Dim DB As DAO.Database
 Dim tble As DAO.Recordset
 Dim L As String             ' Lainausmerkki
-Dim aster As Integer        ' T√§htimerkin sijainti taulukonnimess√§
+Dim aster As Integer        ' T‰htimerkin sijainti taulukonnimess‰
 Dim filenum As Integer      ' Tiedostokahvan numero
 Dim i As Integer, ii As Integer  ' Silmukkalaskurit
 Dim preref As String        ' LISP-muuttujien etuliiteviite
@@ -295,22 +295,22 @@ L = Chr(34)  ' Lainausmerkki LISP-listoja varten
 
 aster = InStr(tanimi, "*")
 
-'--- K√§sitell√§√§n jokerilliset taulukotnimet (esim. "CIRCUIT*") ---
+'--- K‰sitell‰‰n jokerilliset taulukotnimet (esim. "CIRCUIT*") ---
 If aster <> 0 Then
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
-  ' K√§yd√§√§n l√§pi kaikki etuliitett√§ vastaavat taulukot
+  ' K‰yd‰‰n l‰pi kaikki etuliitett‰ vastaavat taulukot
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tanimi) Then
         Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
         preref = get_filename(tanimi)
         
-        ' K√§sitell√§√§n jokainen tietue
+        ' K‰sitell‰‰n jokainen tietue
         Do Until tble.EOF
             preref = get_filename(tanimi)
-            ' Rakennetaan viittausprefiksi ID-kent√§t
+            ' Rakennetaan viittausprefiksi ID-kent‰t
             For ii = 0 To tble.Fields.Count - 1
                 If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                     preref = preref & "." & tble.Fields(ii).Value
@@ -318,7 +318,7 @@ If aster <> 0 Then
                     Exit For
                 End If
             Next
-            ' Kirjoitetaan ei-tyhj√§t kentt√§arvot LISP-tiedostoon
+            ' Kirjoitetaan ei-tyhj‰t kentt‰arvot LISP-tiedostoon
             For ii = 0 To tble.Fields.Count - 1
                 If Not IsNull(tble.Fields(ii).Value) Then
                     Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
@@ -332,7 +332,7 @@ If aster <> 0 Then
   Next
   Close filenum
 
-'--- K√§sitell√§√§n yksitt√§inen taulu/kysely ---
+'--- K‰sitell‰‰n yksitt‰inen taulu/kysely ---
 Else
   Set tble = DB.OpenRecordset(tanimi, dbOpenDynaset)
   If Not tble.EOF Then tble.MoveFirst
@@ -340,10 +340,10 @@ Else
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
 
-  ' K√§sitell√§√§n jokainen tietue
+  ' K‰sitell‰‰n jokainen tietue
   Do Until tble.EOF
     preref = get_filename(tanimi)
-    ' Rakennetaan viittausprefiksi ID-kent√§t
+    ' Rakennetaan viittausprefiksi ID-kent‰t
     For ii = 0 To tble.Fields.Count - 1
         If Right$(tble.Fields(ii).Name, 2) = "ID" Then
             preref = preref & "." & tble.Fields(ii).Value
@@ -351,7 +351,7 @@ Else
             Exit For
         End If
     Next
-    ' Kirjoitetaan ei-tyhj√§t arvot LISP-tiedostoon (ristiviitehaku mukana)
+    ' Kirjoitetaan ei-tyhj‰t arvot LISP-tiedostoon (ristiviitehaku mukana)
     For ii = 0 To tble.Fields.Count - 1
         If Not IsNull(tble.Fields(ii).Value) Then
             Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
@@ -373,7 +373,7 @@ Exit Sub
 
 ErrorHandler:
     MsgBox "Virhe MakeListNoLoopID-rutiinissa: " & Err.Description & vbCrLf & _
-           "Taulu/Kysely: " & tanimi, vbCritical, "LISP-generointi ep√§onnistui"
+           "Taulu/Kysely: " & tanimi, vbCritical, "LISP-generointi ep‰onnistui"
     ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
     Close filenum
@@ -405,12 +405,12 @@ If aster <> 0 Then
 
   filenum = FreeFile
   Open Hakem & get_filename(tblnimipre) & ".txt" For Append As filenum
-  ' K√§yd√§√§n l√§pi kaikki taulukot
+  ' K‰yd‰‰n l‰pi kaikki taulukot
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tblnimipre) Then
         Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
-        ' K√§yd√§√§n l√§pi kaikki tietueet
+        ' K‰yd‰‰n l‰pi kaikki tietueet
         Do Until tble.EOF
             If tble.Fields(0).Value = suoda Then
                 preref = tble.Fields(Looppid).Value & "." & get_filename(tblnimipre)
@@ -501,10 +501,10 @@ End Sub
 ' Funktio: MakeLocFiles
 ' Tarkoitus: Luo asennussijainnin tiedostot AutoCADille
 '
-' KOVAKOODATUT POLUT ‚Äî projektikohtaiset:
+' KOVAKOODATUT POLUT ó projektikohtaiset:
 '   P:\acaddata\projekti\agropm10\tyo\instloc.txt
 '
-' Huom: Polut ovat agropm10-projektille. Muokkaa tai siirr√§ konfiguraatiotauluun.
+' Huom: Polut ovat agropm10-projektille. Muokkaa tai siirr‰ konfiguraatiotauluun.
 '------------------------------------------------------------------------------
 Function MakeLocFiles()
 On Error GoTo ErrorHandler
@@ -573,7 +573,7 @@ L = Chr(34)
  End If
 Next
 
-' Kirjoitetaan p√§√§tt√§v√§ sulkumerkki tiedostoon
+' Kirjoitetaan p‰‰tt‰v‰ sulkumerkki tiedostoon
         Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Append As #1
         Print #1, ")"
         Close

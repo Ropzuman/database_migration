@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysReserve
-' SOVELLUS : DOCUMENTS ‚Äî Asiakkaan piirustunumeron varaus
+' SOVELLUS : DOCUMENTS ó Asiakkaan piirustunumeron varaus
 ' KUVAUS   : Varaa asiakkaan piirustunumeron UsysClientDocNos-tauluun.
 '            Tallennuksessa kirjataan varaajan nimi ja aikaleima.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Public SelDept As String
 Public Varaaja As String
@@ -16,7 +16,7 @@ Private Sub Peruuta_Click()
   DoCmd.Close
 End Sub
 Private Sub TalletaNappi_Click()
-    ' Formin tietojen talletus ja sulkeminen asiakkaan piirustunumeron varauksen j√§lkeen
+    ' Formin tietojen talletus ja sulkeminen asiakkaan piirustunumeron varauksen j‰lkeen
     Dim DB As DAO.Database
     Dim taulu As DAO.Recordset
     Dim SQL As String
@@ -38,7 +38,7 @@ Private Sub TalletaNappi_Click()
     Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset, dbDenyWrite)
 
     If IsNull(taulu.Fields("Reserved")) Then
-      ' Numero viel√§ vapaa ‚Äî kirjataan varaus ja aikaleima
+      ' Numero viel‰ vapaa ó kirjataan varaus ja aikaleima
       taulu.Edit
       taulu.Fields("Number") = Me.TClientNo.Caption
       taulu.Fields("Reserved") = Varaaja & "@" & Now
@@ -56,7 +56,7 @@ Cleanup:
       taulu.Close
       Set taulu = Nothing
     End If
-    ' EI DB.Close: CurrentDb-viitett√§ ei tule sulkea koodista
+    ' EI DB.Close: CurrentDb-viitett‰ ei tule sulkea koodista
     Set DB = Nothing
     Exit Sub
 
@@ -80,7 +80,7 @@ Private Sub MuodostaNumero()
 End Sub
 
 Private Function GetNetworkUserName() As String
-  ' Luetaan k√§ytt√§j√§nimi suoraan ymp√§rist√∂muuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
+  ' Luetaan k‰ytt‰j‰nimi suoraan ymp‰ristˆmuuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
   On Error GoTo FallbackHandler
   GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
   If GetNetworkUserName = "" Then GoTo FallbackHandler

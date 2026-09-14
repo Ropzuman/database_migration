@@ -115,7 +115,7 @@ Do Until tbl.EOF
 Loop
        
 qry2.MoveFirst
-qry.MoveFirst 'lis√§tty jotta saataisiin my√∂s eka
+qry.MoveFirst 'lis‰tty jotta saataisiin myˆs eka
 
 Do Until qry2.EOF
 
@@ -170,14 +170,14 @@ Private Sub Command12_Click()
 ' Vie DATA9-taulun tiedot AutoCAD-piirustuksissa oleviin blokkeihin
 Dim EdTied As String
 Dim Taul As DAO.Recordset
-Dim oBlock As Object  ' AcadBlockReference ‚Äî my√∂h√§inen sidonta 64-bit-yhteensopivuuden vuoksi
+Dim oBlock As Object  ' AcadBlockReference ó myˆh‰inen sidonta 64-bit-yhteensopivuuden vuoksi
 Dim ATTRIB As Variant
 Dim i As Integer
 Set Taul = CurrentDb.OpenRecordset("SELECT * FROM DATA9 order by Path, DWG")
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-  If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+  If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If
@@ -239,12 +239,12 @@ End Sub
 Private Sub NoudaTiedot(Listalta As Boolean)
 Dim i As Integer
 Dim Tied As String
-'Yhdistet√§√§n ensin AutoCADiin
+'Yhdistet‰‰n ensin AutoCADiin
 'Otetaan yhteys AutoCADiin
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-  If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+  If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Exit Sub
   End If
@@ -268,7 +268,7 @@ End Sub
 Private Sub PoimiTiedot(Tiedosto)
 Dim FT(0) As Integer
 Dim FD(0) As Variant
-Dim Joukko As Object  ' AcadSelectionSet ‚Äî my√∂h√§inen sidonta 64-bit-yhteensopivuuden vuoksi
+Dim Joukko As Object  ' AcadSelectionSet ó myˆh‰inen sidonta 64-bit-yhteensopivuuden vuoksi
 Dim i As Integer, j As Integer
 Dim Taul As DAO.Recordset
 Dim ATTRIB As Variant

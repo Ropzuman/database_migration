@@ -2,9 +2,9 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' RAPORTTI : Report_Copy of TRANSMITTAL
-' SOVELLUS : DOCUMENTS ‚Äî L√§hetyslistan kopio
-' KUVAUS   : T√§ytt√§√§ raportin otsikot ProjInfo-taulusta avauksen yhteydess√§.
-' P√ÑIVITETTY: 2026-03-03
+' SOVELLUS : DOCUMENTS ó L‰hetyslistan kopio
+' KUVAUS   : T‰ytt‰‰ raportin otsikot ProjInfo-taulusta avauksen yhteydess‰.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Sub Report_Open(Cancel As Integer)
     Dim DB As DAO.Database
@@ -13,10 +13,10 @@ Private Sub Report_Open(Cancel As Integer)
     On Error GoTo ErrorHandler
 
     Set DB = CurrentDb
-    ' Avataan vain luku -tilassa: dat√§√§ haetaan vain n√§ytt√§mist√§ varten
+    ' Avataan vain luku -tilassa: dat‰‰ haetaan vain n‰ytt‰mist‰ varten
     Set taulu = DB.OpenRecordset("Projinfo", dbOpenSnapshot)
 
-    ' Varmistetaan ett√§ taulussa on tietoja ennen kenttien lukemista
+    ' Varmistetaan ett‰ taulussa on tietoja ennen kenttien lukemista
     If Not taulu.EOF Then
         Me.TContractNo1.Caption = Nz(taulu("ContractNo"), "")
         Me.TContractNo2.Caption = Nz(taulu("ContractNo"), "")
@@ -28,7 +28,7 @@ Private Sub Report_Open(Cancel As Integer)
 Cleanup:
     On Error Resume Next
     If Not taulu Is Nothing Then
-        taulu.Close  ' Suljetaan recordset kunnolla muistivuodon est√§miseksi
+        taulu.Close  ' Suljetaan recordset kunnolla muistivuodon est‰miseksi
         Set taulu = Nothing
     End If
     Set DB = Nothing

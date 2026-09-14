@@ -2,17 +2,17 @@ Option Compare Database
 Option Explicit
 '================================================================================
 ' Moduuli: USysCheck
-' Tarkoitus: K√§ytt√§j√§n kirjautumisen seuranta ja lokitus
-' Tekij√§: VG Codes (2001)
-' P√§ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis√§tty
+' Tarkoitus: K‰ytt‰j‰n kirjautumisen seuranta ja lokitus
+' Tekij‰: VG Codes (2001)
+' P‰ivitetty: 2025-11-11 - VBA7/64-bit-tuki lis‰tty
 '             2026-03-03 - Kommentit suomeksi, nSize-tyyppikorjaus
 '             2026-03-06 - Siirtyminen Unicode W -API-versioihin (GetUserNameW, GetComputerNameW)
 '
 ' Kuvaus:
-'   Kirjaa k√§ytt√§j√§n kirjautumistiedot UsysUsers-tauluun, mukaan lukien:
-'   - Verkkok√§ytt√§j√§nimi (Windows API ‚Äî Unicode)
-'   - Tietokonenimi (Windows API ‚Äî Unicode)
-'   - Access-tietokannan k√§ytt√§j√§nimi
+'   Kirjaa k‰ytt‰j‰n kirjautumistiedot UsysUsers-tauluun, mukaan lukien:
+'   - Verkkok‰ytt‰j‰nimi (Windows API ó Unicode)
+'   - Tietokonenimi (Windows API ó Unicode)
+'   - Access-tietokannan k‰ytt‰j‰nimi
 '   - Kirjautumisaika
 '
 ' Riippuvuudet:
@@ -21,7 +21,7 @@ Option Explicit
 '   - kernel32.dll (GetComputerNameW API)
 '================================================================================
 
-' Unicode W -versiot tukevat skandinaavisia merkkej√§ (√Ñ, √ñ) ilman merkist√∂korruptioriski√§
+' Unicode W -versiot tukevat skandinaavisia merkkej‰ (ƒ, ÷) ilman merkistˆkorruptioriski‰
 #If VBA7 Then
     Private Declare PtrSafe Function api_GetUserName _
                     Lib "advapi32.dll" _
@@ -44,25 +44,25 @@ Option Explicit
 
 '--------------------------------------------------------------------------------
 ' Funktio: SniffUser
-' Tarkoitus: Kirjaa nykyisen k√§ytt√§j√§n kirjautumistiedot seurantatauluun
+' Tarkoitus: Kirjaa nykyisen k‰ytt‰j‰n kirjautumistiedot seurantatauluun
 '
-' Palauttaa: Ei mit√§√§n (toimenpide suoritetaan hiljaisesti)
+' Palauttaa: Ei mit‰‰n (toimenpide suoritetaan hiljaisesti)
 '
 ' Huomiot:
-'   - Virheet vaiennetaan, jotta sovelluksen k√§ynnistys ei keskeydy
-'   - Kutsutaan tyypillisesti AutoExec-makrosta tai k√§ynnistyslomakkeesta
-'   - Vaatii UsysUsers-taulun kent√§ill√§: NetworkUser, DBUser, ComputerName, LoginTime
+'   - Virheet vaiennetaan, jotta sovelluksen k‰ynnistys ei keskeydy
+'   - Kutsutaan tyypillisesti AutoExec-makrosta tai k‰ynnistyslomakkeesta
+'   - Vaatii UsysUsers-taulun kent‰ill‰: NetworkUser, DBUser, ComputerName, LoginTime
 '--------------------------------------------------------------------------------
 Function SniffUser()
 On Error GoTo ErrorHandler
-    Dim DB As Object  ' Tietokantaviittaus ilman k√§√§nn√∂saikaista DAO-viitett√§
-    Dim Taulu As Object  ' UsysUsers-taulun recordset ilman k√§√§nn√∂saikaista DAO-viitett√§
-    Dim NWUserName As String  ' Verkkok√§ytt√§j√§nimi Windowsista
+    Dim DB As Object  ' Tietokantaviittaus ilman k‰‰nnˆsaikaista DAO-viitett‰
+    Dim Taulu As Object  ' UsysUsers-taulun recordset ilman k‰‰nnˆsaikaista DAO-viitett‰
+    Dim NWUserName As String  ' Verkkok‰ytt‰j‰nimi Windowsista
     Dim CName As String  ' Tietokoneen nimi Windowsista
     Dim BuffSize As Long  ' Puskurin koko API-kutsuille
     Dim NBuffer As String  ' Merkkijonopuskuri API-kutsuille
     
-    ' Haetaan verkkok√§ytt√§j√§nimi Windows API:n avulla
+    ' Haetaan verkkok‰ytt‰j‰nimi Windows API:n avulla
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     
@@ -86,8 +86,8 @@ On Error GoTo ErrorHandler
     Set Taulu = DB.OpenRecordset("UsysUsers", 1)  ' 1 = dbOpenTable
     With Taulu
         .AddNew
-        .Fields(0) = NWUserName     'K√§ytt√§j√§nimi verkossa
-        .Fields(1) = CurrentUser()  'K√§ytt√§j√§nimi t√§ss√§ tietokannassa
+        .Fields(0) = NWUserName     'K‰ytt‰j‰nimi verkossa
+        .Fields(1) = CurrentUser()  'K‰ytt‰j‰nimi t‰ss‰ tietokannassa
         .Fields(2) = CName          'Tietokoneen nimi
         .Fields(3) = Now            'Kirjautumisaika
         .Update
@@ -100,7 +100,7 @@ On Error GoTo ErrorHandler
     Exit Function
 
 ErrorHandler:
-    ' Vaiennetaan virhe ‚Äì ei saa keskeyytt√§√§ sovelluksen k√§ynnistyst√§
+    ' Vaiennetaan virhe ñ ei saa keskeyytt‰‰ sovelluksen k‰ynnistyst‰
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing

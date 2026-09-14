@@ -1,30 +1,30 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
 ' Lomake: USysPipeFromTo
-' Tarkoitus: AutoCAD-putkilinjablokkien FROM/TO-attribuuttien muokkausty√∂kalu
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis√§tty
+' Tarkoitus: AutoCAD-putkilinjablokkien FROM/TO-attribuuttien muokkaustyˆkalu
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis‰tty
 '
 ' Kuvaus:
 '   Interaktiivinen lomake putkilinjablokkien FROM/TO-attribuuttien muokkaamiseen:
-'   - Yhdistyy k√§ynniss√§ olevaan AutoCAD-instanssiin
-'   - Suodattaa ja n√§ytt√§√§ vain putkilinjablokit (PIPELINE, PIPELINE_DATA, METSO_PIPE)
-'   - Mahdollistaa navigoinnin blokkien v√§lill√§ (Seuraava, Edellinen, Etsi tyhj√§)
-'   - Poimi FROM/TO piirustuksesta tai sy√∂t√§ k√§sin
-'   - P√§ivitt√§√§ blokin attribuutit reaaliajassa
+'   - Yhdistyy k‰ynniss‰ olevaan AutoCAD-instanssiin
+'   - Suodattaa ja n‰ytt‰‰ vain putkilinjablokit (PIPELINE, PIPELINE_DATA, METSO_PIPE)
+'   - Mahdollistaa navigoinnin blokkien v‰lill‰ (Seuraava, Edellinen, Etsi tyhj‰)
+'   - Poimi FROM/TO piirustuksesta tai syˆt‰ k‰sin
+'   - P‰ivitt‰‰ blokin attribuutit reaaliajassa
 '
 ' Riippuvuudet:
 '   - AutoCAD-sovellus (COM-automaatio)
 '   - Putkilinjablokit, joissa on FROM/TO-attribuutit
 '
 ' Kontrollit:
-'   - TFrom, TTo: FROM/TO-tekstikent√§t
+'   - TFrom, TTo: FROM/TO-tekstikent‰t
 '   - BNext, BPrev: Navigointipainikkeet
-'   - BFind: Etsi seuraava tyhj√§ -painike
+'   - BFind: Etsi seuraava tyhj‰ -painike
 '   - BPickFrom, BPickTo: Poimi piirustuksesta -painikkeet
 '   - BClearFrom, BClearTo: Tyhjennetty attribuutti -painikkeet
-'   - LPipeLine: N√§ytt√§√§ nykyisen putkilinjaviittauksen
+'   - LPipeLine: N‰ytt‰‰ nykyisen putkilinjaviittauksen
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
@@ -37,7 +37,7 @@ Dim i As Integer  ' Nykyinen blokkiindeksi
 
 '================================================================================
 ' Tapahtuma: BClearFrom_Click
-' Tarkoitus: Tyhjent√§√§ nykyisen putkilinjablokin FROM-attribuutin
+' Tarkoitus: Tyhjent‰‰ nykyisen putkilinjablokin FROM-attribuutin
 '================================================================================
 Private Sub BClearFrom_Click()
   On Error GoTo ErrorHandler
@@ -47,12 +47,12 @@ Private Sub BClearFrom_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe FROM-attribuutin tyhjennyst√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe FROM-attribuutin tyhjennyst‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: BClearTo_Click
-' Tarkoitus: Tyhjent√§√§ nykyisen putkilinjablokin TO-attribuutin
+' Tarkoitus: Tyhjent‰‰ nykyisen putkilinjablokin TO-attribuutin
 '================================================================================
 Private Sub BClearTo_Click()
   On Error GoTo ErrorHandler
@@ -62,7 +62,7 @@ Private Sub BClearTo_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe TO-attribuutin tyhjennyst√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe TO-attribuutin tyhjennyst‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
@@ -75,10 +75,10 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: OpenSource
-' Tarkoitus: Poimii putkilinjan, s√§ili√∂n, pumpun tai laitteen piirroksesta ja palauttaa viittauksen
+' Tarkoitus: Poimii putkilinjan, s‰iliˆn, pumpun tai laitteen piirroksesta ja palauttaa viittauksen
 ' Parametrit:
-'   Teksti - Tekstikentt√§, johon viittaus asetetaan
-'   oAttrib - P√§ivitett√§v√§ attribuuttiviittaus
+'   Teksti - Tekstikentt‰, johon viittaus asetetaan
+'   oAttrib - P‰ivitett‰v‰ attribuuttiviittaus
 '================================================================================
 Private Sub OpenSource(Teksti As TextBox, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   Dim Kohde As Object
@@ -95,7 +95,7 @@ Private Sub OpenSource(Teksti As TextBox, oAttrib As Object)  ' AcadAttributeRef
     Exit Sub
   End If
   
-  oDOC.Utility.GetEntity Kohde, Piste, "Poimi putkilinja, s√§ili√∂, pumppu tai laite: "
+  oDOC.Utility.GetEntity Kohde, Piste, "Poimi putkilinja, s‰iliˆ, pumppu tai laite: "
   If Err <> 0 Then
     Err.Clear
   Else
@@ -156,7 +156,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: BFind_Click
-' Tarkoitus: Etsii seuraavan putkilinjablokin, jolla FROM tai TO on tyhj√§
+' Tarkoitus: Etsii seuraavan putkilinjablokin, jolla FROM tai TO on tyhj‰
 '================================================================================
 Private Sub BFind_Click()
   On Error GoTo ErrorHandler
@@ -164,7 +164,7 @@ Private Sub BFind_Click()
   Do
     i = i + 1
     If i > Joukko.Count - 1 Then
-      If MsgBox("Viimeinen blokki!" & vbCrLf & "Aloitetaanko alusta?", vbYesNo, "Etsi seuraava tyhj√§") = vbYes Then
+      If MsgBox("Viimeinen blokki!" & vbCrLf & "Aloitetaanko alusta?", vbYesNo, "Etsi seuraava tyhj‰") = vbYes Then
          i = 0
       Else
         Exit Do
@@ -176,7 +176,7 @@ Private Sub BFind_Click()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe seuraavan tyhj√§n blokin etsimisess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe seuraavan tyhj‰n blokin etsimisess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
@@ -193,7 +193,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: NextBlock
-' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiert√§√§ alkuun)
+' Tarkoitus: Siirtyy seuraavaan blokkiin valintajoukossa (kiert‰‰ alkuun)
 '================================================================================
 Private Sub NextBlock()
   On Error GoTo ErrorHandler
@@ -214,7 +214,7 @@ End Sub
 ' Tarkoitus: Kirjoittaa tekstin attribuuttiviittaukseen
 ' Parametrit:
 '   Teksti - Text to write
-'   oAttrib - P√§ivitett√§v√§ attribuuttiviittaus
+'   oAttrib - P‰ivitett‰v‰ attribuuttiviittaus
 '================================================================================
 Private Sub KirjoitaAtt(Teksti As String, oAttrib As Object)  ' AcadAttributeReference - muutettu late binding (64-bit)
   On Error GoTo ErrorHandler
@@ -274,7 +274,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: PrevBlock
-' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiert√§√§ loppuun)
+' Tarkoitus: Siirtyy edelliseen blokkiin valintajoukossa (kiert‰‰ loppuun)
 '================================================================================
 Private Sub PrevBlock()
   On Error GoTo ErrorHandler
@@ -313,7 +313,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustetaan lomake, yhdistet√§√§n AutoCADiin, suodatetaan putkilinjablokit
+' Tarkoitus: Alustetaan lomake, yhdistet‰‰n AutoCADiin, suodatetaan putkilinjablokit
 '================================================================================
 Private Sub Form_Load()
   Dim FT(0) As Integer
@@ -334,7 +334,7 @@ Private Sub Form_Load()
        TeeJoukko "APUVALINTA", Joukko
        Joukko.Select acSelectionSetAll, , , FT, FD
        
-       ' Suodatus: pidet√§√§n vain putkilinjablokit
+       ' Suodatus: pidet‰‰n vain putkilinjablokit
        For j = 0 To Joukko.Count - 1
          Nimi = UCase$(Joukko(j).EffectiveName)
          If Nimi <> "PIPELINE" And Nimi <> "PIPELINE_DATA" And Nimi <> "METSO_PIPE" Then
@@ -347,7 +347,7 @@ Private Sub Form_Load()
        If L > 0 Then Joukko.RemoveItems Poista
        
        If Joukko.Count = 0 Then
-         MsgBox "Putkilinjojen blokkeja ei l√∂ytynyt.", vbExclamation
+         MsgBox "Putkilinjojen blokkeja ei lˆytynyt.", vbExclamation
          Err.Raise vbObjectError + 1000
        Else
          AvaaBlokki
@@ -390,7 +390,7 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: N√§ytt√§√§ ja korostaa nykyisen putkilinjablokin ja lataa attribuutit
+' Tarkoitus: N‰ytt‰‰ ja korostaa nykyisen putkilinjablokin ja lataa attribuutit
 '================================================================================
 Private Sub AvaaBlokki()
   Dim Attrib As Variant
@@ -407,7 +407,7 @@ Private Sub AvaaBlokki()
     oBlock.Highlight False
   End If
   
-  ' Haetaan ja n√§ytet√§√§n nykyinen blokki
+  ' Haetaan ja n‰ytet‰‰n nykyinen blokki
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
 oACAD.ZoomWindow MinPoint, MaxPoint
@@ -427,21 +427,21 @@ Next j
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe blokin n√§ytt√§misess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe blokin n‰ytt‰misess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: Yhdist√§√§ k√§ynniss√§ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdist‰‰ k‰ynniss‰ olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Yhdistet√§√§n k√§ynniss√§ olevaan AutoCADiin
+  ' Yhdistet‰‰n k‰ynniss‰ olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function
@@ -454,7 +454,7 @@ End Function
 
 '================================================================================
 ' Tapahtuma: TFrom_AfterUpdate
-' Tarkoitus: P√§ivitt√§√§ FROM-attribuutin tekstikent√§n arvon muuttuessa
+' Tarkoitus: P‰ivitt‰‰ FROM-attribuutin tekstikent‰n arvon muuttuessa
 '================================================================================
 Private Sub TFrom_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -463,12 +463,12 @@ Private Sub TFrom_AfterUpdate()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe FROM-attribuutin p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe FROM-attribuutin p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: TTo_AfterUpdate
-' Tarkoitus: P√§ivitt√§√§ TO-attribuutin tekstikent√§n arvon muuttuessa
+' Tarkoitus: P‰ivitt‰‰ TO-attribuutin tekstikent‰n arvon muuttuessa
 '================================================================================
 Private Sub TTo_AfterUpdate()
   On Error GoTo ErrorHandler
@@ -477,6 +477,6 @@ Private Sub TTo_AfterUpdate()
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe TO-attribuutin p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe TO-attribuutin p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 

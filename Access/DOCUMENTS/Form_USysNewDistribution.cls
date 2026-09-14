@@ -1,12 +1,12 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysNewDistribution
-' SOVELLUS : DOCUMENTS ‚Äî Uuden distribuution luonti
-' KUVAUS   : K√§ytt√§j√§ valitsee vastaanottajat ja sy√∂tt√§√§ distribuution
-'            perustiedot. Tallennuksessa luodaan merkinn√§t tauluihin
+' SOVELLUS : DOCUMENTS ó Uuden distribuution luonti
+' KUVAUS   : K‰ytt‰j‰ valitsee vastaanottajat ja syˆtt‰‰ distribuution
+'            perustiedot. Tallennuksessa luodaan merkinn‰t tauluihin
 '            UsysDISTRIBUTION ja USysRecipByDistr.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Sub BExit_Click()
   DoCmd.Close
@@ -15,7 +15,7 @@ End Sub
 '==========================================================================
 ' Tapahtuma: Form_Load
 ' KUVAUS  : Alustaa uuden distribuution lomakkeen tilan.
-'           Nollaa vain nykyisen k√§ytt√§j√§n aiemmat valinnat.
+'           Nollaa vain nykyisen k‰ytt‰j‰n aiemmat valinnat.
 '==========================================================================
 Private Sub Form_Load()
   Dim DB As DAO.Database
@@ -23,17 +23,17 @@ Private Sub Form_Load()
 
   On Error GoTo ErrorHandler
 
-  ' Haetaan nykyinen Windows-k√§ytt√§j√§tunnus omien valintojen tunnistamiseksi
+  ' Haetaan nykyinen Windows-k‰ytt‰j‰tunnus omien valintojen tunnistamiseksi
   Kayttaja = GetNetworkUserName()
 
   Set DB = CurrentDb
-  ' Nollataan VAIN t√§m√§n k√§ytt√§j√§n aiemmat unohtuneet valinnat ‚Äî
-  ' muiden k√§ytt√§jien samanaikaiset valinnat s√§ilyv√§t koskemattomina
+  ' Nollataan VAIN t‰m‰n k‰ytt‰j‰n aiemmat unohtuneet valinnat ó
+  ' muiden k‰ytt‰jien samanaikaiset valinnat s‰ilyv‰t koskemattomina
   DB.Execute "UPDATE USysRecipients SET [To Distribution] = No, SelectedBy = Null " & _
              "WHERE SelectedBy = '" & Replace(Kayttaja, "'", "") & "';", dbFailOnError
   Me.TDate.Value = Date
 
-  ' EI DB.Close: CurrentDb-viitett√§ ei tule sulkea koodista
+  ' EI DB.Close: CurrentDb-viitett‰ ei tule sulkea koodista
   Set DB = Nothing
   Exit Sub
 
@@ -45,14 +45,14 @@ ErrorHandler:
 End Sub
 
 Private Sub Lisaa_Click()
-' Avataan uuden vastaanottajan lis√§yslomake
+' Avataan uuden vastaanottajan lis‰yslomake
    DoCmd.OpenForm "USysNewRecipient", acNormal, , , , acDialog
    Me.Lista.Requery
 End Sub
 
 '==========================================================================
 ' Tapahtuma: Lista_DblClick
-' KUVAUS  : Lis√§√§ tai poistaa vastaanottajan k√§ytt√§j√§n nykyisest√§
+' KUVAUS  : Lis‰‰ tai poistaa vastaanottajan k‰ytt‰j‰n nykyisest‰
 '           distribuutiovalinnasta.
 '==========================================================================
 Private Sub Lista_DblClick(Cancel As Integer)
@@ -71,14 +71,14 @@ SQL = "SELECT * FROM USysRecipients WHERE ID=" & Me.Lista.ItemData(Me.Lista.Item
   If Not taulu.EOF Then
     taulu.Edit
     If taulu.Fields("To Distribution") Then
-      ' Poistetaan valinta ‚Äî tyhjennet√§√§n my√∂s k√§ytt√§j√§tunnus
+      ' Poistetaan valinta ó tyhjennet‰‰n myˆs k‰ytt‰j‰tunnus
       taulu.Fields("To Distribution") = False
       taulu.Fields("SelectedBy") = Null
     Else
       Oletus = IIf(IsNull(taulu.Fields("Copies")), "", taulu.Fields("Copies"))
       Kopioita = InputBox("How many copies are been sent? E.g. 4 paper copies and e-mail are marked as ""4+e"".", "Copies", Oletus)
       If Kopioita <> "" Then
-        ' Merkit√§√§n valituksi ja kirjataan valitsijan k√§ytt√§j√§tunnus monik√§ytt√§j√§tuen takaamiseksi
+        ' Merkit‰‰n valituksi ja kirjataan valitsijan k‰ytt‰j‰tunnus monik‰ytt‰j‰tuen takaamiseksi
         taulu.Fields("To Distribution") = True
         taulu.Fields("Copies") = Kopioita
         taulu.Fields("SelectedBy") = GetNetworkUserName()
@@ -94,7 +94,7 @@ Cleanup:
     taulu.Close
     Set taulu = Nothing
   End If
-  ' EI DB.Close: CurrentDb-viitett√§ ei tule sulkea koodista
+  ' EI DB.Close: CurrentDb-viitett‰ ei tule sulkea koodista
   Set DB = Nothing
   Exit Sub
 
@@ -104,8 +104,8 @@ ErrorHandler:
 End Sub
 
 Private Sub Valmis_Click()
-' Lis√§t√§√§n uusi distribuutio UsysDISTRIBUTION-tauluun ja
-' vastaanottajat USysRecipByDistr-tauluun transaktion sis√§ll√§ atomaarisuuden takaamiseksi
+' Lis‰t‰‰n uusi distribuutio UsysDISTRIBUTION-tauluun ja
+' vastaanottajat USysRecipByDistr-tauluun transaktion sis‰ll‰ atomaarisuuden takaamiseksi
   Dim SQL As String
   Dim DB As DAO.Database
   Dim taulu As DAO.Recordset
@@ -120,7 +120,7 @@ Private Sub Valmis_Click()
   Set DB = CurrentDb
   Kayttaja = GetNetworkUserName()
 
-  ' Tarkistetaan valinnat vain t√§m√§n k√§ytt√§j√§n rivien perusteella
+  ' Tarkistetaan valinnat vain t‰m‰n k‰ytt‰j‰n rivien perusteella
   Set taulu = DB.OpenRecordset("SELECT * FROM USysRecipients WHERE [To Distribution] = Yes AND SelectedBy = '" & Replace(Kayttaja, "'", "") & "';")
   If taulu.EOF Then
     MsgBox "You have to select recipients for Distribution!", vbCritical, "Error!"
@@ -145,13 +145,13 @@ Private Sub Valmis_Click()
   SQL = "SELECT * FROM UsysDISTRIBUTION WHERE No='" & Replace(Me.DistrNo, "'", "") & "'"
   Set taulu = DB.OpenRecordset(SQL)
   If Not taulu.EOF Then
-    MsgBox "Distribuution numero """ & Me.DistrNo & """ on jo k√§yt√∂ss√§! Valitse toinen numero.", vbCritical, "Error!"
+    MsgBox "Distribuution numero """ & Me.DistrNo & """ on jo k‰ytˆss‰! Valitse toinen numero.", vbCritical, "Error!"
     GoTo Cleanup
   End If
   taulu.Close
   Set taulu = Nothing
 
-  ' Aloitetaan transaktio: molemmat taulut p√§ivitet√§√§n atomaarisesti
+  ' Aloitetaan transaktio: molemmat taulut p‰ivitet‰‰n atomaarisesti
   DBEngine.BeginTrans
   inTransaction = True
 
@@ -170,13 +170,13 @@ Private Sub Valmis_Click()
   End With
   Set taulu = Nothing
 
-  ' Tehokkaampi INSERT INTO -kysely ‚Äî kopioidaan vain t√§m√§n k√§ytt√§j√§n valitsemat vastaanottajat
+  ' Tehokkaampi INSERT INTO -kysely ó kopioidaan vain t‰m‰n k‰ytt‰j‰n valitsemat vastaanottajat
   SQL = "INSERT INTO USysRecipByDistr (DistrID, Copies, Unit, Company, Name, Description, Address, email) " & _
         "SELECT " & DistrID & ", Copies, Unit, Company, Name, Description, Address, email " & _
         "FROM USysRecipients WHERE [To Distribution] = Yes AND SelectedBy = '" & Replace(Kayttaja, "'", "") & "';"
   DB.Execute SQL, dbFailOnError
 
-  ' Siivotaan t√§m√§n k√§ytt√§j√§n valinnat lomakkeen sulkemisen j√§lkeen
+  ' Siivotaan t‰m‰n k‰ytt‰j‰n valinnat lomakkeen sulkemisen j‰lkeen
   DB.Execute "UPDATE USysRecipients SET [To Distribution] = No, SelectedBy = Null " & _
              "WHERE SelectedBy = '" & Replace(Kayttaja, "'", "") & "';", dbFailOnError
 
@@ -193,7 +193,7 @@ Cleanup:
     Taulu2.Close
     Set Taulu2 = Nothing
   End If
-  ' EI DB.Close: CurrentDb-viitett√§ ei tule sulkea koodista
+  ' EI DB.Close: CurrentDb-viitett‰ ei tule sulkea koodista
   Set DB = Nothing
   Exit Sub
 
@@ -207,7 +207,7 @@ ErrorHandler:
 End Sub
 
 Private Function GetNetworkUserName() As String
-  ' Luetaan k√§ytt√§j√§nimi suoraan ymp√§rist√∂muuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
+  ' Luetaan k‰ytt‰j‰nimi suoraan ymp‰ristˆmuuttujasta, jotta lomake ei riipu ulkoisesta moduulista.
   On Error GoTo FallbackHandler
   GetNetworkUserName = Trim$(CStr(Environ$("USERNAME")))
   If GetNetworkUserName = "" Then GoTo FallbackHandler
@@ -217,5 +217,5 @@ FallbackHandler:
   GetNetworkUserName = "Unknown"
 End Function
 
-' IsNumeric() k√§ytt√§√§ VBA:n sis√§√§nrakennettua toteutusta.
-' Yksityinen ylikirjoitus poistettiin k√§√§nn√∂sep√§selvyyden est√§miseksi.
+' IsNumeric() k‰ytt‰‰ VBA:n sis‰‰nrakennettua toteutusta.
+' Yksityinen ylikirjoitus poistettiin k‰‰nnˆsep‰selvyyden est‰miseksi.

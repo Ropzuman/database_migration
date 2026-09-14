@@ -2,7 +2,7 @@ Option Compare Database
 Option Explicit
 
 Private Sub Command0_Click()
-    ' Ajetaan IntLoopDescr20Upd-kysely√§ ‚Äì p√§ivitt√§√§ loop-kuvausten 20-merkkiset kent√§t
+    ' Ajetaan IntLoopDescr20Upd-kysely‰ ñ p‰ivitt‰‰ loop-kuvausten 20-merkkiset kent‰t
     On Error GoTo ErrorHandler
     
     DoCmd.Hourglass True

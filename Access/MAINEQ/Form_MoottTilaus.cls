@@ -11,16 +11,16 @@ Private Sub Command0_Click()
     Dim Rivi As Integer
     Dim TemplatePath As String
 
-    ' Polku: haetaan asetustaulusta tulevaisuudessa; t√§ss√§ tarkistetaan ensin tiedoston olemassaolo
+    ' Polku: haetaan asetustaulusta tulevaisuudessa; t‰ss‰ tarkistetaan ensin tiedoston olemassaolo
     TemplatePath = "N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\LiiteMoottorienOstoehdotukseenTemplate.xls"
 
     If Dir(TemplatePath) = "" Then
-        MsgBox "Excel-mallitiedostoa ei l√∂ydy polusta:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
+        MsgBox "Excel-mallitiedostoa ei lˆydy polusta:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
         Exit Sub
     End If
 
     Set XL = CreateObject("Excel.Application")
-    ' Piilotetaan Excel ajon ajaksi ‚Äî nopeuttaa k√§ytt√∂√§ huomattavasti
+    ' Piilotetaan Excel ajon ajaksi ó nopeuttaa k‰yttˆ‰ huomattavasti
     XL.Visible = False
     XL.ScreenUpdating = False
 
@@ -64,14 +64,14 @@ Private Sub Command0_Click()
       .ColorIndex = -4105  ' xlAutomatic
     End With
 
-    ' N√§ytet√§√§n tulos k√§ytt√§j√§lle
+    ' N‰ytet‰‰n tulos k‰ytt‰j‰lle
     XL.ScreenUpdating = True
     XL.Visible = True
     AppActivate XL.Caption
 
 Cleanup:
     On Error Resume Next
-    ' Vapautetaan COM-objektit muistivuotojen est√§miseksi
+    ' Vapautetaan COM-objektit muistivuotojen est‰miseksi
     Set PWB = Nothing
     Set UWB = Nothing
     Set XL = Nothing
@@ -79,7 +79,7 @@ Cleanup:
 
 ErrorHandler:
     MsgBox "Virhe Excel-raportin luonnissa: " & Err.Description, vbCritical, "Virhe " & Err.Number
-    ' Jos Excel kaatuu, yritet√§√§n sulkea piilotettu prosessi
+    ' Jos Excel kaatuu, yritet‰‰n sulkea piilotettu prosessi
     If Not XL Is Nothing Then
         On Error Resume Next
         If Not XL.Visible Then XL.Quit

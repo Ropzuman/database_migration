@@ -2,7 +2,7 @@ Option Compare Database
 Option Explicit
 
 Private Sub Form_BeforeInsert(Cancel As Integer)
-    ' Haetaan suurin olemassa oleva Suffix parametrisoidulla kyselyll√§ (SQL-injektio estetty)
+    ' Haetaan suurin olemassa oleva Suffix parametrisoidulla kyselyll‰ (SQL-injektio estetty)
     Dim qdf As DAO.QueryDef
     Dim Taulukko As DAO.Recordset
     Dim Uusi As String
@@ -13,7 +13,7 @@ Private Sub Form_BeforeInsert(Cancel As Integer)
              "WHERE Department = [pDept] AND Eqtype = [pEqType] AND EqSeq = [pEqSeq];"
 
     Set qdf = CurrentDb.CreateQueryDef("", SqlStr)
-    ' Sy√∂tet√§√§n arvot parametreina ‚Äî heittomerkit tai erikoismerkit eiv√§t aiheuta SQL-injektiota
+    ' Syˆtet‰‰n arvot parametreina ó heittomerkit tai erikoismerkit eiv‰t aiheuta SQL-injektiota
     qdf.Parameters("[pDept]") = IIf(IsNull(Me.Parent.Department.Value), "", Me.Parent.Department.Value)
     qdf.Parameters("[pEqType]") = IIf(IsNull(Me.Parent.EqType.Value), "", Me.Parent.EqType.Value)
     qdf.Parameters("[pEqSeq]") = IIf(IsNull(Me.Parent.EqSeq.Value), "", Me.Parent.EqSeq.Value)
@@ -21,9 +21,9 @@ Private Sub Form_BeforeInsert(Cancel As Integer)
     Set Taulukko = qdf.OpenRecordset(dbOpenSnapshot)
 
     If Taulukko.EOF Or IsNull(Taulukko!MaxSuffix) Then
-        Uusi = "01"  ' Ei aiempia tietueita t√§lle kombinaatiolle
+        Uusi = "01"  ' Ei aiempia tietueita t‰lle kombinaatiolle
     Else
-        ' Lis√§t√§√§n 1 suurimpaan arvoon ‚Äî turvallinen my√∂s poistettujen rivien j√§lkeen
+        ' Lis‰t‰‰n 1 suurimpaan arvoon ó turvallinen myˆs poistettujen rivien j‰lkeen
         Uusi = Format$(CStr(Val(Taulukko!MaxSuffix) + 1), "00")
     End If
 

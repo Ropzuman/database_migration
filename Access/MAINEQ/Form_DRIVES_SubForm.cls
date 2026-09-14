@@ -3,7 +3,7 @@ Option Explicit
 
 Private Sub Form_BeforeInsert(Cancel As Integer)
     ' Haetaan SUURIN olemassa oleva Suffix MAX-funktiolla (turvallinen, ei rip RecordCount-bug)
-    ' Parametrisoitu kysely est√§√§ my√∂s SQL-injektion
+    ' Parametrisoitu kysely est‰‰ myˆs SQL-injektion
     Dim qdf As DAO.QueryDef
     Dim Taulukko As DAO.Recordset
     Dim Uusi As String
@@ -23,7 +23,7 @@ Private Sub Form_BeforeInsert(Cancel As Integer)
     If Taulukko.EOF Or IsNull(Taulukko!MaxSuffix) Then
         Uusi = "01"  ' Ei aiempia tietueita
     Else
-        ' MAX(Suffix) + 1 ‚Äî toimii oikein my√∂s poistojen j√§lkeen
+        ' MAX(Suffix) + 1 ó toimii oikein myˆs poistojen j‰lkeen
         Uusi = Format$(CStr(Val(Taulukko!MaxSuffix) + 1), "00")
     End If
 
@@ -54,7 +54,7 @@ Exit Sub
 Else
 If Not IsNull(Me.Rpm) And Me.Rpm <> "0" Then
     If Me.Rpm <> "3000" And Me.Rpm <> "1500" And Me.Rpm <> "1000" And Me.Rpm <> "750" Then
-        MsgBox "Huom!@Arvo pit√§√§ olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
+        MsgBox "Huom!@Arvo pit‰‰ olla synkroninen nopeus! @Esim. 3000, 1500, 1000 tai 750. @Paitsi vaihdemoottoreilla (GM)", vbOKOnly
         Me.Rpm.SetFocus
     End If
 End If

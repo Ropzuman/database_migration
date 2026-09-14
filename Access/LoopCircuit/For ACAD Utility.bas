@@ -8,7 +8,7 @@ End Type
 
 Public Paikat() As iPoint
 
-' Hiiren kursorin sijainnin API â€” 64-bit-yhteensopiva
+' Hiiren kursorin sijainnin API — 64-bit-yhteensopiva
 Type POINTAPI
     X As Long
     Y As Long

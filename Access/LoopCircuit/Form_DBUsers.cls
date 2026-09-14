@@ -1,11 +1,11 @@
 Option Compare Database
 Option Explicit
 
-' P√§ivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenk√§sittely, siivottu logiikka
+' P‰ivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenk‰sittely, siivottu logiikka
 
 Private Type UserRec
    bMach(1 To 32) As Byte  ' Tietokoneen nimen tavut
-   bUser(1 To 32) As Byte  ' K√§ytt√§j√§nimen tavut
+   bUser(1 To 32) As Byte  ' K‰ytt‰j‰nimen tavut
 End Type
 
 Private Sub Form_Open(Cancel As Integer)
@@ -23,7 +23,7 @@ Private Sub Form_Open(Cancel As Integer)
    Exit Sub
    
 ErrHandler:
-   ' Lomakkeen avaaminen ei peruunnu ‚Äî virhe n√§ytet√§√§n k√§ytt√§j√§lle
+   ' Lomakkeen avaaminen ei peruunnu ó virhe n‰ytet‰‰n k‰ytt‰j‰lle
    MsgBox "Error opening form: " & Err.Number & " - " & Err.Description, vbExclamation, "Form Error"
    Me.LoggedOn.RowSource = ""
 End Sub
@@ -69,13 +69,13 @@ Private Function WhosOn() As String
    ' Haetaan tietokannan polku lukitustiedostoa varten
    SPath = CurrentDb.Name
    
-   ' Access 2007+ k√§ytt√§√§ .laccdb-tiedostop√§√§tett√§ (ei en√§√§ .ldb)
+   ' Access 2007+ k‰ytt‰‰ .laccdb-tiedostop‰‰tett‰ (ei en‰‰ .ldb)
    SPath = Left$(SPath, InStr(1, SPath, ".")) & "laccdb"
 
-   ' Tarkistetaan, l√∂ytyk√∂ lukitustiedosto
+   ' Tarkistetaan, lˆytykˆ lukitustiedosto
    X = Dir(SPath)
    If X = "" Then
-      ' Kokeillaan vanhaa .ldb-p√§√§tett√§ yhteensopivuuden varmistamiseksi
+      ' Kokeillaan vanhaa .ldb-p‰‰tett‰ yhteensopivuuden varmistamiseksi
       SPath = Left$(SPath, InStr(1, SPath, ".")) & "ldb"
       X = Dir(SPath)
       If X = "" Then
@@ -91,7 +91,7 @@ Private Function WhosOn() As String
       Get iLDBFile, , rUser
       
       With rUser
-         ' Poimitaan null-merkkiin p√§√§ttyv√§ tietokoneen nimi
+         ' Poimitaan null-merkkiin p‰‰ttyv‰ tietokoneen nimi
          i = 1
          sMach = ""
          Do While i <= 32 And .bMach(i) <> 0
@@ -99,7 +99,7 @@ Private Function WhosOn() As String
             i = i + 1
          Loop
          
-         ' Poimitaan null-merkkiin p√§√§ttyv√§ k√§ytt√§j√§nimi
+         ' Poimitaan null-merkkiin p‰‰ttyv‰ k‰ytt‰j‰nimi
          i = 1
          sUser = ""
          Do While i <= 32 And .bUser(i) <> 0
@@ -108,7 +108,7 @@ Private Function WhosOn() As String
          Loop
       End With
       
-      ' Rakennetaan yksik√§sitteinen kirjautumismerkkijono
+      ' Rakennetaan yksik‰sitteinen kirjautumismerkkijono
       sLogStr = sMach & " -- " & sUser
       If InStr(sLogins, sLogStr) = 0 Then
          sLogins = sLogins & sLogStr & ";"

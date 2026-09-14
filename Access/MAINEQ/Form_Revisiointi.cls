@@ -58,7 +58,7 @@ For i = 0 To Rev.ListCount - 1
     Exit For
   End If
 Next i
-' Avataan taulu kenttien tyyppien tarkistamista varten (suljetaan ennen uudelleenk√§ytt√∂√§)
+' Avataan taulu kenttien tyyppien tarkistamista varten (suljetaan ennen uudelleenk‰yttˆ‰)
 Set Taul = CurrentDb.OpenRecordset(ATaulu.Value)
 For i = 0 To Taul.Fields.Count - 1
   If Taul.Fields(i).Type = 4 And Taul.Fields(i).Attributes = 49 Then
@@ -69,7 +69,7 @@ Next i
 Taul.Close
 Set Taul = Nothing
 If ATaulu <> "" And Rev <> "" Then
-  ' Avataan uusi kysely viimeisimm√§n revision selvitt√§miseksi
+  ' Avataan uusi kysely viimeisimm‰n revision selvitt‰miseksi
   Set Taul = CurrentDb.OpenRecordset("SELECT " & Rev & " FROM " & ATaulu & " WHERE " & Rev & " Is Not Null")
   If Not Taul.EOF Then
     Revi = Left$(Taul.Fields(0), InStr(Taul.Fields(0), " ") - 1)
@@ -101,11 +101,11 @@ Dim i As Integer
 
 ' Validate that all required selections are made
 If ATaulu = "" Or UTaulu = "" Or ID = "" Or Rev = "" Then
-  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinn√§t"
+  MsgBox "Valitse ensin taulukot ja sarakkeet", vbCritical, "Tee merkinn‰t"
   Exit Sub
 End If
 If TRev = "" Or TDate = "" Or TMaker = "" Then
-  MsgBox "Laita ensin revisiomerkinn√§t", vbCritical, "Tee merkinn√§t"
+  MsgBox "Laita ensin revisiomerkinn‰t", vbCritical, "Tee merkinn‰t"
   Exit Sub
 End If
 
@@ -144,5 +144,5 @@ Loop
 Merk.Visible = False
 Vert.Close
 Set Vert = Nothing
-MsgBox "Valmis", vbOKOnly, "Tee merkinn√§t"
+MsgBox "Valmis", vbOKOnly, "Tee merkinn‰t"
 End Sub

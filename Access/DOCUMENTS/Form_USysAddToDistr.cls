@@ -1,12 +1,12 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysAddToDistr
-' SOVELLUS : DOCUMENTS ‚Äî Lis√§√§ dokumentti distribuutioon
-' KUVAUS   : Tarkistaa onko dokumentti jo lis√§tty valittuun distribuutioon
-'            ja lis√§√§ sen, jos ei. K√§ytt√§√§ transaktioita atomaarisuuden
+' SOVELLUS : DOCUMENTS ó Lis‰‰ dokumentti distribuutioon
+' KUVAUS   : Tarkistaa onko dokumentti jo lis‰tty valittuun distribuutioon
+'            ja lis‰‰ sen, jos ei. K‰ytt‰‰ transaktioita atomaarisuuden
 '            takaamiseksi.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Const TV_DOC_CURRENT_COUNTER As String = "DOC_CurrentCounter"
 Private Const TV_DOC_DIST_REV As String = "DOC_AddToDistr_Rev"
@@ -28,7 +28,7 @@ Private Sub Add_Click()
   On Error GoTo ErrorHandler
   inTransaction = False
   
-  ' Esitarkistus: varmistetaan ett√§ distribuutio on valittu
+  ' Esitarkistus: varmistetaan ett‰ distribuutio on valittu
   If IsNull(Me.Distribution.Value) Then
     MsgBox "Please select a distribution first.", vbExclamation, "Validation"
     Exit Sub
@@ -51,7 +51,7 @@ Private Sub Add_Click()
     DBEngine.BeginTrans
     inTransaction = True
 
-    ' Avataan taulu pelkk√§√§ lis√§yst√§ varten
+    ' Avataan taulu pelkk‰‰ lis‰yst‰ varten
     Set taulu = DB.OpenRecordset("SentDocuments", dbOpenDynaset, dbAppendOnly)
     taulu.AddNew
     taulu.Fields(0) = DokumenttiID
@@ -71,13 +71,13 @@ Cleanup:
     taulu.Close
     Set taulu = Nothing
   End If
-  ' EI DB.Close: CurrentDb-viitett√§ ei tule sulkea
+  ' EI DB.Close: CurrentDb-viitett‰ ei tule sulkea
   Set DB = Nothing
   Exit Sub
   
 ErrorHandler:
   If inTransaction Then
-    DBEngine.Rollback  ' Vapautetaan tietokanta lukot ep√§onnistuneen tallennuksen j√§lkeen
+    DBEngine.Rollback  ' Vapautetaan tietokanta lukot ep‰onnistuneen tallennuksen j‰lkeen
     inTransaction = False
   End If
   MsgBox "Error adding document to distribution: " & Err.Description, vbCritical, "Add Error"
@@ -89,13 +89,13 @@ Private Sub Command14_Click()
 End Sub
 
 Private Sub Form_Load()
-  ' Valitaan oletuksena ensimm√§inen distribuutiovaihtoehto
+  ' Valitaan oletuksena ensimm‰inen distribuutiovaihtoehto
   Me.Distribution.Value = Me.Distribution.ItemData(1)
 End Sub
 
 Private Function LueTempVarPitka(ByVal Nimi As String) As Long
   Dim Arvo As String
-  ' K√§yt√§ paikallista lukijaa, se kutsuu p√§√§formin versiota
+  ' K‰yt‰ paikallista lukijaa, se kutsuu p‰‰formin versiota
   Arvo = LueTempVarTeksti(Nimi)
   If Arvo <> "" And IsNumeric(Arvo) Then
     LueTempVarPitka = CLng(Arvo)

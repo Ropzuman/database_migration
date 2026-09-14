@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysStart
-' SOVELLUS : DOCUMENTS ‚Äî K√§ynnistysn√§ytt√∂
-' KUVAUS   : N√§ytt√§√§ k√§ynnistysruudun 2 sekunnin ajan (TimerInterval),
-'            jonka j√§lkeen avaa joko SETTINGS- tai DOCUMENTS-lomakkeen.
-' P√ÑIVITETTY: 2026-03-03
+' SOVELLUS : DOCUMENTS ó K‰ynnistysn‰yttˆ
+' KUVAUS   : N‰ytt‰‰ k‰ynnistysruudun 2 sekunnin ajan (TimerInterval),
+'            jonka j‰lkeen avaa joko SETTINGS- tai DOCUMENTS-lomakkeen.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Public ajastin As Long
 Private Sub Form_Load()
@@ -17,7 +17,7 @@ Private Sub Form_Timer()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
-  ' Avaa SETTINGS- tai DOCUMENTS-lomake k√§ynnistysasennuksen mukaan
+  ' Avaa SETTINGS- tai DOCUMENTS-lomake k‰ynnistysasennuksen mukaan
   If Me.ShowSettings.Value Then
     DoCmd.OpenForm "SETTINGS"
   Else

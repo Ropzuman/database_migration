@@ -34,9 +34,9 @@ Dim FilterData(0) As Variant
 Dim Laitettu As Integer
 
 On Error Resume Next
-Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist√§√§ AutoCADiin
-If Err <> 0 Then 'K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt
-  MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Generoi kuvat"
+Set oAcad = GetObject(, "AutoCAD.Application") 'Koitetaan yhdist‰‰ AutoCADiin
+If Err <> 0 Then 'K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt
+  MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Generoi kuvat"
   Set oAcad = Nothing
   Exit Sub
 End If

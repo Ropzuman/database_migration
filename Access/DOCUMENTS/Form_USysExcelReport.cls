@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysExcelReport
-' SOVELLUS : DOCUMENTS ‚Äî Excel-raporttien luonti
+' SOVELLUS : DOCUMENTS ó Excel-raporttien luonti
 ' KUVAUS   : Generoi dokumenttilistausraportin Exceliin valitun
-'            raporttityypin ja yksik√∂n mukaan (PDU/FLU, normaali/CN-pyynn√∂t).
-' P√ÑIVITETTY: 2026-03-03
+'            raporttityypin ja yksikˆn mukaan (PDU/FLU, normaali/CN-pyynnˆt).
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 Private Sub Command16_Click()
@@ -21,7 +21,7 @@ Private Sub OK_Click()
   Dim DB As DAO.Database
   Dim Kysely As String
   Dim Kysely2 As String
-  Dim xlApp As Object  ' Late binding ‚Äî vakaampi kuin varhainen sidonta
+  Dim xlApp As Object  ' Late binding ó vakaampi kuin varhainen sidonta
   Dim ExcelTaulu As DAO.Recordset
   Dim DTaulu As DAO.Recordset
   Dim Itemi As String
@@ -31,7 +31,7 @@ Private Sub OK_Click()
 
   ExcelPolku = "l:\projekti\valdivia\sheets\tools\DocumentReport.xls"
 
-  ' Varmistetaan tiedoston olemassaolo ennen Excelin k√§ynnistyst√§
+  ' Varmistetaan tiedoston olemassaolo ennen Excelin k‰ynnistyst‰
   If Dir(ExcelPolku) = "" Then
     MsgBox "Excel report template not found at: " & ExcelPolku, vbCritical
     Exit Sub
@@ -57,10 +57,10 @@ Private Sub OK_Click()
 
   Set DB = CurrentDb
 
-  ' Tyhjennet√§√§n v√§liaikaistaulut ennen t√§ytt√∂√§
+  ' Tyhjennet‰‰n v‰liaikaistaulut ennen t‰yttˆ‰
   DB.Execute "DELETE * FROM USysTblForExcel;"
   DB.Execute "DELETE * FROM USysDIForExcel;"
-  ' T√§ytet√§√§n v√§liaikaistaulut raporttidatalla
+  ' T‰ytet‰‰n v‰liaikaistaulut raporttidatalla
   DB.Execute Kysely
   DB.Execute Kysely2
 
@@ -89,9 +89,9 @@ Private Sub OK_Click()
   ExcelTaulu.Close
   Set ExcelTaulu = Nothing
 
-  ' K√§ynnistet√§√§n Excel COM-automaatio raporttia varten
+  ' K‰ynnistet‰‰n Excel COM-automaatio raporttia varten
   Set xlApp = CreateObject("Excel.Application")
-  ' Poistetaan Excelin omat h√§iritsev√§t varoitukset automaation ajaksi
+  ' Poistetaan Excelin omat h‰iritsev‰t varoitukset automaation ajaksi
   xlApp.DisplayAlerts = False
   xlApp.Workbooks.Open ExcelPolku, UpdateLinks:=False
   xlApp.Visible = True
@@ -104,7 +104,7 @@ Private Sub OK_Click()
   xlApp.Workbooks("DocumentReport.xls").Close False
 
 Cleanup:
-  ' Varmistetaan aina Excel-prosessin puhdistus muistivuodon est√§miseksi
+  ' Varmistetaan aina Excel-prosessin puhdistus muistivuodon est‰miseksi
   On Error Resume Next
   If Not DTaulu Is Nothing Then
     DTaulu.Close
@@ -117,7 +117,7 @@ Cleanup:
   Set DB = Nothing
   If Not xlApp Is Nothing Then
     xlApp.DisplayAlerts = True
-    xlApp.Quit  ' Lopetetaan Excel-prosessi ‚Äî estet√§√§n "haamuinstanssit"
+    xlApp.Quit  ' Lopetetaan Excel-prosessi ó estet‰‰n "haamuinstanssit"
     Set xlApp = Nothing
   End If
   DoCmd.Close acForm, "USysExcelReport"

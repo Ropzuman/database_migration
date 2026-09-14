@@ -2,11 +2,11 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysOpenFile
-' SOVELLUS : DOCUMENTS ‚Äî Tiedoston avaus
-' KUVAUS   : N√§ytt√§√§ dokumenttiin liitetyt tiedostot listassa.
+' SOVELLUS : DOCUMENTS ó Tiedoston avaus
+' KUVAUS   : N‰ytt‰‰ dokumenttiin liitetyt tiedostot listassa.
 '            Kaksoisnapsautuksella avataan tiedosto FollowHyperlink-kutsulla.
 '            Hakemiston voi avata Explorerissa Shell-komennolla.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Dim Hakem As String
 Dim fso As Object
@@ -14,8 +14,8 @@ Private Sub Command4_Click()
   DoCmd.Close
 End Sub
 Private Sub Command52_Click()
-  ' Avataan hakemisto turvallisesti k√§ytt√∂j√§rjestelm√§n omalla menettelyll√§
-  ' FollowHyperlink v√§ltt√§√§ Shell-komentoinjektioriskin kokonaan
+  ' Avataan hakemisto turvallisesti k‰yttˆj‰rjestelm‰n omalla menettelyll‰
+  ' FollowHyperlink v‰ltt‰‰ Shell-komentoinjektioriskin kokonaan
   If fso.FolderExists(Hakem) Then
     On Error Resume Next
     Application.FollowHyperlink Hakem
@@ -44,7 +44,7 @@ Private Sub Form_Load()
 
   Set fso = CreateObject("Scripting.FileSystemObject")
 
-  ' Dokumentin tunniste v√§litet√§√§n avaavalta lomakkeelta OpenArgs-parametrissa.
+  ' Dokumentin tunniste v‰litet‰‰n avaavalta lomakkeelta OpenArgs-parametrissa.
   If IsNull(Me.OpenArgs) Or Len(Trim$(CStr(Me.OpenArgs))) = 0 Then
     MsgBox "Dokumentin tunniste puuttuu.", vbCritical, "Avaa tiedosto"
     DoCmd.Close acForm, Me.Name
@@ -105,4 +105,4 @@ Private Sub Tied_DblClick(Cancel As Integer)
   End If
 End Sub
 
-' IsNumeric() ‚Äî using VBA built-in; private override removed to avoid compile ambiguity.
+' IsNumeric() ó using VBA built-in; private override removed to avoid compile ambiguity.

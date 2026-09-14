@@ -2,19 +2,19 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' MODUULI  : USysCheck
-' SOVELLUS : FunctionDiagrams ‚Äî K√§ytt√§j√§tunnistus
-' KUVAUS   : Kirjaa kirjautuneen k√§ytt√§j√§n verkkonimet UsysUsers-
-'            j√§rjestelm√§tauluun istunnon alussa (SniffUser). KAYTTAJA()-
-'            funktio palauttaa nykyisen Windows-k√§ytt√§j√§nimen muiden
-'            moduulien k√§ytt√∂√∂n (mm. revisioiden tekij√§tieto).
-'            Molemmat Windows-kutsut (advapi32 / kernel32) on p√§ivitetty
-'            64-bittisiksi: nSize-parametri on LongPtr-tyyppi√§.
+' SOVELLUS : FunctionDiagrams ó K‰ytt‰j‰tunnistus
+' KUVAUS   : Kirjaa kirjautuneen k‰ytt‰j‰n verkkonimet UsysUsers-
+'            j‰rjestelm‰tauluun istunnon alussa (SniffUser). KAYTTAJA()-
+'            funktio palauttaa nykyisen Windows-k‰ytt‰j‰nimen muiden
+'            moduulien k‰yttˆˆn (mm. revisioiden tekij‰tieto).
+'            Molemmat Windows-kutsut (advapi32 / kernel32) on p‰ivitetty
+'            64-bittisiksi: nSize-parametri on LongPtr-tyyppi‰.
 ' DIPLE    : PtrSafe + LongPtr; kaikki resurssit vapautetaan Set = Nothing.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
-' Windows-rajapinnan kutsut k√§ytt√§j√§nimen ja koneen nimen hakemiseen
-' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) ‚Äî ByRef Long, EI LongPtr
+' Windows-rajapinnan kutsut k‰ytt‰j‰nimen ja koneen nimen hakemiseen
+' nSize on LPDWORD (osoitin 32-bittiseen DWORD:iin) ó ByRef Long, EI LongPtr
 #If VBA7 Then
 Private Declare PtrSafe Function api_GetUserName _
                 Lib "advapi32.dll" _
@@ -35,7 +35,7 @@ Private Declare Function api_GetComputerName _
                 (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 Function SniffUser()
-    ' Hakee verkkok√§ytt√§j√§nimen ja koneen nimen: tallentaa UsysUsers-tauluun
+    ' Hakee verkkok‰ytt‰j‰nimen ja koneen nimen: tallentaa UsysUsers-tauluun
     Dim DB As Object
     Dim Taulu As Object
     Dim NWUserName As String
@@ -63,8 +63,8 @@ Function SniffUser()
     Set Taulu = DB.OpenRecordset("UsysUsers", 1)
     With Taulu
         .AddNew
-        .Fields(0) = NWUserName     ' Verkkok√§ytt√§j√§nimi
-        .Fields(1) = CurrentUser()  ' Tietokantak√§ytt√§j√§nimi
+        .Fields(0) = NWUserName     ' Verkkok‰ytt‰j‰nimi
+        .Fields(1) = CurrentUser()  ' Tietokantak‰ytt‰j‰nimi
         .Fields(2) = CName          ' Koneen nimi
         .Fields(3) = Now            ' Kirjautumishetki
         .Update

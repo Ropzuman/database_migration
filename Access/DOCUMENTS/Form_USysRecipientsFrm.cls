@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysRecipientsFrm
-' SOVELLUS : DOCUMENTS ‚Äî Vastaanottajien n√§kym√§
-' KUVAUS   : N√§ytt√§√§ vastaanottajan osoitetiedot USysShowCommon-dialogi
+' SOVELLUS : DOCUMENTS ó Vastaanottajien n‰kym‰
+' KUVAUS   : N‰ytt‰‰ vastaanottajan osoitetiedot USysShowCommon-dialogi
 '            kautta tarkastelua varten.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 Private Sub Text36_Click()
   DoCmd.OpenForm "USysShowCommon", , , , , acDialog, IIf(IsNull(Me.Address.Value), "", CStr(Me.Address.Value))

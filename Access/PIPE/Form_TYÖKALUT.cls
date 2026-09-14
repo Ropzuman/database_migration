@@ -1,42 +1,42 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
-' Lomake: TY√ñKALUT
-' Tarkoitus: AutoCAD P&I -tietojen tuonti- ja p√§ivitysty√∂kalupakki PIPE-tietokantaan
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis√§tty
+' Lomake: TY÷KALUT
+' Tarkoitus: AutoCAD P&I -tietojen tuonti- ja p‰ivitystyˆkalupakki PIPE-tietokantaan
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis‰tty
 '
 ' Kuvaus:
-'   Keskuslomake P&I-kaaviotietojen tuontiin ja p√§ivitykseen AutoCADista:
-'   - K√§sittelee .DWG-tiedostot er√§ajona valitusta kansiosta
-'   - Tuo putkilinja-, venttiili-, kentt√§laite- ja instrumenttisilmukkatiedot
-'   - Kolmivaiheinen ty√∂nkulku per tietotyyppi:
+'   Keskuslomake P&I-kaaviotietojen tuontiin ja p‰ivitykseen AutoCADista:
+'   - K‰sittelee .DWG-tiedostot er‰ajona valitusta kansiosta
+'   - Tuo putkilinja-, venttiili-, kentt‰laite- ja instrumenttisilmukkatiedot
+'   - Kolmivaiheinen tyˆnkulku per tietotyyppi:
 '     1. Lue AutoCADista (Command1x_Click)
-'     2. Lis√§√§ v√§liaikaistaulukkoon (Command2x_Click)
-'     3. P√§ivit√§ tietokantaan (Command3x_Click)
+'     2. Lis‰‰ v‰liaikaistaulukkoon (Command2x_Click)
+'     3. P‰ivit‰ tietokantaan (Command3x_Click)
 '   - Avaa erikoiseditorilomakkeet (FlowPickNo, PipeFromTo, PipeToOther)
 '
 ' Riippuvuudet:
 '   - AutoCAD-sovellus (COM-automaatio)
 '   - DAO.Recordset tietokantaoperaatioihin
 '   - Kyselytoiminnot: *_APPEND, *_UPDATE, DELETE-kyselyt
-'   - LPolku-otsikkoruutu: M√§√§rittelee .DWG-tiedostojen alakansion
+'   - LPolku-otsikkoruutu: M‰‰rittelee .DWG-tiedostojen alakansion
 '
 ' Tietotyypit:
 '   - PIPELINEDATA: Putkilinjablokit (PIPELINE_DATA)
-'   - MANVALVEDATA: K√§siventtiilit (MANUALVALVE_DATA)
+'   - MANVALVEDATA: K‰siventtiilit (MANUALVALVE_DATA)
 '   - INSTVALVEDATA: Instrumenttiventtiilit (INSTVALVE_DATA)
-'   - FIELDINSTDATA: Kentt√§laitteet (UP080D)
+'   - FIELDINSTDATA: Kentt‰laitteet (UP080D)
 '   - INSTLOOPDATA: Instrumenttisilmukat (UP079D))
 '
 ' Kontrollit:
-'   - Command11-13: Putkilinjaty√∂nkulku
-'   - Command21-23: K√§siventtiility√∂nkulku
-'   - Command31-33: Instrumenttiventtiility√∂nkulku
-'   - Command41-43: Kentt√§laitety√∂nkulku
-'   - Command51-53: Instrumenttisilmukkaty√∂nkulku
+'   - Command11-13: Putkilinjatyˆnkulku
+'   - Command21-23: K‰siventtiilityˆnkulku
+'   - Command31-33: Instrumenttiventtiilityˆnkulku
+'   - Command41-43: Kentt‰laitetyˆnkulku
+'   - Command51-53: Instrumenttisilmukkatyˆnkulku
 '   - Command18, 19, 40: Avaa editorilomakkeet
-'   - BPipelineToManval: Linkit√§ putkilinjat k√§siventtiileihin
+'   - BPipelineToManval: Linkit‰ putkilinjat k‰siventtiileihin
 '================================================================================
 
 Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
@@ -44,24 +44,24 @@ Dim oDOC As Object  ' AcadDocument - muutettu late binding (64-bit)
 Dim Tied As String  ' Current .DWG filename during batch processing
 Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
 
-'===== Putkilinja k√§siventtiileihin =====
+'===== Putkilinja k‰siventtiileihin =====
 '================================================================================
 ' Tapahtuma: BPipelineToManval_Click
-' Tarkoitus: Avaa lomake putkilinjaviittausten linkitt√§miseen k√§siventtiileihin
+' Tarkoitus: Avaa lomake putkilinjaviittausten linkitt‰miseen k‰siventtiileihin
 '================================================================================
 Private Sub BPipelineToManval_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss√§?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss‰?", vbYesNo, "Pipeline To Manualvalve") = vbYes Then
     DoCmd.OpenForm "USysPipeToOther", , , , , , "MANUALVALVE_DATA"
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (k√§siventtiilit): " & Err.Description, vbExclamation
+  MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (k‰siventtiilit): " & Err.Description, vbExclamation
 End Sub
 
-'===== Putkilinjaty√∂nkulku (Commands 11-13) =====
+'===== Putkilinjatyˆnkulku (Commands 11-13) =====
 '================================================================================
 ' Tapahtuma: Command11_Click
 ' Tarkoitus: Lukee putkilinjatiedot AutoCAD-piirustuksista
@@ -88,30 +88,30 @@ Private Sub Command12_Click()
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "PIPELINES_APPEND"
-  MsgBox "Putkilinjojen lis√§ys valmis", vbInformation
+  MsgBox "Putkilinjojen lis‰ys valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe putkilinjojen lis√§yksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjojen lis‰yksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command13_Click
-' Tarkoitus: P√§ivitt√§√§ tietokantaan putkilinjatiedot v√§liaikaistaulukosta
+' Tarkoitus: P‰ivitt‰‰ tietokantaan putkilinjatiedot v‰liaikaistaulukosta
 '================================================================================
 Private Sub Command13_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! T√§m√§ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p√§√§lle." & vbCrLf & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P√§ivit√§ tiedot") = vbYes Then
+  If MsgBox("Varoitus! T‰m‰ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p‰‰lle." & vbCrLf & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P‰ivit‰ tiedot") = vbYes Then
     CurrentDb.Execute "DELETE * From UsysPIPEUPD"
     CurrentDb.Execute "PIPELINES_UPDATE_START"
     CurrentDb.Execute "PIPELINES_UPDATE"
-    MsgBox "Putkilinjojen p√§ivitys valmis", vbInformation
+    MsgBox "Putkilinjojen p‰ivitys valmis", vbInformation
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe putkilinjojen p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe putkilinjojen p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '===== Editorilomakkeet (Commands 18-19, 40) =====
@@ -122,7 +122,7 @@ End Sub
 Private Sub Command18_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss√§?", vbYesNo, "FlowPickNo") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss‰?", vbYesNo, "FlowPickNo") = vbYes Then
     DoCmd.OpenForm "USysFlowpickNo"
   End If
   
@@ -138,7 +138,7 @@ End Sub
 Private Sub Command19_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss√§?", vbYesNo, "Pipeline From/To") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss‰?", vbYesNo, "Pipeline From/To") = vbYes Then
     DoCmd.OpenForm "USysPipeFromTo"
   End If
   
@@ -147,10 +147,10 @@ ErrorHandler:
   MsgBox "Virhe PipeFromTo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== K√§siventtiility√∂nkulku (Commands 21-23) =====
+'===== K‰siventtiilityˆnkulku (Commands 21-23) =====
 '================================================================================
 ' Tapahtuma: Command21_Click
-' Tarkoitus: Lukee k√§siventtiilitiedot AutoCAD-piirustuksista
+' Tarkoitus: Lukee k‰siventtiilitiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command21_Click()
   On Error GoTo ErrorHandler
@@ -158,12 +158,12 @@ Private Sub Command21_Click()
   Tied = ""
   LueTiedot "MANVALVEDATA", "MANUALVALVE_DATA"
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "K√§siventtiilien luku valmis", vbInformation
+  MsgBox "K‰siventtiilien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Virhe k√§siventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
+  MsgBox "Virhe k‰siventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
@@ -174,34 +174,34 @@ Private Sub Command22_Click()
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "MANVALVE_APPEND"
-  MsgBox "K√§siventtiilien lis√§ys valmis", vbInformation
+  MsgBox "K‰siventtiilien lis‰ys valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe k√§siventtiilien lis√§yksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe k‰siventtiilien lis‰yksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command23_Click
-' Tarkoitus: P√§ivitt√§√§ tietokantaan k√§siventtiilidata v√§liaikaistaulukosta
+' Tarkoitus: P‰ivitt‰‰ tietokantaan k‰siventtiilidata v‰liaikaistaulukosta
 '================================================================================
 Private Sub Command23_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! T√§m√§ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p√§√§lle." & vbCrLf _
+  If MsgBox("Varoitus! T‰m‰ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p‰‰lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia n√§ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P√§ivit√§ tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia n‰ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P‰ivit‰ tiedot") = vbYes Then
     CurrentDb.Execute "MANVALVE_UPDATE"
-    MsgBox "K√§siventtiilien p√§ivitys valmis", vbInformation
+    MsgBox "K‰siventtiilien p‰ivitys valmis", vbInformation
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe k√§siventtiilien p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe k‰siventtiilien p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttiventtiility√∂nkulku (Commands 31-33) =====
+'===== Instrumenttiventtiilityˆnkulku (Commands 31-33) =====
 '================================================================================
 ' Tapahtuma: Command31_Click
 ' Tarkoitus: Lukee instrumenttiventtiilitiedot AutoCAD-piirustuksista
@@ -229,41 +229,41 @@ Private Sub Command32_Click()
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "INSTVALVE_APPEND"
-  MsgBox "Instrumenttiventtiilien lis√§ys valmis", vbInformation
+  MsgBox "Instrumenttiventtiilien lis‰ys valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe instrumenttiventtiilien lis√§yksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttiventtiilien lis‰yksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command33_Click
-' Tarkoitus: P√§ivitt√§√§ tietokantaan instrumenttiventtiilidata v√§liaikaistaulukosta
+' Tarkoitus: P‰ivitt‰‰ tietokantaan instrumenttiventtiilidata v‰liaikaistaulukosta
 '================================================================================
 Private Sub Command33_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! T√§m√§ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p√§√§lle." & vbCrLf _
+  If MsgBox("Varoitus! T‰m‰ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p‰‰lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia n√§ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P√§ivit√§ tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia n‰ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P‰ivit‰ tiedot") = vbYes Then
     CurrentDb.Execute "INSTVALVE_UPDATE"
-    MsgBox "Instrumenttiventtiilien p√§ivitys valmis", vbInformation
+    MsgBox "Instrumenttiventtiilien p‰ivitys valmis", vbInformation
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe instrumenttiventtiilien p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttiventtiilien p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command40_Click
-' Tarkoitus: Avaa lomake putkilinjaviittausten linkitt√§miseen instrumenttisilmukoihin
+' Tarkoitus: Avaa lomake putkilinjaviittausten linkitt‰miseen instrumenttisilmukoihin
 '================================================================================
 Private Sub Command40_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss√§?", vbYesNo, "Pipeline To Loops") = vbYes Then
+  If MsgBox("Onko haluttu P&I kaavio auki AutoCADiss‰?", vbYesNo, "Pipeline To Loops") = vbYes Then
     DoCmd.OpenForm "USysPipeToOther", , , , , , "UP079D"
   End If
   
@@ -272,10 +272,10 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-instrumenttipiirilomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Kentt√§laitety√∂nkulku (Commands 41-43) =====
+'===== Kentt‰laitetyˆnkulku (Commands 41-43) =====
 '================================================================================
 ' Tapahtuma: Command41_Click
-' Tarkoitus: Lukee kentt√§laitetiedot AutoCAD-piirustuksista (UP080D-blokit)
+' Tarkoitus: Lukee kentt‰laitetiedot AutoCAD-piirustuksista (UP080D-blokit)
 '================================================================================
 Private Sub Command41_Click()
   On Error GoTo ErrorHandler
@@ -283,12 +283,12 @@ Private Sub Command41_Click()
   Tied = ""
   LueTiedot "FIELDINSTDATA", "UP080D"
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Kentt√§instrumenttien luku valmis", vbInformation
+  MsgBox "Kentt‰instrumenttien luku valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
   Application.SysCmd acSysCmdClearStatus
-  MsgBox "Virhe kentt√§instrumenttien tietojen lukemisessa: " & Err.Description, vbExclamation
+  MsgBox "Virhe kentt‰instrumenttien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
@@ -299,34 +299,34 @@ Private Sub Command42_Click()
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "FIELDINST_APPEND"
-  MsgBox "Kentt√§instrumenttien lis√§ys valmis", vbInformation
+  MsgBox "Kentt‰instrumenttien lis‰ys valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe kentt√§instrumenttien lis√§yksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe kentt‰instrumenttien lis‰yksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command43_Click
-' Tarkoitus: P√§ivitt√§√§ tietokantaan kentt√§laitteen data v√§liaikaistaulukosta
+' Tarkoitus: P‰ivitt‰‰ tietokantaan kentt‰laitteen data v‰liaikaistaulukosta
 '================================================================================
 Private Sub Command43_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! T√§m√§ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p√§√§lle." & vbCrLf _
+  If MsgBox("Varoitus! T‰m‰ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p‰‰lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia n√§ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P√§ivit√§ tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia n‰ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P‰ivit‰ tiedot") = vbYes Then
     CurrentDb.Execute "FIELDINST_UPDATE"
-    MsgBox "Kentt√§instrumenttien p√§ivitys valmis", vbInformation
+    MsgBox "Kentt‰instrumenttien p‰ivitys valmis", vbInformation
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe kentt√§instrumenttien p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe kentt‰instrumenttien p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttisilmukkaty√∂nkulku (Commands 51-53) =====
+'===== Instrumenttisilmukkatyˆnkulku (Commands 51-53) =====
 '================================================================================
 ' Tapahtuma: Command51_Click
 ' Tarkoitus: Lukee instrumenttisilmukkatiedot AutoCAD-piirustuksista
@@ -353,41 +353,41 @@ Private Sub Command52_Click()
   On Error GoTo ErrorHandler
   
   CurrentDb.Execute "INSTLOOP_APPEND"
-  MsgBox "Instrumenttipiirien lis√§ys valmis", vbInformation
+  MsgBox "Instrumenttipiirien lis‰ys valmis", vbInformation
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe instrumenttipiirien lis√§yksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttipiirien lis‰yksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command53_Click
-' Tarkoitus: P√§ivitt√§√§ tietokantaan instrumenttisilmukkata v√§liaikaistaulukosta
+' Tarkoitus: P‰ivitt‰‰ tietokantaan instrumenttisilmukkata v‰liaikaistaulukosta
 '================================================================================
 Private Sub Command53_Click()
   On Error GoTo ErrorHandler
   
-  If MsgBox("Varoitus! T√§m√§ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p√§√§lle." & vbCrLf _
+  If MsgBox("Varoitus! T‰m‰ ajaa kaavioissa olevat tiedot kannassa olevien tietojen p‰‰lle." & vbCrLf _
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
-         & "Jos olet tehnyt muutoksia n√§ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
-         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P√§ivit√§ tiedot") = vbYes Then
+         & "Jos olet tehnyt muutoksia n‰ihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
+         & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "P‰ivit‰ tiedot") = vbYes Then
     CurrentDb.Execute "INSTLOOP_UPDATE"
-    MsgBox "Instrumenttipiirien p√§ivitys valmis", vbInformation
+    MsgBox "Instrumenttipiirien p‰ivitys valmis", vbInformation
   End If
   
   Exit Sub
 ErrorHandler:
-  MsgBox "Virhe instrumenttipiirien p√§ivityksess√§: " & Err.Description, vbExclamation
+  MsgBox "Virhe instrumenttipiirien p‰ivityksess‰: " & Err.Description, vbExclamation
 End Sub
 
 '===== Apufunktiot =====
 '================================================================================
 ' Funktio: FieldExists
-' Tarkoitus: Tarkistaa, onko kentt√§ olemassa recordsetiss√§
+' Tarkoitus: Tarkistaa, onko kentt‰ olemassa recordsetiss‰
 ' Parametrit:
 '   RS - Tarkistettava recordset
-'   Kent√§nNimi - Kentt√§nimi, jota etsit√§√§n
-' Palautusarvo: True jos kentt√§ l√∂ytyy, False muuten
+'   Kent‰nNimi - Kentt‰nimi, jota etsit‰‰n
+' Palautusarvo: True jos kentt‰ lˆytyy, False muuten
 '================================================================================
 Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
   Dim fld As DAO.Field
@@ -429,7 +429,7 @@ Private Sub LueTiedot(Taulukko As String, Blokki As String)
       Tiedot.Fields("BLOCK") = oBlock.EffectiveName
       Tiedot.Fields("Handles") = oBlock.Handle
       
-      ' Luetaan attribuutit vain jos blokilla on niit√§ ‚Äì est√§√§ virheen attribuutittomilla blokeilla
+      ' Luetaan attribuutit vain jos blokilla on niit‰ ñ est‰‰ virheen attribuutittomilla blokeilla
       If oBlock.HasAttributes Then
         Attrib = oBlock.GetAttributes
         For j = 0 To UBound(Attrib)
@@ -461,7 +461,7 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  ' Siivotaan COM-objektit muistivuotojen est√§miseksi
+  ' Siivotaan COM-objektit muistivuotojen est‰miseksi
   If Not Joukko Is Nothing Then
     Joukko.Delete
     Set Joukko = Nothing
@@ -533,7 +533,7 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  ' Siivotaan COM-objektit muistivuotojen est√§miseksi
+  ' Siivotaan COM-objektit muistivuotojen est‰miseksi
   If Not Joukko Is Nothing Then
     Joukko.Delete
     Set Joukko = Nothing
@@ -546,12 +546,12 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: LueTiedotByBlockAndAttribute
-' Tarkoitus: Lukee blokit tietyll√§ nimell√§ ja attribuuttiarvolla
+' Tarkoitus: Lukee blokit tietyll‰ nimell‰ ja attribuuttiarvolla
 ' Parametrit:
 '   Taulukko - Access-kohdontaulukon nimi
-'   BlockName - Etsitt√§v√§n blokin nimi
+'   BlockName - Etsitt‰v‰n blokin nimi
 '   AttribName - Tarkistettavan attribuutin tagi
-'   ContainsValue - Arvo, jolla attribuutin arvon t√§ytyy alkaa
+'   ContainsValue - Arvo, jolla attribuutin arvon t‰ytyy alkaa
 '================================================================================
 Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
   Dim i As Integer, j As Integer
@@ -607,7 +607,7 @@ ErrorHandler:
     Tiedot.Close
     Set Tiedot = Nothing
   End If
-  ' Siivotaan COM-objektit muistivuotojen est√§miseksi
+  ' Siivotaan COM-objektit muistivuotojen est‰miseksi
   If Not Joukko Is Nothing Then
     Joukko.Delete
     Set Joukko = Nothing
@@ -620,16 +620,16 @@ End Sub
 
 '================================================================================
 ' Funktio: Yhdista
-' Tarkoitus: Yhdist√§√§ k√§ynniss√§ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdist‰‰ k‰ynniss‰ olevaan AutoCAD-instanssiin
 ' Palautusarvo: True jos yhteys onnistui, False muuten
 '================================================================================
 Private Function Yhdista() As Boolean
   On Error Resume Next
   
-  ' Yhdistet√§√§n k√§ynniss√§ olevaan AutoCADiin
+  ' Yhdistet‰‰n k‰ynniss‰ olevaan AutoCADiin
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
     Exit Function
@@ -641,8 +641,8 @@ End Function
 
 '================================================================================
 ' Funktio: SeuraavaKuva
-' Tarkoitus: Avaa seuraava .DWG-tiedosto m√§√§ritetyst√§ kansiosta er√§ajoa varten
-' Palautusarvo: True jos tiedosto avattu, False jos ei en√§√§ tiedostoja
+' Tarkoitus: Avaa seuraava .DWG-tiedosto m‰‰ritetyst‰ kansiosta er‰ajoa varten
+' Palautusarvo: True jos tiedosto avattu, False jos ei en‰‰ tiedostoja
 '================================================================================
 Private Function SeuraavaKuva() As Boolean
   Dim Polku As String
@@ -687,9 +687,9 @@ End Function
 
 '================================================================================
 ' Aliohjelma: PoimiJoukko
-' Tarkoitus: Luo suodatettu valintajoukko m√§√§ritetyist√§ blokkityypeist√§
+' Tarkoitus: Luo suodatettu valintajoukko m‰‰ritetyist‰ blokkityypeist‰
 ' Parametrit:
-'   Nimet - Blokin nimi/nimet, pilkuilla erotettu useampaa tyyppi√§ varten
+'   Nimet - Blokin nimi/nimet, pilkuilla erotettu useampaa tyyppi‰ varten
 '================================================================================
 Private Sub PoimiJoukko(Nimet As String)
   Dim FilterType(0) As Integer
@@ -703,7 +703,7 @@ Private Sub PoimiJoukko(Nimet As String)
   
   On Error GoTo ErrorHandler
   
-  ' J√§sennet√§√§n blokkinimet
+  ' J‰sennet‰‰n blokkinimet
   Blokit = Split(Nimet, ",")
   For i = 0 To UBound(Blokit)
     Blokit(i) = UCase$(Trim$(Blokit(i)))
@@ -713,8 +713,8 @@ Private Sub PoimiJoukko(Nimet As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto est√§√§ nimit√∂rm√§yksen (jos edellinen ajo
-  ' kaatui ennen joukon tuhoamista, Add heitt√§isi virheen ilman t√§t√§)
+  ' KORJATTU: On Error Resume Next -poisto est‰‰ nimitˆrm‰yksen (jos edellinen ajo
+  ' kaatui ennen joukon tuhoamista, Add heitt‰isi virheen ilman t‰t‰)
   On Error Resume Next
   oDOC.SelectionSets.Item("APUPICK").Delete
   On Error GoTo ErrorHandler
@@ -722,8 +722,8 @@ Private Sub PoimiJoukko(Nimet As String)
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Suodatus: poistetaan blokit, jotka eiv√§t ole listalla
-  ' Huom: xref-blokeilla EffectiveName on muodossa "XREF|BLOKKI" ‚Üí otetaan vain loppuosa vertailua varten
+  ' Suodatus: poistetaan blokit, jotka eiv‰t ole listalla
+  ' Huom: xref-blokeilla EffectiveName on muodossa "XREF|BLOKKI" -> otetaan vain loppuosa vertailua varten
   Dim sNimi As String
   L = 0
   For j = 0 To Joukko.Count - 1
@@ -756,7 +756,7 @@ End Sub
 ' Aliohjelma: PoimiJoukkoByAttribute
 ' Tarkoitus: Luo valintajoukko blokeista, joilla on tietyt attribuutit
 ' Parametrit:
-'   AttribNames - Etsitt√§v√§ attribuuttitagi/tagit, pilkuilla erotettu
+'   AttribNames - Etsitt‰v‰ attribuuttitagi/tagit, pilkuilla erotettu
 '================================================================================
 Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Dim FilterType(0) As Integer
@@ -772,7 +772,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   
   On Error GoTo ErrorHandler
   
-  ' J√§sennet√§√§n etsitt√§v√§t attribuuttinimet
+  ' J‰sennet‰‰n etsitt‰v‰t attribuuttinimet
   AttribList = Split(AttribNames, ",")
   For i = 0 To UBound(AttribList)
     AttribList(i) = UCase$(Trim$(AttribList(i)))
@@ -782,7 +782,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto est√§√§ nimit√∂rm√§yksen
+  ' KORJATTU: On Error Resume Next -poisto est‰‰ nimitˆrm‰yksen
   On Error Resume Next
   oDOC.SelectionSets.Item("APUPICK").Delete
   On Error GoTo ErrorHandler
@@ -790,7 +790,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Suodatus: pidet√§√§n vain blokit, joilla on m√§√§ritetyt attribuutit
+  ' Suodatus: pidet‰‰n vain blokit, joilla on m‰‰ritetyt attribuutit
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
@@ -800,9 +800,9 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
       If Joukko(j).HasAttributes Then
         Attribs = Joukko(j).GetAttributes
         
-        ' K√§yd√§√§n l√§pi kaikki blokin attribuutit
+        ' K‰yd‰‰n l‰pi kaikki blokin attribuutit
         For k = 0 To UBound(Attribs)
-          ' Tarkistetaan, t√§sm√§√§k√∂ attribuutti hakuun
+          ' Tarkistetaan, t‰sm‰‰kˆ attribuutti hakuun
           For i = 0 To UBound(AttribList)
             If UCase$(Attribs(k).TagString) = AttribList(i) Then
               HasAttribute = True
@@ -813,7 +813,7 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
         Next k
       End If
       
-      ' Jos blokilla ei ole attribuuttia, merkit√§√§n poistettavaksi
+      ' Jos blokilla ei ole attribuuttia, merkit‰‰n poistettavaksi
       If Not HasAttribute Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)
@@ -831,11 +831,11 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: PoimiJoukkoByBlockAndAttributeValue
-' Tarkoitus: Luo valintajoukko tietyist√§ blokeista, joiden attribuutti sis√§lt√§√§ arvon
+' Tarkoitus: Luo valintajoukko tietyist‰ blokeista, joiden attribuutti sis‰lt‰‰ arvon
 ' Parametrit:
-'   BlockName - Etsitt√§v√§n blokin nimi
+'   BlockName - Etsitt‰v‰n blokin nimi
 '   AttribName - Tarkistettavan attribuutin tagi
-'   ContainsValue - Arvo, jonka attribuutin t√§ytyy sis√§lt√§√§ (ei kirjainkokoherkk√§)
+'   ContainsValue - Arvo, jonka attribuutin t‰ytyy sis‰lt‰‰ (ei kirjainkokoherkk‰)
 '================================================================================
 Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, ContainsValue As String)
   Dim FilterType(0) As Integer
@@ -858,7 +858,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto est√§√§ nimit√∂rm√§yksen
+  ' KORJATTU: On Error Resume Next -poisto est‰‰ nimitˆrm‰yksen
   On Error Resume Next
   oDOC.SelectionSets.Item("APUPICK").Delete
   On Error GoTo ErrorHandler
@@ -866,7 +866,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Suodatus: pidet√§√§n vain vastaavat blokit, joiden attribuuttiarvo t√§sm√§√§
+  ' Suodatus: pidet‰‰n vain vastaavat blokit, joiden attribuuttiarvo t‰sm‰‰
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
@@ -878,11 +878,11 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
         If Joukko(j).HasAttributes Then
           Attribs = Joukko(j).GetAttributes
           
-          ' K√§yd√§√§n l√§pi kaikki attribuutit
+          ' K‰yd‰‰n l‰pi kaikki attribuutit
           For i = 0 To UBound(Attribs)
             If UCase$(Attribs(i).TagString) = AttribName Then
               AttribValue = UCase$(Attribs(i).TextString)
-              ' Tarkistetaan, alkaako attribuutin arvo m√§√§ritetyll√§ arvolla
+              ' Tarkistetaan, alkaako attribuutin arvo m‰‰ritetyll‰ arvolla
               If Left$(AttribValue, Len(ContainsValue)) = ContainsValue Then
                 HasMatch = True
                 Exit For
@@ -892,7 +892,7 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
         End If
       End If
       
-      ' Jos blokki ei t√§sm√§√§ kriteereihin, merkit√§√§n poistettavaksi
+      ' Jos blokki ei t‰sm‰‰ kriteereihin, merkit‰‰n poistettavaksi
       If Not HasMatch Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)

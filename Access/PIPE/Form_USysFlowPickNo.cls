@@ -1,28 +1,28 @@
-ÔªøOption Compare Database
+Option Compare Database
 Option Explicit
 
 '================================================================================
 ' Lomake: USysFlowPickNo
 ' Tarkoitus: Virtausblokkien putkilinjanumerovalitsin AutoCAD-piirustuksille
-' P√§ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis√§tty
+' P‰ivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lis‰tty
 '
 ' Kuvaus:
 '   Interaktiivinen lomake tasearvoblokkien putkilinjanumeroiden asettamiseen:
-'   - Yhdistyy k√§ynniss√§ olevaan AutoCAD-instanssiin
+'   - Yhdistyy k‰ynniss‰ olevaan AutoCAD-instanssiin
 '   - Etsii kaikki virtausblokit (PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA)
-'   - Korostaa jokaisen blokin j√§rjestyksess√§
-'   - K√§ytt√§j√§ voi poimia putkilinjan piirustuksesta tai sy√∂tt√§√§ k√§sin
-'   - P√§ivitt√§√§ blokin PIPEREF/PIPELINENO/PIPE_LINE-attribuutin
+'   - Korostaa jokaisen blokin j‰rjestyksess‰
+'   - K‰ytt‰j‰ voi poimia putkilinjan piirustuksesta tai syˆtt‰‰ k‰sin
+'   - P‰ivitt‰‰ blokin PIPEREF/PIPELINENO/PIPE_LINE-attribuutin
 '
 ' Riippuvuudet:
 '   - AutoCAD-sovellus (COM-automaatio)
 '   - Virtausblokit, joissa on putkilinjaviittausattribuutit
 '
 ' Kontrollit:
-'   - TRefNo: Putkilinjaviittauksen tekstikentt√§
+'   - TRefNo: Putkilinjaviittauksen tekstikentt‰
 '   - BSeuraava: Seuraava blokki -painike
 '   - BEdellinen: Edellinen blokki -painike
-'   - BSeurT: Etsi seuraava tyhj√§ -painike
+'   - BSeurT: Etsi seuraava tyhj‰ -painike
 '   - BPoimi: Poimi piirustuksesta -painike
 '   - BAutohaku: Automaattinen haku -painike
 '   - BSulje: Sulje lomake -painike
@@ -50,17 +50,17 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustaa lomakkeen - yhdist√§√§ AutoCADiin ja luo virtausblokkien valintajoukko
+' Tarkoitus: Alustaa lomakkeen - yhdist‰‰ AutoCADiin ja luo virtausblokkien valintajoukko
 '
 ' Toiminta:
-'   1. Yhdistet√§√§n k√§ynniss√§ olevaan AutoCADiin (Yhdista-funktio)
+'   1. Yhdistet‰‰n k‰ynniss‰ olevaan AutoCADiin (Yhdista-funktio)
 '   2. Poistetaan olemassa oleva APUPICK-valintajoukko
 '   3. Luodaan uusi valintajoukko virtausblokkiluodatilla
-'   4. N√§ytet√§√§n ensimm√§inen blokki
+'   4. N‰ytet‰‰n ensimm‰inen blokki
 '
 ' Huom:
-'   - Suljetaan lomake, jos AutoCAD ei ole k√§ynniss√§
-'   - Suljetaan lomake, jos virtausblokkeja ei l√∂ydy
+'   - Suljetaan lomake, jos AutoCAD ei ole k‰ynniss‰
+'   - Suljetaan lomake, jos virtausblokkeja ei lˆydy
 '   - Suodatin: PDUFLOWDATA, ARAFLOW, FLOWBLOCK, BALANCE_DATA -blokit
 '--------------------------------------------------------------------------------
 Private Sub Form_Load()
@@ -69,7 +69,7 @@ Dim i As Integer
 Dim FilterType(0) As Integer
 Dim FilterData(0) As Variant
 
-' Yhdistet√§√§n AutoCADiin
+' Yhdistet‰‰n AutoCADiin
 If Yhdista = False Then
   DoCmd.Close acForm
   Exit Sub
@@ -95,7 +95,7 @@ If Joukko.Count = 0 Then
   Exit Sub
 End If
 
-' Alustetaan ensimm√§isell√§ blokilla
+' Alustetaan ensimm‰isell‰ blokilla
 j = 0
 AvaaBlokki
 Exit Sub
@@ -108,17 +108,17 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: BAutohaku_Click
-' Tarkoitus: L√∂yt√§√§ automaattisesti kaikki putkilinjat virtausblokeille
+' Tarkoitus: Lˆyt‰‰ automaattisesti kaikki putkilinjat virtausblokeille
 '
 ' Toiminta:
-'   1. K√§yd√§√§n l√§pi jokainen virtausblokki valintajoukossa
-'   2. Kutsutaan EtsiLinja etsim√§√§n l√§heisin putkilinja
-'   3. Seurataan, l√∂ytyik√∂ kaikille blokeille putkilinja
-'   4. N√§ytet√§√§n yhteenviesti
+'   1. K‰yd‰‰n l‰pi jokainen virtausblokki valintajoukossa
+'   2. Kutsutaan EtsiLinja etsim‰‰n l‰heisin putkilinja
+'   3. Seurataan, lˆytyikˆ kaikille blokeille putkilinja
+'   4. N‰ytet‰‰n yhteenviesti
 '
 ' Huom:
-'   - K√§y automaattisesti l√§pi kaikki blokit
-'   - Asettaa EiLinjaa-lipun, jos jollekin blokille ei l√∂ydy putkilinjaa
+'   - K‰y automaattisesti l‰pi kaikki blokit
+'   - Asettaa EiLinjaa-lipun, jos jollekin blokille ei lˆydy putkilinjaa
 '--------------------------------------------------------------------------------
 Private Sub BAutohaku_Click()
 On Error GoTo ErrorHandler
@@ -128,10 +128,10 @@ For j = 0 To Joukko.Count - 1
   EtsiLinja
 Next j
 If EiLinjaa Then
-  MsgBox "Kaikki linjat on k√§yty l√§pi. Yksi tai useampia virtausarvoblokkeja j√§i ilman putkilinjanumeroa.", vbOKOnly, "Auto-haku"
+  MsgBox "Kaikki linjat on k‰yty l‰pi. Yksi tai useampia virtausarvoblokkeja j‰i ilman putkilinjanumeroa.", vbOKOnly, "Auto-haku"
   BSeurT_Click
 Else
-  MsgBox "Kaikki linjat on k√§yty l√§pi. Kaikkiin virtausarvoblokkeihin l√∂ytyi putkilinjanumero.", vbOKOnly, "Auto-haku"
+  MsgBox "Kaikki linjat on k‰yty l‰pi. Kaikkiin virtausarvoblokkeihin lˆytyi putkilinjanumero.", vbOKOnly, "Auto-haku"
 End If
 Exit Sub
 
@@ -144,14 +144,14 @@ End Sub
 '
 ' Toiminta:
 '   1. Aktivoidaan AutoCAD-ikkuna
-'   2. Pyydet√§√§n k√§ytt√§j√§√§ poimiman putkilinjablokki
+'   2. Pyydet‰‰n k‰ytt‰j‰‰ poimiman putkilinjablokki
 '   3. Poimitaan putkilinjaviittaus blokin attribuuteista
-'   4. P√§ivitet√§√§n nykyisen virtausblokin putkilinja-attribuutti
+'   4. P‰ivitet‰‰n nykyisen virtausblokin putkilinja-attribuutti
 '
 ' Huom:
 '   - Toimii PIPELINE, PIPELINE_F, ARAPIPEL, BAHPIPEL, METSO_PIPE -blokkien kanssa
-'   - K√§ytt√§√§ POS.NO, CUSTPOS, SDPOS -attribuutteja muille blokeille
-'   - K√§ytt√§√§ AttribToPipeline-apufunktiota standardiputkilinjoille
+'   - K‰ytt‰‰ POS.NO, CUSTPOS, SDPOS -attribuutteja muille blokeille
+'   - K‰ytt‰‰ AttribToPipeline-apufunktiota standardiputkilinjoille
 '--------------------------------------------------------------------------------
 Private Sub BPoimi_Click()
 On Error GoTo ErrorHandler
@@ -209,11 +209,11 @@ End Sub
 '
 ' Toiminta:
 '   1. Skannataan attribuutit: DEP/DEPA, FSB, LINE -tagit
-'   2. Yhdistet√§√§n arvot ilman erotinmerkkej√§
+'   2. Yhdistet‰‰n arvot ilman erotinmerkkej‰
 '
 ' Huom:
 '   - Palauttaa yhdistetyn merkkijonon (esim. "AREA01L001")
-'   - K√§sittelee sek√§ DEP- ett√§ DEPA-attribuuttitagit
+'   - K‰sittelee sek‰ DEP- ett‰ DEPA-attribuuttitagit
 '--------------------------------------------------------------------------------
 Private Function AttribToPipeline(Attrib As Variant) As String
 On Error GoTo ErrorHandler
@@ -240,17 +240,17 @@ ErrorHandler:
 End Function
 '--------------------------------------------------------------------------------
 ' Tapahtuma: BSeurT_Click
-' Tarkoitus: Etsii seuraavan virtausblokin, jolla putkilinjaviittaus on tyhj√§
+' Tarkoitus: Etsii seuraavan virtausblokin, jolla putkilinjaviittaus on tyhj‰
 '
 ' Toiminta:
 '   1. Poistetaan nykyisen blokin korostus
-'   2. Siirryt√§√§n seuraavaan blokkiin
-'   3. Tarkistetaan, onko putkilinjaviittaus tyhj√§
-'   4. Toistetaan, kunnes tyhj√§ l√∂ytyy tai kaikki blokit on k√§yty
+'   2. Siirryt‰‰n seuraavaan blokkiin
+'   3. Tarkistetaan, onko putkilinjaviittaus tyhj‰
+'   4. Toistetaan, kunnes tyhj‰ lˆytyy tai kaikki blokit on k‰yty
 '
 ' Huom:
 '   - Ohitetaan blokit, joilla on jo putkilinjaviittaus
-'   - Pys√§hdyt√§√§n ensimm√§iseen tyhj√§√§n blokkiin
+'   - Pys‰hdyt‰‰n ensimm‰iseen tyhj‰‰n blokkiin
 '--------------------------------------------------------------------------------
 Private Sub BSeurT_Click()
 On Error GoTo ErrorHandler
@@ -263,14 +263,14 @@ Dim i As Integer
     If TRefNo.Value = "" Then
       Exit Do
     ElseIf j = Joukko.Count - 1 Then
-      MsgBox "Sellaisia virtausarvoblokkeja ei l√∂ytynyt, joissa putkilinja olisi tyhj√§.", vbInformation, "Seur.Tyhj√§"
+      MsgBox "Sellaisia virtausarvoblokkeja ei lˆytynyt, joissa putkilinja olisi tyhj‰.", vbInformation, "Seur.Tyhj‰"
       Exit Do
     End If
   Loop
   Exit Sub
 
 ErrorHandler:
-    MsgBox "Virhe seuraavan tyhj√§n etsimisess√§: " & Err.Description, vbCritical, "Seur.Tyhj√§"
+    MsgBox "Virhe seuraavan tyhj‰n etsimisess‰: " & Err.Description, vbCritical, "Seur.Tyhj‰"
 End Sub
 '--------------------------------------------------------------------------------
 ' Tapahtuma: BEdellinen_Click
@@ -299,7 +299,7 @@ End Sub
 ' Tarkoitus: Navigoi seuraavaan virtausblokkiin
 '
 ' Huom:
-'   - Siirtyy ensimm√§iseen blokkiin, jos ollaan lopussa
+'   - Siirtyy ensimm‰iseen blokkiin, jos ollaan lopussa
 '--------------------------------------------------------------------------------
 Private Sub BSeuraava_Click()
 On Error GoTo ErrorHandler
@@ -326,19 +326,19 @@ End Sub
 
 '--------------------------------------------------------------------------------
 ' Aliohjelma: AvaaBlokki
-' Tarkoitus: N√§ytt√§√§ ja zoomaa nykyisen virtausblokin AutoCADissa
+' Tarkoitus: N‰ytt‰‰ ja zoomaa nykyisen virtausblokin AutoCADissa
 '
 ' Toiminta:
 '   1. Korostetaan nykyinen blokki valintajoukossa
-'   2. P√§ivitet√§√§n lomakkeen otsikko blokkim√§√§r√§ll√§
+'   2. P‰ivitet‰‰n lomakkeen otsikko blokkim‰‰r‰ll‰
 '   3. Zoomataan blokin sijaintiin
-'   4. Etsit√§√§n ja asetetaan putkilinja-attribuuttiviittaus
-'   5. N√§ytet√§√§n nykyinen putkilinja-arvo TRefNo-kent√§ss√§
+'   4. Etsit‰‰n ja asetetaan putkilinja-attribuuttiviittaus
+'   5. N‰ytet‰‰n nykyinen putkilinja-arvo TRefNo-kent‰ss‰
 '
 ' Huom:
 '   - Etsii PIPEREF-, PIPELINENO- tai PIPE_LINE-attribuutin
-'   - N√§ytt√§√§ virheen, jos attribuuttia ei l√∂ydy
-'   - P√§ivitt√§√§ otsikon muodossa "BlockName: X/Total"
+'   - N‰ytt‰‰ virheen, jos attribuuttia ei lˆydy
+'   - P‰ivitt‰‰ otsikon muodossa "BlockName: X/Total"
 '--------------------------------------------------------------------------------
 Sub AvaaBlokki()
 On Error GoTo ErrorHandler
@@ -348,19 +348,19 @@ Dim MaxPoint As Variant
 Dim Loytyi As Boolean
 Dim ii As Integer
 
-' Tarkistetaan, ett√§ indeksi on kelvollinen
+' Tarkistetaan, ett‰ indeksi on kelvollinen
 If j >= Joukko.Count Or j < 0 Then j = 0
 
 Joukko(j).Highlight True
 
-' P√§ivitet√§√§n lomakkeen otsikko
+' P‰ivitet‰‰n lomakkeen otsikko
 Me.Caption = Joukko(j).Name & ":  " & j + 1 & "/" & Joukko.Count
 
 ' Zoomataan blokkiin
 Joukko(j).GetBoundingBox MinPoint, MaxPoint
 oACAD.ZoomCenter Joukko(j).InsertionPoint, 200
 
-' Etsit√§√§n putkilinja-attribuutti
+' Etsit‰‰n putkilinja-attribuutti
 Attrib = Joukko(j).GetAttributes
 Loytyi = False
 For ii = 0 To UBound(Attrib)
@@ -372,7 +372,7 @@ For ii = 0 To UBound(Attrib)
 Next ii
 
 If Loytyi = False Then
-  MsgBox "Tasearvoblokki ei sis√§lt√§nyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPickNo"
+  MsgBox "Tasearvoblokki ei sis‰lt‰nyt attribuuttia putkilinjanumerolle.", vbCritical, "FlowPickNo"
   DoCmd.Close
   Exit Sub
 End If
@@ -386,12 +386,12 @@ ErrorHandler:
 End Sub
 '--------------------------------------------------------------------------------
 ' Funktio: Yhdista
-' Tarkoitus: Yhdist√§√§ k√§ynniss√§ olevaan AutoCAD-instanssiin
+' Tarkoitus: Yhdist‰‰ k‰ynniss‰ olevaan AutoCAD-instanssiin
 '
-' Palautusarvo: Boolean - True jos yhteys onnistui, False jos AutoCAD ei k√§ynniss√§
+' Palautusarvo: Boolean - True jos yhteys onnistui, False jos AutoCAD ei k‰ynniss‰
 '
 ' Toiminta:
-'   1. Kokeillaan GetObject-yhteys k√§ynniss√§ olevaan AutoCADiin
+'   1. Kokeillaan GetObject-yhteys k‰ynniss‰ olevaan AutoCADiin
 '   2. Jos onnistui, asetetaan oDOC aktiiviseen piirustukseen
 '   3. Palautetaan yhteystila
 '
@@ -403,7 +403,7 @@ Private Function Yhdista() As Boolean
 On Error Resume Next
   Set oACAD = GetObject(, "AutoCAD.Application")
   If Err <> 0 Then
-    MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Virhe!"
+    MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Virhe!"
     Set oACAD = Nothing
     Yhdista = False
   Else
@@ -414,20 +414,20 @@ On Error Resume Next
 End Function
 '--------------------------------------------------------------------------------
 ' Aliohjelma: EtsiLinja
-' Tarkoitus: Etsii automaattisesti putkilinjan l√§hell√§ nykyist√§ virtausblokkia
+' Tarkoitus: Etsii automaattisesti putkilinjan l‰hell‰ nykyist‰ virtausblokkia
 '
 ' Toiminta:
 '   1. Haetaan nykyisen virtausblokin sijainti
-'   2. M√§√§ritet√§√§n hakuikkuna (56 yks. oikealle, 13 yks. yl√∂s)
+'   2. M‰‰ritet‰‰n hakuikkuna (56 yks. oikealle, 13 yks. ylˆs)
 '   3. Luodaan valintajoukko putkilinjablokkiluodatilla
-'   4. Jos putkilinja l√∂ytyy, poimitaan viittaus ja p√§ivitet√§√§n blokki
-'   5. Jos ei l√∂ydy, tyhjennet√§√§n attribuutti ja asetetaan EiLinjaa
+'   4. Jos putkilinja lˆytyy, poimitaan viittaus ja p‰ivitet‰‰n blokki
+'   5. Jos ei lˆydy, tyhjennet‰‰n attribuutti ja asetetaan EiLinjaa
 '
 ' Huom:
 '   - Etsii PIPELINE, BAHPIPEL, ARAPIPEL -blokkeja
-'   - K√§ytt√§√§ leikkausikkunavalintaa
-'   - Poistaa tilap√§isen valintajoukon k√§yt√∂n j√§lkeen
-'   - Asettaa EiLinjaa=True, jos putkilinjaa ei l√∂ydy
+'   - K‰ytt‰‰ leikkausikkunavalintaa
+'   - Poistaa tilap‰isen valintajoukon k‰ytˆn j‰lkeen
+'   - Asettaa EiLinjaa=True, jos putkilinjaa ei lˆydy
 '--------------------------------------------------------------------------------
 Private Sub EtsiLinja()
 On Error GoTo ErrorHandler
@@ -445,11 +445,11 @@ Piste = Joukko(j).InsertionPoint
 aPiste(0) = Piste(0)
 aPiste(1) = Piste(1)
 
-' M√§√§ritet√§√§n hakuikkuna
+' M‰‰ritet‰‰n hakuikkuna
 lPiste(0) = aPiste(0) + 56
 lPiste(1) = aPiste(1) + 13
 
-' Poistetaan tilap√§inen valintajoukko
+' Poistetaan tilap‰inen valintajoukko
 For i = 0 To oDOC.SelectionSets.Count - 1
   If oDOC.SelectionSets(i).Name = "APUPICK2" Then
     oDOC.SelectionSets(i).Delete
@@ -482,15 +482,15 @@ ErrorHandler:
     If Not Poiminta Is Nothing Then Poiminta.Delete
     Set Poiminta = Nothing
     On Error GoTo 0
-    MsgBox "Virhe putkilinjan etsimisess√§: " & Err.Description, vbCritical, "EtsiLinja"
+    MsgBox "Virhe putkilinjan etsimisess‰: " & Err.Description, vbCritical, "EtsiLinja"
 End Sub
 
 '--------------------------------------------------------------------------------
 ' Tapahtuma: TRefNo_AfterUpdate
-' Tarkoitus: P√§ivitt√§√§ AutoCAD-blokin attribuutin, kun k√§ytt√§j√§ muokkaa viittausta
+' Tarkoitus: P‰ivitt‰‰ AutoCAD-blokin attribuutin, kun k‰ytt‰j‰ muokkaa viittausta
 '
 ' Huom:
-'   - K√§ytt√§√§ Nz-funktiota Null-arvojen k√§sittelyyn
+'   - K‰ytt‰‰ Nz-funktiota Null-arvojen k‰sittelyyn
 '--------------------------------------------------------------------------------
 Private Sub TRefNo_AfterUpdate()
 On Error GoTo ErrorHandler
@@ -500,6 +500,6 @@ End If
 Exit Sub
 
 ErrorHandler:
-    ' Hiljainen virhe - ei keskeyt√§ k√§ytt√§j√§√§
+    ' Hiljainen virhe - ei keskeyt‰ k‰ytt‰j‰‰
 End Sub
 

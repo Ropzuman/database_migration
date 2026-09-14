@@ -30,7 +30,7 @@ Private Sub Command0_Click()
                 If Polku2 <> LCase$(Polku) Then
                     Kohdetiedosto = Polku & Nimi
                     If Len(Dir$(Kohdetiedosto)) = 0 Then
-                        epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei l√∂ydy: " & Kohdetiedosto & ")" & vbCrLf
+                        epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei lˆydy: " & Kohdetiedosto & ")" & vbCrLf
                     Else
                         Set tdf = db.TableDefs(Taulu)
                         tdf.Connect = ";DATABASE=" & Kohdetiedosto
@@ -53,7 +53,7 @@ Private Sub Command0_Click()
     Set Taul = Nothing
     Set db = Nothing
     If Len(epaonnistuneet) > 0 Then
-        MsgBox "Osa taulujen linkeist√§ ei p√§ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
+        MsgBox "Osa taulujen linkeist‰ ei p‰ivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
     Else
         MsgBox "Valmis", vbInformation
     End If
@@ -68,7 +68,7 @@ ErrorHandler:
     Set tdf = Nothing
     Set db = Nothing
     On Error GoTo 0
-    MsgBox "Virhe tauluyhteyksien p√§ivityksess√§ (" & virhenumero & "): " & virhekuvaus, vbCritical
+    MsgBox "Virhe tauluyhteyksien p‰ivityksess‰ (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub
 
 Private Function JoKasitelty(ByRef lista As Collection, ByVal nimi As String) As Boolean

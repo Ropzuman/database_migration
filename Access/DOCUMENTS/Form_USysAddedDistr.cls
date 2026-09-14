@@ -2,10 +2,10 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_USysAddedDistr
-' SOVELLUS : DOCUMENTS ‚Äî Lis√§tty distribuutioon
-' KUVAUS   : N√§ytt√§√§ Outbox- ja Sent-hakemistolinkit distribuution
-'            luomisen j√§lkeen.
-' P√ÑIVITETTY: 2026-03-03
+' SOVELLUS : DOCUMENTS ó Lis‰tty distribuutioon
+' KUVAUS   : N‰ytt‰‰ Outbox- ja Sent-hakemistolinkit distribuution
+'            luomisen j‰lkeen.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 Private Sub BOK_Click()
@@ -33,7 +33,7 @@ Set taulu = DB.OpenRecordset(SQL)
 If Not taulu.EOF Then
   SentPath = taulu.Fields("Path")
 End If
-' Haetaan Common-polku TempVarsista (Form_DOCUMENTS:sta v√§litetty)
+' Haetaan Common-polku TempVarsista (Form_DOCUMENTS:sta v‰litetty)
 CommonPath = LueTempVarTeksti("DOC_Common_Text")
 If CommonPath <> "" Then
   Me.OHakemisto.Caption = CommonPath

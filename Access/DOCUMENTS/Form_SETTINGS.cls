@@ -2,11 +2,11 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_SETTINGS
-' SOVELLUS : DOCUMENTS ‚Äî Sovellusasetukset
+' SOVELLUS : DOCUMENTS ó Sovellusasetukset
 ' KUVAUS   : Tallennetaan sovelluksen nimi (AppTitle) tietokantaan
-'            sulkemisen yhteydess√§ ja avataan DOCUMENTS-p√§√§lomake.
-'            Hakemiston valintadialogia k√§ytet√§√§n polun valintaan.
-' P√ÑIVITETTY: 2026-03-03
+'            sulkemisen yhteydess‰ ja avataan DOCUMENTS-p‰‰lomake.
+'            Hakemiston valintadialogia k‰ytet‰‰n polun valintaan.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 Private Sub Sulje_Click()
@@ -22,13 +22,13 @@ Private Sub Form_Unload(Cancel As Integer)
   On Error GoTo ErrorHandler
   
   Set DB = CurrentDb
-  ' Varmistetaan, ettei tallenneta tyhj√§√§ sovelluksen otsikkoa
+  ' Varmistetaan, ettei tallenneta tyhj‰‰ sovelluksen otsikkoa
   If Len(Nz(Me.Nimi.Value, "")) > 0 Then
     DB.Properties("AppTitle").Value = Me.Nimi.Value
     Application.RefreshTitleBar
   End If
   
-  ' EI SAA SULKEA: CurrentDb-viitett√§ ei tule sulkea koodista!
+  ' EI SAA SULKEA: CurrentDb-viitett‰ ei tule sulkea koodista!
   Set DB = Nothing
   
   DoCmd.OpenForm "DOCUMENTS"
@@ -37,7 +37,7 @@ Private Sub Form_Unload(Cancel As Integer)
 ErrorHandler:
   MsgBox "Error saving settings: " & Err.Description, vbExclamation, "Settings Error"
   If Not DB Is Nothing Then
-    ' DB.Close <- Poistettu; CurrentDb-viitett√§ ei tule sulkea
+    ' DB.Close <- Poistettu; CurrentDb-viitett‰ ei tule sulkea
     Set DB = Nothing
   End If
 End Sub

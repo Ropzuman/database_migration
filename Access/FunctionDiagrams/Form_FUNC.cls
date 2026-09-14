@@ -2,15 +2,15 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_FUNC
-' SOVELLUS : FunctionDiagrams ‚Äî Funktiokaavion alilomake
-' KUVAUS   : Funktiokaavion FUNC-alilomake. Sis√§lt√§√§ FBlock_DblClick-
-'            tapahtumank√§sittelij√§n, joka on varattuna tulevaa
+' SOVELLUS : FunctionDiagrams ó Funktiokaavion alilomake
+' KUVAUS   : Funktiokaavion FUNC-alilomake. Sis‰lt‰‰ FBlock_DblClick-
+'            tapahtumank‰sittelij‰n, joka on varattuna tulevaa
 '            toiminnallisuutta varten.
-' DIPLE    : Option Explicit lis√§tty.
-' P√ÑIVITETTY: 2026-03-03
+' DIPLE    : Option Explicit lis‰tty.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
-' Funktiokaavion alilomake: k√§sittelee blokkien kaksoisnapsautuksen
+' Funktiokaavion alilomake: k‰sittelee blokkien kaksoisnapsautuksen
 Private Sub FBlock_DblClick(Cancel As Integer)
 
 End Sub

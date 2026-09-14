@@ -2,14 +2,14 @@ Option Compare Database
 Option Explicit
 
 '================================================================================
-' Moduuli: KAANNOS (K√§√§nn√∂s)
-' Tarkoitus: K√§√§nt√§√§ laite- ja piiriviittaukset kuvaaviksi nimiksi
-' P√§ivitetty: 2025-11-13 ‚Äî VBA7/64-bit tuki lis√§tty
-'             2026-03-03 ‚Äî Kommentit suomeksi
+' Moduuli: KAANNOS (K‰‰nnˆs)
+' Tarkoitus: K‰‰nt‰‰ laite- ja piiriviittaukset kuvaaviksi nimiksi
+' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
+'             2026-03-03 ó Kommentit suomeksi
 '
 ' Kuvaus:
-'   K√§sittelee teksti√§, joka sis√§lt√§√§ laiteviittauksia muodossa
-'   {xx-xx-xx kuvaus}, ja k√§√§nt√§√§ ne todellisiksi laite- tai piirinimiksi
+'   K‰sittelee teksti‰, joka sis‰lt‰‰ laiteviittauksia muodossa
+'   {xx-xx-xx kuvaus}, ja k‰‰nt‰‰ ne todellisiksi laite- tai piirinimiksi
 '   MAINEQ- tai Loops-taulusta. Merkitsee poistetut tai puuttuvat kohteet
 '   virhetagein.
 '
@@ -17,30 +17,30 @@ Option Explicit
 '   - Taulut: MAINEQ, Loops
 '   - DLookup-funktio
 '
-' Esimerkkej√§:
-'   Sy√∂tt√∂:  "{60-20-01 Moottorin kuvaus}"
+' Esimerkkej‰:
+'   Syˆttˆ:  "{60-20-01 Moottorin kuvaus}"
 '   Tulos:   "60-20-01 Oikea moottorin nimi" (MAINEQ-taulusta)
-'   Sy√∂tt√∂:  "{10-TIC-001 Piirin kuvaus}"
+'   Syˆttˆ:  "{10-TIC-001 Piirin kuvaus}"
 '   Tulos:   "10-TIC-001 Oikea piirin kuvaus" (Loops-taulusta)
 '================================================================================
 
 '================================================================================
 ' Funktio: Kaanna
-' Tarkoitus: K√§√§nt√§√§ laite-/piiriviittaukset todellisiksi nimiksi
+' Tarkoitus: K‰‰nt‰‰ laite-/piiriviittaukset todellisiksi nimiksi
 ' Parametrit:
-'   Tieto ‚Äî Teksti, joka sis√§lt√§√§ {Alue-Tyyppi-Nro kuvaus} -muotoisia viittauksia
-' Palauttaa: K√§√§nnetty teksti tai virheim√§rkit√§t viittaukset
+'   Tieto ó Teksti, joka sis‰lt‰‰ {Alue-Tyyppi-Nro kuvaus} -muotoisia viittauksia
+' Palauttaa: K‰‰nnetty teksti tai virheim‰rkit‰t viittaukset
 '
 ' Kuvaus:
-'   J√§sent√§√§ tekstist√§ {POS kuvaus} -muodot, miss√§:
+'   J‰sent‰‰ tekstist‰ {POS kuvaus} -muodot, miss‰:
 '   - POS-osa: Alue-Tyyppi-Nro (esim. 60-20-01 tai 10-TIC-001)
 '   - Jos Alue = "60": Hakee MAINEQ-taulusta (moottoreiden laitedata)
-'   - Muuten: Hakee Loops-taulusta (prosessipiirej√§)
+'   - Muuten: Hakee Loops-taulusta (prosessipiirej‰)
 '
-'   Virheenk√§sittely:
-'   - [ERR: Not found]: Laitetta ei l√∂ydy tietokannasta
+'   Virheenk‰sittely:
+'   - [ERR: Not found]: Laitetta ei lˆydy tietokannasta
 '   - [DELETED!]: Laite on merkitty poistetuksi
-'   - [ERR: No translation]: Laite l√∂ytyy, mutta nimike puuttuu
+'   - [ERR: No translation]: Laite lˆytyy, mutta nimike puuttuu
 '================================================================================
 Function Kaanna(Tieto As Variant) As Variant
     Dim OS As Long, OS2 As Long, OS3 As Long, OS4 As Long
@@ -60,17 +60,17 @@ Function Kaanna(Tieto As Variant) As Variant
     
     OS = InStr(Tieto, "{")
     If OS = 0 Then
-        ' Ei k√§√§nnett√§vi√§ viittauksia
+        ' Ei k‰‰nnett‰vi‰ viittauksia
         Kaanna = Tieto
         Exit Function
     End If
     
-    ' Alustetaan tulos tekstill√§ ennen ensimm√§ist√§ viittausta
+    ' Alustetaan tulos tekstill‰ ennen ensimm‰ist‰ viittausta
     Kaanna = Left$(Tieto, OS)
     
     Do While OS > 0
         ' Haetaan sijaintimerkit: { POS } -rakenne
-        OS2 = InStr(OS + 1, Tieto, " ")    ' V√§lily√∂nti position j√§lkeen
+        OS2 = InStr(OS + 1, Tieto, " ")    ' V‰lilyˆnti position j‰lkeen
         OS3 = InStr(OS + 1, Tieto, "}")    ' Sulkeva aaltosulku
         OS4 = InStr(OS3 + 1, Tieto, "{")   ' Seuraava avautuva aaltosulku
         
@@ -78,7 +78,7 @@ Function Kaanna(Tieto As Variant) As Variant
         tPOS = Mid$(Tieto, OS + 1, OS2 - OS - 1)
         Osat = Split(tPOS, "-")
         
-        ' Sanitoidaan DLookup-parametrit heittomerkkien varalta ‚Äî SQL-injektion esto
+        ' Sanitoidaan DLookup-parametrit heittomerkkien varalta ó SQL-injektion esto
         sPar0 = Replace(Nz(Osat(0), ""), "'", "''")
         sPar1 = Replace(Nz(Osat(1), ""), "'", "''")
         sPar2 = Replace(Nz(Osat(2), ""), "'", "''")
@@ -94,7 +94,7 @@ Function Kaanna(Tieto As Variant) As Variant
             Poistettu = DLookup("[DELETED]",   "Loops", "[AreaCode] = '" & sPar0 & "' AND [LoopSymb] = '" & sPar1 & "' AND [LoopNo] = '" & sPar2 & "'")
         End If
         
-        ' Tarkistetaan virheet ja merkit√§√§n tuntemattomiksi tarvittaessa
+        ' Tarkistetaan virheet ja merkit‰‰n tuntemattomiksi tarvittaessa
         If IsNull(Poistettu) Then
             Nimitys = "[ERR: Not found] " & Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1)
             Virheet = Virheet + 1
@@ -106,23 +106,23 @@ Function Kaanna(Tieto As Variant) As Variant
             Virheet = Virheet + 1
         End If
         
-        ' Rakennetaan tulos: positio + k√§√§nn√∂s
+        ' Rakennetaan tulos: positio + k‰‰nnˆs
         Kaanna = Kaanna & tPOS & " " & Nimitys
         
-        ' Lis√§t√§√§n teksti t√§m√§n viittauksen j√§lkeen (tai loppuun)
+        ' Lis‰t‰‰n teksti t‰m‰n viittauksen j‰lkeen (tai loppuun)
         If OS4 <> 0 Then
             Kaanna = Kaanna & Mid$(Tieto, OS3, OS4 - OS3)
         Else
             Kaanna = Kaanna & Mid$(Tieto, OS3)
         End If
         
-        ' Edet√§√§n seuraavaan viittaukseen
+        ' Edet‰‰n seuraavaan viittaukseen
         OS = InStr(OS + 1, Tieto, "{")
     Loop
     
     ' Kirjataan virheet Immediate-ikkunaan debuggausta varten
     If Virheet > 0 Then
-        Debug.Print "Kaanna: " & Virheet & " virhe(tt√§) k√§√§nn√∂ksess√§"
+        Debug.Print "Kaanna: " & Virheet & " virhe(tt‰) k‰‰nnˆksess‰"
     End If
     
     Exit Function
