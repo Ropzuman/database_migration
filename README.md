@@ -7,10 +7,10 @@
 
 ## 📌 Projektin tila / Project Status
 
-> **Versio / Version:** 2.1 — VBA7/64-bit and late-binding fixes
-> **Viimeksi päivitetty / Last updated:** 11.9.2026
+> **Versio / Version:** 2.1.1 — Kielikoodauksen ja 64-bit-yhteensopivuuden viimeistely
+> **Viimeksi päivitetty / Last updated:** 17.9.2026
 > **Yhteensopivuus / Compatibility:** Microsoft 365 (32/64-bit), Excel, Access, AutoCAD 2019–2027
-> **Tila / Status:** ⚠️ Lähdekoodi auditoitu ja korjattu — tietokantakohtainen käännös ja toiminnallinen testi tarvitaan
+> **Tila / Status:** ✅ Käyttövalmis / Ready for use
 
 ---
 
