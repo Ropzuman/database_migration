@@ -1,35 +1,36 @@
 Option Compare Database
 Option Explicit
-' Sleep API G�� est+�+� busy wait -kuormituksen CPU:lla (VBA7/64-bit yhteensopiva)
+
+' Sleep API – estää busy wait -kuormituksen CPU:lla (VBA7/64-bit yhteensopiva)
 #If VBA7 Then
     Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 #Else
     Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 #End If
 
-' P+�ivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenk+�sittely, poistettu kuollut koodi
+' Päivitetty 2025-10-22: Eksplisiittinen DAO, parannettu virheenkäsittely, poistettu kuollut koodi
 
 Private Ajastin As Long
 Private min As Long
 Private sec As Long
 Private OSMODE As Long
 Private LokiPituus As Long
-Private oAcad As Object ' AcadApplication (my+�h+�inen sidonta yhteensopivuuden vuoksi)
+Private oAcad As Object ' AcadApplication (myöhäinen sidonta yhteensopivuuden vuoksi)
 Public oDoc As Object ' AcadDocument-objekti
 
-' Odottaa annetun ajan (sadasosasekunteina) G�� k+�yt+�ss+� AutoCAD-operaatioiden v+�lille
+' Odottaa annetun ajan (sadasosasekunteina) – käytössä AutoCAD-operaatioiden välille
 Private Sub Odota(Aika As Integer)
-    ' Sleep vapauttaa CPU:n odotusajalla G�� busy wait korvattu kernel-tasoisella odotuksella
-    DoEvents ' K+�sitell+�+�n mahdolliset taustaviestit ennen odotusta
+    ' Sleep vapauttaa CPU:n odotusajalla – busy wait korvattu kernel-tasoisella odotuksella
+    DoEvents ' Käsitellään mahdolliset taustaviestit ennen odotusta
     Sleep CLng(Aika) * 10
 End Sub
 
-' P+�ivitt+�+� Accessin tilapalkin tiedostonnimell+� ja kuluneella ajalla
+' Päivittää Accessin tilapalkin tiedostonnimellä ja kuluneella ajalla
 Private Sub Tila(Tiedosto As String)
     sec = CLng(Timer - Ajastin)
     min = sec \ 60
     sec = sec Mod 60
-    SysCmd acSysCmdSetStatus, "K+�sittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
+    SysCmd acSysCmdSetStatus, "Käsittelee tiedostoa: " & Tiedosto & "  Aika: " & min & " min  " & sec & " sek"
 End Sub
 
 Private Sub Form_Load()
@@ -62,11 +63,11 @@ Private Sub HaeTekstit_Click()
     On Error GoTo ErrHandler
     
     Ajastin = Timer
-    ' Yritet+�+�n ensin liitty+� jo auki olevaan AutoCAD-instanssiin G�� nopeampaa kuin uuden luonti
+    ' Yritetään ensin liittyä jo auki olevaan AutoCAD-instanssiin – nopeampaa kuin uuden luonti
     On Error Resume Next
     Set oAcad = GetObject(, "AutoCAD.Application")
     If Err.Number <> 0 Then
-        ' AutoCAD ei ole auki G�� avataan uusi instanssi
+        ' AutoCAD ei ole auki – avataan uusi instanssi
         Err.Clear
         Set oAcad = CreateObject("AutoCAD.Application")
     End If
@@ -85,7 +86,7 @@ Private Sub HaeTekstit_Click()
     Do While Tied <> ""
         Nimi = Left$(Tied, Len(Tied) - 4)
         
-        ' Ohitetaan BASE*- ja BLOCKMAP*-tiedostot (eiv+�t sis+�ll+� k+�siteltavi+� blokkeja)
+        ' Ohitetaan BASE*- ja BLOCKMAP*-tiedostot (eivät sisällä käsiteltäviä blokkeja)
         If UCase$(Left$(Tied, 4)) <> "BASE" And UCase$(Left$(Tied, 8)) <> "BLOCKMAP" Then
             Set oDoc = oAcad.Documents.Open(Polku & Tied)
             Tila Tied
@@ -120,7 +121,7 @@ Cleanup:
     End If
     On Error GoTo 0
 
-    MsgBox "Valmis", vbInformation, "P+�ivit+� tekstit"
+    MsgBox "Valmis", vbInformation, "Päivitä tekstit"
     Exit Sub
 
 ErrHandler:
@@ -170,7 +171,7 @@ Private Sub HaeValitutTekstit_Click()
     Joukko.Select acSelectionSetPrevious, , , FilterType, FilterData
     
     If Joukko.Count = 0 Then
-        MsgBox "Kuvasta ei l+�ytynyt valittuja blokkeja!", vbCritical, "Tuo DATA"
+        MsgBox "Kuvasta ei löytynyt valittuja blokkeja!", vbCritical, "Tuo DATA"
         Exit Sub
     End If
     
@@ -212,7 +213,7 @@ Cleanup:
     Set oAcad = Nothing
     On Error GoTo 0
 
-    MsgBox "Valmis - K+�sitelty " & Rivi & " blokkia.", vbInformation, "P+�ivit+� tekstit"
+    MsgBox "Valmis - Käsitelty " & Rivi & " blokkia.", vbInformation, "Päivitä tekstit"
     Exit Sub
 
 ErrHandler:
@@ -243,6 +244,7 @@ Private Sub TeeKuvat_Click()
     Dim Os2 As Long
     Dim Kysely As String
     Dim Burst As Boolean
+    Dim UusiAcad As Boolean
     
     On Error GoTo ErrHandler
     
@@ -254,13 +256,15 @@ Private Sub TeeKuvat_Click()
     BlockTaulukko = Me.TBlockTaulukko.Value
     BlockTaulukkoTyhjennys = Me.TBlockTaulukko.Value
 
-    Vastaus = MsgBox("P+�ivitet+�+�nk+� " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
+    Vastaus = MsgBox("Päivitetäänkö " & BlockTaulukkoTyhjennys & "-taulukko?", vbYesNoCancel, "Tee kuvat")
 
     If Vastaus = vbCancel Then Exit Sub
     
     If Vastaus = vbYes Then
-        db.Execute "DELETE * FROM " & BlockTaulukkoTyhjennys
-        db.Execute "DELETE * FROM Kuviin_Device_Info_Tbl"
+        Sql = "DELETE * FROM " & BlockTaulukkoTyhjennys
+        db.Execute Sql, dbFailOnError
+        Sql = "DELETE * FROM Kuviin_Device_Info_Tbl"
+        db.Execute Sql, dbFailOnError
         
         ' Execute multiple queries from TKyselyt field
         Os = 1
@@ -268,56 +272,71 @@ Private Sub TeeKuvat_Click()
             Os2 = InStr(Os, Me.TKyselyt.Value, vbCrLf)
             If Os2 = 0 Then
                 Kysely = Mid$(Me.TKyselyt.Value, Os)
-                db.Execute Kysely
+                Sql = Kysely
+                SuoritaKysely db, Kysely
                 LisaaLokiin "- Ajettiin kysely " & Kysely
                 Exit Do
             Else
                 Kysely = Mid$(Me.TKyselyt.Value, Os, Os2 - Os)
-                db.Execute Kysely
+                Sql = Kysely
+                SuoritaKysely db, Kysely
                 LisaaLokiin "- Ajettiin kysely '" & Kysely & "'"
                 Os = Os2 + 2
             End If
         Loop
 
-        LisaaLokiin "- P+�ivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
+        LisaaLokiin "- Päivitettiin " & BlockTaulukkoTyhjennys & "-taulukko"
     End If
     
-    ' Tarkistetaan hakemistopolkujen olemassaolo ennen k+�sittelyn aloittamista
+    ' Tarkistetaan hakemistopolkujen olemassaolo ennen käsittelyn aloittamista
     Set FSO = CreateObject("Scripting.FileSystemObject")
     
     If IsNull(Me.KuvaHakem.Value) Then
         Me.KuvaHakem.Value = Me.PohjaHakem.Value
-        LisaaLokiin "- Kuvahakemistoa ei m+�+�ritelty, k+�ytet+�+�n pohjahakemistoa"
+        LisaaLokiin "- Kuvahakemistoa ei määritelty, käytetään pohjahakemistoa"
     End If
     
     If Not FSO.FolderExists(Me.PohjaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei l+�ytynyt (" & Me.PohjaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & Me.PohjaHakem.Value & vbCrLf & " ei l+�ytynyt!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & Me.PohjaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & Me.PohjaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
     If Not FSO.FolderExists(Me.KuvaHakem.Value) Then
-        LisaaLokiin "Virhe: Hakemistoa ei l+�ytynyt (" & Me.KuvaHakem.Value & ")"
-        MsgBox "Hakemistoa: " & vbCrLf & Me.KuvaHakem.Value & vbCrLf & " ei l+�ytynyt!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Hakemistoa ei löytynyt (" & Me.KuvaHakem.Value & ")"
+        MsgBox "Hakemistoa: " & vbCrLf & Me.KuvaHakem.Value & vbCrLf & " ei löytynyt!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
-    ' Varmistetaan, ett+� polku p+�+�ttyy kenoviivaan
+    ' Varmistetaan, että polku päättyy kenoviivaan
     If Right$(Me.PohjaHakem.Value, 1) <> "\" Then Me.PohjaHakem.Value = Me.PohjaHakem.Value & "\"
     If Right$(Me.KuvaHakem.Value, 1) <> "\" Then Me.KuvaHakem.Value = Me.KuvaHakem.Value & "\"
     
-    Set Kuvat = db.OpenRecordset("SELECT * FROM " & OtsTaulukko)
+    Sql = "SELECT * FROM " & OtsTaulukko
+    Set Kuvat = db.OpenRecordset(Sql, dbOpenSnapshot)
     
     If Kuvat.EOF Then
-        LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei l+�ytynyt kuvia"
-        MsgBox "Taulukosta """ & OtsTaulukko & """ ei l+�ytynyt tietoja!", vbCritical, "Tee kuvat"
+        LisaaLokiin "Virhe: Taulukosta (" & OtsTaulukko & ") ei löytynyt kuvia"
+        MsgBox "Taulukosta """ & OtsTaulukko & """ ei löytynyt tietoja!", vbCritical, "Tee kuvat"
         GoTo Cleanup
     End If
     
-    Set oAcad = CreateObject("AutoCAD.Application")
+    On Error Resume Next
+    Set oAcad = GetObject(, "AutoCAD.Application")
+    If oAcad Is Nothing Then
+        Err.Clear
+        Set oAcad = CreateObject("AutoCAD.Application")
+        UusiAcad = Not oAcad Is Nothing
+    End If
+    On Error GoTo ErrHandler
+
+    If oAcad Is Nothing Then
+        Err.Raise vbObjectError + 1001, "TeeKuvat_Click", _
+                  "AutoCAD-sovellusta ei voitu avata tai siihen ei voitu liittyä."
+    End If
     
     Do While Not Kuvat.EOF
-        LisaaLokiin "=== K+�sitell+�+�n: " & Kuvat.Fields("FileID").Value & " ==="
+        LisaaLokiin "=== Käsitellään: " & Kuvat.Fields("FileID").Value & " ==="
         Tiedosto = Me.PohjaHakem.Value & Kuvat.Fields("BaseDWG").Value
         If LCase(Right(Tiedosto, 4)) <> ".dwg" Then
             Tiedosto = Tiedosto & ".dwg"
@@ -364,7 +383,7 @@ Private Sub TeeKuvat_Click()
                                 If Not Tiedot.NoMatch Then
                                     Attribuutit(i).TextString = IIf(IsNull(Tiedot.Fields("Teksti").Value), "", Tiedot.Fields("Teksti").Value)
                                 ' Else
-                                '     LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei l+�ytynyt arvoa"
+                                '     LisaaLokiin "Virhe: Blokin " & DbBlokit.Fields("Block").Value & " attribuutille (" & Attribuutit(i).TagString & ") ei löytynyt arvoa"
                                 End If
                             Next i
                             
@@ -375,7 +394,7 @@ Private Sub TeeKuvat_Click()
                             Tiedot.Close
                             Set Tiedot = Nothing
                         ' Else
-                        '     LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei l+�ytynyt"
+                        '     LisaaLokiin "Virhe: Blokkia " & DbBlokit.Fields("Block").Value & " ei löytynyt"
                         End If
                         DbBlokit.MoveNext
                     Loop
@@ -383,10 +402,10 @@ Private Sub TeeKuvat_Click()
                     DbBlokit.Close
                     Set DbBlokit = Nothing
                 ' Else
-                '     LisaaLokiin "VIRHE: VaihdaOtsikkotiedot ep+�onnistui kuvalle: " & Kuvat.Fields("FileID").Value
+                '     LisaaLokiin "VIRHE: VaihdaOtsikkotiedot epäonnistui kuvalle: " & Kuvat.Fields("FileID").Value
                 End If
             ' Else
-            '     LisaaLokiin "VIRHE: HaeIPoints ep+�onnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
+            '     LisaaLokiin "VIRHE: HaeIPoints epäonnistui kuvalle: " & Kuvat.Fields("BaseDWG").Value
             End If
             
             KuvaNimi = Me.KuvaHakem.Value & Kuvat.Fields("FileID").Value
@@ -401,7 +420,7 @@ Private Sub TeeKuvat_Click()
             oDoc.Close
             LisaaLokiin "Valmis: " & KuvaNimi
         ' Else
-        '     LisaaLokiin "Virhe: M+�+�ritelty+� tiedostoa ei l+�ytynyt (" & Tiedosto & ")"
+        '     LisaaLokiin "Virhe: Määriteltyä tiedostoa ei löytynyt (" & Tiedosto & ")"
         End If
         
         Kuvat.MoveNext
@@ -423,17 +442,49 @@ Cleanup:
     Set db = Nothing
     Set FSO = Nothing
     Set Blokki = Nothing
-    If Not oAcad Is Nothing Then
+    If UusiAcad And Not oAcad Is Nothing Then
         oAcad.Quit
-        Set oAcad = Nothing
     End If
-    Set oDoc = Nothing ' Vapautetaan AutoCAD-dokumenttiobjekti G�� est+�+� haamuviittauksen muistissa
+    Set oAcad = Nothing
+    Set oDoc = Nothing ' Vapautetaan AutoCAD-dokumenttiobjekti – estetään haamuviittauksen jääminen muistiin
     On Error GoTo 0
     Exit Sub
 
 ErrHandler:
-    MsgBox "Virhe: " & Err.Description, vbCritical, "TeeKuvat"
+    If Len(Sql) > 0 Then
+        MsgBox "Virhe: " & Err.Description & vbCrLf & vbCrLf & "SQL:" & vbCrLf & Sql, vbCritical, "TeeKuvat"
+    Else
+        MsgBox "Virhe: " & Err.Description, vbCritical, "TeeKuvat"
+    End If
     Resume Cleanup
+End Sub
+
+Private Sub SuoritaKysely(ByVal db As DAO.Database, ByVal KyselyTaiNimi As String)
+    Dim Qdf As DAO.QueryDef
+    Dim Parametri As DAO.Parameter
+    Dim Nimi As String
+    
+    Nimi = Trim$(KyselyTaiNimi)
+    On Error Resume Next
+    Set Qdf = db.QueryDefs(Nimi)
+    On Error GoTo 0
+    
+    If Not Qdf Is Nothing Then
+        For Each Parametri In Qdf.Parameters
+            On Error Resume Next
+            Parametri.Value = Eval(Parametri.Name)
+            If Err.Number <> 0 Then
+                Err.Clear
+                On Error GoTo 0
+                Err.Raise 3061, "SuoritaKysely", _
+                          "Kyselyn '" & Nimi & "' parametri puuttuu: " & Parametri.Name
+            End If
+            On Error GoTo 0
+        Next Parametri
+        Qdf.Execute dbFailOnError
+    Else
+        db.Execute Nimi, dbFailOnError
+    End If
 End Sub
 
 ' Poimii blokin insertointipisteet sijoittajablokilta ja tallentaa ne Paikat()-taulukkoon
@@ -480,11 +531,11 @@ Private Function HaeIPoints(ByVal Kuva As String) As Boolean
                 Paikat(Numero).Pisteet(2) = iPaikka(2)
             Next i
         ' Else
-        '     LisaaLokiin "Virhe: Insertointipaikat sis+�ltyv+�st+� blokista ei l+�ytynyt attribuutteja (Kuva:" & Kuva & ")"
+        '     LisaaLokiin "Virhe: Insertointipaikat sisällä olevasta blokista ei löytynyt attribuutteja (Kuva:" & Kuva & ")"
         '     Virhe = True
         End If
     ' Else
-    '     LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei l+�ytynyt insertointipaikkoja sis+�lt+�v+�+� blokkia (" & Paikkablokki & ")"
+    '     LisaaLokiin "Virhe: Kuvasta " & Kuva & " ei löytynyt insertointipaikkoja sisältävää blokkia (" & Paikkablokki & ")"
     '     Virhe = True
     End If
     
@@ -501,7 +552,7 @@ ErrHandler:
     HaeIPoints = False
 End Function
 
-' P+�ivitt+�+� otsikkoblokin attribuutit tietueelta saaduilla arvoilla
+' Päivittää otsikkoblokin attribuutit tietueelta saaduilla arvoilla
 Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
     Dim Attribuutit As Variant
     Dim Virhe As Boolean
@@ -544,7 +595,7 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
                         Loytyi = False
                         
                         For j = 0 To Taulu.Fields.Count - 1
-                            ' Etsit+�+�n vastaavuus joko tagin arvolla tai tagin nimell+�
+                            ' Etsitään vastaavuus joko tagin arvolla tai tagin nimellä
                             If Taulu.Fields(j).Name = tagiValue Or Taulu.Fields(j).Name = tagi Then
                                 Attribuutit(i).TextString = IIf(IsNull(Taulu.Fields(j).Value), "", Taulu.Fields(j).Value)
                                 Loytyi = True
@@ -553,15 +604,15 @@ Private Function VaihdaOtsikkotiedot(Taulu As DAO.Recordset) As Boolean
                         Next j
                         
                         If Not Loytyi Then
-                            ' LisaaLokiin "- Taulukosta ei l+�ytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
+                            ' LisaaLokiin "- Taulukosta ei löytynyt tietoa otsikkotaulun attribuutille: " & tagiValue
                         End If
                     Next i
                 ' Else
-                '     LisaaLokiin "Virhe: Otsikkoblokista ei l+�ytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
+                '     LisaaLokiin "Virhe: Otsikkoblokista ei löytynyt attribuutteja (Kuva: " & Taulu.Fields("BaseDWG").Value & ")"
                 '     Virhe = True
                 End If
             ' Else
-            '     LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei l+�ytynyt otsikkotietoja sis+�lt+�v+�+� blokkia (" & Titleblokki & ")"
+            '     LisaaLokiin "Virhe: Kuvasta " & Taulu.Fields("BaseDWG").Value & " ei löytynyt otsikkotietoja sisältävää blokkia (" & Titleblokki & ")"
             '     Virhe = True
             End If
         Next b
@@ -582,7 +633,7 @@ End Function
 
 ' Add entry to log
 Private Sub LisaaLokiin(Tieto As String)
-    ' Lis+�t+�+�n rivi lokitekstiboksiin G�� virhe sivuutetaan, jos kontrolli ei ole saatavilla
+    ' Lisätään rivi lokitekstiboksiin – virhe sivuutetaan, jos kontrolli ei ole saatavilla
     On Error Resume Next
     If LokiPituus > 0 Then
         Me.Loki.Value = Me.Loki.Value & vbCrLf & Tieto
@@ -653,4 +704,3 @@ Private Function PoimiHakemisto(AHakem As String) As String
 ErrHandler:
     PoimiHakemisto = AHakem
 End Function
-
