@@ -132,7 +132,7 @@ On Error GoTo ErrorHandler
   If LueAttribuutit = False Then
     MsgBox "Virhe blokin valinnassa!", vbOKOnly, "Muokkaa blokkia"
   End If
-  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  AktivoiAccessIkkuna
   Exit Function
   
 ErrorHandler:
@@ -405,7 +405,7 @@ Virhe:
     End If
   End With
   Set PointBlock = Nothing
-  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  AktivoiAccessIkkuna
 End Sub
 
 Private Sub Ctl__Click()
@@ -487,7 +487,7 @@ Dim i As Integer
         
         '------- VIIVAN PÄÄ ---------
         End If
-        AppActivate CurrentDb.Properties("AppTitle").VALUE
+        AktivoiAccessIkkuna
         Exit Do
       Else
         Set ViimViiva = oDOC.ModelSpace.AddLine(sPoint, Piste)
@@ -499,7 +499,7 @@ Dim i As Integer
       End If
     Loop
   Else 'Keskeytettiin heti
-    AppActivate CurrentDb.Properties("AppTitle").VALUE
+    AktivoiAccessIkkuna
   End If
   Err.Clear
 
@@ -531,32 +531,34 @@ Private Sub Form_Current()
 End Sub
 
 Private Sub Form_Load()
+  Dim virheKuvaus As String
 
-'Yhdistetään ensin AutoCADiin
-'Otetaan yhteys AutoCADiin
+  On Error GoTo ErrorHandler
+
+  ' Yhdistetään ensin käynnissä olevaan AutoCADiin; käynnistetään se tarvittaessa.
   On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    
-    Set oACAD = CreateObject("AutoCad.Application")
-    
-    If oACAD Is Nothing Then
-        MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
-        Set oACAD = Nothing
-        Unload Me
-        Exit Sub
-    End If
-    
+  Set oACAD = GetObject(, "AutoCAD.Application")
+  If Err.Number <> 0 Then
+    Err.Clear
+    Set oACAD = CreateObject("AutoCAD.Application")
   End If
-  'On Error GoTo 0
-  Set oDOC = oACAD.ActiveDocument
-  If Err <> 0 Then
-    Set oDOC = oACAD.Activate
-    oDOC.Application.Visible = True
-    oDOC.Application.WindowState = AC_MAX_WINDOW
+  If Err.Number <> 0 Or oACAD Is Nothing Then
+    virheKuvaus = Err.Description
+    Err.Clear
+    On Error GoTo ErrorHandler
+    Err.Raise vbObjectError + 2100, "Form_Interlocking.Form_Load", _
+      "AutoCAD-sovellukseen ei saatu yhteyttä. " & virheKuvaus
   End If
-  On Error GoTo 0
-  'Haetaan asetukset
+  On Error GoTo ErrorHandler
+
+  oACAD.Visible = True
+  oACAD.Activate
+  If oACAD.Documents.Count = 0 Then
+    Set oDOC = oACAD.Documents.Add
+  Else
+    Set oDOC = oACAD.ActiveDocument
+  End If
+
   BaseDWG1 = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEDWG1'")
   BaseDWG2 = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEDWG2'")
   BasePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='BASEPATH'")
@@ -565,22 +567,14 @@ Private Sub Form_Load()
   If Right$(BlockPath, 1) <> "\" Then BlockPath = BlockPath & "\"
   SavePath = DLookup("[VALUE]", "SETTINGS", "[SETTING]='SAVEPATH'")
   If Right$(SavePath, 1) <> "\" Then SavePath = SavePath & "\"
-  
   Exit Sub
-  
+
 ErrorHandler:
-  MsgBox "Error loading form: " & Err.Description, vbCritical
+  virheKuvaus = Err.Description
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  MsgBox "Lomakkeen lataus epäonnistui: " & virheKuvaus, vbCritical
 End Sub
-
-
-
-
-
-
-
-
-
-
 
 Private Sub Lehdet_Change()
   'If Lehdet <> 3 Then
@@ -631,7 +625,7 @@ Virhe:
   
   ' Tarkistetaan, että käyttäjä valitsi pisteen eikä perunut
   If IsEmpty(gPoint) Or IsNull(gPoint) Then
-    AppActivate CurrentDb.Properties("AppTitle").VALUE
+    AktivoiAccessIkkuna
     Exit Sub
   End If
   
@@ -666,12 +660,12 @@ Virhe:
     End If
   End With
   Set oBlock = Nothing
-  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  AktivoiAccessIkkuna
   Exit Sub
   
 ErrorHandler:
   Set oBlock = Nothing
-  AppActivate CurrentDb.Properties("AppTitle").VALUE
+  AktivoiAccessIkkuna
   MsgBox "Virhe blokin insertoinnissa: " & Err.Description, vbExclamation, "Lisäys"
 End Sub
 Private Function DoubleToPoint(ByVal Piste As Double) As String

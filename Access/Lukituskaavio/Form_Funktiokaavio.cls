@@ -99,24 +99,49 @@ End Sub
 
 
 Private Sub Command83_Click()
-'Tämä päivittää reseptit kaikkiin piireihin, joissa on käytetty tiettyä reseptiä.
-Dim DB As DAO.Database
-Dim Vastaus As VbMsgBoxResult
-On Error GoTo ErrorHandler
+  ' Päivittää valitun reseptin piirien tiedot yhtenä tietokantatapahtumana.
+  Dim DB As DAO.Database
+  Dim Vastaus As VbMsgBoxResult
+  Dim RecipeID As Long
+  Dim TransaktioAuki As Boolean
+  Dim Tallennettu As Boolean
+  Dim virheKuvaus As String
 
-Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & Me.RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
-If Vastaus = vbYes Then 'Poistetaan ensin kaikki vanhat blokit niistä piireistä, joissa on resepti
-  CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & Me.RECIPES.Form.ID
-End If
-If Vastaus <> vbCancel Then
-  CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & Me.RECIPES.Form.ID
+  On Error GoTo ErrorHandler
+  RecipeID = Me.RECIPES.Form.ID
+  Vastaus = MsgBox("Tämä päivittää reseptin (ID=" & RecipeID & ") niille piireille, joissa on alla mainittu resepti." & vbCrLf & _
+    "Poistetaanko vanhat blokit piireistä, joille on määritelty resepti?", _
+    vbYesNoCancel, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+  If Vastaus = vbCancel Then Exit Sub
+
+  Set DB = CurrentDb
+  DBEngine.Workspaces(0).BeginTrans
+  TransaktioAuki = True
+  If Vastaus = vbYes Then
+    DB.Execute "DELETE * FROM Control WHERE RecipeID = " & RecipeID, dbFailOnError
+  End If
+  DB.Execute "INSERT INTO control (RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja) " & _
+    "SELECT * FROM RECIPES_ADD_ID WHERE RecipeID = " & RecipeID, dbFailOnError
+  DBEngine.Workspaces(0).CommitTrans
+  TransaktioAuki = False
+  Tallennettu = True
+
+  Set DB = Nothing
   MsgBox "Piirit päivitetty!", vbOKOnly, "PÄIVITÄ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
   Me.Refresh
-End If
-Exit Sub
+  Exit Sub
 
 ErrorHandler:
-  MsgBox "Error: " & Err.Description, vbCritical
+  virheKuvaus = Err.Description
+  On Error Resume Next
+  If TransaktioAuki Then DBEngine.Workspaces(0).Rollback
+  Set DB = Nothing
+  On Error GoTo 0
+  If Tallennettu Then
+    MsgBox "Resepti tallennettiin, mutta lomakkeen päivitys epäonnistui: " & virheKuvaus, vbExclamation
+  Else
+    MsgBox "Reseptin päivitys epäonnistui; muutokset peruutettiin: " & virheKuvaus, vbCritical
+  End If
 End Sub
 
 Private Sub Command97_Click()

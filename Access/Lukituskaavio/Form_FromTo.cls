@@ -237,65 +237,110 @@ Private Sub Command6_Click()
  
 End Sub
 Private Sub NoudaTiedot(Listalta As Boolean)
-Dim i As Integer
-Dim Tied As String
-'Yhdistetään ensin AutoCADiin
-'Otetaan yhteys AutoCADiin
-  On Error Resume Next
-  Set oACAD = GetObject(, "AutoCAD.Application") 'Koitetaan yhdistää AutoCADiin
-  If Err <> 0 Then 'Käynnissä olevaa AutoCADiä ei löytynyt
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
-    Set oACAD = Nothing
-    Exit Sub
-  End If
-  On Error GoTo 0
-  CurrentDb.Execute "DELETE * FROM DATA9"
+  Dim i As Long
+  Dim Tied As String
+  Dim DB As DAO.Database
+  Dim TransaktioAuki As Boolean
+  Dim TuontiValmis As Boolean
+  Dim virheKuvaus As String
+
+  On Error GoTo ErrorHandler
+  Set oACAD = GetObject(, "AutoCAD.Application")
+  If oACAD Is Nothing Then Err.Raise vbObjectError + 2200, "NoudaTiedot", "Käynnissä olevaa AutoCADia ei löytynyt."
+
+  Set DB = CurrentDb
+  DBEngine.Workspaces(0).BeginTrans
+  TransaktioAuki = True
+  DB.Execute "DELETE * FROM DATA9", dbFailOnError
   If Listalta Then
     For i = 1 To Me.Lista.ItemsSelected.Count
-        PoimiTiedot Me.Lista.ItemData(Me.Lista.ItemsSelected(i - 1))
+      PoimiTiedot DB, CStr(Me.Lista.ItemData(Me.Lista.ItemsSelected(i - 1)))
     Next i
   Else
     Tied = Dir(Me.TPolku & "*.dwg")
     Do While Tied <> ""
-      PoimiTiedot Tied
+      PoimiTiedot DB, Tied
       Tied = Dir()
     Loop
   End If
+
+  DBEngine.Workspaces(0).CommitTrans
+  TransaktioAuki = False
+  TuontiValmis = True
   Set oDOC = Nothing
   Set oACAD = Nothing
+  Set DB = Nothing
   DoCmd.OpenTable "DATA9"
+  Exit Sub
+
+ErrorHandler:
+  virheKuvaus = Err.Description
+  On Error Resume Next
+  If TransaktioAuki Then DBEngine.Workspaces(0).Rollback
+  Set oDOC = Nothing
+  Set oACAD = Nothing
+  Set DB = Nothing
+  On Error GoTo 0
+  If TuontiValmis Then
+    MsgBox "Tietojen tuonti tallennettiin, mutta DATA9-taulun avaaminen epäonnistui: " & virheKuvaus, vbExclamation
+  Else
+    MsgBox "Tietojen tuonti epäonnistui. DATA9-taulu palautettiin ennalleen: " & virheKuvaus, vbCritical
+  End If
 End Sub
-Private Sub PoimiTiedot(Tiedosto)
-Dim FT(0) As Integer
-Dim FD(0) As Variant
-Dim Joukko As Object  ' AcadSelectionSet — myöhäinen sidonta 64-bit-yhteensopivuuden vuoksi
-Dim i As Integer, j As Integer
-Dim Taul As DAO.Recordset
-Dim ATTRIB As Variant
-Dim TNimi As String
-  Set Taul = CurrentDb.OpenRecordset("DATA9")
-  FT(0) = 2       'ObjecName
+
+Private Sub PoimiTiedot(ByVal DB As DAO.Database, ByVal Tiedosto As String)
+  Dim FT(0) As Integer
+  Dim FD(0) As Variant
+  Dim TiedostonDOC As Object
+  Dim Joukko As Object  ' AutoCAD-valintajoukko, myöhäinen sidonta
+  Dim i As Long, j As Long
+  Dim Taul As DAO.Recordset
+  Dim ATTRIB As Variant
+  Dim TNimi As String
+  Dim virheNumero As Long
+  Dim virheKuvaus As String
+
+  On Error GoTo ErrorHandler
+  Set Taul = DB.OpenRecordset("DATA9", dbOpenDynaset)
+  FT(0) = 2       ' DXF-ryhmäkoodi: objektin nimi
   FD(0) = Me.FROMTOBLOCKS.Value
-  Set oDOC = oACAD.Documents.Open(Me.TPolku & Tiedosto)
-  Set Joukko = oDOC.SelectionSets.Add("APUFROMTO")
+  Set TiedostonDOC = oACAD.Documents.Open(Me.TPolku & Tiedosto)
+  Set Joukko = TiedostonDOC.SelectionSets.Add("APUFROMTO")
   Joukko.Select AC_SELECTION_SET_ALL, , , FT, FD
   TNimi = Left$(Tiedosto, Len(Tiedosto) - 4)
   For i = 0 To Joukko.Count - 1
     ATTRIB = Joukko(i).GetAttributes
     Taul.AddNew
-    Taul.Fields("PATH") = TPolku
+    Taul.Fields("PATH") = Me.TPolku
     Taul.Fields("DWG") = TNimi
     Taul.Fields("HANDLE") = Joukko(i).Handle
     Taul.Fields("BLOCK") = Joukko(i).Name
-    
     For j = 0 To UBound(ATTRIB)
       Taul.Fields(ATTRIB(j).TagString) = ATTRIB(j).TextString
     Next j
     Taul.Update
   Next i
-  oDOC.Close False
-  
-  Set oDOC = Nothing
+
+  Taul.Close
+  Set Taul = Nothing
+  Joukko.Delete
+  Set Joukko = Nothing
+  TiedostonDOC.Close False
+  Set TiedostonDOC = Nothing
+  Exit Sub
+
+ErrorHandler:
+  virheNumero = Err.Number
+  virheKuvaus = Err.Description
+  On Error Resume Next
+  If Not Taul Is Nothing Then Taul.Close
+  Set Taul = Nothing
+  If Not Joukko Is Nothing Then Joukko.Delete
+  Set Joukko = Nothing
+  If Not TiedostonDOC Is Nothing Then TiedostonDOC.Close False
+  Set TiedostonDOC = Nothing
+  On Error GoTo 0
+  Err.Raise virheNumero, "PoimiTiedot", virheKuvaus
 End Sub
 
 Private Sub Command7_Click()

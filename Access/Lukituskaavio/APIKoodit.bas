@@ -6,9 +6,9 @@ Option Explicit
     Private Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
     ' --------- [ CHOOSE FILE ] -----------------
-    ' KORJATTU: GetOpenFileName palauttaa BOOL/osoitteen — LongPtr 64-bittisellä
+    ' GetOpenFileName palauttaa 32-bittisen BOOL-arvon (Long) molemmissa Access-arkkitehtuureissa.
     Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
-        (pOpenfilename As OPENFILENAME) As LongPtr
+        (pOpenfilename As OPENFILENAME) As Long
 #Else
   Private Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameA" _
         (ByVal lpBuffer As String, ByRef nSize As Long) As Long
@@ -103,7 +103,7 @@ Public Function ValitseHakem(Handle As Long, Optional StartPath As String) As St
   Const BIF_DONTGOBELOWDOMAIN = 2
   Const MAX_PATH = 260
 
-  If IsMissing(StartPath) Or StartPath = "" Then
+  If StartPath = "" Then
     CDialogPath = "C:\"
   Else
     If Right$(StartPath, 2) = ":\" Then
@@ -174,7 +174,7 @@ Public Function ValitseTiedosto(Nimi As String, Otsikko As String) As String
 ' Avaa tiedostovalintaikkuna tietokantapolun hakemiseksi
     Dim OpenFile As OPENFILENAME
     #If VBA7 Then
-        Dim lReturn As LongPtr
+        Dim lReturn As Long
     #Else
         Dim lReturn As Long
     #End If

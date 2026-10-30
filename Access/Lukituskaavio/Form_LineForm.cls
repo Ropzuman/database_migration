@@ -83,7 +83,7 @@ If Valmis = False Then
         Else
           Valmis = True
         End If
-        AppActivate CurrentDb.Properties("AppTitle").VALUE
+        AktivoiAccessIkkuna
         Exit Do
       Else
         Set ViimViiva = oDOC.ModelSpace.AddLine(sPoint, iPoint)
@@ -96,7 +96,7 @@ If Valmis = False Then
     Loop
   Else 'Keskeytettiin heti
     DoCmd.Close acForm
-    AppActivate CurrentDb.Properties("AppTitle").VALUE
+    AktivoiAccessIkkuna
   End If
   Err.Clear
 End If

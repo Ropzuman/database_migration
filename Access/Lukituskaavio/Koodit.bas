@@ -1,5 +1,15 @@
 Option Compare Database
 Option Explicit
+
+#If VBA7 Then
+Private Declare PtrSafe Function api_SetForegroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal hWnd As LongPtr) As Long
+#Else
+Private Declare Function api_SetForegroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal hWnd As Long) As Long
+#End If
+
+Public Function AktivoiAccessIkkuna() As Boolean
+  AktivoiAccessIkkuna = (api_SetForegroundWindow(Application.hWndAccessApp) <> 0)
+End Function
 ' AutoCAD-objektit muutettu late binding -tyypiksi 64-bit yhteensopivuuden vuoksi
 Public oACAD As Object    ' AcadApplication - muutettu late binding (64-bit)
 Public oDOC As Object     ' AcadDocument - muutettu late binding (64-bit)
