@@ -1,6 +1,16 @@
 Option Compare Database
 Option Explicit
 
+#If VBA7 Then
+  Private Declare PtrSafe Function SetForegroundWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+#Else
+  Private Declare Function SetForegroundWindow Lib "user32" (ByVal hwnd As Long) As Long
+#End If
+
+' AutoCAD-vakiot m‰‰ritell‰‰n paikallisesti, koska tyyppikirjastoviittausta ei k‰ytet‰
+Private Const acSelectionSetAll As Long = 5
+Private Const acZoomScaledRelative As Long = 1
+
 '================================================================================
 ' Lomake: USysPipeToOther
 ' Tarkoitus: Linkit‰ laiteblokit putkilinjoihin PIPELINE-attribuutin kautta
@@ -103,7 +113,14 @@ Private Sub OpenPipeline()
     End If
   Loop
   On Error GoTo 0
-  AppActivate CurrentDb.Properties("AppTitle").Value
+  AktivoiAccess
+End Sub
+
+' Nostetaan Access-ikkuna etualalle ikkunakahvan avulla (toimii 32- ja 64-bittisess‰ Accessissa)
+Private Sub AktivoiAccess()
+  On Error Resume Next
+  SetForegroundWindow Application.hWndAccessApp
+  Err.Clear
 End Sub
 
 '================================================================================
@@ -342,14 +359,14 @@ Private Sub TeeJoukko(Nimi As String, VJoukko As Object)  ' AcadSelectionSet - m
   On Error GoTo ErrorHandler
   
   ' Poistetaan, jos on jo olemassa
-  For i = 0 To ActiveDocument.SelectionSets.Count - 1
-    If ActiveDocument.SelectionSets(i).Name = Nimi Then
-      ActiveDocument.SelectionSets(i).Delete
+  For i = 0 To oDOC.SelectionSets.Count - 1
+    If oDOC.SelectionSets(i).Name = Nimi Then
+      oDOC.SelectionSets(i).Delete
       Exit For
     End If
   Next i
   
-  Set VJoukko = ActiveDocument.SelectionSets.Add(Nimi)
+  Set VJoukko = oDOC.SelectionSets.Add(Nimi)
   Exit Sub
   
 ErrorHandler:
@@ -379,7 +396,7 @@ Private Sub AvaaBlokki()
   Set oBlock = Joukko(i)
   oBlock.GetBoundingBox MinPoint, MaxPoint
   oACAD.ZoomWindow MinPoint, MaxPoint
-  oACAD.ZoomScaled 0.2, 1  ' acZoomScaledRelative late bindingissa
+  oACAD.ZoomScaled 0.2, acZoomScaledRelative
   oBlock.Highlight True
   
   ' Haetaan PIPELINE-attribuutti

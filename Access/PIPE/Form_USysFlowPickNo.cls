@@ -1,6 +1,16 @@
 Option Compare Database
 Option Explicit
 
+#If VBA7 Then
+  Private Declare PtrSafe Function SetForegroundWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+#Else
+  Private Declare Function SetForegroundWindow Lib "user32" (ByVal hwnd As Long) As Long
+#End If
+
+' AutoCAD-vakiot m‰‰ritell‰‰n paikallisesti, koska tyyppikirjastoviittausta ei k‰ytet‰
+Private Const acSelectionSetCrossing As Long = 1
+Private Const acSelectionSetAll As Long = 5
+
 '================================================================================
 ' Lomake: USysFlowPickNo
 ' Tarkoitus: Virtausblokkien putkilinjanumerovalitsin AutoCAD-piirustuksille
@@ -165,7 +175,7 @@ On Error Resume Next
 oDOC.Utility.GetEntity Kohde, Piste, "Poimi putkilinja..."
 If Err <> 0 Then
   Err.Clear
-  AppActivate CurrentDb.Properties("AppTitle").Value, True
+    AktivoiAccess
   Exit Sub
 End If
 On Error GoTo ErrorHandler
@@ -189,14 +199,21 @@ If Kohde.ObjectName = "AcDbBlockReference" Then
   End Select
   oAttrib.TextString = TRefNo.Value
 End If
-AppActivate CurrentDb.Properties("AppTitle").Value, True
+AktivoiAccess
 Exit Sub
 
 ErrorHandler:
-    On Error Resume Next
-    AppActivate CurrentDb.Properties("AppTitle").Value, True
-    On Error GoTo 0
-    MsgBox "Virhe putkilinjan poiminnassa: " & Err.Description, vbCritical, "BPoimi"
+    Dim Virhe As String
+    Virhe = Err.Description
+    AktivoiAccess
+    MsgBox "Virhe putkilinjan poiminnassa: " & Virhe, vbCritical, "BPoimi"
+End Sub
+
+' Nostetaan Access-ikkuna etualalle ikkunakahvan avulla (toimii 32- ja 64-bittisess‰ Accessissa)
+Private Sub AktivoiAccess()
+  On Error Resume Next
+  SetForegroundWindow Application.hWndAccessApp
+  Err.Clear
 End Sub
 '--------------------------------------------------------------------------------
 ' Funktio: AttribToPipeline

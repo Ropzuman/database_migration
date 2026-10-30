@@ -1,6 +1,9 @@
 Option Compare Database
 Option Explicit
 
+' AutoCAD-vakio määritellään paikallisesti, koska tyyppikirjastoviittausta ei käytetä
+Private Const acSelectionSetAll As Long = 5
+
 '================================================================================
 ' Lomake: TYÖKALUT
 ' Tarkoitus: AutoCAD P&I -tietojen tuonti- ja päivitystyökalupakki PIPE-tietokantaan
