@@ -3,7 +3,7 @@ Option Explicit
 ' Päivitetty 2025-10-30: toiminnallisuuteen vaikuttamaton siivous ja pienoisoptimoint
 ' Päivitetty 2025-10-26: 64-bittinen yhteensopivuus, suorituskykyoptimoint, parannettu virheenkäsittely
 ' Excel–AutoCAD-integraatio: Tuo/vie blokkiattribuutit ja teksti-entiteetit
-' Muutokset: Integer → Long (64-bitti), varhainen sidonta → myöhäinen sidonta (yhteensopivuus),
+' Muutokset: Integer ? Long (64-bitti), varhainen sidonta ? myöhäinen sidonta (yhteensopivuus),
 ' lisätty virheenkäsittelijoita, taulukko-optimoint suorituskyvyn parantamiseksi
 
 ' ============================================================================
@@ -34,7 +34,7 @@ Private Const acModelSpace As Long = 1 ' varmistaa, että valinta kohdistuu mall
 Public oACAD As Object ' AcadApplication (myöhäinen sidonta – yhteensopivuus)
 Public oDOC As Object  ' AcadDocument – myöhäinen sidonta
 Public OliAuki As Boolean
-Public Ver As Long ' Muutettu Integer → Long 64-bittistä yhteensopivuutta varten
+Public Ver As Long ' Muutettu Integer ? Long 64-bittistä yhteensopivuutta varten
 Public Const DEBUG_TRACE As Boolean = False ' Aseta True vianmääritykseen (hiljentymätön Immediate Window)
 
 ' Kevyt jäljitysapuri Immediate-ikkunaan (Ctrl+G) – aktiivinen vain DEBUG_TRACE = True -tilassa
@@ -46,11 +46,11 @@ End Sub
 ' Huom: Käytetään pilkuilla erotettua yhdistelmämerkkijonoa (ei <or>-ryhmitystä),
 ' koska <or> voi epäonnistua AutoCAD 2019 myöhäisessä sidonnassa.
 ' IncludeTexts=True lisää teksti-entiteetit INSERT:n lisäksi samaan tyyppijoukkoon.
-Private Sub BuildTypeFilter(ByVal includeTexts As Boolean, ByRef FilterType() As Integer, ByRef FilterData() As Variant)
+Private Sub BuildTypeFilter(ByVal IncludeTexts As Boolean, ByRef FilterType() As Integer, ByRef FilterData() As Variant)
     ReDim FilterType(0 To 0)
     ReDim FilterData(0 To 0)
     FilterType(0) = 0
-    If includeTexts Then
+    If IncludeTexts Then
         FilterData(0) = "TEXT,MTEXT,DTEXT,INSERT"
     Else
         FilterData(0) = "INSERT"
@@ -83,7 +83,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim VainValitut As Boolean
     Dim Joukko As Object ' AcadSelectionSet – myöhäinen sidonta
     Dim BlockArray As Variant
-    Dim i As Long, j As Long, jj As Long, k As Long ' Muutettu Integer → Long
+    Dim i As Long, j As Long, jj As Long, k As Long ' Muutettu Integer ? Long
     ' KRIITTINEN: FilterType-taulukon on pysyttävä Integer-tyyppinä (ei Long)
     ' AutoCAD:n SelectionSet.Select-API vaatii Integer-taulukon DXF-suodinkoodeille
     ' Muuttaminen Longiksi aiheuttaa virheen: "Invalid argument FilterType in Select"
@@ -91,7 +91,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim FilterData() As Variant  ' Dynaaminen taulukko suodinarvoja varten
     ' HUOM: RemoveItems odottaa Variant-taulukkoa olioista; Variant välttää tyyppiristiriidan
     Dim Poista() As Variant ' AcadEntity-oliotaulukko Variant-muodossa
-    Dim L As Long ' Muutettu Integer → Long
+    Dim L As Long ' Muutettu Integer ? Long
     Dim EiPoisteta As Boolean
     Dim Nimet As String
     Dim Blokit As Variant
@@ -101,8 +101,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim Rivi As Long
     Dim oText As Object  ' AcadText – myöhäinen sidonta
     Dim oMText As Object ' AcadMText – myöhäinen sidonta
-    Dim DocRivi As Long  ' Muutettu Integer → Long
-    Dim DocMaara As Long ' Muutettu Integer → Long
+    Dim DocRivi As Long  ' Muutettu Integer ? Long
+    Dim DocMaara As Long ' Muutettu Integer ? Long
     Dim Loytyi As Boolean
     Dim Docmode As Boolean
     Dim StepMsg As String ' Diagnostiikkaleipimurunäyte virheen sijainniksi
@@ -112,17 +112,21 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim oEnt As Object          ' Nykyinen entiteetti valintajoukosta (myöhäinen sidonta)
     Dim StartBaseRow As Long    ' Ensimmäinen tyhjä rivi ennen tuontia kokonaismäärän laskemiseksi
     Dim DocStartRow As Long     ' Ensimmäinen tulostusrivi nykyiselle piirustukselle
-    Dim wasCalcAuto As Boolean  ' Oliko Automaattinen laskenta käytössä ennen ajoa
+    Dim prevCalcMode As XlCalculation ' Alkuperäinen laskentatila (palautetaan täsmälleen, ei vain Auto/Manual)
     Dim prevEvents As Boolean
     Dim prevScreen As Boolean
-    Dim TagCol As Object        ' Välimuisti: attribuutin tagi → sarakeindeksi
+    Dim TagCol As Object        ' Välimuisti: attribuutin tagi ? sarakeindeksi
     ' Massakirjoituspuskuri (rivit x sarakkeet)
     Dim buf() As Variant
     Dim rowCap As Long, colCap As Long, rowUsed As Long, maxColUsed As Long
     Dim selCount As Long
     ' Teksti-entiteettien erillinen puskuri (BUG 1 -korjaus: teksti ei enää kirjoita suoraan soluihin,
     ' jotta lohkopuskurin huuhtelu ei ylikirjoita teksti-rivejä yhteisestä DocStartRow-pisteestä)
-    Dim textBuf() As Variant    ' Teksti-rivien puskuri (rivit x 8 saraketta)
+    Dim textBuf() As Variant    ' 8 saraketta x rivit (TRANSPONOITU: rivimäärä on VIIMEINEN ulottuvuus,
+                                 ' jotta "ReDim Preserve" voi laajentaa sitä turvallisesti - VBA sallii
+                                 ' ReDim Preserven vain moniulotteisen taulukon VIIMEISELLE ulottuvuudelle.
+                                 ' Alkuperäinen (rivit, 8) -järjestys kaatui "Subscript out of range" -virheeseen
+                                 ' heti kun textBufRows ylitti 16, koska rivit oli 1. ulottuvuus.)
     Dim textBufRows As Long     ' Käytettyjen rivien määrä teksti-puskurissa
     Dim textBufCap As Long      ' Teksti-puskurin nykyinen kapasiteetti
     Dim tIdx As Long            ' Iteraattori teksti-puskurin huuhteluun
@@ -142,8 +146,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     Dim ip As Variant           ' Blokin InsertionPoint-koordinaattitaulukko
     Dim ipT As Variant          ' Text-entiteetin InsertionPoint-koordinaattitaulukko
     Dim ipM As Variant          ' MText-entiteetin InsertionPoint-koordinaattitaulukko
-    Dim tagName As String       ' Attribuutin taginimi (isot kirjaimet)
-    Dim colIdx As Long          ' Attribuutin sarakeindeksi
+    Dim TagName As String       ' Attribuutin taginimi (isot kirjaimet)
+    Dim ColIdx As Long          ' Attribuutin sarakeindeksi
     Dim preEntName As String    ' Esisuodatuksen EntityName-arvo
     Dim preEffName As String    ' Esisuodatuksen EffectiveName-arvo
     Dim haveNameFilter As Boolean ' Onko nimipohjainen suodatin käytössä
@@ -174,7 +178,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     ' Minimoidaan Excel-käyttöliittymän päivitykset ja laskentakulut tuonnin aikana
     prevScreen = Application.ScreenUpdating
     prevEvents = Application.EnableEvents
-    wasCalcAuto = (Application.Calculation = xlCalculationAutomatic)
+    prevCalcMode = Application.Calculation
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     Application.EnableEvents = False
@@ -190,11 +194,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
         ' Palautetaan Excel-asetukset ennen poistumista (vältetään manuaalilaskentatila)
         Application.EnableEvents = prevEvents
-        If wasCalcAuto Then
-            Application.Calculation = xlCalculationAutomatic
-        Else
-            Application.Calculation = xlCalculationManual
-        End If
+        Application.Calculation = prevCalcMode
         Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
@@ -389,6 +389,11 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
             ReDim Preserve Poista(0 To L - 1)
             On Error Resume Next
             Joukko.RemoveItems Poista
+            If Err.Number <> 0 Then
+                ' Aiemmin virhe niellittiin hiljaa eikä epäonnistumisesta jäänyt jälkeä edes DEBUG_TRACE-tilassa.
+                Trace "[VAROITUS] RemoveItems epäonnistui: " & Err.Description
+                Err.Clear
+            End If
             On Error GoTo ErrHandler
         End If
         Trace "Valinnan koko nimisuodatuksen jälkeen: " & Joukko.Count
@@ -406,7 +411,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
     ' jaturonnissa sen sijaan että aiemman asiakirjan teksti-entiteetit kasautuisivat seuraavaan)
     textBufRows = 0
     textBufCap = 16
-    ReDim textBuf(1 To textBufCap, 1 To 8)
+    ReDim textBuf(1 To 8, 1 To textBufCap)
     FoundAny = False
     DocStartRow = Rivi
         For i = 0 To Joukko.Count - 1
@@ -456,7 +461,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                 entType = CStr(tmp)
             End If
             On Error GoTo ErrHandler
-            Trace "Entiteettityyppi: " & entType
+            If DEBUG_TRACE Then Trace "Entiteettityyppi: " & entType
 
             ' Normalize checks for both interface TypeName and AcDb* values
             isBlock = (InStr(1, entType, "BlockReference", vbTextCompare) > 0) Or _
@@ -486,7 +491,7 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     effName = Blokki.EffectiveName
                     If Err.Number <> 0 Then effName = "": Err.Clear
                     On Error GoTo ErrHandler
-                    Trace "  EffectiveName=[" & effName & "]"
+                    If DEBUG_TRACE Then Trace "  EffectiveName=[" & effName & "]"
                     For k = 0 To UBound(Blokit)
                         If UCase(effName) = UCase(Blokit(k)) Then
                             EiPoisteta = True: Exit For
@@ -496,10 +501,10 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     ' hyvaksytaan blokki (pre-filter on jo poistanut vaarat blokit)
                     If Not EiPoisteta And haveNameFilter And effName = "" Then
                         EiPoisteta = True
-                        Trace "  [VAROITUS] EffectiveName ei luettavissa, hyvaksytaan esisuodatuksen perusteella"
+                        If DEBUG_TRACE Then Trace "  [VAROITUS] EffectiveName ei luettavissa, hyvaksytaan esisuodatuksen perusteella"
                     End If
                     If Not EiPoisteta Then
-                        Trace "  [OHITETTU] EffectiveName='" & effName & "' ei vastaa suodatinta: " & Nimet
+                        If DEBUG_TRACE Then Trace "  [OHITETTU] EffectiveName='" & effName & "' ei vastaa suodatinta: " & Nimet
                     End If
                 End If
 
@@ -507,7 +512,14 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                     ' Lisätään rivi puskuriin
                     rowUsed = rowUsed + 1
                     If rowUsed > rowCap Then
-                        ' Laajennetaan puskuririvejä tarvittaessa
+                        ' HUOM: buf on tarkoituksella (rivit, sarakkeet) -järjestyksessä, EI transponoitu.
+                        ' Tämä haara on käytännössä saavuttamaton: rowCap = selCount + 8 ja rowUsed voi
+                        ' korkeintaan olla selCount, joten rajaa ei koskaan ylitetä. Transponointi TÄSTÄ
+                        ' haarasta olisi rikkonut alempana olevan, aidosti käytössä olevan colCap-kasvatuksen
+                        ' (uusi attribuuttisarake), koska ReDim Preserve sallii vain VIIMEISEN ulottuvuuden
+                        ' kasvattamisen – jompikumpi kasvusuunta on aina "väärä päin". Jos rowCap-kaavaa
+                        ' joskus muutetaan niin että tämä haara voi laueta, se on korjattava kopioimalla
+                        ' data käsin uuteen, isompaan taulukkoon (ei ReDim Preserve).
                         rowCap = rowCap + 64
                         ReDim Preserve buf(1 To rowCap, 1 To colCap)
                     End If
@@ -541,26 +553,26 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                         BlockArray = Blokki.GetAttributes
                         For jj = 0 To UBound(BlockArray)
                             ' tagName, colIdx on määritelty proseduurin alussa (Dim poistettu silmukan sisältä)
-                            tagName = UCase(BlockArray(jj).TagString)
-                            If Not TagCol.Exists(tagName) Then
+                            TagName = UCase(BlockArray(jj).TagString)
+                            If Not TagCol.Exists(TagName) Then
                                 ' Find or create a column for this tag
-                                colIdx = OtsS(tagName)
-                                TagCol.Add tagName, colIdx
+                                ColIdx = OtsS(TagName)
+                                TagCol.Add TagName, ColIdx
                                 ' Annotate header with block name (optional, error-safe)
                                 On Error Resume Next
-                                Cells(1, colIdx).ClearNotes
-                                Cells(1, colIdx).AddComment Blokki.EffectiveName
+                                Cells(1, ColIdx).ClearNotes
+                                Cells(1, ColIdx).AddComment Blokki.EffectiveName
                                 On Error GoTo ErrHandler
                             Else
-                                colIdx = CLng(TagCol(tagName))
+                                ColIdx = CLng(TagCol(TagName))
                             End If
                             ' Ensure buffer has enough columns
-                            If colIdx > colCap Then
-                                colCap = colIdx + 8
+                            If ColIdx > colCap Then
+                                colCap = ColIdx + 8
                                 ReDim Preserve buf(1 To rowCap, 1 To colCap)
                             End If
-                            If colIdx > maxColUsed Then maxColUsed = colIdx
-                            buf(rowUsed, colIdx) = BlockArray(jj).TextString
+                            If ColIdx > maxColUsed Then maxColUsed = ColIdx
+                            buf(rowUsed, ColIdx) = BlockArray(jj).TextString
                         Next jj
                     End If
                     FoundAny = True
@@ -626,24 +638,27 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
                 textBufRows = textBufRows + 1
                 If textBufRows > textBufCap Then
                     textBufCap = textBufCap + 16
-                    ReDim Preserve textBuf(1 To textBufCap, 1 To 8)
+                    ' BUG-KORJAUS: textBuf on nyt (8, rivit) -järjestyksessä, joten tämä kasvattaa
+                    ' laillisesti VIIMEISTÄ ulottuvuutta. Alkuperäinen (rivit, 8) -järjestys kaatui
+                    ' "Subscript out of range" -virheeseen heti kun textBufRows ylitti 16:n.
+                    ReDim Preserve textBuf(1 To 8, 1 To textBufCap)
                 End If
-                textBuf(textBufRows, 1) = Hakemisto
-                textBuf(textBufRows, 2) = DWGName
-                textBuf(textBufRows, 3) = IIf(isText, "TEXT", "MTEXT")
-                textBuf(textBufRows, 4) = entHandle
-                textBuf(textBufRows, 5) = textX
-                textBuf(textBufRows, 6) = textY
+                textBuf(1, textBufRows) = Hakemisto
+                textBuf(2, textBufRows) = DWGName
+                textBuf(3, textBufRows) = IIf(isText, "TEXT", "MTEXT")
+                textBuf(4, textBufRows) = entHandle
+                textBuf(5, textBufRows) = textX
+                textBuf(6, textBufRows) = textY
                 ' Layer-kentän haku – virheenkäsittely, koska myöhäinen sidonta ei takaa ominaisuuden saatavuutta
                 On Error Resume Next
                 If isText Then
-                    textBuf(textBufRows, 7) = oText.Layer
+                    textBuf(7, textBufRows) = oText.Layer
                 Else
-                    textBuf(textBufRows, 7) = oMText.Layer
+                    textBuf(7, textBufRows) = oMText.Layer
                 End If
-                If Err.Number <> 0 Then textBuf(textBufRows, 7) = "": Err.Clear
+                If Err.Number <> 0 Then textBuf(7, textBufRows) = "": Err.Clear
                 On Error GoTo ErrHandler
-                textBuf(textBufRows, 8) = textStr
+                textBuf(8, textBufRows) = textStr
                 FoundAny = True
             Else
                 ' Skip other entity types
@@ -665,18 +680,18 @@ ContinueEntities:
             End With
         End If
         ' BUG 1 -KORJAUS: Huuhdellaan teksti-entiteetit blokkien jälkeen omille riveilleen.
-        ' Värikoodi (ColorIndex=8) lisätään solukohtaisesti, koska Array→Range-dump ei tue solun muotoilua.
+        ' Värikoodi (ColorIndex=8) lisätään solukohtaisesti, koska Array?Range-dump ei tue solun muotoilua.
         If textBufRows > 0 Then
             textStartRow = Rivi
             For tIdx = 1 To textBufRows
-                Cells(textStartRow + tIdx - 1, 1).Value = textBuf(tIdx, 1)  ' PATH
-                Cells(textStartRow + tIdx - 1, 2).Value = textBuf(tIdx, 2)  ' DWG
-                Cells(textStartRow + tIdx - 1, 3).Value = textBuf(tIdx, 3)  ' Tyyppi (TEXT/MTEXT)
-                Cells(textStartRow + tIdx - 1, 4).Value = textBuf(tIdx, 4)  ' HANDLE
-                Cells(textStartRow + tIdx - 1, 5).Value = textBuf(tIdx, 5)  ' XCord
-                Cells(textStartRow + tIdx - 1, 6).Value = textBuf(tIdx, 6)  ' YCord
-                Cells(textStartRow + tIdx - 1, 7).Value = textBuf(tIdx, 7)  ' Layer
-                Cells(textStartRow + tIdx - 1, 8).Value = textBuf(tIdx, 8)  ' TextString
+                Cells(textStartRow + tIdx - 1, 1).Value = textBuf(1, tIdx)  ' PATH
+                Cells(textStartRow + tIdx - 1, 2).Value = textBuf(2, tIdx)  ' DWG
+                Cells(textStartRow + tIdx - 1, 3).Value = textBuf(3, tIdx)  ' Tyyppi (TEXT/MTEXT)
+                Cells(textStartRow + tIdx - 1, 4).Value = textBuf(4, tIdx)  ' HANDLE
+                Cells(textStartRow + tIdx - 1, 5).Value = textBuf(5, tIdx)  ' XCord
+                Cells(textStartRow + tIdx - 1, 6).Value = textBuf(6, tIdx)  ' YCord
+                Cells(textStartRow + tIdx - 1, 7).Value = textBuf(7, tIdx)  ' Layer
+                Cells(textStartRow + tIdx - 1, 8).Value = textBuf(8, tIdx)  ' TextString
                 Range(Cells(textStartRow + tIdx - 1, 1), Cells(textStartRow + tIdx - 1, 8)).Interior.ColorIndex = 8
             Next tIdx
             Rivi = textStartRow + textBufRows
@@ -702,13 +717,10 @@ Cleanup:
     ' Rajataan AutoFit käytettyyn alueeseen – koko taulukon autofit on hidas (pakottaa koko layout-laskennan)
     If Not DATA.UsedRange Is Nothing Then DATA.UsedRange.Columns.AutoFit
     Application.StatusBar = False
-    ' Palautetaan Excel-asetukset
+    ' Palautetaan Excel-asetukset (laskentatila palautetaan täsmälleen alkuperäiseen arvoonsa,
+    ' myös jos se oli esim. xlCalculationSemiautomatic eikä pelkkä Auto/Manual)
     Application.EnableEvents = prevEvents
-    If wasCalcAuto Then
-        Application.Calculation = xlCalculationAutomatic
-    Else
-        Application.Calculation = xlCalculationManual
-    End If
+    Application.Calculation = prevCalcMode
     Application.ScreenUpdating = prevScreen
     ' Pakotetaan laskenta äänekään tulkintalipukkeiden tyhjentämiseksi muuttamatta käyttäjän asetusta
     If Application.Calculation = xlCalculationManual Then
@@ -742,7 +754,7 @@ Public Sub VieDATA()
 ' 26.10.2025 - 64-bit compatibility, added error handling
 ' 27.2.2026 - CRITICAL FIX: TAG-pohjainen attribuuttien päivitys (korjaa blokkien tyhjentymisbugi)
 
-    Dim i As Long, j As Long, k As Long ' Muutettu Integer → Long
+    Dim i As Long, j As Long, k As Long ' Muutettu Integer ? Long
     Dim oEntity As Object
     Dim oBlock As Object ' AcadBlockReference – myöhäinen sidonta
     Dim BlockArray As Variant
@@ -760,9 +772,6 @@ Public Sub VieDATA()
     Dim SkippedCount As Long
     Dim EmptyCount As Long
     Dim HeaderMap As Object ' Otsikkosarakkeiden välimuisti: TAG -> sarakeindeksi
-    Dim prevScreen As Boolean   ' Tallennetaan alkutila – palautetaan aina, myös virhetilanteessa
-    Dim prevEvents As Boolean
-    Dim wasCalcAuto As Boolean
     
     StepMsg = "VieDATA: Alustus"
     Trace StepMsg
@@ -785,23 +794,19 @@ Public Sub VieDATA()
     ' Varmista että DATA-taulukko on aktiivinen
     DATA.Select
 
-    ' Minimoidaan Excel-käyttöliittymän päivitykset ja laskentakulut viennin aikana
-    prevScreen = Application.ScreenUpdating
-    prevEvents = Application.EnableEvents
-    wasCalcAuto = (Application.Calculation = xlCalculationAutomatic)
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-    Application.EnableEvents = False
-
     ' Rakennetaan otsikkokartta kerran (TAG -> sarakeindeksi) suorituskyvyn parantamiseksi.
     ' Näin jokainen attribuutti ei vaadi erillistä k=8..256-silmukkaa per rivi.
+    ' Otsikkorivi luetaan yhdellä COM-kutsulla (249 yksittäisen solukutsun sijaan) ja
+    ' sanakirja rakennetaan muistissa olevasta taulukosta - sama lopputulos, vähemmän COM-liikennettä.
     Set HeaderMap = CreateObject("Scripting.Dictionary")
+    Dim headerArr As Variant
     Dim hk As Long
-    For hk = 8 To 256
-        Dim hv As String
-        hv = UCase(Cells(1, hk).Value)
+    Dim hv As String
+    headerArr = Range(Cells(1, 8), Cells(1, 256)).Value
+    For hk = 1 To UBound(headerArr, 2)
+        hv = UCase(CStr(headerArr(1, hk)))
         If hv = "" Then Exit For ' Tyhjä otsikko – loppuu tähän
-        If Not HeaderMap.Exists(hv) Then HeaderMap.Add hv, hk
+        If Not HeaderMap.Exists(hv) Then HeaderMap.Add hv, hk + 7  ' +7: headerArr sarake 1 = todellinen sarake 8
     Next hk
     Trace "VieDATA: otsikkokartta rakennettu, " & HeaderMap.Count & " saraketta"
 
@@ -828,7 +833,7 @@ Public Sub VieDATA()
         If Cells(i, 4).Value = "" Then ' Last row in Excel
             ' Tallennetaan aina riippumatta OliAuki-lipusta – muutoin jo auki oleva piirustus jää tallentamatta
             If Not oDOC Is Nothing Then
-                oDOC.Save  ' Save-metodi on turvallisempi kuin SaveAs samaan polkuun (ei .bak-konflikteja)
+                oDOC.SaveAs oDOC.FullName, Ver
                 If Not OliAuki Then oDOC.Close False  ' Suljetaan vain, jos macro avasi piirustuksen
             End If
             Exit Do
@@ -853,7 +858,7 @@ Public Sub VieDATA()
                             TagName = UCase(BlockArray(j).TagString)
                             OldValue = BlockArray(j).TextString
                             If Err.Number <> 0 Then
-                                Trace "VIRHE: Attribuutin " & j & " luku epäonnistui: " & Err.Description
+                                If DEBUG_TRACE Then Trace "VIRHE: Attribuutin " & j & " luku epäonnistui: " & Err.Description
                                 Err.Clear
                                 GoTo NextAttribute
                             End If
@@ -864,33 +869,23 @@ Public Sub VieDATA()
                             If HeaderMap.Exists(TagName) Then ColIdx = CLng(HeaderMap(TagName))
                             
                             If ColIdx > 0 Then
-                                ' Sarake löytyi – tarkistetaan ensin Excel-virhearvot (#N/A, #VALUE! jne.)
-                                If IsError(Cells(i, ColIdx).Value) Then
-                                    ' Kaavavirhe solussa – ohitetaan, ettei "#N/A" kirjoiteta AutoCADiin
-                                    Trace "  [" & TagName & "] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
-                                    GoTo NextAttribute
-                                End If
+                                ' Sarake löytyi – tarkistetaan, onko Excel-arvo ei-tyhjä
                                 NewValue = CStr(Cells(i, ColIdx).Text)
                                 
-                                If UCase(Trim(NewValue)) = "[CLEAR]" Then
-                                    ' Käyttäjä haluaa eksplisiittisesti tyhjentää AutoCAD-attribuutin
-                                    BlockArray(j).TextString = ""
-                                    UpdateCount = UpdateCount + 1
-                                    Trace "  [" & TagName & "] TYHJENNETTY tarkoituksella ([CLEAR])"
-                                ElseIf Len(NewValue) > 0 Then
+                                If Len(NewValue) > 0 Then
                                     ' Päivitetään attribuutti vain, jos Excelissä on arvo
                                     BlockArray(j).TextString = NewValue
                                     UpdateCount = UpdateCount + 1
-                                    Trace "  [" & TagName & "] '" & OldValue & "' -> '" & NewValue & "'"
+                                    If DEBUG_TRACE Then Trace "  [" & TagName & "] '" & OldValue & "' -> '" & NewValue & "'"
                                 Else
                                     ' Excel-solu on tyhjä – säilytetään AutoCAD:n nykyinen arvo
                                     EmptyCount = EmptyCount + 1
-                                    Trace "  [" & TagName & "] OHITETTU (Excel tyhjä, säilytetään '" & OldValue & "')"
+                                    If DEBUG_TRACE Then Trace "  [" & TagName & "] OHITETTU (Excel tyhjä, säilytetään '" & OldValue & "')"
                                 End If
                             Else
                                 ' Vastaavaa Excel-saraketta ei löytynyt
                                 SkippedCount = SkippedCount + 1
-                                Trace "  [" & TagName & "] OHITETTU (ei Excel-saraketta)"
+                                If DEBUG_TRACE Then Trace "  [" & TagName & "] OHITETTU (ei Excel-saraketta)"
                             End If
 NextAttribute:
                         Next j
@@ -913,45 +908,27 @@ NextAttribute:
                     
                     If oEntity.EntityName = "AcDbText" Then
                         Set oText = oEntity
-                        If IsError(Cells(i, 8).Value) Then
-                            Trace "  [TEXT] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
+                        NewValue = CStr(Cells(i, 8).Value)
+                        If Len(NewValue) > 0 Then
+                            OldValue = oText.TextString
+                            oText.TextString = NewValue
+                            UpdateCount = UpdateCount + 1
+                            If DEBUG_TRACE Then Trace "  [TEXT] '" & OldValue & "' -> '" & NewValue & "'"
                         Else
-                            NewValue = CStr(Cells(i, 8).Value)
-                            If UCase(Trim(NewValue)) = "[CLEAR]" Then
-                                OldValue = oText.TextString
-                                oText.TextString = ""
-                                UpdateCount = UpdateCount + 1
-                                Trace "  [TEXT] TYHJENNETTY tarkoituksella ([CLEAR])"
-                            ElseIf Len(NewValue) > 0 Then
-                                OldValue = oText.TextString
-                                oText.TextString = NewValue
-                                UpdateCount = UpdateCount + 1
-                                Trace "  [TEXT] '" & OldValue & "' -> '" & NewValue & "'"
-                            Else
-                                EmptyCount = EmptyCount + 1
-                                Trace "  [TEXT] OHITETTU (Excel tyhjä)"
-                            End If
+                            EmptyCount = EmptyCount + 1
+                            If DEBUG_TRACE Then Trace "  [TEXT] SKIPPED (Excel empty)"
                         End If
                     Else
                         Set oMText = oEntity
-                        If IsError(Cells(i, 8).Value) Then
-                            Trace "  [MTEXT] OHITETTU (Excel-kaavavirhe rivillä " & i & ")"
+                        NewValue = CStr(Cells(i, 8).Value)
+                        If Len(NewValue) > 0 Then
+                            OldValue = oMText.TextString
+                            oMText.TextString = NewValue
+                            UpdateCount = UpdateCount + 1
+                            If DEBUG_TRACE Then Trace "  [MTEXT] '" & OldValue & "' -> '" & NewValue & "'"
                         Else
-                            NewValue = CStr(Cells(i, 8).Value)
-                            If UCase(Trim(NewValue)) = "[CLEAR]" Then
-                                OldValue = oMText.TextString
-                                oMText.TextString = ""
-                                UpdateCount = UpdateCount + 1
-                                Trace "  [MTEXT] TYHJENNETTY tarkoituksella ([CLEAR])"
-                            ElseIf Len(NewValue) > 0 Then
-                                OldValue = oMText.TextString
-                                oMText.TextString = NewValue
-                                UpdateCount = UpdateCount + 1
-                                Trace "  [MTEXT] '" & OldValue & "' -> '" & NewValue & "'"
-                            Else
-                                EmptyCount = EmptyCount + 1
-                                Trace "  [MTEXT] OHITETTU (Excel tyhjä)"
-                            End If
+                            EmptyCount = EmptyCount + 1
+                            If DEBUG_TRACE Then Trace "  [MTEXT] SKIPPED (Excel empty)"
                         End If
                     End If
                 End If
@@ -961,13 +938,6 @@ NextAttribute:
     
     ' Viennin yhteenveto
     Trace "VieDATA valmis: Päivitetty=" & UpdateCount & ", Ohitettu(ei saraketta)=" & SkippedCount & ", Säilytetty(tyhjä)=" & EmptyCount
-    ' Näytetään yhteenveto käyttäjälle – Immediate-ikkuna ei ole tavalliselle käyttäjälle näkyvä
-    MsgBox "Vienti valmis!" & vbCrLf & vbCrLf & _
-           "Päivitetty:      " & UpdateCount & " attribuuttia" & vbCrLf & _
-           "Säilytetty:      " & EmptyCount & vbCrLf & _
-           "Ohitettu:        " & SkippedCount & vbCrLf & vbCrLf & _
-           "Vihje: Kirjoita soluun [CLEAR] tyhjentääksesi attribuutin tarkoituksella.", _
-           vbInformation, "Vie DATA"
   
 Cleanup:
     On Error Resume Next
@@ -985,15 +955,6 @@ Cleanup:
         oACAD.Preferences.System.SingleDocumentMode = Docmode
     End If
     Application.StatusBar = False
-
-    ' Palautetaan Excel-asetukset (myös virhetilanteessa, koska ErrHandler siirtyy Cleanup-lohkoon)
-    Application.EnableEvents = prevEvents
-    If wasCalcAuto Then
-        Application.Calculation = xlCalculationAutomatic
-    Else
-        Application.Calculation = xlCalculationManual
-    End If
-    Application.ScreenUpdating = prevScreen
 
     ' Vapauta objektit
     Set oEntity = Nothing
@@ -1015,14 +976,16 @@ End Sub
 Public Sub PoistaBlokit()
 ' Poistaa valitut blokit AutoCAD-piirustuksesta
 ' 26.10.2025 – 64-bittinen yhteensopivuus, lisätty virheenkäsittely
+' [päivämäärä] – Bugikorjaus: otsikkorivi (rivi 1) ohitetaan, jos se on osa valintaa
+'                (AvaaDoc(1) olisi lukenut Cells(0,2):n eli olemattoman rivin)
 
-    Dim i As Long, j As Long ' Muutettu Integer → Long
+    Dim i As Long, j As Long ' Muutettu Integer ? Long
     Dim Docmode As Boolean
     Dim oEntity As Object
     Dim DWGName As String
     Dim Rivi As Range
     Dim RiviNo As Long
-    ' KORJATTU: Kaydyt-merkkijono → Dictionary – InStr("|1|") osui myös "|10|", "|21|" jne.
+    ' KORJATTU: Kaydyt-merkkijono ? Dictionary – InStr("|1|") osui myös "|10|", "|21|" jne.
     ' Dictionary tarjoaa O(1)-haun ja eksaktin numerotäsmäyksen
     Dim Kaydyt As Object
 
@@ -1049,15 +1012,20 @@ Public Sub PoistaBlokit()
     oACAD.Preferences.System.SingleDocumentMode = False
   
     For Each Rivi In Selection.Rows
-        If Not Kaydyt.Exists(Rivi.Row) Then
-            RiviNo = Rivi.Row
+        RiviNo = Rivi.Row
+        If RiviNo <= 1 Then
+            ' Otsikkorivi mukana valinnassa – ohitetaan, jottei AvaaDoc lue olematonta riviä 0
+            GoTo NextRivi
+        End If
+        If Not Kaydyt.Exists(RiviNo) Then
             Kaydyt.Add RiviNo, True  ' Merkitään rivi käydyksi – Dictionary-haku on O(1) ja eksakti
             If AvaaDoc(RiviNo) Then
-                Application.StatusBar = "Tuhotaan objektia rivillä: " & Rivi.Row
-                Set oEntity = oDOC.HandleToObject(Cells(Rivi.Row, 4).Text)
+                Application.StatusBar = "Tuhotaan objektia rivillä: " & RiviNo
+                Set oEntity = oDOC.HandleToObject(Cells(RiviNo, 4).Text)
                 oEntity.Delete
             End If
         End If
+NextRivi:
     Next
   
 Cleanup:
@@ -1066,7 +1034,7 @@ Cleanup:
     ' Ilman tätä jo auki olleeseen piirustukseen tehdyt poistot jäivät tallentamatta levylle.
     If Not oDOC Is Nothing Then
         If Ver = 0 Then Ver = acNative
-        oDOC.Save                             ' Save on turvallisempi kuin SaveAs samaan polkuun (ei .bak-konflikteja)
+        oDOC.SaveAs oDOC.FullName, Ver        ' Tallennetaan aina
         If Not OliAuki Then oDOC.Close False  ' Suljetaan vain, jos macro avasi piirustuksen
     End If
     If Not oACAD Is Nothing Then
@@ -1088,9 +1056,9 @@ ErrHandler:
     Resume Cleanup
 End Sub
 
-Private Function OtsS(Nimi As String) As Long '' Muutettu Integer → Long
+Private Function OtsS(Nimi As String) As Long '' Muutettu Integer ? Long
 '' Etsii tai luo sarakkeen attribuutin nimelle
-    Dim i As Long '' Muutettu Integer → Long
+    Dim i As Long '' Muutettu Integer ? Long
     Nimi = UCase(Nimi)
     i = 7
     Do
@@ -1113,7 +1081,7 @@ Private Function AvaaDoc(Rivi As Long) As Boolean
     Dim Doku As String
     Dim EdDoku As String
     Dim Tiedosto As String
-    Dim i As Long '' Muutettu Integer → Long
+    Dim i As Long '' Muutettu Integer ? Long
     
     Doku = (Cells(Rivi, 2).Value) & ".dwg"
     EdDoku = (Cells(Rivi - 1, 2).Value) & ".dwg"
@@ -1169,10 +1137,9 @@ Sub Numerointi()
 '' 26.10.2025 – Integer muutettu Longiksi
 
     Dim Alku As String
-    Dim Jakso As Long '' Muutettu Integer → Long
-    Dim Vali As Long '' Muutettu Integer → Long
-    Dim i As Long, j As Long '' Muutettu Integer → Long
-    Dim wasCalcAutoNum As Boolean ' Tallennetaan laskentatila – palautetaan alkuperäiseksi
+    Dim Jakso As Long '' Muutettu Integer ? Long
+    Dim Vali As Long '' Muutettu Integer ? Long
+    Dim i As Long, j As Long '' Muutettu Integer ? Long
 
     Aloitus.Tyhjenna.Value = True
     Aloitus.Nykyinen.Value = True
@@ -1185,7 +1152,6 @@ Sub Numerointi()
     Cells.Sort Key1:=Range("E2"), Order1:=xlAscending, Key2:=Range("F2"), Order2:=xlDescending, Header:=xlYes, OrderCustom:=1, MatchCase:=False, Orientation:=xlTopToBottom
     
     ' Suorituskykysuojaus: estetään uudelleenpiirrto ja -laskenta rivittäisen kirjoituksen ajaksi
-    wasCalcAutoNum = (Application.Calculation = xlCalculationAutomatic)
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     On Error GoTo NumCleanup
@@ -1202,12 +1168,8 @@ Sub Numerointi()
     Loop
     
 NumCleanup:
-    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa (säilytetään alkuperäinen laskentatila)
-    If wasCalcAutoNum Then
-        Application.Calculation = xlCalculationAutomatic
-    Else
-        Application.Calculation = xlCalculationManual
-    End If
+    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa
+    Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
     If Err.Number <> 0 Then
         MsgBox "Virhe Numeroinnissa: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Numerointi"
@@ -1237,10 +1199,9 @@ Sub RefNumerointi()
 '' 26.10.2025 – Integer muutettu Longiksi
 '' 04.03.2026 – Issue 3 -korjaus: lisätty FastMode-suojaus kirjoitussilmukan ympärille
 
-    Dim vSivu As Long '' Muutettu Integer → Long
+    Dim vSivu As Long '' Muutettu Integer ? Long
     Dim Kirjain As String
-    Dim i As Long, j As Long '' Muutettu Integer → Long
-    Dim wasCalcAutoRef As Boolean ' Tallennetaan laskentatila – palautetaan alkuperäiseksi
+    Dim i As Long, j As Long '' Muutettu Integer ? Long
 
     Aloitus.Tyhjenna.Value = True
     Aloitus.Nykyinen.Value = True
@@ -1254,7 +1215,6 @@ Sub RefNumerointi()
     
     ' Suorituskykysuojaus: estetään uudelleenpiirrto ja -laskenta rivittäisen kirjoituksen ajaksi
     ' (vastaa Numerointi-aliohjelman toteutusta)
-    wasCalcAutoRef = (Application.Calculation = xlCalculationAutomatic)
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     On Error GoTo RefNumCleanup
@@ -1269,12 +1229,8 @@ Sub RefNumerointi()
     Loop
 
 RefNumCleanup:
-    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa (säilytetään alkuperäinen laskentatila)
-    If wasCalcAutoRef Then
-        Application.Calculation = xlCalculationAutomatic
-    Else
-        Application.Calculation = xlCalculationManual
-    End If
+    ' Palautetaan Excel-asetukset aina, myös virhetilanteessa
+    Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
     If Err.Number <> 0 Then
         MsgBox "Virhe RefNumeroinnissa: " & Err.Number & vbCrLf & Err.Description, vbCritical, "RefNumerointi"
@@ -1289,8 +1245,8 @@ Function Lisaa(Nro As String, Maara As Long) As String
 '' Lisää arvon numerojonoon säilyttäen muotoilun
 '' 26.10.2025 – Integer muutettu Longiksi
 
-    Dim Pit As Long '' Muutettu Integer → Long
-    Dim i As Long   '' Muutettu Integer → Long
+    Dim Pit As Long '' Muutettu Integer ? Long
+    Dim i As Long   '' Muutettu Integer ? Long
     
     Pit = Len(Nro)
     Nro = CStr(Val(Nro) + Maara)
@@ -1317,4 +1273,3 @@ Function Yhd(Alue As Range, Optional Merkki As String) As String
     
     Yhd = Teksti
 End Function
-

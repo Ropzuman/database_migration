@@ -2,7 +2,7 @@ Option Explicit
 
 ' Päivitetty 2025-10-26: 64-bittinen yhteensopivuus, parannettu virheenkäsittely, suorituskykyoptimoint
 ' Taulukon kaksoisnapsautustapahtuma: Etsii ja zoomaa AutoCAD-blokin piirustuksessa
-' Muutokset: Integer → Long (64-bitti), varhainen sidonta → myöhäinen sidonta (yhteensopivuus)
+' Muutokset: Integer ? Long (64-bitti), varhainen sidonta ? myöhäinen sidonta (yhteensopivuus)
 
 ' ============================================================================
 ' AutoCAD-vakiot – tarvitaan myöhäistä sidontaa varten
@@ -26,7 +26,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
     Dim Tiedosto As String
     Dim MinPoint As Variant
     Dim MaxPoint As Variant
-    Dim i As Long ' Muutettu Integer → Long 64-bittistä yhteensopivuutta varten
+    Dim i As Long ' Muutettu Integer ? Long 64-bittistä yhteensopivuutta varten
     Dim prevScreen As Boolean ' Tallennetaan alkutila – palautetaan aina, myös virhetilanteessa
     
     On Error GoTo ErrHandler
@@ -71,7 +71,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
         ' MDI-tila – useita piirustuksia voi olla auki yhtä aikaa
         For i = 0 To oACAD.Documents.Count - 1
             If LCase(oACAD.Documents(i).Name) = Doku Then
-                oACAD.Documents(i).Activate 
+                oACAD.Documents(i).Activate
                 OK = True
                 Exit For
             End If

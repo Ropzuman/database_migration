@@ -169,6 +169,23 @@ Private Function LuoADODBYhteys(kantaPolku As String) As Object
     Set LuoADODBYhteys = Nothing  ' Kaikki versiot käyty läpi — yhteys ei onnistunut
 End Function
 
+  Private Function HaeDAOParametrit(ByVal db As Object, ByVal sqlText As String) As String
+    Dim qdf As Object
+    Dim prm As Object
+    Dim nimet As String
+
+    On Error Resume Next
+    Set qdf = db.CreateQueryDef("", sqlText)
+    If qdf Is Nothing Then Exit Function
+    qdf.Parameters.Refresh
+    For Each prm In qdf.Parameters
+      If Len(nimet) > 0 Then nimet = nimet & ", "
+      nimet = nimet & prm.Name
+    Next prm
+    On Error GoTo 0
+    HaeDAOParametrit = nimet
+  End Function
+
 
 '''
 ' HaeData: Hakee datan Access-tietokannasta käyttäen tallennettuja kyselyitä tai SQL-lauseita.
@@ -189,6 +206,11 @@ Dim ws As Worksheet
 Dim rc As Long
 Dim Provider As String
 Dim emptyCount As Long, colCount As Long, k As Long
+Dim CurrentStage As String
+Dim CurrentQuery As String
+Dim errorNumber As Long
+Dim errorDescription As String
+Dim unresolvedNames As String
 
 ' DAO-muuttujat DB1:lle (tallennetut kyselyt)
 Dim dbDAO As Object      ' DAO.Database
@@ -220,6 +242,7 @@ Dim fld As Object        ' ADODB.Field
   
   Debug.Print "  Tietokanta: " & Kanta
   Debug.Print "  SQL-valinta: " & Valinta
+  CurrentStage = "tietokantayhteyden valmistelu"
   
   On Error GoTo ErrorHandler
   BeginFastMode
@@ -253,6 +276,8 @@ Dim fld As Object        ' ADODB.Field
   ws.Cells.Clear
   
   If sSQL(1) <> "" Then
+    CurrentStage = "DB1-kyselyn avaaminen DAO:lla"
+    CurrentQuery = sSQL(1)
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB1 dataa..."
     Debug.Print "    Kysely/SQL: " & sSQL(1)
 
@@ -355,6 +380,8 @@ Dim fld As Object        ' ADODB.Field
   ws.Cells.Clear
   
   If sSQL(2) <> "" Then
+    CurrentStage = "DB2-kyselyn avaaminen ADODB:lla"
+    CurrentQuery = sSQL(2)
     Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Haetaan DB2 dataa..."
     Debug.Print "    SQL: " & sSQL(2)
 
@@ -438,8 +465,19 @@ SafeExit:
   Exit Sub
 
 ErrorHandler:
-  Debug.Print Format(Now, "hh:mm:ss") & " [HaeData ERROR] " & Err.Number & ": " & Err.Description
-  MsgBox "Database Error: " & Err.Description & vbCrLf & vbCrLf & _
+  errorNumber = Err.Number
+  errorDescription = Err.Description
+  If CurrentStage = "DB1-kyselyn avaaminen DAO:lla" Then
+    unresolvedNames = HaeDAOParametrit(dbDAO, CurrentQuery)
+  End If
+  Debug.Print Format(Now, "hh:mm:ss") & " [HaeData ERROR] Vaihe: " & CurrentStage
+  Debug.Print "  Kysely: " & CurrentQuery
+  Debug.Print "  " & errorNumber & ": " & errorDescription
+  If Len(unresolvedNames) > 0 Then Debug.Print "  Tunnistamattomat nimet: " & unresolvedNames
+  MsgBox "Database Error: " & errorDescription & vbCrLf & vbCrLf & _
+         "Vaihe: " & CurrentStage & vbCrLf & _
+         "Kysely: " & CurrentQuery & vbCrLf & vbCrLf & _
+         IIf(Len(unresolvedNames) > 0, "Tunnistamattomat nimet: " & unresolvedNames & vbCrLf, "") & _
          "Database: " & Kanta & vbCrLf & _
          "Provider: " & Provider, vbCritical, "Database Connection Error"
   Err.Clear
