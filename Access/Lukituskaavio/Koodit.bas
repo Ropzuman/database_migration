@@ -7,9 +7,6 @@ Private Declare PtrSafe Function api_SetForegroundWindow Lib "user32" Alias "Set
 Private Declare Function api_SetForegroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal hWnd As Long) As Long
 #End If
 
-Public Function AktivoiAccessIkkuna() As Boolean
-  AktivoiAccessIkkuna = (api_SetForegroundWindow(Application.hWndAccessApp) <> 0)
-End Function
 ' AutoCAD-objektit muutettu late binding -tyypiksi 64-bit yhteensopivuuden vuoksi
 Public oACAD As Object    ' AcadApplication - muutettu late binding (64-bit)
 Public oDOC As Object     ' AcadDocument - muutettu late binding (64-bit)
@@ -18,6 +15,10 @@ Public Const AC_MODEL_SPACE As Long = 0  ' AutoCADin acModelSpace-arvo late bind
 Public Const AC_MAX_WINDOW As Long = 3   ' AutoCADin acMax-arvo late bindingia varten
 Public Const AC_ZOOM_SCALED_RELATIVE As Long = 1  ' AutoCADin acZoomScaledRelative-arvo
 Public Const AC_SELECTION_SET_ALL As Long = 5  ' AutoCADin acSelectionSetAll-arvo
+
+Public Function AktivoiAccessIkkuna() As Boolean
+  AktivoiAccessIkkuna = (api_SetForegroundWindow(Application.hWndAccessApp) <> 0)
+End Function
 Sub KillLinks()
 Dim T As DAO.TableDef
 Dim LinkCount As Long
