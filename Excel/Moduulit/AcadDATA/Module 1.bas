@@ -4,8 +4,6 @@ Option Explicit
 ' P‰ivitetty 2025-10-30: toiminnallisuuteen vaikuttamaton siivous ja pienoisoptimoint
 ' P‰ivitetty 2025-10-26: 64-bittinen yhteensopivuus, suorituskykyoptimointi, parannettu virheenk‰sittely
 ' ExcelñAutoCAD-integraatio: Tuo/vie blokkiattribuutit ja teksti-entiteetit
-' Muutokset: Integer -> Long (64-bitti), varhainen sidonta -> myˆh‰inen sidonta (yhteensopivuus),
-' lis‰tty virheenk‰sittelijoita, taulukko-optimoint suorituskyvyn parantamiseksi
 
 ' ============================================================================
 ' AutoCAD-vakiot ñ tarvitaan myˆh‰ist‰ sidontaa varten
@@ -329,7 +327,8 @@ Public Sub TuoDATA(Optional Valitut As Boolean, Optional Filtterit As String)
         oDOC.ActiveSpace = acModelSpace
         Err.Clear
         On Error GoTo ErrHandler
-        For i = 0 To oDOC.SelectionSets.Count - 1
+        ' K‰yd‰‰n l‰pi lopusta alkuun, koska poisto siirt‰‰ j‰ljell‰ olevien indeksej‰
+        For i = oDOC.SelectionSets.Count - 1 To 0 Step -1
             If oDOC.SelectionSets(i).Name = "EXCELHAKU" Then
                 oDOC.SelectionSets(i).Delete
             End If
@@ -725,12 +724,15 @@ ContinueEntities:
         ' Suljetaan listalta avattu piirustus (ei tallenneta) alkuper‰isen k‰ytt‰ytymisen mukaisesti
         If Not Loytyi Then
             oDOC.Close False
+            Set oDOC = Nothing
         End If
     Next DocRivi
     Trace "TuoDATA valmis, yht. lis‰ttyj‰ rivej‰: " & (Rivi - StartBaseRow)
     
 Cleanup:
     On Error Resume Next
+    ' Virhetilanteessa listalta avattu piirustus suljetaan tallentamatta
+    If Listasta And Not Loytyi And Not oDOC Is Nothing Then oDOC.Close False
     oACAD.Visible = True
     If DocmodeTalletettu Then oACAD.Preferences.System.SingleDocumentMode = Docmode
     ' Rajataan AutoFit k‰ytettyyn alueeseen ñ koko taulukon autofit on hidas (pakottaa koko layout-laskennan)
@@ -1022,7 +1024,7 @@ Cleanup:
                "P‰ivitetty: " & UpdateCount & vbCrLf & _
                "S‰ilytetty (Excel tyhj‰): " & EmptyCount & vbCrLf & _
                "Ohitettu (ei saraketta): " & SkippedCount & vbCrLf & _
-               "Kahvaa ei lˆytynyt: " & NotFoundCount & vbCrLf & _
+               "Handlea ei lˆytynyt: " & NotFoundCount & vbCrLf & _
                "Saman nimisi‰ tageja ohitettu: " & DuplicateCount & vbCrLf & _
                "Arvo ei p‰ivittynyt: " & MismatchCount, _
                IIf(MismatchCount > 0 Or NotFoundCount > 0, vbExclamation, vbInformation), "Vie DATA"
@@ -1036,7 +1038,7 @@ ErrHandler:
     Trace "ERROR in VieDATA: " & Err.Description & " @ " & StepMsg
     MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description & vbCrLf & _
           "Vaihe: " & StepMsg & vbCrLf & _
-          "Piirustusta ei tallennettu.", vbCritical, "Vie DATA"
+          "Virheen hetkell‰ k‰sitelty piirustus ei tallentunut; aiemmin k‰sitellyt piirustukset on jo tallennettu.", vbCritical, "Vie DATA"
     Resume Cleanup
 End Sub
 
@@ -1159,7 +1161,8 @@ Cleanup:
 ErrHandler:
     ' Virhetilanteessa piirustusta ei tallenneta eik‰ suljeta
     VirheTapahtui = True
-    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description & vbCrLf & "Piirustusta ei tallennettu.", vbCritical, "Poista Blokit"
+    MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description & vbCrLf & _
+           "Virheen hetkell‰ k‰sitelty piirustus ei tallentunut; aiemmin k‰sitellyt piirustukset on jo tallennettu.", vbCritical, "Poista Blokit"
     Resume Cleanup
 End Sub
 
@@ -1167,9 +1170,14 @@ End Sub
 Private Function LueSolu(ByVal v As Variant, ByVal Rivi As Long, ByVal Sarake As Long) As String
     If IsError(v) Or IsEmpty(v) Or IsNull(v) Then Exit Function
     If VarType(v) = vbDouble Then
-        ' Luvut luetaan solun n‰kyv‰ss‰ muodossa; kapea sarake voi antaa "####", jolloin k‰ytet‰‰n arvoa
-        LueSolu = DATA.Cells(Rivi, Sarake).Text
-        If Left(LueSolu, 1) = "#" Then LueSolu = CStr(v)
+        ' General-muotoisesta solusta luetaan t‰ysi tarkkuus (.Text katkoisi desimaalit sarakkeen leveyden mukaan);
+        ' erikseen muotoillun solun n‰kyv‰ muoto s‰ilytet‰‰n. Kapea sarake voi antaa "####", jolloin k‰ytet‰‰n arvoa
+        If DATA.Cells(Rivi, Sarake).NumberFormat = "General" Then
+            LueSolu = CStr(v)
+        Else
+            LueSolu = DATA.Cells(Rivi, Sarake).Text
+            If Left(LueSolu, 1) = "#" Then LueSolu = CStr(v)
+        End If
     Else
         LueSolu = CStr(v)
     End If

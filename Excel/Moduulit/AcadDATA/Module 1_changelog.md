@@ -21,20 +21,26 @@
 - `PoistaBlokit`: tallennus vain, jos jotain poistettiin; tuki usean alueen valinnalle; tarkistus, että valinta on solualue.
 - Taulukkotuonti (`TuoDATA`) palautettu: täsmälleen oikean kokoinen kirjoitustaulukko (blokit + tekstit), kohdealueen tyhjyystarkistus (`CountA`), tekstimuodot asetetaan ennen kirjoitusta, ensimmäisen ja viimeisen kahvan tarkistus kirjoituksen jälkeen. Varatila: `KAYTA_TAULUKKOKIRJOITUSTA = False` kirjoittaa solu kerrallaan.
 - Kaikki `Cells`/`Rows`/`Columns`/`Range`-viittaukset osoittavat eksplisiittisesti `DATA`-taulukkoon (`TIEDLISTA` listalle) aktiivisen taulukon sijaan.
-- Ei `Declare`-lauseita, `Nz()`-kutsuja eikä Jet-ajureita; AutoCAD pysyy myöhäisessä sidonnassa (ei sidottu AutoCAD-versioon). Toimii 32- ja 64-bittisessä Excelissä.
+- Ei `Declare`-lauseita, `Nz()`-kutsuja eikï¿½ Jet-ajureita; AutoCAD pysyy myï¿½hï¿½isessï¿½ sidonnassa (ei sidottu AutoCAD-versioon). Toimii 32- ja 64-bittisessï¿½ Excelissï¿½.
+
+- Toinen katselmointi (2026-11-01):
+  - `LueSolu`: General-muotoisesta solusta luetaan täysi tarkkuus (`.Text` katkoi desimaaleja).
+  - `TuoDATA`: virhetilanteessa listalta avattu piirustus suljetaan tallentamatta.
+  - `EXCELHAKU`-valintajoukot poistetaan lopusta alkuun (indeksien siirtyminen).
+  - Virheilmoitukset tarkennettu: aiemmin käsitellyt piirustukset on jo tallennettu.
 
 ## Siivous ja optimointi
 
 - Poistettu käyttämättömät muuttujat (`Jakso`, `BlockNimi`, `k` VieDATA:ssa, `textStartRow`, `j` RefNumeroinnissa) sekä "Dim poistettu" -kommentit.
-- Poistettu vanhat korjausmerkinnät (BUG/Issue-viittaukset) ja toistuvat "Muutettu Integer -> Long" -kommentit.
-- `Dir()` korvattu `TiedostoNimi`-funktiolla; lisÃ¤tty apufunktiot `LueSolu` ja `TallennaDoc`.
-- `OtsS` ei enää silmukoi loputtomasti, vaan antaa virheen, jos sarakkeet loppuvat.
-- Tuplailmoitus "ei lÃ¶ytynyt tietoja" poistettu.
-- Kommentit ja vaihe-ilmoitukset kÃ¤Ã¤nnetty suomeksi, puuttuvat Ã¤/Ã¶-merkit korjattu, kysymysmerkeiksi muuttuneet nuolet korvattu `->`-merkinnÃ¤llÃ¤.
-- Tiedosto tallennettu yhtenÃ¤isenÃ¤ Windows-1252-koodauksena (CRLF) â€“ aiempi sekakoodaus korjattu.
-- `Lisaa` ja `Yhd` jÃ¤tetty paikoilleen, koska ne voivat olla taulukkokaavojen kÃ¤ytÃ¶ssÃ¤.
+- Poistettu vanhat korjausmerkinnï¿½t (BUG/Issue-viittaukset) ja toistuvat "Muutettu Integer -> Long" -kommentit.
+-- `Dir()` korvattu `TiedostoNimi`-funktiolla; lisätty apufunktiot `LueSolu` ja `TallennaDoc`.
+- `OtsS` ei enï¿½ï¿½ silmukoi loputtomasti, vaan antaa virheen, jos sarakkeet loppuvat.
+-- Tuplailmoitus "ei löytynyt tietoja" poistettu.
+-- Kommentit ja vaihe-ilmoitukset käännetty suomeksi, puuttuvat ä/ö-merkit korjattu, kysymysmerkitiksi muuttuneet nuolet korvattu `->`-merkinnällä.
+- Tiedosto tallennettu yhtenäisenä Windows-1252-koodauksena (CRLF) – aiempi sekakoodaus korjattu.
+- `Lisaa` ja `Yhd` jätetty paikoilleen, koska ne voivat olla taulukkokaavojen käytössä.
 
 ## Huomioitavaa
 
-- `RefNumerointi` lukee sivunumeron solusta D17 ja kirjoittaa seuraavan solusta D18 – tarkista, onko tämä tarkoituksellista.
-- Koodia ei ole käännetty eikä ajettu: tuo moduuli uudelleen VBA-editoriin, aja Debug ? Compile ja testaa testikuvalla (tee varmuuskopio).
+- `RefNumerointi` lukee sivunumeron solusta D17 ja kirjoittaa seuraavan solusta D18 ï¿½ tarkista, onko tï¿½mï¿½ tarkoituksellista.
+- Koodia ei ole kï¿½ï¿½nnetty eikï¿½ ajettu: tuo moduuli uudelleen VBA-editoriin, aja Debug ? Compile ja testaa testikuvalla (tee varmuuskopio).
