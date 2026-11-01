@@ -1,16 +1,16 @@
 Option Explicit
 
-' P√§ivitetty 2025-10-26: 64-bittinen yhteensopivuus, parannettu virheenk√§sittely, suorituskykyoptimoint
+' P‰ivitetty 2025-10-26: 64-bittinen yhteensopivuus, parannettu virheenk‰sittely, suorituskykyoptimoint
 ' Taulukon kaksoisnapsautustapahtuma: Etsii ja zoomaa AutoCAD-blokin piirustuksessa
-' Muutokset: Integer ? Long (64-bitti), varhainen sidonta ? my√∂h√§inen sidonta (yhteensopivuus)
+' Muutokset: Integer ? Long (64-bitti), varhainen sidonta ? myˆh‰inen sidonta (yhteensopivuus)
 
 ' ============================================================================
-' AutoCAD-vakiot ‚Äì tarvitaan my√∂h√§ist√§ sidontaa varten
+' AutoCAD-vakiot ñ tarvitaan myˆh‰ist‰ sidontaa varten
 ' ============================================================================
-' My√∂h√§ist√§ sidontaa k√§ytett√§ess√§ (Object AcadApplication, AcadEntity jne. sijaan)
-' AutoCAD-tyyppikirjastoa ei viitata, joten sis√§√§nrakennetut vakiot eiv√§t ole k√§ytett√§viss√§.
-' Ne on m√§√§ritelt√§v√§ manuaalisesti niiden numeroarvoilla.
-' L√§hde: Autodesk AutoCAD ActiveX/VBA Reference Documentation
+' Myˆh‰ist‰ sidontaa k‰ytett‰ess‰ (Object AcadApplication, AcadEntity jne. sijaan)
+' AutoCAD-tyyppikirjastoa ei viitata, joten sis‰‰nrakennetut vakiot eiv‰t ole k‰ytett‰viss‰.
+' Ne on m‰‰ritelt‰v‰ manuaalisesti niiden numeroarvoilla.
+' L‰hde: Autodesk AutoCAD ActiveX/VBA Reference Documentation
 ' ============================================================================
 
 Private Const acModelSpace As Long = 1              ' Malliavaruus (ei paperitila)
@@ -18,7 +18,7 @@ Private Const acMax As Long = 3                     ' Maksimoi ikkuna
 
 
 Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As Boolean)
-    Dim oACAD As Object ' AcadApplication (my√∂h√§inen sidonta ‚Äì yhteensopivuus)
+    Dim oACAD As Object ' AcadApplication (myˆh‰inen sidonta ñ yhteensopivuus)
     Dim Entity As Object ' AcadEntity
     Dim Avataan As Boolean
     Dim OK As Boolean
@@ -26,28 +26,28 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
     Dim Tiedosto As String
     Dim MinPoint As Variant
     Dim MaxPoint As Variant
-    Dim i As Long ' Muutettu Integer ? Long 64-bittist√§ yhteensopivuutta varten
-    Dim prevScreen As Boolean ' Tallennetaan alkutila ‚Äì palautetaan aina, my√∂s virhetilanteessa
+    Dim i As Long ' Muutettu Integer ? Long 64-bittist‰ yhteensopivuutta varten
+    Dim prevScreen As Boolean ' Tallennetaan alkutila ñ palautetaan aina, myˆs virhetilanteessa
     
     On Error GoTo ErrHandler
     prevScreen = Application.ScreenUpdating
     Application.ScreenUpdating = False
     
-    ' Tarkistetaan, ett√§ rivill√§ on dataa
+    ' Tarkistetaan, ett‰ rivill‰ on dataa
     If Cells(Target.Row, 1).Value = "" Then
-        MsgBox "Ei kuvaa valitulla rivill√§", vbInformation, "Etsi blokki"
+        MsgBox "Ei kuvaa valitulla rivill‰", vbInformation, "Etsi blokki"
         Cancel = True
         Application.ScreenUpdating = prevScreen
         Exit Sub
     End If
     
-    ' Yhdistet√§√§n k√§ynniss√§ olevaan AutoCAD-instanssiin
+    ' Yhdistet‰‰n k‰ynniss‰ olevaan AutoCAD-instanssiin
     On Error Resume Next
     Set oACAD = GetObject(, "AutoCAD.Application")
     
     If Err.Number <> 0 Then
         On Error GoTo 0
-        MsgBox "K√§ynniss√§ olevaa AutoCADi√§ ei l√∂ytynyt!", vbCritical, "Etsi blokki"
+        MsgBox "K‰ynniss‰ olevaa AutoCADi‰ ei lˆytynyt!", vbCritical, "Etsi blokki"
         Cancel = True
         Application.ScreenUpdating = prevScreen
         Exit Sub
@@ -59,7 +59,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
     
     ' Tarkistetaan, onko oikea piirustus avoinna
     If oACAD.Preferences.System.SingleDocumentMode Then
-        ' SDI-tila ‚Äì vain yksi piirustus voi olla auki kerrallaan
+        ' SDI-tila ñ vain yksi piirustus voi olla auki kerrallaan
         If LCase(oACAD.ActiveDocument.Name) <> Doku Then
             If MsgBox("Kyseinen kuva ei ole auki. Avataanko se?", vbOKCancel, "Etsi blokki") = vbOK Then
                 Avataan = True
@@ -68,7 +68,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
             OK = True
         End If
     Else
-        ' MDI-tila ‚Äì useita piirustuksia voi olla auki yht√§ aikaa
+        ' MDI-tila ñ useita piirustuksia voi olla auki yht‰ aikaa
         For i = 0 To oACAD.Documents.Count - 1
             If LCase(oACAD.Documents(i).Name) = Doku Then
                 oACAD.Documents(i).Activate
@@ -84,7 +84,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
         End If
     End If
     
-    ' Avataan piirustus, jos k√§ytt√§j√§ hyv√§ksyi
+    ' Avataan piirustus, jos k‰ytt‰j‰ hyv‰ksyi
     If Avataan Then
         Tiedosto = Cells(Target.Row, 1).Value & "\" & Doku
         
@@ -109,7 +109,7 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Excel.Range, Cancel As B
         Entity.GetBoundingBox MinPoint, MaxPoint
         oACAD.ActiveDocument.WindowState = acMax
         oACAD.ZoomWindow MinPoint, MaxPoint
-        ' Luotettava zoom-ulos my√∂h√§isess√§ sidonnassa: kokeillaan arvoa 1, sitten 3
+        ' Luotettava zoom-ulos myˆhemm‰ss‰ sidonnassa: kokeillaan arvoa 1, sitten 3
         SafeZoomScaled oACAD, 0.5
         
         ' Aktivoidaan AutoCAD-ikkuna etualalle
@@ -127,7 +127,7 @@ Cleanup:
     Exit Sub
     
 ErrHandler:
-    Application.ScreenUpdating = prevScreen  ' Palautetaan alkutila aina, my√∂s virhetilanteessa
+    Application.ScreenUpdating = prevScreen  ' Palautetaan alkutila aina, myˆs virhetilanteessa
     MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description, vbCritical, "Etsi blokki"
     Resume Cleanup
 End Sub

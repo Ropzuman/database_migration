@@ -1,19 +1,19 @@
 Option Explicit
 
-' Turvallinen apufunktio ZoomScaled-kutsulle my√∂h√§ist√§ sidontaa k√§ytett√§ess√§.
-' Eri AutoCAD-versiot voivat k√§ytt√§√§ eri numeroarvoa AcZoomScaledRelative-vakiolle (1 tai 3),
-' ja my√∂h√§inen sidonta voi nostaa virheen "Invalid argument type in ZoomScaled".
-' Funktio kokeilee molemmat arvoj√§rjestyksess√§ ja ohittaa harmattomat virheet.
+' Turvallinen apufunktio ZoomScaled-kutsulle myˆh‰ist‰ sidontaa k‰ytett‰ess‰.
+' Eri AutoCAD-versiot voivat k‰ytt‰‰ eri numeroarvoa AcZoomScaledRelative-vakiolle (1 tai 3),
+' ja myˆh‰inen sidonta voi nostaa virheen "Invalid argument type in ZoomScaled".
+' Funktio kokeilee molemmat arvoj‰rjestyksess‰ ja ohittaa harmattomat virheet.
 Public Sub SafeZoomScaled(ByVal app As Object, ByVal factor As Double)
     On Error Resume Next
     ' Kokeillaan ensin arvoa 1 (yleisimmin acZoomScaledRelative)
     app.ZoomScaled CDbl(factor), CLng(1)
     If Err.Number <> 0 Then
         Err.Clear
-        ' Vaihtoehto: arvo 3 (k√§ytetty joissakin Autodeskin dokumentaatioissa)
+        ' Vaihtoehto: arvo 3 (k‰ytetty joissakin Autodeskin dokumentaatioissa)
         app.ZoomScaled CDbl(factor), CLng(3)
     End If
-    ' Jos molemmat ep√§onnistuvat, j√§tet√§√§n n√§kym√§ ennalleen
+    ' Jos molemmat ep‰onnistuvat, j‰tet‰‰n n‰kym‰ ennalleen
     Err.Clear
     On Error GoTo 0
 End Sub
