@@ -74,9 +74,7 @@ Private Sub Valmis_Click()
   Set taulu = DB.OpenRecordset("USysRecipients", dbOpenTable)
   With taulu
     .AddNew
-    If IsNull(Me.TCopies) = False Then
-      .Fields("To Distribution") = True
-    End If
+    .Fields("To Distribution") = False
     .Fields("Name") = Me.TName
     .Fields("Unit") = Nz(Me.TUnit, Null)
     .Fields("Description") = Nz(Me.TDescription, Null)

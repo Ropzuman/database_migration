@@ -17,11 +17,14 @@ Private PaikallinenChecked As String
 Private PaikallinenApproved As String
 Private PaikallinenDescription As String
 Private PaikallinenRevisioteksti As String
+Private RevisioAlustettu As Boolean
 
 ' Revisiokenttien tila pidet‰‰n paikallisena, jotta lomake toimii ilman ulkoisia globaaleja.
 Private Sub Form_Resize()
   Dim RevTeksti As String
 
+  If RevisioAlustettu Then Exit Sub
+  RevisioAlustettu = True
   RevTeksti = HaeRevisioTekstiTyoskentely()
   If RevTeksti <> "" Then
     Me.Lista.RowSource = Replace(CStr(RevTeksti), vbCrLf, ";")
@@ -125,7 +128,7 @@ For i = 0 To Indeksi - 1
   Alku = Alku & Me.Lista.Column(0, i) & ";"
 Next i
 ' Rakennetaan Loppu-merkkijono valitun rivin alapuolisista riveist‰
-For i = Indeksi + 1 To Me.Lista.ListCount
+For i = Indeksi + 1 To Me.Lista.ListCount - 1
   Loppu = Loppu & ";" & Me.Lista.Column(0, i)
 Next i
 ' Revisio

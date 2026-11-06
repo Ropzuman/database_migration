@@ -1,20 +1,20 @@
 # Tietokantamigraatio: 32-bit ‚Üí 64-bit Office VBA
 >
-> Tietokantapohjainen suunnitteluj√§rjestelm√§ p√§ivitetty 64-bittiseksi M365-yhteensopivaksi.
+> Tietokantapohjainen suunnitteluj‰rjestelm‰ p‰ivitetty 64-bittiseksi M365-yhteensopivaksi.
 > *Database-driven design system upgraded to 64-bit M365 compatibility.*
 
 ---
 
-## üìå Projektin tila / Project Status
+## ?? Projektin tila / Project Status
 
 > **Versio / Version:** 2.1.1 ‚Äî Kielikoodauksen ja 64-bit-yhteensopivuuden viimeistely
-> **Viimeksi p√§ivitetty / Last updated:** 17.9.2026
+> **Viimeksi p‰ivitetty / Last updated:** 17.9.2026
 > **Yhteensopivuus / Compatibility:** Microsoft 365 (32/64-bit), Excel, Access, AutoCAD 2019‚Äì2027
 > **Tila / Status:** ‚úÖ K√§ytt√∂valmis / Ready for use
 
 ---
 
-## üóÇÔ∏è Sis√§llysluettelo / Table of Contents
+## ?? Sis‰llysluettelo / Table of Contents
 
 1. [Project Overview](#project-overview)
 2. [What Changed](#what-changed)
@@ -31,15 +31,15 @@
 
 ## Project Overview
 
-T√§m√§ j√§rjestelm√§ on suunnittelijoille tarkoitettu tietokantapohjainen ty√∂kalu, joka yhdist√§√§ **MS Access -tietokannan**, **Excel-ty√∂kirjat** ja **AutoCAD 2019** -piirustukset yhdeksi kokonaisuudeksi.
+T‰m‰ j‰rjestelm‰ on suunnittelijoille tarkoitettu tietokantapohjainen tyˆkalu, joka yhdist‰‰ **MS Access -tietokannan**, **Excel-tyˆkirjat** ja **AutoCAD 2019** -piirustukset yhdeksi kokonaisuudeksi.
 
 *This is a database-driven toolset for designers that connects an MS Access database, Excel workbooks, and AutoCAD 2019 drawings into a unified workflow.*
 
-**J√§rjestelm√§ koostuu kolmesta osasta / The system has three parts:**
+**J‰rjestelm‰ koostuu kolmesta osasta / The system has three parts:**
 
-| Osa / Part | Mit√§ tekee / What it does |
+| Osa / Part | Mit‰ tekee / What it does |
 | --- | --- |
-| **Access-tietokanta** | S√§ilytt√§√§ laitteiden, piirien ja dokumenttien tiedot / Stores equipment, circuit, and document data |
+| **Access-tietokanta** | S‰ilytt‰‰ laitteiden, piirien ja dokumenttien tiedot / Stores equipment, circuit, and document data |
 | **Excel-kyselyt** | Hakee tietoja kannasta ja tuottaa listat ja tulosteet / Fetches data and produces lists and printouts |
 | **AutoCAD-integraatio** | Lukee ja kirjoittaa lohkoattribuutteja AutoCAD-piirustuksiin / Reads and writes block attributes in AutoCAD drawings |
 
@@ -47,45 +47,45 @@ T√§m√§ j√§rjestelm√§ on suunnittelijoille tarkoitettu tietokantapohjainen ty√∂ka
 
 ## What Changed
 
-J√§rjestelm√§ p√§ivitettiin toimimaan nykyaikaisessa **64-bittisess√§ Microsoft 365** -ymp√§rist√∂ss√§. Aiempi versio toimi vain 32-bittisess√§ Officessa.
+J‰rjestelm‰ p‰ivitettiin toimimaan nykyaikaisessa **64-bittisess‰ Microsoft 365** -ymp‰ristˆss‰. Aiempi versio toimi vain 32-bittisess‰ Officessa.
 
 *The system was updated to work in modern 64-bit Microsoft 365. The previous version only worked in 32-bit Office.*
 
-**K√§ytt√§j√§lle n√§kyv√§t muutokset / Changes visible to users:**
+**K‰ytt‰j‰lle n‰kyv‰t muutokset / Changes visible to users:**
 
-- ‚úÖ Access VBA -l√§hdekoodi tukee VBA7/64-bit-ymp√§rist√∂√§ ja s√§ilytt√§√§ VBA6/32-bit-haarat
-- ‚úÖ Yhteydet tietokantaan ovat nopeampia ja luotettavampia
-- ‚úÖ Automaatioskriptit toimivat 64-bit PowerShelliss√§
-- ‚úÖ AutoCAD-tyyppikirjaston enum-vakiot on korvattu late-binding-yhteensopivilla vakioilla
-- ‚úÖ PIPE-, LoopCircuit- ja Lukituskaavio-moduulien k√§√§nn√∂sesteit√§ korjattu
+- ? Access VBA -l‰hdekoodi tukee VBA7/64-bit-ymp‰ristˆ‰ ja s‰ilytt‰‰ VBA6/32-bit-haarat
+- ? Yhteydet tietokantaan ovat nopeampia ja luotettavampia
+- ? Automaatioskriptit toimivat 64-bit PowerShelliss‰
+- ? AutoCAD-tyyppikirjaston enum-vakiot on korvattu late-binding-yhteensopivilla vakioilla
+- ? PIPE-, LoopCircuit- ja Lukituskaavio-moduulien k‰‰nnˆsesteit‰ korjattu
 
-**Tekniset muutokset (kehitt√§jille) / Technical changes (for developers):**
+**Tekniset muutokset (kehitt‰jille) / Technical changes (for developers):**
 
 **Tekniset muutokset / Technical changes:**
 
-- VBA7-haaroissa k√§ytet√§√§n `PtrSafe`- ja osoitinkohdissa `LongPtr`-tyyppej√§; VBA6-haaroissa k√§ytet√§√§n tavallista `Declare`-syntaksia ja `Long`-tyyppej√§
-- Tietokanta-ajuri vaihdettu: `Microsoft.Jet.OLEDB.4.0` ‚Üí `Microsoft.ACE.OLEDB.12.0`
+- VBA7-haaroissa k‰ytet‰‰n `PtrSafe`- ja osoitinkohdissa `LongPtr`-tyyppej‰; VBA6-haaroissa k‰ytet‰‰n tavallista `Declare`-syntaksia ja `Long`-tyyppej‰
+- Tietokanta-ajuri vaihdettu: `Microsoft.Jet.OLEDB.4.0` ? `Microsoft.ACE.OLEDB.12.0`
 - `Nz()`-funktio korvattu `IIf(IsNull(), 0, Value)` -rakenteella (Excel VBA -yhteensopivuus)
-- Kaikki koodikommentit suomeksi √Ñ/√ñ-kirjaimia k√§ytt√§en
-- `ScreenUpdating` ja `Calculation`-suojaukset lis√§tty virheenk√§sittelij√∂ineen
-- Ajuri-fallback: 16.0 ‚Üí 15.0 ‚Üí 12.0 eri Office-versioiden tukemiseksi
+- Kaikki koodikommentit suomeksi ƒ/÷-kirjaimia k‰ytt‰en
+- `ScreenUpdating` ja `Calculation`-suojaukset lis‰tty virheenk‰sittelijˆineen
+- Ajuri-fallback: 16.0 ? 15.0 ? 12.0 eri Office-versioiden tukemiseksi
 - Kaikki laskurimuuttujat muutettu `Long`-tyyppisiksi 64-bit-yhteensopivuuden vuoksi
 
-Katso t√§ydelliset muutokset: `Logs/CHANGELOG_64bit_and_perf.md`
+Katso t‰ydelliset muutokset: `Logs/CHANGELOG_64bit_and_perf.md`
 
 ---
 
 ## Setup
 
-1. Kloonaa repository ja s√§ilyt√§ `Access`, `Excel`, `AutoCAD` ja `Automations` -kansiot samassa kokonaisuudessa.
+1. Kloonaa repository ja s‰ilyt‰ `Access`, `Excel`, `AutoCAD` ja `Automations` -kansiot samassa kokonaisuudessa.
 2. Asenna Microsoft Access Database Engine / ACE OLEDB, jos Excel- tai Access-yhteys ilmoittaa provider-virheen.
-3. Avaa k√§ytett√§v√§ Access-kanta ohittaen tarvittaessa k√§ynnistyslomake painamalla `Shift`.
+3. Avaa k‰ytett‰v‰ Access-kanta ohittaen tarvittaessa k‰ynnistyslomake painamalla `Shift`.
 4. Tuo tarvittaessa `Access/AutoCAD_References.bas` Access-kantaan ja suorita makro `PoistaAutoCADReferences`.
-5. Tarkista v√§hint√§√§n `Microsoft Office xx.0 Access database engine Object Library` ja `OLE Automation`.
+5. Tarkista v‰hint‰‰n `Microsoft Office xx.0 Access database engine Object Library` ja `OLE Automation`.
 6. Tuo aktiivisen tietokannan tarvitsemat moduulit vastaavasta `Access`-alikansiosta.
-7. Suorita **Debug ‚Üí Compile VBAProject** ennen toiminnallista testausta.
+7. Suorita **Debug ? Compile VBAProject** ennen toiminnallista testausta.
 
-Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. L√§hdekoodin p√§ivitt√§minen ei yksin korjaa puuttuvaa `MISSING:`-viitett√§. `PoistaAutoCADReferences` poistaa vain rikkin√§iset tai AutoCADin version sidotut viitteet; DAO-, Office- ja OLE Automation -viitteit√§ ei poisteta.
+Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. L‰hdekoodin p‰ivitt‰minen ei yksin korjaa puuttuvaa `MISSING:`-viitett‰. `PoistaAutoCADReferences` poistaa vain rikkin‰iset tai AutoCADin version sidotut viitteet; DAO-, Office- ja OLE Automation -viitteit‰ ei poisteta.
 
 *Access VBA references are stored inside the database file. Updating exported source files alone does not repair a missing project reference.*
 
@@ -96,32 +96,32 @@ Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. L√§hdekoodi
 | Komponentti / Component | Vaatimus / Requirement |
 | --- | --- |
 | Office | Microsoft 365 (suositus / recommended), 32- tai 64-bit |
-| Access | Microsoft Access (sis√§ltyy M365:een / included in M365) |
-| Excel | Microsoft Excel (sis√§ltyy M365:een / included in M365) |
+| Access | Microsoft Access (sis‰ltyy M365:een / included in M365) |
+| Excel | Microsoft Excel (sis‰ltyy M365:een / included in M365) |
 | AutoCAD | AutoCAD 2019‚Äì2027 tai uudempi / or newer |
 | Windows | Windows 10/11 (64-bit) |
 | PowerShell | 5.1+ (64-bit) ‚Äî automaatioita varten / for automations |
 
-> ‚ö†Ô∏è **T√§rke√§√§ / Important:** 64-bit Office on ensisijainen kohde. 32-bit Officea tuetaan vain moduuleissa, joissa on erillinen `#Else`-haara. Tarkista bittisyys: Excel ‚Üí Tiedosto ‚Üí Tili ‚Üí Tietoja Excelist√§.
+> ?? **T‰rke‰‰ / Important:** 64-bit Office on ensisijainen kohde. 32-bit Officea tuetaan vain moduuleissa, joissa on erillinen `#Else`-haara. Tarkista bittisyys: Excel ? Tiedosto ? Tili ? Tietoja Excelist‰.
 > *64-bit Office is the primary target. 32-bit Office is supported only where a separate `#Else` branch exists.*
 
 ---
 
 ## Database Tools
 
-### Kytkent√§lista / Connection List
+### Kytkent‰lista / Connection List
 
-Kytkent√§lista-ty√∂kalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel-pohjasta.
+Kytkent‰lista-tyˆkalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel-pohjasta.
 
-*The Kytkent√§lista tool fetches data from the Access database and generates a printout from an Excel template.*
+*The Kytkent‰lista tool fetches data from the Access database and generates a printout from an Excel template.*
 
-**Kolme p√§√§toimintoa / Three main functions:**
+**Kolme p‰‰toimintoa / Three main functions:**
 
 #### 1. Hae tiedot (HaeData) / Get Data
 
 - Hakee tiedot Access-tietokannasta Excel-arkeille DB1 ja DB2
 - Tarkistaa tietokantatiedoston olemassaolon ennen yhteyden avaamista
-- K√§sittelee yhteysvirheet selkokielisill√§ virheilmoituksilla
+- K‰sittelee yhteysvirheet selkokielisill‰ virheilmoituksilla
 
 *Fetches data from the Access database to Excel sheets DB1 and DB2. Validates the database file before connecting.*
 
@@ -129,15 +129,15 @@ Kytkent√§lista-ty√∂kalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel
 
 - Tarkistaa TEMPLATE-otsikot DB1-dataa vasten
 - Hakee dokumentin metatiedot DB2:sta
-- T√§ytt√§√§ Info-arkin tiedoilla
+- T‰ytt‰‰ Info-arkin tiedoilla
 - Raportoi puuttuvat otsikot ERRORS-arkille
 
 *Validates TEMPLATE headers against DB1 data, fetches document metadata from DB2, fills the Info sheet, reports missing headers to ERRORS sheet.*
 
 #### 3. Luo tuloste (GenPrintout) / Generate Printout
 
-- Luo uuden ty√∂kirjan TEMPLATE-pohjasta
-- T√§ytt√§√§ DB1-datan ja dokumentin metatiedot
+- Luo uuden tyˆkirjan TEMPLATE-pohjasta
+- T‰ytt‰‰ DB1-datan ja dokumentin metatiedot
 - Tuottaa tulostusvalmiit dokumentit
 
 *Creates a new workbook from the TEMPLATE, populates it with DB1 data and document metadata, produces print-ready output.*
@@ -146,20 +146,20 @@ Kytkent√§lista-ty√∂kalu hakee tietoja Access-kannasta ja tuottaa tulosteen Excel
 
 - DB1 hakee piirikaavio- ja IO-terminaalidatan (`Circuit_Diagrams_IO_Terminals`)
 - DB2 hakee dokumenttimetatiedot (`DOCUMENTS`-taulu tai `_qryForExcel`-kysely)
-- Hakupolku: DB2-sarake `WorkPath` m√§√§ritt√§√§ oletustallennushakemiston
-- Tiedostonimi: DB2-sarake `File` ‚Äî puuttuessa k√§ytet√§√§n pohjan nime√§ + `.xlsx`
+- Hakupolku: DB2-sarake `WorkPath` m‰‰ritt‰‰ oletustallennushakemiston
+- Tiedostonimi: DB2-sarake `File` ó puuttuessa k‰ytet‰‰n pohjan nime‰ + `.xlsx`
 
 ---
 
 ## AutoCAD Integration
 
-AcadDATA-ty√∂kalu lukee lohkoattribuutteja AutoCAD-piirustuksista ja kirjoittaa muutokset takaisin.
+AcadDATA-tyˆkalu lukee lohkoattribuutteja AutoCAD-piirustuksista ja kirjoittaa muutokset takaisin.
 
 *The AcadDATA tool reads block attributes from AutoCAD drawings and writes changes back.*
 
-Accessin AutoCAD-integraatio k√§ytt√§√§ my√∂h√§ist√§ sidontaa (`Object`) eik√§ tarvitse AutoCAD 2019- tai
-AutoCAD 2027 -tyyppikirjastoa. Sama l√§hdekanta voidaan siksi k√§√§nt√§√§ molemmissa AutoCAD-ymp√§rist√∂iss√§,
-kun vanhat AutoCAD References -viitteet on ensin poistettu `AutoCAD_References.bas`-moduulin avulla.
+Accessin AutoCAD-integraatio k‰ytt‰‰ myˆh‰ist‰ sidontaa (`Object`) eik‰ tarvitse AutoCAD 2019- tai
+AutoCAD 2027 -tyyppikirjastoa. Sama l‰hdekanta voidaan siksi k‰‰nt‰‰ molemmissa AutoCAD-ymp‰ristˆiss‰,
+kun vanhat AutoCAD References -viitteet on ensin poistettu `AutoCAD_References.bas` -moduulin avulla.
 
 ### Tuo tiedot (TuoDATA) / Import Data
 
@@ -167,11 +167,11 @@ Ajettavissa makroina: `TuoDATA_All` (kaikki lohkot) tai `TuoDATA_Selected` (edel
 
 **Start-arkin asetukset / Start sheet settings:**
 
-| Kentt√§ / Field | Kuvaus / Description |
+| Kentt‰ / Field | Kuvaus / Description |
 | --- | --- |
 | **D7** | Lohkojen nimet pilkulla erotettuna. `*` = kaikki lohkot. / Block names, comma-separated. `*` = all blocks. |
 | **D5** | Entiteettityyppi: `"Blokit"`, `"Tekstit"` tai `"Blokit ja tekstit"` / Entity scope |
-| **Nykyinen** (checkbox) | Tuo nykyisest√§ avoimesta AutoCAD-piirustuksesta / Import from currently active drawing |
+| **Nykyinen** (checkbox) | Tuo nykyisest‰ avoimesta AutoCAD-piirustuksesta / Import from currently active drawing |
 | **Lista** (checkbox) | Tuo TIEDLISTA-arkin tiedostoluettelosta / Import from file list on TIEDLISTA sheet |
 
 Ulostulosarakkeet: PATH, DWG, BLOCK, HANDLE, XCord, YCord, Layer + yksi sarake per attribuuttitagi.
@@ -182,65 +182,65 @@ Kirjoittaa muokatut attribuuttiarvot takaisin lohkoihin HANDLE-tunnisteen avulla
 
 *Writes edited attribute values back to blocks using the HANDLE identifier.*
 
-- Kutsuu `oBlock.Update` jokaisen lohkon j√§lkeen ‚Äî muutokset n√§kyv√§t heti ruudulla
-- Kutsuu `oDOC.Regen 1` lopussa kaikkien n√§kymien p√§ivitt√§miseksi
-- K√§ytt√§√§ `HeaderMap`-sanakirjaa nopeaan TAG‚Üísarake-hakuun
+- Kutsuu `oBlock.Update` jokaisen lohkon j‰lkeen ó muutokset n‰kyv‰t heti ruudulla
+- Kutsuu `oDOC.Regen 1` lopussa kaikkien n‰kymien p‰ivitt‰miseksi
+- K‰ytt‰‰ `HeaderMap`-sanakirjaa nopeaan TAG?sarake-hakuun
 
 ### Kaksoisnapsautusnavigaatio / Double-click Navigation
 
-Dataarkilta kaksoisklik riville zoomaa AutoCAD n√§ytt√§m√§√§n kyseisen entiteetin.
+Dataarkilta kaksoisklik riville zoomaa AutoCAD n‰ytt‰m‰‰n kyseisen entiteetin.
 
 *Double-clicking a row on the data sheet zooms AutoCAD to that entity.*
 
-**Kehitt√§j√§tiedot / Developer details:**
+**Kehitt‰j‰tiedot / Developer details:**
 
-- Dynaamisten lohkojen tunnistus `EffectiveName`-ominaisuuden kautta (anonyymit sis√§iset nimet k√§sitell√§√§n oikein)
-- DXF-tyyppisuodatin: `FilterType(0)=0` / `FilterData(0)="INSERT"` (luotettava AutoCAD 2019 late binding -ymp√§rist√∂ss√§)
-- Debug-j√§ljitys: `Public Const DEBUG_TRACE As Boolean` tiedostossa `Excel/Moduulit/AcadDATA/Koodit.bas`
-- Lis√§tiedot: `Logs/ACADDATA_DEVELOPER_NOTES.md` ‚úÖ
+- Dynaamisten lohkojen tunnistus `EffectiveName`-ominaisuuden kautta (anonyymit sis‰iset nimet k‰sitell‰‰n oikein)
+- DXF-tyyppisuodatin: `FilterType(0)=0` / `FilterData(0)="INSERT"` (luotettava AutoCAD 2019 late binding -ymp‰ristˆss‰)
+- Debug-j‰ljitys: `Public Const DEBUG_TRACE As Boolean` tiedostossa `Excel/Moduulit/AcadDATA/Koodit.bas`
+- Lis‰tiedot: `Logs/ACADDATA_DEVELOPER_NOTES.md` ?
 
 ---
 
 ## Automations
 
-Automaatioskriptit p√§ivitt√§v√§t VBA-moduulit tiedostoihin ilman manuaalista kopiointia. Kaikki yksityiskohtaiset ohjeet: [`Automations/README.md`](Automations/README.md).
+Automaatioskriptit p‰ivitt‰v‰t VBA-moduulit tiedostoihin ilman manuaalista kopiointia. Kaikki yksityiskohtaiset ohjeet: [`Automations/README.md`](Automations/README.md).
 
 *Automation scripts update VBA modules in files without manual copy-pasting. Full instructions: [`Automations/README.md`](Automations/README.md).*
 
-| Skripti / Script | K√§ytt√∂tarkoitus / Purpose |
+| Skripti / Script | K‰yttˆtarkoitus / Purpose |
 | --- | --- |
-| `Automations/Access_automaatio.ps1` | P√§ivitt√§√§ VBA-moduulit .accdb-tietokantaan / Updates VBA modules in .accdb database |
-| `Automations/Access_automaatio_batch.ps1` | Er√§ajo useille tietokannoille / Batch update for multiple databases |
-| `Automations/Excel_automaatio.ps1` | P√§ivitt√§√§ VBA-moduulit .xlsm-ty√∂kirjoihin / Updates VBA modules in .xlsm workbooks |
+| `Automations/Access_automaatio.ps1` | P‰ivitt‰‰ VBA-moduulit .accdb-tietokantaan / Updates VBA modules in .accdb database |
+| `Automations/Access_automaatio_batch.ps1` | Er‰ajo useille tietokannoille / Batch update for multiple databases |
+| `Automations/Excel_automaatio.ps1` | P‰ivitt‰‰ VBA-moduulit .xlsm-tyˆkirjoihin / Updates VBA modules in .xlsm workbooks |
 
 **Esivaatimukset / Prerequisites:**
 
-1. Aja 64-bittisess√§ PowerShelliss√§ (x64) ‚Äî skripti tarkistaa t√§m√§n automaattisesti
+1. Aja 64-bittisess‰ PowerShelliss‰ (x64) ó skripti tarkistaa t‰m‰n automaattisesti
 2. Microsoft Access/Excel asennettuna
 3. Trust Center: ota k√§ytt√∂√∂n "Luota VBA-projektin objektimalliin" / "Trust access to the VBA project object model"
 
-> ‚ö†Ô∏è **T√§rke√§√§ / Important:** Skriptit k√§ytt√§v√§t **suoraa koodinkorvausta** eik√§ `VBComponents.Import()` -metodia. T√§m√§ est√§√§ n√§kym√§tt√∂m√§n metatietovioittumisen. Katso `Automations/Logs/Access_automaatio_changelog.md`.
+> ?? **T‰rke‰‰ / Important:** Skriptit k‰ytt‰v‰t **suoraa koodinkorvausta** eik‰ `VBComponents.Import()` -metodia. T‰m‰ est‰‰ n‰kym‰ttˆm‰n metatietovioittumisen. Katso `Automations/Logs/Access_automaatio_changelog.md`.
 
 ---
 
 ## Troubleshooting
 
-### Yleisimm√§t ongelmat / Most common issues
+### Yleisimm‰t ongelmat / Most common issues
 
 | Ongelma / Problem | Syy / Cause | Ratkaisu / Fix |
 | --- | --- | --- |
-| "Tietokantaa ei l√∂ydy" | Tiedostopolku v√§√§r√§ tai tiedosto siirretty | Tarkista polku faceplate-kent√§ss√§ |
-| Excel j√§√§tyy Checkout-ajon aikana | Vanha versio (korjattu v2.0) | Varmista k√§yt√∂ss√§ on versio 2.0 |
-| "Provider not found" -virhe | V√§√§r√§ Office-bittisyys tai puuttuva Access-ajuri | Tarkista Office on 64-bit |
-| AutoCAD ei vastaa tuonnin aikana | Suuri piirustus tai verkkoasema | Odota ‚Äî √§l√§ sulje AutoCADia |
-| PowerShell-skripti ei toimi | 32-bit PowerShell k√§yt√∂ss√§ | Avaa "Windows PowerShell" (ei x86-versiota) |
+| "Tietokantaa ei lˆydy" | Tiedostopolku v‰‰r‰ tai tiedosto siirretty | Tarkista polku faceplate-kent‰ss‰ |
+| Excel j‰‰tyy Checkout-ajon aikana | Vanha versio (korjattu v2.0) | Varmista k‰ytˆss‰ on versio 2.0 |
+| "Provider not found" -virhe | V‰‰r‰ Office-bittisyys tai puuttuva Access-ajuri | Tarkista Office on 64-bit |
+| AutoCAD ei vastaa tuonnin aikana | Suuri piirustus tai verkkoasema | Odota ó ‰l‰ sulje AutoCADia |
+| PowerShell-skripti ei toimi | 32-bit PowerShell k‰ytˆss‰ | Avaa "Windows PowerShell" (ei x86-versiota) |
 
-### Testiohjeet kehitt√§jille / Test instructions for developers
+### Testiohjeet kehitt‰jille / Test instructions for developers
 
-1. **Access:** Debug ‚Üí Compile VBA-editorissa, testaa `SniffUser`, `CustomMessage`
-2. **Excel:** Klikkaa "Hae tiedot" ‚Üí tarkista DB1/DB2 t√§yttyv√§t ilman virheit√§
-3. **Excel:** Klikkaa "Aja tarkistus" ‚Üí tarkista Info-arkki t√§yttyy, ei ERRORS-merkint√∂j√§
-4. **Excel:** Klikkaa "Luo tuloste" ‚Üí tarkista uusi ty√∂kirja luodaan oikein
+1. **Access:** Debug ? Compile VBA-editorissa, testaa `SniffUser`, `CustomMessage`
+2. **Excel:** Klikkaa "Hae tiedot" ? tarkista DB1/DB2 t‰yttyv‰t ilman virheit‰
+3. **Excel:** Klikkaa "Aja tarkistus" ? tarkista Info-arkki t‰yttyy, ei ERRORS-merkintˆj‰
+4. **Excel:** Klikkaa "Luo tuloste" ? tarkista uusi tyˆkirja luodaan oikein
 
 ---
 
@@ -249,37 +249,37 @@ Automaatioskriptit p√§ivitt√§v√§t VBA-moduulit tiedostoihin ilman manuaalista ko
 ### Tiedostorakenne / File Structure
 
 ```text
-Access/              ‚Äî Access VBA -moduulit / Access VBA modules
+Access/              ó Access VBA -moduulit / Access VBA modules
 Excel/Moduulit/
-  AcadDATA/          ‚Äî AutoCAD-integraatiomoduuli / AutoCAD integration module
-  Listojen kyselyt/  ‚Äî Kytkent√§lista-kyselymoduulit / Connection list query modules
-AutoCAD/             ‚Äî AutoCAD DVB-projektit / AutoCAD DVB projects
-Automations/         ‚Äî PowerShell-automaatioskriptit / PowerShell automation scripts
-  Apuskriptit/       ‚Äî Skannarit ja apuskriptit / Scanners and helper scripts
-Logs/                ‚Äî Muutoslokit ja analyysit / Changelogs and analysis docs
-_archive/            ‚Äî Arkistoidut vanhat dokumentit / Archived old documents
+  AcadDATA/          ó AutoCAD-integraatiomoduuli / AutoCAD integration module
+  Listojen kyselyt/  ó Kytkent‰lista-kyselymoduulit / Connection list query modules
+AutoCAD/             ó AutoCAD DVB-projektit / AutoCAD DVB projects
+Automations/         ó PowerShell-automaatioskriptit / PowerShell automation scripts
+  Apuskriptit/       ó Skannarit ja apuskriptit / Scanners and helper scripts
+Logs/                ó Muutoslokit ja analyysit / Changelogs and analysis docs
+_archive/            ó Arkistoidut vanhat dokumentit / Archived old documents
 ```
 
 ### Tekniset viitedokumentit / Technical Reference Documents
 
-- `Logs/ACADDATA_DEVELOPER_NOTES.md` ‚Äî AcadDATA-moduulin kehitt√§j√§muistiinpanot
-- `Logs/FACEPLATE_FEATURES.md` ‚Äî Faceplate-lomakkeen ominaisuudet
-- `Logs/LISTOJEN_KYSELYT_REFACTORING.md` ‚Äî Kysely-moduulin refaktorointilogiikka
-- `Logs/REFACTORING_DOCUMENTATION.md` ‚Äî Projektitason refaktorointidokumentti
-- `Logs/REFACTORING_DOCUMENTATION.md` ‚Äî Projektitason refaktorointikuvaus (sarakekartoitus dokumentoitu sis√§ll√§)
+- `Logs/ACADDATA_DEVELOPER_NOTES.md` ó AcadDATA-moduulin kehitt‰j‰m‰istiinpanot
+- `Logs/FACEPLATE_FEATURES.md` ó Faceplate-lomakkeen ominaisuudet
+- `Logs/LISTOJEN_KYSELYT_REFACTORING.md` ó Kysely-moduulin refaktorointilogiikka
+- `Logs/REFACTORING_DOCUMENTATION.md` ó Projektitason refaktorointidokumentti
+- `Logs/REFACTORING_DOCUMENTATION.md` ó Projektitason refaktorointikuvaus (sarakekartoitus dokumentoitu sis‰ll‰)
 
 ### Tietokanta-ajuri / Database Driver
 
-Kaikki yhteydet k√§ytt√§v√§t ajuria `Microsoft.ACE.OLEDB.12.0` automaattisella fallback-logiikalla:
-versio 16.0 ‚Üí 15.0 ‚Üí 12.0.
+Kaikki yhteydet k‰ytt‰v‰t ajuria `Microsoft.ACE.OLEDB.12.0` automaattisella fallback-logiikalla:
+versio 16.0 ? 15.0 ? 12.0.
 
 ---
 
 ## Changelog
 
-T√§ydelliset muutoslokit / Full changelogs:
+T‰ydelliset muutoslokit / Full changelogs:
 
-- **Projektin p√§√§muutosloki:** `Logs/CHANGELOG_64bit_and_perf.md`
+- **Projektin p‰‰muutosloki:** `Logs/CHANGELOG_64bit_and_perf.md`
 - **Access 64-bit Declare -yhteenveto:** `Access/ACCESS_64bit_DECLARE_MIGRATION_SUMMARY.md`
 - **Viimeisin vaihe:** `Logs/PHASE3_PHASE4_WORKSPACE_CHANGELOG_2026-03-09.md`
 - **Access MAINEQ:** `Access/MAINEQ/Logs/MAINEQ_changelog.md`

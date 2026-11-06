@@ -11,26 +11,26 @@ Access-kansion yhteenveto 64-bit `Declare`-korjauksista
 ## Kriittiset muutokset
 
 - Koko aktiivinen `Access`-kansio auditoitiin `Declare`-lauseiden osalta.
-- Kaikki ei-`PtrSafe`-declarit korjattiin `PtrSafe`-muotoon aktiivisissa l√§hdetiedostoissa.
-- `GetUserName`/`GetComputerName`-kutsujen `nSize` pidettiin oikein `Long`-tyyppisen√§ (DWORD), ei `LongPtr`.
-- OPENFILENAME-rakenteissa varmistettiin 64-bit-osoitinkent√§t (`lCustData`, `lpfnHook`) yhteensopiviksi.
-- `Sleep`- ja `GetCursorPos`-declarit yhten√§istettiin 64-bit-k√§√§nn√∂ksen vaatimusten mukaisiksi.
+- Kaikki ei-`PtrSafe`-declarit korjattiin `PtrSafe`-muotoon aktiivisissa l‰hdetiedostoissa.
+- `GetUserName`/`GetComputerName`-kutsujen `nSize` pidettiin oikein `Long`-tyyppisen‰ (DWORD), ei `LongPtr`.
+- OPENFILENAME-rakenteissa varmistettiin 64-bit-osoitinkent‰t (`lCustData`, `lpfnHook`) yhteensopiviksi.
+- `Sleep`- ja `GetCursorPos`-declarit yhten‰istettiin 64-bit-k‰‰nnˆksen vaatimusten mukaisiksi.
 
 ## Siivous ja optimointi
 
 - Muutokset rajattiin API-deklarointeihin ja UDT-osoitinkenttiin; liiketoimintalogiikkaa ei muutettu.
 - Jokaiselle muokatulle tiedostolle luotiin oma `[OriginalFileName]_changelog.md` samaan kansioon.
-- Markdown-muotoilu normalisoitiin (otsikot ja listojen v√§lit), jotta dokumentit l√§p√§isev√§t lint-tarkistuksen.
+- Markdown-muotoilu normalisoitiin (otsikot ja listojen v‰lit), jotta dokumentit l‰p‰isev‰t lint-tarkistuksen.
 
 ## Vaikutusalue
 
-- Dokumentaatio p√§ivitetty moduuleihin: `DOCUMENTS`, `FunctionDiagrams`, `Function_descriptions_html`, `instru3`, `LoopCircuit`, `Lukituskaavio`, `MAINEQ`, `PIPE`.
-- `_ARCHIVE` j√§tettiin tarkoituksella koskematta (vain read-only auditointi).
+- Dokumentaatio p‰ivitetty moduuleihin: `DOCUMENTS`, `FunctionDiagrams`, `Function_descriptions_html`, `instru3`, `LoopCircuit`, `Lukituskaavio`, `MAINEQ`, `PIPE`.
+- `_ARCHIVE` j‰tettiin tarkoituksella koskematta (vain read-only auditointi).
 
 ## Suositeltu varmistus
 
 - Aja Accessissa `Debug -> Compile` koko projektille.
-- Jos compile pys√§htyy, korjaa seuraava ilmoitettu rivi prioriteettij√§rjestyksess√§:
+- Jos compile pys‰htyy, korjaa seuraava ilmoitettu rivi prioriteettij‰rjestyksess‰:
   1. API-declare allekirjoitus
   2. Viitekirjasto (DAO/ActiveX)
   3. Tyyppiristiriita (`Long` vs `LongPtr`)

@@ -19,10 +19,12 @@ Private Sub Add_Click()
     Dim taulu As DAO.Recordset
     Dim Taulu2 As DAO.Recordset
     Dim i As Integer
-    Dim j As Integer
+    Dim j As Long
     Dim TRev As String
     Dim TMetsoRev As String
     Dim KaikkiOK As Boolean
+    Dim TransaktioKaynnissa As Boolean
+    Dim VirheenKuvaus As String
     
     On Error GoTo ErrorHandler
     
@@ -44,8 +46,7 @@ Private Sub Add_Click()
     
 ' Aloitetaan transaktio atomaarisuuden takaamiseksi
     DBEngine.BeginTrans
-    
-Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.TDistr.Value, dbOpenSnapshot)
+    TransaktioKaynnissa = True
 
     For i = 0 To Me.Docs.ItemsSelected.Count - 1
         j = Me.Docs.ItemData(Me.Docs.ItemsSelected.Item(i))
@@ -70,6 +71,7 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
                 End If
                 
                 taulu.Close
+                Set taulu = Nothing
             End If
         End If
         
@@ -79,9 +81,10 @@ Set taulu = DB.OpenRecordset("SELECT Date From USysDISTRIBUTION WHERE ID=" & Me.
     
 ' Vahvistetaan transaktio
     DBEngine.CommitTrans
-    
+    TransaktioKaynnissa = False
+
     If Not KaikkiOK Then
-        MsgBox "At least one of the documents did not have Revision!" & vbCrLf & "Please check the revision and try again.", vbCritical, "Add to DISTRIBUTION"
+        MsgBox "Only documents with a revision could be added. At least one document had no revision and was not added." & vbCrLf & "Please check the missing revisions and try again.", vbExclamation, "Add to DISTRIBUTION"
     End If
     
 Cleanup:
@@ -102,10 +105,15 @@ Cleanup:
     
 ErrorHandler:
 ' Per‰ytet‰‰n transaktio virhetilanteessa
-    On Error Resume Next
-    DBEngine.Rollback
-    On Error GoTo 0
-    MsgBox "Error adding documents to distribution: " & Err.Description, vbExclamation, "Add Error"
+    VirheenKuvaus = Err.Description
+    If TransaktioKaynnissa Then
+        On Error Resume Next
+        Err.Clear
+        DBEngine.Rollback
+        If Err.Number <> 0 Then VirheenKuvaus = VirheenKuvaus & vbCrLf & "Rollback failed: " & Err.Description
+        On Error GoTo 0
+    End If
+    MsgBox "Error adding documents to distribution: " & VirheenKuvaus, vbExclamation, "Add Error"
     Resume Cleanup
 End Sub
 
@@ -151,39 +159,34 @@ End Sub
 '''
 Private Sub ExcelRep(Ehto As String)
     Dim xlApp As Object
-    Dim DB As DAO.Database
-    Dim Polku As String
+    Dim ExcelKayttajalla As Boolean
+    Const ExcelPienennetty As Long = -4140
+    Const ExcelSuurennettu As Long = -4137
     
     On Error GoTo ErrorHandler
     
-    Set DB = CurrentDb
-    Polku = DB.Name
-    Polku = Left$(Polku, Len(Polku) - Len(Dir(Polku)))
-    
     Set xlApp = CreateObject("Excel.Application")
     SysCmd acSysCmdSetStatus, "Starting Excel..."
-    xlApp.Workbooks.Open Polku & "DocumentReport.xls", , True
+    xlApp.Workbooks.Open "\\proense01\yhteinen\Data\Tools\Excel\DocumentReport.xls", , True
     xlApp.Visible = True
+    ExcelKayttajalla = True
     SysCmd acSysCmdSetStatus, "Running Excelmacros..."
     xlApp.Run "GeneroiRaportti", Ehto
-    xlApp.WindowState = xlMinimized
+    xlApp.WindowState = ExcelPienennetty
     xlApp.Workbooks("DocumentReport.xls").Close False
     MsgBox "Excel report generated." & vbCrLf & "You can now save it as you wish.", vbInformation, "Generate Excelreport"
     SysCmd acSysCmdClearStatus
-    xlApp.WindowState = xlMaximized
+    xlApp.WindowState = ExcelSuurennettu
     xlApp.ScreenUpdating = True
     
 Cleanup:
     If Not xlApp Is Nothing Then
-        ' Suljetaan Excel-prosessi ñ ilman Quit-kutsua Excel j‰‰ taustalle zombina
-        On Error Resume Next
-        xlApp.Quit
-        On Error GoTo 0
+        If Not ExcelKayttajalla Then
+            On Error Resume Next
+            xlApp.Quit
+            On Error GoTo 0
+        End If
         Set xlApp = Nothing
-    End If
-    If Not DB Is Nothing Then
-        DB.Close
-        Set DB = Nothing
     End If
     Exit Sub
     

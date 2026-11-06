@@ -26,10 +26,11 @@ Private Sub OK_Click()
   Dim DTaulu As DAO.Recordset
   Dim Itemi As String
   Dim ExcelPolku As String
+  Dim ExcelKayttajalla As Boolean
 
   On Error GoTo ErrorHandler
 
-  ExcelPolku = "l:\projekti\valdivia\sheets\tools\DocumentReport.xls"
+  ExcelPolku = "\\proense01\yhteinen\Data\Tools\Excel\DocumentReport.xls"
 
   ' Varmistetaan tiedoston olemassaolo ennen Excelin k‰ynnistyst‰
   If Dir(ExcelPolku) = "" Then
@@ -95,6 +96,7 @@ Private Sub OK_Click()
   xlApp.DisplayAlerts = False
   xlApp.Workbooks.Open ExcelPolku, UpdateLinks:=False
   xlApp.Visible = True
+  ExcelKayttajalla = True
 
   If Me.FReportType.Value = 1 Then
     xlApp.Run "AjaKaikki", False
@@ -104,7 +106,6 @@ Private Sub OK_Click()
   xlApp.Workbooks("DocumentReport.xls").Close False
 
 Cleanup:
-  ' Varmistetaan aina Excel-prosessin puhdistus muistivuodon est‰miseksi
   On Error Resume Next
   If Not DTaulu Is Nothing Then
     DTaulu.Close
@@ -117,7 +118,7 @@ Cleanup:
   Set DB = Nothing
   If Not xlApp Is Nothing Then
     xlApp.DisplayAlerts = True
-    xlApp.Quit  ' Lopetetaan Excel-prosessi ó estet‰‰n "haamuinstanssit"
+    If Not ExcelKayttajalla Then xlApp.Quit
     Set xlApp = Nothing
   End If
   DoCmd.Close acForm, "USysExcelReport"

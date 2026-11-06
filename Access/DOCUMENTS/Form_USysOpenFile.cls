@@ -98,10 +98,14 @@ Private Sub Form_Unload(Cancel As Integer)
   Set fso = Nothing
 End Sub
 Private Sub Tied_DblClick(Cancel As Integer)
-  If fso.FileExists(Hakem & Me.Tied.Value) Then
-    Application.FollowHyperlink Hakem & Me.Tied.Value, , True, False
+  Dim TiedostoPolku As String
+
+  If IsNull(Me.Tied.Value) Then Exit Sub
+  TiedostoPolku = fso.BuildPath(Hakem, CStr(Me.Tied.Value))
+  If fso.FileExists(TiedostoPolku) Then
+    Application.FollowHyperlink TiedostoPolku, , True, False
   Else
-      MsgBox "File not found: " & Hakem & Me.Tied.Value, vbCritical, "Open File"
+    MsgBox "File not found: " & TiedostoPolku, vbCritical, "Open File"
   End If
 End Sub
 

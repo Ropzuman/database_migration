@@ -21,6 +21,7 @@ Private Const TV_DOC_DEF_REV As String = "DOC_Def_Rev"
 
 Public SelDept As String
 Public Varaaja As String
+Private DokumenttiTallennettu As Boolean
 
 ' Oletusarvot luetaan ja kirjoitetaan TempVarsiin, jolloin lomake ei riipu Def*-globaaleista.
 Private Sub ChoosePath_Click()
@@ -60,65 +61,85 @@ Private Sub Peruuta_Click()
   DoCmd.Close
 End Sub
 Private Sub TalletaNappi_Click()
-    'Formin tietojen talletus ja sulkeminen
-    If IsNull(Me.TDocName1.Value) And IsNull(Me.TDocName2.Value) Then
-      MsgBox "You can't leave Document Name empty!" & vbCrLf _
-           & "If you don't know document name now, put something like:" & vbCrLf _
-           & """Reserved for subcontractor"", and write name down afterwards.", vbCritical
-      Exit Sub
-    ElseIf IsNull(Me.TClientDocNo.Value) And IsNull(Me.TMetsoDocNo.Value) And IsNull(Me.TExtDocID.Value) Then
-      MsgBox "Document has to have some kind of ID!" & vbCrLf _
-           & "If document is not going to client put at least Extra Document ID", vbCritical
-      Exit Sub
-    End If
-    'Kaikki kunnossa, voidaan tallettaa tiedot ja poistua formista
-    Dim DB As DAO.Database
-    Dim taulu As DAO.Recordset
-    Dim SQL As String
-    Set DB = CurrentDb
-      If IsNull(Me.TClientDocNo.Value) = False And Me.TClientDocNo.Value <> "" Then
-        SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & Me.TNumber.Value & "'"
-        Set taulu = DB.OpenRecordset(SQL, , dbDenyWrite)
-        If taulu.EOF = False Then
-          If IsNull(taulu.Fields("Reserved")) Then
-            taulu.Edit
-            taulu.Fields("Number") = Me.TClientDocNo.Value
-            taulu.Fields("Reserved") = Varaaja & "@" & Now
-            taulu.Update
-            taulu.Close
-          Else
-            MsgBox "Someone reserved number " & Me.TClientDocNo.Value & " at the same time!" & vbCrLf & "Please choose another number.", vbCritical, "Error!"
-            taulu.Close
-            DB.Close
-            Set taulu = Nothing
-            Set DB = Nothing
-            Exit Sub
-          End If
-        End If
+  Dim DB As DAO.Database
+  Dim taulu As DAO.Recordset
+  Dim SQL As String
+  Dim UusiTunniste As Long
+  Dim TransaktioKaynnissa As Boolean
+  Dim Tallennettu As Boolean
+  Dim VirheenKuvaus As String
+
+  On Error GoTo ErrorHandler
+
+  If DokumenttiTallennettu Then
+    MsgBox "The document has already been saved. Close the form to avoid creating a duplicate.", vbExclamation, "Document saved"
+    Exit Sub
+  End If
+
+  If IsNull(Me.TDocName1.Value) And IsNull(Me.TDocName2.Value) Then
+    MsgBox "You can't leave Document Name empty!" & vbCrLf _
+         & "If you don't know document name now, put something like:" & vbCrLf _
+         & """Reserved for subcontractor"", and write name down afterwards.", vbCritical
+    Exit Sub
+  ElseIf IsNull(Me.TClientDocNo.Value) And IsNull(Me.TMetsoDocNo.Value) And IsNull(Me.TExtDocID.Value) Then
+    MsgBox "Document has to have some kind of ID!" & vbCrLf _
+         & "If document is not going to client put at least Extra Document ID", vbCritical
+    Exit Sub
+  End If
+
+  Set DB = CurrentDb
+  DBEngine.BeginTrans
+  TransaktioKaynnissa = True
+
+  If Not IsNull(Me.TClientDocNo.Value) Then
+    If Len(CStr(Me.TClientDocNo.Value)) > 0 Then
+      If IsNull(Me.TNumber.Value) Then
+        Err.Raise vbObjectError + 1100, "TalletaNappi_Click", "Client number is missing its reservation number."
       End If
-      Set taulu = DB.OpenRecordset("DOCUMENTS", dbOpenTable)
-      With taulu
-        .AddNew
-        .Fields("DocName1") = Me.TDocName1.Value
-        .Fields("DocName2") = Me.TDocName2.Value
-        .Fields("DocName3") = Me.TDocName3.Value
-        .Fields("Area") = Me.TArea.Value
-        .Fields("Pick2") = Me.TPick2.Value
-        .Fields("Rev") = Me.TRev.Value
-        .Fields("ClientNo") = Me.TClientDocNo.Value
-        .Fields("MetsoDocNo") = Me.TMetsoDocNo.Value
-        .Fields("ExtDocID") = Me.TExtDocID.Value
-        .Fields("Pages") = Me.TPages.Value
-        .Fields("WorkPath") = Me.TPath.Value
-        .Fields("Note") = Me.TNote.Value
-        AsetaTempVar TV_DOC_NEW_COUNTER, CStr(.Fields("Counter"))
-        .Update
-      End With
+      SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & Replace(CStr(Me.TNumber.Value), "'", "''") & "'"
+      Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset, dbDenyWrite)
+      If taulu.EOF Then
+        Err.Raise vbObjectError + 1101, "TalletaNappi_Click", "The client number reservation was not found."
+      End If
+      If Not IsNull(taulu.Fields("Reserved").Value) Then
+        Err.Raise vbObjectError + 1102, "TalletaNappi_Click", "Someone already reserved number " & Me.TClientDocNo.Value & ". Please choose another number."
+      End If
+      taulu.Edit
+      taulu.Fields("Number") = Me.TClientDocNo.Value
+      taulu.Fields("Reserved") = Varaaja & "@" & Now
+      taulu.Update
       taulu.Close
-      DB.Close
       Set taulu = Nothing
-      Set DB = Nothing
-' Tallennetaan viimeksi lisätyn dokumentin tiedot seuraavan pohjaksi
+    End If
+  End If
+
+  Set taulu = DB.OpenRecordset("DOCUMENTS", dbOpenTable)
+  With taulu
+    .AddNew
+    .Fields("DocName1") = Me.TDocName1.Value
+    .Fields("DocName2") = Me.TDocName2.Value
+    .Fields("DocName3") = Me.TDocName3.Value
+    .Fields("Area") = Me.TArea.Value
+    .Fields("Pick2") = Me.TPick2.Value
+    .Fields("Rev") = Me.TRev.Value
+    .Fields("ClientNo") = Me.TClientDocNo.Value
+    .Fields("MetsoDocNo") = Me.TMetsoDocNo.Value
+    .Fields("ExtDocID") = Me.TExtDocID.Value
+    .Fields("Pages") = Me.TPages.Value
+    .Fields("WorkPath") = Me.TPath.Value
+    .Fields("Note") = Me.TNote.Value
+    .Update
+    .Bookmark = .LastModified
+    UusiTunniste = CLng(.Fields("Counter").Value)
+    .Close
+  End With
+  Set taulu = Nothing
+  DBEngine.CommitTrans
+  TransaktioKaynnissa = False
+  Tallennettu = True
+  DokumenttiTallennettu = True
+
+  AsetaTempVar TV_DOC_NEW_COUNTER, CStr(UusiTunniste)
   AsetaTempVar TV_DOC_DEF_DNAME1, Nz(Me.TDocName1.Value, "")
   AsetaTempVar TV_DOC_DEF_DNAME2, Nz(Me.TDocName2.Value, "")
   AsetaTempVar TV_DOC_DEF_DNAME3, Nz(Me.TDocName3.Value, "")
@@ -127,10 +148,32 @@ Private Sub TalletaNappi_Click()
   AsetaTempVar TV_DOC_DEF_PAGES, Nz(Me.TPages.Value, "")
   AsetaTempVar TV_DOC_DEF_PATH, Nz(Me.TPath.Value, "")
   AsetaTempVar TV_DOC_DEF_REV, Nz(Me.TRev.Value, "")
-'--------------------------------------------------
-      DoCmd.Close
-End Sub
+  Set DB = Nothing
+  DoCmd.Close
+  Exit Sub
 
+ErrorHandler:
+  VirheenKuvaus = Err.Description
+  On Error Resume Next
+  If TransaktioKaynnissa Then
+    Err.Clear
+    DBEngine.Rollback
+    If Err.Number <> 0 Then VirheenKuvaus = VirheenKuvaus & vbCrLf & "Rollback failed: " & Err.Description
+  End If
+  If Not taulu Is Nothing Then
+    Err.Clear
+    taulu.Close
+    If Err.Number <> 0 Then VirheenKuvaus = VirheenKuvaus & vbCrLf & "Closing the recordset failed: " & Err.Description
+    Set taulu = Nothing
+  End If
+  Set DB = Nothing
+  On Error GoTo 0
+  If Tallennettu Then
+    MsgBox "The document was saved, but finishing the operation failed. Do not save it again." & vbCrLf & VirheenKuvaus, vbExclamation, "Document saved"
+  Else
+    MsgBox "The document save could not be confirmed: " & VirheenKuvaus, vbCritical, "Save error"
+  End If
+End Sub
 Private Sub AsetaTempVar(ByVal Nimi As String, ByVal Arvo As String)
   On Error Resume Next
   TempVars.Remove Nimi

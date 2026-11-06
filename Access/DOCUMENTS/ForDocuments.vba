@@ -3,18 +3,18 @@ Option Explicit
 '==========================================================================
 ' MODUULI  : ForDocuments
 ' SOVELLUS : DOCUMENTS ‚Äî Jaetut muuttujat ja apufunktiot
-' KUVAUS   : Sis√§lt√§√§ lomakkeiden v√§lisen tiedonsiirron julkiset muuttujat,
+' KUVAUS   : Sis‰lt‰‰ lomakkeiden v‰lisen tiedonsiirron julkiset muuttujat,
 '            Shell-kansion valintadialogin API-kutsut (BrowseForFolder),
-'            verkkonimen haun (NetworkUserName) sek√§ apufunktiot
-'            hakemistopoluille (ValitseHakem, BrowseCallbackProc).
+'            verkkonimen haun (NetworkUserName) sek‰ apufunktiot
+'           hakemistopoluille (ValitseHakem, BrowseCallbackProc).
 '            Kaikki API-julistukset suojattu #If VBA7 -ehdolla:
-'            64-bittinen haara k√§ytt√§√§ PtrSafe + LongPtr,
-'            32-bittinen haara k√§ytt√§√§ tavallista Declare + Long.
+'            64-bittinen haara k‰ytt‰‰ PtrSafe + LongPtr,
+'            32-bittinen haara k‰ytt‰‰ tavallista Declare + Long.
 '            nSize GetUserNameA:ssa on ByRef Long (LPDWORD) molemmissa haaroissa.
-' P√ÑIVITETTY: 2026-03-03
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
-' DOCUMENTS-alaformien v√§linen tiedonsiirto
+' DOCUMENTS-alaformien v‰linen tiedonsiirto
 Public Revisioteksti As String
 Public Revisionumero As String
 Public UusiRevisio As Boolean
@@ -25,7 +25,7 @@ Public Common As String
 Public CommonOts As String
 Public CommonType As Integer
 Public DocStatus As String
-'UUDEN t√§ytetyn dokumentin tietojen muistamista varten
+'UUDEN t‰ytetyn dokumentin tietojen muistamista varten
 Public DefDName1 As String
 Public DefDName2 As String
 Public DefDName3 As String
@@ -50,7 +50,7 @@ Public MRevDescription As String
 '---------------------------------------
 
 '---------- [Hakemiston valintaa varten API-funktiot ja muuttujat] ------------
-' API declarations ‚Äî guarded for both 32-bit (VBA6) and 64-bit (VBA7/PtrSafe)
+' API declarations ó guarded for both 32-bit (VBA6) and 64-bit (VBA7/PtrSafe)
 #If VBA7 Then
     ' 64-bit: pointer-sized handles and return values use LongPtr
     Private Declare PtrSafe Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As LongPtr
@@ -133,9 +133,9 @@ Public Function NetworkUserName() As String
         NetworkUserName = "Unknown"
     End If
 End Function
-' ValitseHakem: Handle parameter is pointer-sized ‚Äî LongPtr on 64-bit, Long on 32-bit.
+' ValitseHakem: Handle parameter is pointer-sized ó LongPtr on 64-bit, Long on 32-bit.
 ' The entire function body is duplicated in each branch because #If cannot split a
-' Function definition across its boundary ‚Äî the header and End Function must be in the same block.
+' Function definition across its boundary ó the header and End Function must be in the same block.
 #If VBA7 Then
 Public Function ValitseHakem(Handle As LongPtr, Optional ByVal StartPath As String = "") As String
   Dim dlg As Object
@@ -248,7 +248,7 @@ End Function
 #End If
 
 Public Sub AsetaCommonArvot(ByVal Teksti As String, ByVal Otsikko As String, ByVal Tyyppi As Integer)
-    ' Keskitet√§√§n yhteisen tekstidialogin sy√∂tt√∂arvot yhteen paikkaan.
+    ' Keskitet‰‰n yhteisen tekstidialogin syˆttˆarvot yhteen paikkaan.
     Common = Teksti
     CommonOts = Otsikko
     CommonType = Tyyppi

@@ -57,94 +57,82 @@ Private Sub UpdateBtn_Click()
     Me.Requery
 End Sub
 
-'-------------------------------------------------------------------------------------
-'   Subject : WhosOn()
-'   Purpose : Will read *.LDB file and read who's currently
-'             logged on and their station name.
-'
-'             The LDB file has a 64 byte record.
-'
-'             The station name starts at byte 1 and is null
-'             terminated.
-'
-'             Log-in names start at the 33rd byte and are
-'             also null terminated.
-'
-'-------------------------------------------------------------------------------------
-'''
-' WhosOn - Read LDB file to show who's currently logged on
-' OPTIMIZED 2025-11-09: Added explicit DAO typing, removed redundant CurrentDb call
-' @return String - Semicolon-delimited list of "Machine -- User" entries
-'''
+' Luetaan nykyisen tietokannan lukitustiedoston kone- ja käyttäjätiedot.
 Private Function WhosOn() As String
+  Dim Tiedosto As Integer
+  Dim TiedostoAuki As Boolean
+  Dim Tietueita As Long
+  Dim TietueNro As Long
+  Dim i As Long
+  Dim PaatePos As Long
+  Dim Polku As String
+  Dim Paate As String
+  Dim Kone As String
+  Dim Kayttaja As String
+  Dim Rivi As String
+  Dim Kirjautumiset As String
+  Dim Virhekuvaus As String
+  Dim Tietue As UserRec
+  Dim DB As DAO.Database
 
-On Error GoTo Err_WhosOn
+  On Error GoTo Virhe
 
-   Dim iLDBFile As Integer, iStart As Integer
-   Dim iLOF As Integer, i As Integer
-   Dim sPath As String, X As String
-   Dim sLogStr As String, sLogins As String
-   Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As DAO.Database
+  Set DB = CurrentDb
+  Polku = DB.Name
+  PaatePos = InStrRev(Polku, ".")
+  If PaatePos <= InStrRev(Polku, "\") Then
+    Err.Raise vbObjectError + 1000, "WhosOn", "Tietokannan tiedostopääte puuttuu."
+  End If
 
-' Get Path of current database.  Should substitute this code
-' for an attached table path in a multi-user environment.
+  Paate = LCase$(Mid$(Polku, PaatePos + 1))
+  Select Case Paate
+    Case "mdb", "mde"
+      Polku = Left$(Polku, PaatePos) & "ldb"
+    Case "accdb", "accde", "accdr"
+      Polku = Left$(Polku, PaatePos) & "laccdb"
+    Case Else
+      Err.Raise vbObjectError + 1001, "WhosOn", "Tuntematon tietokannan tiedostopääte: " & Paate
+  End Select
 
-   Set dbCurrent = CurrentDb
-   sPath = dbCurrent.Name
+  Tiedosto = FreeFile
+  Open Polku For Binary Access Read Shared As #Tiedosto
+  TiedostoAuki = True
+  If LOF(Tiedosto) Mod 64 <> 0 Then
+    Err.Raise vbObjectError + 1002, "WhosOn", "Lukitustiedoston koko ei vastaa 64 tavun tietueita."
+  End If
+  Tietueita = LOF(Tiedosto) \ 64
 
-' Iterate thru dbCurrent.LDB file for login names.
+  For TietueNro = 1 To Tietueita
+    Get #Tiedosto, , Tietue
+    Kone = ""
+    Kayttaja = ""
+    For i = 1 To 32
+      If Tietue.bMach(i) = 0 Then Exit For
+      Kone = Kone & Chr$(Tietue.bMach(i))
+    Next i
+    For i = 1 To 32
+      If Tietue.bUser(i) = 0 Then Exit For
+      Kayttaja = Kayttaja & Chr$(Tietue.bUser(i))
+    Next i
+    Rivi = Kone & " -- " & Kayttaja
+    If InStr(1, ";" & Kirjautumiset, ";" & Rivi & ";", vbTextCompare) = 0 Then
+      Kirjautumiset = Kirjautumiset & Rivi & ";"
+    End If
+  Next TietueNro
 
-   sPath = Left$(sPath, InStr(1, sPath, ".")) + "laccdb"
+  Close #Tiedosto
+  TiedostoAuki = False
+  Set DB = Nothing
+  WhosOn = Kirjautumiset
+  Exit Function
 
-' Test for valid file, else Error
-
-   X = Dir(sPath)
-   iStart = 1
-   iLDBFile = FreeFile
-
-   Open sPath For Binary Access Read Shared As iLDBFile
-   iLOF = LOF(iLDBFile)
-   Do While Not EOF(iLDBFile)
-      Get iLDBFile, , rUser
-      With rUser
-         i = 1
-         sMach = ""
-         While .bMach(i) <> 0
-            sMach = sMach & Chr(.bMach(i))
-            i = i + 1
-         Wend
-         i = 1
-         sUser = ""
-         While .bUser(i) <> 0
-            sUser = sUser & Chr(.bUser(i))
-            i = i + 1
-         Wend
-      End With
-      sLogStr = sMach & " -- " & sUser
-      If InStr(sLogins, sLogStr) = 0 Then
-         sLogins = sLogins & sLogStr & ";"
-      End If
-      iStart = iStart + 64 'increment to next record offset
-   Loop
-   Close iLDBFile
-   WhosOn = sLogins
-
-Exit_WhosOn:
-   ' EI dbCurrent.Close: CurrentDb-viitettä ei tule sulkea koodista
-   If Not dbCurrent Is Nothing Then
-      Set dbCurrent = Nothing
-   End If
-   Exit Function
-
-Err_WhosOn:
-   If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LDB File"
-   Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
-      Close iLDBFile
-   End If
-   Resume Exit_WhosOn
-
+Virhe:
+  Virhekuvaus = Err.Description
+  If TiedostoAuki Then
+    On Error Resume Next
+    Close #Tiedosto
+    On Error GoTo 0
+  End If
+  Set DB = Nothing
+  MsgBox "Käyttäjälistan lukeminen epäonnistui: " & Virhekuvaus, vbExclamation, "Käyttäjälista"
 End Function

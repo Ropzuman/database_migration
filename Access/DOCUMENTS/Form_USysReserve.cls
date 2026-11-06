@@ -37,7 +37,9 @@ Private Sub TalletaNappi_Click()
     SQL = "SELECT * FROM UsysClientDocNos WHERE Number='AV-2090-210-DD-" & EtsittavaNumero & "'"
     Set taulu = DB.OpenRecordset(SQL, dbOpenDynaset, dbDenyWrite)
 
-    If IsNull(taulu.Fields("Reserved")) Then
+    If taulu.EOF Then
+      MsgBox "The selected client number was not found. Please check the number and try again.", vbExclamation, "Client number"
+    ElseIf IsNull(taulu.Fields("Reserved")) Then
       ' Numero vielä vapaa — kirjataan varaus ja aikaleima
       taulu.Edit
       taulu.Fields("Number") = Me.TClientNo.Caption
