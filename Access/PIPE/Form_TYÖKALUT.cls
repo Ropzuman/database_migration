@@ -7,17 +7,22 @@ Private Const acSelectionSetAll As Long = 5
 '================================================================================
 ' Lomake: TYÖKALUT
 ' Tarkoitus: AutoCAD P&I -tietojen tuonti- ja päivitystyökalupakki PIPE-tietokantaan
-' Päivitetty: 2025-11-12 - VBA7/64-bit-tuki ja optimointi lisätty
+' Yhteensopivuus: VBA7, DAO ja AutoCADin myöhäinen sidonta
 '
 ' Kuvaus:
 '   Keskuslomake P&I-kaaviotietojen tuontiin ja päivitykseen AutoCADista:
-'   - Käsittelee .DWG-tiedostot eräajona valitusta kansiosta
+'   - Käsittelee DWG-tiedostot eräajona LPolku-otsikon määrittämästä kansiosta
 '   - Tuo putkilinja-, venttiili-, kenttälaite- ja instrumenttisilmukkatiedot
-'   - Kolmivaiheinen työnkulku per tietotyyppi:
-'     1. Lue AutoCADista (Command1x_Click)
-'     2. Lisää väliaikaistaulukkoon (Command2x_Click)
-'     3. Päivitä tietokantaan (Command3x_Click)
+'   - Kunkin tietotyypin työnkulku (esimerkiksi Command11–13):
+'     1. Lue AutoCADista välitauluun.
+'     2. Lisää tiedot välitaulusta tietokannan tauluihin.
+'     3. Päivitä tietokannan tiedot välitaulusta.
 '   - Avaa erikoiseditorilomakkeet (FlowPickNo, PipeFromTo, PipeToOther)
+'   - Haku korvaa välitaulun vain, kun osumia löytyy ja koko luku onnistuu.
+'     Nollatuloksessa tai virheessä muutos pyritään perumaan; palautusvirhe ilmoitetaan.
+'   - Välitaulun on tuettava DAO-tapahtumia.
+'   - Avoinna olevat piirustukset jätetään auki ja niiden nykyiset tiedot luetaan.
+'   - Lisäys- ja päivityskyselyistä näytetään viimeisen kyselyn muuttamien rivien määrä.
 '
 ' Riippuvuudet:
 '   - AutoCAD-sovellus (COM-automaatio)
@@ -28,9 +33,14 @@ Private Const acSelectionSetAll As Long = 5
 ' Tietotyypit:
 '   - PIPELINEDATA: Putkilinjablokit (PIPELINE_DATA)
 '   - MANVALVEDATA: Käsiventtiilit (MANUALVALVE_DATA)
-'   - INSTVALVEDATA: Instrumenttiventtiilit (INSTVALVE_DATA)
-'   - FIELDINSTDATA: Kenttälaitteet (UP080D)
-'   - INSTLOOPDATA: Instrumenttisilmukat (UP079D))
+'   - INSTVALVEDATA: UP079D-blokit, joiden FUNCTION on HIC tai HS.
+'     AREACODE saadaan samannimisestä attribuutista; LOOPNO:n viisi ensimmäistä
+'     ja viimeistä merkkiä tallennetaan kenttiin VALVE_FUNCTION ja VALVE_NO.
+'   - FIELDINSTDATA: UP080D-blokit; FUNCTION ja AREACODE kopioidaan attribuuteista.
+'   - INSTLOOPDATA: UP079D-blokit, joiden FUNCTION ei ole HIC tai HS.
+'     Myös blokit, joilla FUNCTION puuttuu tai on tyhjä, otetaan mukaan.
+'   - FIELDINSTDATA- ja INSTLOOPDATA-tauluissa LOOPSYMB ja LOOPNO muodostetaan
+'     LOOPNO-attribuutin viidestä ensimmäisestä ja viidestä viimeisestä merkistä.
 '
 ' Kontrollit:
 '   - Command11-13: Putkilinjatyönkulku
@@ -38,14 +48,15 @@ Private Const acSelectionSetAll As Long = 5
 '   - Command31-33: Instrumenttiventtiilityönkulku
 '   - Command41-43: Kenttälaitetyönkulku
 '   - Command51-53: Instrumenttisilmukkatyönkulku
-'   - Command18, 19, 40: Avaa editorilomakkeet
-'   - BPipelineToManval: Linkitä putkilinjat käsiventtiileihin
+'   - Command18, 19, 40: Avaavat editorilomakkeet
+'   - BPipelineToManval: Avaa putkilinjojen ja käsiventtiilien linkityslomakkeen
 '================================================================================
 
-Dim oACAD As Object  ' AcadApplication - muutettu late binding (64-bit)
-Dim oDOC As Object  ' AcadDocument - muutettu late binding (64-bit)
-Dim Tied As String  ' Current .DWG filename during batch processing
-Dim Joukko As Object  ' AcadSelectionSet - muutettu late binding (64-bit)
+Dim oACAD As Object  ' AutoCAD-sovellus myöhäisellä sidonnalla
+Dim oDOC As Object  ' AutoCAD-piirustus myöhäisellä sidonnalla
+Dim KuvaAvattuHaussa As Boolean
+Dim Tied As String  ' Eräajossa käsiteltävän DWG-tiedoston nimi
+Dim Joukko As Object  ' AutoCAD-valintajoukko myöhäisellä sidonnalla
 
 '===== Putkilinja käsiventtiileihin =====
 '================================================================================
@@ -64,34 +75,32 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (käsiventtiilit): " & Err.Description, vbExclamation
 End Sub
 
-'===== Putkilinjatyönkulku (Commands 11-13) =====
+'===== Putkilinjatyönkulku (komennot 11–13) =====
 '================================================================================
 ' Tapahtuma: Command11_Click
 ' Tarkoitus: Lukee putkilinjatiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command11_Click()
+  Dim Lukumaara As Long
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "PIPELINEDATA", "PIPELINE_DATA"
-  Application.SysCmd acSysCmdClearStatus
-  MsgBox "Putkilinjojen luku valmis", vbInformation
+  Lukumaara = LueTiedot("PIPELINEDATA", "PIPELINE_DATA")
+  NaytaLukumaara "Putkilinjojen", Lukumaara
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
   MsgBox "Virhe putkilinjojen tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command12_Click
-' Tarkoitus: Append pipeline data to staging table
+' Tarkoitus: Lisää välitaulun putkilinjatiedot tietokannan tauluihin
 '================================================================================
 Private Sub Command12_Click()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "PIPELINES_APPEND"
-  MsgBox "Putkilinjojen lisäys valmis", vbInformation
+  NaytaKyselynTulos "Putkilinjojen lisäys", SuoritaKyselyt("PIPELINES_APPEND")
   
   Exit Sub
 ErrorHandler:
@@ -106,10 +115,7 @@ Private Sub Command13_Click()
   On Error GoTo ErrorHandler
   
   If MsgBox("Varoitus! Tämä ajaa kaavioissa olevat tiedot kannassa olevien tietojen päälle." & vbCrLf & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "DELETE * From UsysPIPEUPD"
-    CurrentDb.Execute "PIPELINES_UPDATE_START"
-    CurrentDb.Execute "PIPELINES_UPDATE"
-    MsgBox "Putkilinjojen päivitys valmis", vbInformation
+    NaytaKyselynTulos "Putkilinjojen päivitys", SuoritaKyselyt("DELETE * FROM UsysPIPEUPD", "PIPELINES_UPDATE_START", "PIPELINES_UPDATE")
   End If
   
   Exit Sub
@@ -117,7 +123,7 @@ ErrorHandler:
   MsgBox "Virhe putkilinjojen päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Editorilomakkeet (Commands 18-19, 40) =====
+'===== Editorilomakkeet (komennot 18, 19 ja 40) =====
 '================================================================================
 ' Tapahtuma: Command18_Click
 ' Tarkoitus: Avaa FlowPickNo-editorilomake
@@ -150,34 +156,32 @@ ErrorHandler:
   MsgBox "Virhe PipeFromTo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Käsiventtiilityönkulku (Commands 21-23) =====
+'===== Käsiventtiilityönkulku (komennot 21–23) =====
 '================================================================================
 ' Tapahtuma: Command21_Click
 ' Tarkoitus: Lukee käsiventtiilitiedot AutoCAD-piirustuksista
 '================================================================================
 Private Sub Command21_Click()
+  Dim Lukumaara As Long
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "MANVALVEDATA", "MANUALVALVE_DATA"
-  Application.SysCmd acSysCmdClearStatus
-  MsgBox "Käsiventtiilien luku valmis", vbInformation
+  Lukumaara = LueTiedot("MANVALVEDATA", "MANUALVALVE_DATA")
+  NaytaLukumaara "Käsiventtiilien", Lukumaara
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
   MsgBox "Virhe käsiventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command22_Click
-' Tarkoitus: Append manual valve data to staging table
+' Tarkoitus: Lisää välitaulun käsiventtiilitiedot tietokannan tauluihin
 '================================================================================
 Private Sub Command22_Click()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "MANVALVE_APPEND"
-  MsgBox "Käsiventtiilien lisäys valmis", vbInformation
+  NaytaKyselynTulos "Käsiventtiilien lisäys", SuoritaKyselyt("MANVALVE_APPEND")
   
   Exit Sub
 ErrorHandler:
@@ -186,7 +190,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command23_Click
-' Tarkoitus: Päivittää tietokantaan käsiventtiilidata väliaikaistaulukosta
+' Tarkoitus: Päivittää tietokannan käsiventtiilitiedot välitaulusta
 '================================================================================
 Private Sub Command23_Click()
   On Error GoTo ErrorHandler
@@ -195,8 +199,7 @@ Private Sub Command23_Click()
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
          & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "MANVALVE_UPDATE"
-    MsgBox "Käsiventtiilien päivitys valmis", vbInformation
+    NaytaKyselynTulos "Käsiventtiilien päivitys", SuoritaKyselyt("MANVALVE_UPDATE")
   End If
   
   Exit Sub
@@ -204,35 +207,33 @@ ErrorHandler:
   MsgBox "Virhe käsiventtiilien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttiventtiilityönkulku (Commands 31-33) =====
+'===== Instrumenttiventtiilityönkulku (komennot 31–33) =====
 '================================================================================
 ' Tapahtuma: Command31_Click
 ' Tarkoitus: Lukee instrumenttiventtiilitiedot AutoCAD-piirustuksista
-' Huom: Searches for UP079D blocks where LOOPNO attribute contains "AA"
+' Huom: Mukaan otetaan UP079D-blokit, joiden FUNCTION on HIC tai HS.
 '================================================================================
 Private Sub Command31_Click()
+  Dim Lukumaara As Long
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedotByBlockAndAttribute "INSTVALVEDATA", "UP079D", "LOOPNO", "AA"
-  Application.SysCmd acSysCmdClearStatus
-  MsgBox "Instrumenttiventtiilien luku valmis", vbInformation
+  Lukumaara = LueTiedotByBlockAndAttribute("INSTVALVEDATA", "UP079D", "FUNCTION", "HIC,HS")
+  NaytaLukumaara "Instrumenttiventtiilien", Lukumaara
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
   MsgBox "Virhe instrumenttiventtiilien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command32_Click
-' Tarkoitus: Append instrument valve data to staging table
+' Tarkoitus: Lisää välitaulun instrumenttiventtiilitiedot tietokannan tauluihin
 '================================================================================
 Private Sub Command32_Click()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "INSTVALVE_APPEND"
-  MsgBox "Instrumenttiventtiilien lisäys valmis", vbInformation
+  NaytaKyselynTulos "Instrumenttiventtiilien lisäys", SuoritaKyselyt("INSTVALVE_APPEND")
   
   Exit Sub
 ErrorHandler:
@@ -241,7 +242,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command33_Click
-' Tarkoitus: Päivittää tietokantaan instrumenttiventtiilidata väliaikaistaulukosta
+' Tarkoitus: Päivittää tietokannan instrumenttiventtiilitiedot välitaulusta
 '================================================================================
 Private Sub Command33_Click()
   On Error GoTo ErrorHandler
@@ -250,8 +251,7 @@ Private Sub Command33_Click()
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
          & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "INSTVALVE_UPDATE"
-    MsgBox "Instrumenttiventtiilien päivitys valmis", vbInformation
+    NaytaKyselynTulos "Instrumenttiventtiilien päivitys", SuoritaKyselyt("INSTVALVE_UPDATE")
   End If
   
   Exit Sub
@@ -275,34 +275,32 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-instrumenttipiirilomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Kenttälaitetyönkulku (Commands 41-43) =====
+'===== Kenttälaitetyönkulku (komennot 41–43) =====
 '================================================================================
 ' Tapahtuma: Command41_Click
 ' Tarkoitus: Lukee kenttälaitetiedot AutoCAD-piirustuksista (UP080D-blokit)
 '================================================================================
 Private Sub Command41_Click()
+  Dim Lukumaara As Long
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "FIELDINSTDATA", "UP080D"
-  Application.SysCmd acSysCmdClearStatus
-  MsgBox "Kenttäinstrumenttien luku valmis", vbInformation
+  Lukumaara = LueTiedot("FIELDINSTDATA", "UP080D")
+  NaytaLukumaara "Kenttäinstrumenttien", Lukumaara
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
   MsgBox "Virhe kenttäinstrumenttien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command42_Click
-' Tarkoitus: Append field instrument data to staging table
+' Tarkoitus: Lisää välitaulun kenttälaitetiedot tietokannan tauluihin
 '================================================================================
 Private Sub Command42_Click()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "FIELDINST_APPEND"
-  MsgBox "Kenttäinstrumenttien lisäys valmis", vbInformation
+  NaytaKyselynTulos "Kenttäinstrumenttien lisäys", SuoritaKyselyt("FIELDINST_APPEND")
   
   Exit Sub
 ErrorHandler:
@@ -311,7 +309,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command43_Click
-' Tarkoitus: Päivittää tietokantaan kenttälaitteen data väliaikaistaulukosta
+' Tarkoitus: Päivittää tietokannan kenttälaitetiedot välitaulusta
 '================================================================================
 Private Sub Command43_Click()
   On Error GoTo ErrorHandler
@@ -320,8 +318,7 @@ Private Sub Command43_Click()
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
          & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "FIELDINST_UPDATE"
-    MsgBox "Kenttäinstrumenttien päivitys valmis", vbInformation
+    NaytaKyselynTulos "Kenttäinstrumenttien päivitys", SuoritaKyselyt("FIELDINST_UPDATE")
   End If
   
   Exit Sub
@@ -329,34 +326,32 @@ ErrorHandler:
   MsgBox "Virhe kenttäinstrumenttien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttisilmukkatyönkulku (Commands 51-53) =====
+'===== Instrumenttisilmukkatyönkulku (komennot 51–53) =====
 '================================================================================
 ' Tapahtuma: Command51_Click
-' Tarkoitus: Lukee instrumenttisilmukkatiedot AutoCAD-piirustuksista
+' Tarkoitus: Lukee UP079D-blokit, joiden FUNCTION ei ole HIC tai HS
 '================================================================================
 Private Sub Command51_Click()
+  Dim Lukumaara As Long
   On Error GoTo ErrorHandler
   
   Tied = ""
-  LueTiedot "INSTLOOPDATA", "UP079D"
-  Application.SysCmd acSysCmdClearStatus
-  MsgBox "Instrumenttipiirien luku valmis", vbInformation
+  Lukumaara = LueTiedotYhteinen("INSTLOOPDATA", "UP079D", "FUNCTION", "HIC,HS", 3)
+  NaytaLukumaara "Instrumenttipiirien", Lukumaara
   
   Exit Sub
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
   MsgBox "Virhe instrumenttipiirien tietojen lukemisessa: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Command52_Click
-' Tarkoitus: Append instrument loop data to staging table
+' Tarkoitus: Lisää välitaulun instrumenttisilmukkatiedot tietokannan tauluihin
 '================================================================================
 Private Sub Command52_Click()
   On Error GoTo ErrorHandler
   
-  CurrentDb.Execute "INSTLOOP_APPEND"
-  MsgBox "Instrumenttipiirien lisäys valmis", vbInformation
+  NaytaKyselynTulos "Instrumenttipiirien lisäys", SuoritaKyselyt("INSTLOOP_APPEND")
   
   Exit Sub
 ErrorHandler:
@@ -365,7 +360,7 @@ End Sub
 
 '================================================================================
 ' Tapahtuma: Command53_Click
-' Tarkoitus: Päivittää tietokantaan instrumenttisilmukkata väliaikaistaulukosta
+' Tarkoitus: Päivittää tietokannan instrumenttisilmukkatiedot välitaulusta
 '================================================================================
 Private Sub Command53_Click()
   On Error GoTo ErrorHandler
@@ -374,8 +369,7 @@ Private Sub Command53_Click()
          & "Uudet code ja pipeline tiedot otetaan kaaviosta tuoduista tiedoista." & vbCrLf _
          & "Jos olet tehnyt muutoksia näihin tietoihin kannassa, ne ylikirjoitetaan kaavion tiedoilla." & vbCrLf _
          & "Haluatko jatkaa?", vbExclamation + vbYesNo + vbDefaultButton2, "Päivitä tiedot") = vbYes Then
-    CurrentDb.Execute "INSTLOOP_UPDATE"
-    MsgBox "Instrumenttipiirien päivitys valmis", vbInformation
+    NaytaKyselynTulos "Instrumenttipiirien päivitys", SuoritaKyselyt("INSTLOOP_UPDATE")
   End If
   
   Exit Sub
@@ -384,279 +378,304 @@ ErrorHandler:
 End Sub
 
 '===== Apufunktiot =====
-'================================================================================
-' Funktio: FieldExists
-' Tarkoitus: Tarkistaa, onko kenttä olemassa recordsetissä
-' Parametrit:
-'   RS - Tarkistettava recordset
-'   KentänNimi - Kenttänimi, jota etsitään
-' Palautusarvo: True jos kenttä löytyy, False muuten
-'================================================================================
-Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
-  Dim fld As DAO.Field
+Private Sub NaytaKyselynTulos(Kuvaus As String, Maara As Long)
+  If Maara = 0 Then
+    MsgBox Kuvaus & ": yhtään riviä ei muuttunut.", vbExclamation
+  Else
+    MsgBox Kuvaus & " valmis. Muuttuneita rivejä: " & Maara & ".", vbInformation
+  End If
+End Sub
+
+Private Function SuoritaKyselyt(Kysely1 As String, Optional Kysely2 As String = "", Optional Kysely3 As String = "") As Long
+  Dim Tietokanta As DAO.Database
+  Dim Tyoalue As DAO.Workspace
+  Dim Kyselyt As Variant
+  Dim Kysely As Variant
+  Dim KyselynNimi As String
+  Dim TapahtumaKaynnissa As Boolean
+  Dim VirheNumero As Long
+  Dim VirheKuvaus As String
+  Dim VirheLahde As String
+
+  On Error GoTo ErrorHandler
+  Set Tyoalue = DBEngine.Workspaces(0)
+  Set Tietokanta = CurrentDb
+  If Not Tietokanta.Transactions Then
+    Err.Raise vbObjectError + 1110, "SuoritaKyselyt", "Tietokanta ei tue tapahtumia."
+  End If
+  Kyselyt = Array(Kysely1, Kysely2, Kysely3)
+  Tyoalue.BeginTrans
+  TapahtumaKaynnissa = True
+  For Each Kysely In Kyselyt
+    KyselynNimi = CStr(Kysely)
+    If KyselynNimi <> "" Then
+      Tietokanta.Execute KyselynNimi, dbFailOnError
+      SuoritaKyselyt = Tietokanta.RecordsAffected
+    End If
+  Next Kysely
+  Tyoalue.CommitTrans
+  TapahtumaKaynnissa = False
+  Exit Function
+
+ErrorHandler:
+  VirheNumero = Err.Number
+  VirheKuvaus = Err.Description
+  VirheLahde = Err.Source
+  If KyselynNimi <> "" Then VirheKuvaus = VirheKuvaus & vbCrLf & "Kysely: " & KyselynNimi
   On Error Resume Next
-  Set fld = RS.Fields(FieldName)
-  FieldExists = (Err.Number = 0)
+  If TapahtumaKaynnissa Then
+    Err.Clear
+    Tyoalue.Rollback
+    If Err.Number <> 0 Then VirheKuvaus = VirheKuvaus & vbCrLf & "Muutosten palautus epäonnistui: " & Err.Description
+  End If
   On Error GoTo 0
+  Err.Raise VirheNumero, VirheLahde, VirheKuvaus
 End Function
 
-'================================================================================
-' Aliohjelma: LueTiedot
-' Tarkoitus: Lukee blokkitiedot AutoCAD-piirustuksista ja tallentaa Access-taulukkoon
-' Parametrit:
-'   Taulukko - Access-kohdontaulukon nimi
-'   Blokki - Blokkityyppi/tyypit, jotka poimitaan (pilkuilla erotettu)
-'================================================================================
-Private Sub LueTiedot(Taulukko As String, Blokki As String)
-  Dim i As Integer, j As Integer
-  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
-  Dim Attrib As Variant
-  Dim Tiedot As DAO.Recordset
+Private Sub AsetaTekstikentta(Tiedot As DAO.Recordset, Kentta As String, Arvo As String, Handle As String)
+  Dim Kohde As DAO.Field
+  Set Kohde = Tiedot.Fields(Kentta)
+  If Kohde.Type = dbText And Len(Arvo) > Kohde.Size Then
+    Err.Raise vbObjectError + 1104, "AsetaTekstikentta", "Arvo on liian pitkä kenttään " & Kentta & _
+        " (pituus " & Len(Arvo) & ", enimmäispituus " & Kohde.Size & ", blokin handle " & Handle & ")."
+  End If
+  Kohde.Value = Arvo
+End Sub
+
+Private Sub NaytaLukumaara(Kuvaus As String, Lukumaara As Long)
+  If Lukumaara = 0 Then
+    MsgBox Kuvaus & " haussa ei löytynyt tietueita. Välitaulussa on edelleen aiemman haun tiedot; älä aja niiden perusteella lisäys- tai päivityskyselyjä.", vbExclamation
+  Else
+    MsgBox Kuvaus & " luku valmis. Välitauluun tallennettiin " & Lukumaara & " tietuetta.", vbInformation
+  End If
+End Sub
+
+Private Function FieldExists(RS As DAO.Recordset, FieldName As String) As Boolean
   Dim fld As DAO.Field
-  
+  Dim VirheNumero As Long
+  Dim VirheKuvaus As String
+  Dim VirheLahde As String
+
+  On Error Resume Next
+  Err.Clear
+  Set fld = RS.Fields(FieldName)
+  VirheNumero = Err.Number
+  VirheKuvaus = Err.Description
+  VirheLahde = Err.Source
+  On Error GoTo 0
+
+  If VirheNumero = 0 Then
+    FieldExists = True
+  ElseIf VirheNumero <> 3265 Then
+    Err.Raise VirheNumero, VirheLahde, VirheKuvaus
+  End If
+End Function
+
+Private Function LueTiedot(Taulukko As String, Blokki As String) As Long
+  LueTiedot = LueTiedotYhteinen(Taulukko, Blokki, "", "", 0)
+End Function
+
+Private Function LueTiedotByAttribute(Taulukko As String, AttribNames As String) As Long
+  LueTiedotByAttribute = LueTiedotYhteinen(Taulukko, "", AttribNames, "", 1)
+End Function
+
+Private Function LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, AttributeValues As String) As Long
+  LueTiedotByBlockAndAttribute = LueTiedotYhteinen(Taulukko, BlockName, AttribName, AttributeValues, 2)
+End Function
+
+Private Function LueTiedotYhteinen(Taulukko As String, Blokki As String, AttribName As String, AttributeValues As String, HakuTapa As Long) As Long
+  Dim i As Long, j As Long
+  Dim oBlock As Object
+  Dim Attrib As Variant
+  Dim LoopNo As String
+  Dim Aluekoodi As String
+  Dim OnkoVenttiilikartoitus As Boolean
+  Dim OnkoPiirikartoitus As Boolean
+  Dim Tietokanta As DAO.Database
+  Dim Tyoalue As DAO.Workspace
+  Dim Tiedot As DAO.Recordset
+  Dim Lukumaara As Long
+  Dim Kuvia As Long
+  Dim TapahtumaKaynnissa As Boolean
+  Dim TiedotVahvistettu As Boolean
+  Dim VirheNumero As Long
+  Dim VirheKuvaus As String
+  Dim VirheLahde As String
+
   On Error GoTo ErrorHandler
-  
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
-  
-  Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-    PoimiJoukko Blokki
-    
+  Set Tyoalue = DBEngine.Workspaces(0)
+  Set Tietokanta = CurrentDb
+  OnkoVenttiilikartoitus = (StrComp(Taulukko, "INSTVALVEDATA", vbTextCompare) = 0)
+  OnkoPiirikartoitus = (StrComp(Taulukko, "INSTLOOPDATA", vbTextCompare) = 0 Or _
+      StrComp(Taulukko, "FIELDINSTDATA", vbTextCompare) = 0)
+  Set Tiedot = Tietokanta.OpenRecordset(Taulukko, dbOpenDynaset)
+  If Not Tiedot.Transactions Then
+    Err.Raise vbObjectError + 1100, "LueTiedotYhteinen", "Välitaulu ei tue tapahtumia; aiempia tietoja ei voida suojata."
+  End If
+
+  Tyoalue.BeginTrans
+  TapahtumaKaynnissa = True
+  Tietokanta.Execute "DELETE * FROM [" & Taulukko & "]", dbFailOnError
+
+  Do While SeuraavaKuva()
+    Kuvia = Kuvia + 1
+    Select Case HakuTapa
+      Case 0
+        PoimiJoukko Blokki
+      Case 1
+        PoimiJoukkoByAttribute AttribName
+      Case 2
+        PoimiJoukkoByBlockAndAttributeValue Blokki, AttribName, AttributeValues
+      Case 3
+        PoimiJoukkoByBlockAndAttributeValue Blokki, AttribName, AttributeValues, True
+      Case Else
+        Err.Raise vbObjectError + 1101, "LueTiedotYhteinen", "Tuntematon hakutapa."
+    End Select
+
     For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
+      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & (i + 1) & "/" & Joukko.Count
       Set oBlock = Joukko(i)
-      
+      LoopNo = ""
+      Aluekoodi = ""
       Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-      Tiedot.Fields("Handles") = oBlock.Handle
-      
-      ' Luetaan attribuutit vain jos blokilla on niitä – estää virheen attribuutittomilla blokeilla
+      AsetaTekstikentta Tiedot, "PATH", oDOC.Path, oBlock.Handle
+      AsetaTekstikentta Tiedot, "ImpFileID", oDOC.Name, oBlock.Handle
+      AsetaTekstikentta Tiedot, "BLOCK", oBlock.EffectiveName, oBlock.Handle
+      AsetaTekstikentta Tiedot, "Handles", oBlock.Handle, oBlock.Handle
+
       If oBlock.HasAttributes Then
         Attrib = oBlock.GetAttributes
-        For j = 0 To UBound(Attrib)
-          If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
-            Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
-            fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+        For j = LBound(Attrib) To UBound(Attrib)
+          If OnkoVenttiilikartoitus Or OnkoPiirikartoitus Then
+            Select Case UCase$(Attrib(j).TagString)
+              Case "LOOPNO"
+                LoopNo = Attrib(j).TextString
+              Case "AREACODE"
+                Aluekoodi = Attrib(j).TextString
+            End Select
+          End If
+          If Attrib(j).TextString <> "" Then
+            If (Not OnkoVenttiilikartoitus Or _
+                (UCase$(Attrib(j).TagString) <> "VALVE_FUNCTION" And UCase$(Attrib(j).TagString) <> "VALVE_NO")) And _
+                (Not OnkoPiirikartoitus Or UCase$(Attrib(j).TagString) <> "LOOPSYMB") Then
+              If FieldExists(Tiedot, Attrib(j).TagString) Then
+                If OnkoPiirikartoitus And StrComp(Attrib(j).TagString, "LOOPNO", vbTextCompare) = 0 Then
+                  AsetaTekstikentta Tiedot, Attrib(j).TagString, Right$(Attrib(j).TextString, 5), oBlock.Handle
+                Else
+                  AsetaTekstikentta Tiedot, Attrib(j).TagString, Attrib(j).TextString, oBlock.Handle
+                End If
+              End If
+            End If
           End If
         Next j
       End If
-      
-      Tiedot.Update
-    Next i
-    
-    Tiedot.Close
-    Set Tiedot = Nothing
-    Joukko.Delete
-    Set Joukko = Nothing
-  Loop
-  
-  Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
-  Set oDOC = Nothing
-  Exit Sub
-  
-ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
-  On Error Resume Next
-  If Not Tiedot Is Nothing Then
-    Tiedot.Close
-    Set Tiedot = Nothing
-  End If
-  ' Siivotaan COM-objektit muistivuotojen estämiseksi
-  If Not Joukko Is Nothing Then
-    Joukko.Delete
-    Set Joukko = Nothing
-  End If
-  Set oDOC = Nothing
-  Set oACAD = Nothing
-  On Error GoTo 0
-  MsgBox "Virhe tietojen lukemisessa: " & Err.Description, vbExclamation
-End Sub
-
-'================================================================================
-' Aliohjelma: LueTiedotByAttribute
-' Tarkoitus: Lukee blokkitiedot AutoCAD-piirustuksista, suodatettuna attribuuttinimien mukaan
-' Parametrit:
-'   Taulukko - Access-kohdontaulukon nimi
-'   AttribNames - Attribuuttitagi/tagit, joiden mukaan suodatetaan (pilkuilla erotettu)
-'================================================================================
-Private Sub LueTiedotByAttribute(Taulukko As String, AttribNames As String)
-  Dim i As Integer, j As Integer
-  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
-  Dim Attrib As Variant
-  Dim Tiedot As DAO.Recordset
-  Dim fld As DAO.Field
-  
-  On Error GoTo ErrorHandler
-  
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
-  
-  Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-    PoimiJoukkoByAttribute AttribNames
-    
-    For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
-      Set oBlock = Joukko(i)
-      Attrib = oBlock.GetAttributes
-      
-      Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-      Tiedot.Fields("Handles") = oBlock.Handle
-      
-      For j = 0 To UBound(Attrib)
-        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
-          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
-          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+      If OnkoVenttiilikartoitus Then
+        If Len(Trim$(Aluekoodi)) = 0 Then
+          Err.Raise vbObjectError + 1105, "LueTiedotYhteinen", "Blokilta puuttuu AREACODE (handle " & oBlock.Handle & ")."
         End If
-      Next j
-      
-      Tiedot.Update
-    Next i
-    
-    Tiedot.Close
-    Set Tiedot = Nothing
-    Joukko.Delete
-    Set Joukko = Nothing
-  Loop
-  
-  Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
-  Set oDOC = Nothing
-  Exit Sub
-  
-ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
-  On Error Resume Next
-  If Not Tiedot Is Nothing Then
-    Tiedot.Close
-    Set Tiedot = Nothing
-  End If
-  ' Siivotaan COM-objektit muistivuotojen estämiseksi
-  If Not Joukko Is Nothing Then
-    Joukko.Delete
-    Set Joukko = Nothing
-  End If
-  Set oDOC = Nothing
-  Set oACAD = Nothing
-  On Error GoTo 0
-  MsgBox "Virhe tietojen lukemisessa attribuuteilla: " & Err.Description, vbExclamation
-End Sub
-
-'================================================================================
-' Aliohjelma: LueTiedotByBlockAndAttribute
-' Tarkoitus: Lukee blokit tietyllä nimellä ja attribuuttiarvolla
-' Parametrit:
-'   Taulukko - Access-kohdontaulukon nimi
-'   BlockName - Etsittävän blokin nimi
-'   AttribName - Tarkistettavan attribuutin tagi
-'   ContainsValue - Arvo, jolla attribuutin arvon täytyy alkaa
-'================================================================================
-Private Sub LueTiedotByBlockAndAttribute(Taulukko As String, BlockName As String, AttribName As String, ContainsValue As String)
-  Dim i As Integer, j As Integer
-  Dim oBlock As Object  ' AcadBlockReference - muutettu late binding (64-bit)
-  Dim Attrib As Variant
-  Dim Tiedot As DAO.Recordset
-  Dim fld As DAO.Field
-  
-  On Error GoTo ErrorHandler
-  
-  CurrentDb.Execute "DELETE * FROM " & Taulukko
-  
-  Do While SeuraavaKuva
-    Set Tiedot = CurrentDb.OpenRecordset(Taulukko)
-    PoimiJoukkoByBlockAndAttributeValue BlockName, AttribName, ContainsValue
-    
-    For i = 0 To Joukko.Count - 1
-      Application.SysCmd acSysCmdSetStatus, "Haetaan tietoja " & i + 1 & "/" & Joukko.Count
-      Set oBlock = Joukko(i)
-      Attrib = oBlock.GetAttributes
-      
-      Tiedot.AddNew
-      Tiedot.Fields("PATH") = oDOC.Path
-      Tiedot.Fields("ImpFileID") = oDOC.Name
-      Tiedot.Fields("BLOCK") = oBlock.EffectiveName
-      Tiedot.Fields("Handles") = oBlock.Handle
-      
-      For j = 0 To UBound(Attrib)
-        If Attrib(j).TextString <> "" And FieldExists(Tiedot, "[" & Attrib(j).TagString & "]") Then
-          Set fld = Tiedot.Fields("[" & Attrib(j).TagString & "]")
-          fld.Value = IIf(Len(Attrib(j).TextString) > fld.Size, Left$(Attrib(j).TextString, fld.Size), Attrib(j).TextString)
+        If Len(Trim$(LoopNo)) = 0 Then
+          Err.Raise vbObjectError + 1106, "LueTiedotYhteinen", "Blokilta puuttuu LOOPNO (handle " & oBlock.Handle & ")."
         End If
-      Next j
-      
+        AsetaTekstikentta Tiedot, "AREACODE", Aluekoodi, oBlock.Handle
+        AsetaTekstikentta Tiedot, "VALVE_FUNCTION", Left$(LoopNo, 5), oBlock.Handle
+        AsetaTekstikentta Tiedot, "VALVE_NO", Right$(LoopNo, 5), oBlock.Handle
+      ElseIf OnkoPiirikartoitus Then
+        If Len(Trim$(LoopNo)) = 0 Then
+          Err.Raise vbObjectError + 1106, "LueTiedotYhteinen", "Blokilta puuttuu LOOPNO (handle " & oBlock.Handle & ")."
+        End If
+        AsetaTekstikentta Tiedot, "LOOPSYMB", Left$(LoopNo, 5), oBlock.Handle
+        AsetaTekstikentta Tiedot, "LOOPNO", Right$(LoopNo, 5), oBlock.Handle
+      End If
       Tiedot.Update
+      Lukumaara = Lukumaara + 1
     Next i
-    
-    Tiedot.Close
-    Set Tiedot = Nothing
+
     Joukko.Delete
     Set Joukko = Nothing
+    VapautaPiirustus
   Loop
-  
+
+  If Kuvia = 0 Then
+    Err.Raise vbObjectError + 1102, "LueTiedotYhteinen", "Hakukansiosta ei löytynyt DWG-piirustuksia."
+  End If
+
   Application.SysCmd acSysCmdClearStatus
-  Set oACAD = Nothing
+  If Lukumaara = 0 Then
+    Tyoalue.Rollback
+  Else
+    Tyoalue.CommitTrans
+    TiedotVahvistettu = True
+  End If
+  TapahtumaKaynnissa = False
+  Tiedot.Close
+  Set Tiedot = Nothing
   Set oDOC = Nothing
-  Exit Sub
-  
+  Set oACAD = Nothing
+  LueTiedotYhteinen = Lukumaara
+  Exit Function
+
 ErrorHandler:
-  Application.SysCmd acSysCmdClearStatus
+  VirheNumero = Err.Number
+  VirheKuvaus = Err.Description
+  VirheLahde = Err.Source
+  If Tied <> "" Then VirheKuvaus = VirheKuvaus & " (piirustus: " & Tied & ")"
+  If TiedotVahvistettu Then VirheKuvaus = VirheKuvaus & vbCrLf & "Uudet välitaulun tiedot ehdittiin jo vahvistaa."
   On Error Resume Next
+  If TapahtumaKaynnissa Then
+    Err.Clear
+    Tyoalue.Rollback
+    If Err.Number <> 0 Then VirheKuvaus = VirheKuvaus & vbCrLf & "Välitaulun palautus epäonnistui: " & Err.Description
+  End If
   If Not Tiedot Is Nothing Then
+    Err.Clear
     Tiedot.Close
-    Set Tiedot = Nothing
+    If Err.Number <> 0 Then VirheKuvaus = VirheKuvaus & vbCrLf & "Tietuejoukon sulkeminen epäonnistui: " & Err.Description
   End If
-  ' Siivotaan COM-objektit muistivuotojen estämiseksi
   If Not Joukko Is Nothing Then
+    Err.Clear
     Joukko.Delete
-    Set Joukko = Nothing
+    If Err.Number <> 0 Then VirheKuvaus = VirheKuvaus & vbCrLf & "Valintajoukon poisto epäonnistui: " & Err.Description
   End If
+  Set Joukko = Nothing
+  Err.Clear
+  VapautaPiirustus
+  If Err.Number <> 0 Then VirheKuvaus = VirheKuvaus & vbCrLf & "Piirustuksen vapautus epäonnistui: " & Err.Description
+  Application.SysCmd acSysCmdClearStatus
   Set oDOC = Nothing
   Set oACAD = Nothing
   On Error GoTo 0
-  MsgBox "Virhe suodatettujen tietojen lukemisessa: " & Err.Description, vbExclamation
-End Sub
+  Err.Raise VirheNumero, VirheLahde, VirheKuvaus
+End Function
 
 '================================================================================
 ' Funktio: Yhdista
 ' Tarkoitus: Yhdistää käynnissä olevaan AutoCAD-instanssiin
-' Palautusarvo: True jos yhteys onnistui, False muuten
+' Palautusarvo: True jos yhteys onnistui; virhe välitetään kutsujalle
 '================================================================================
 Private Function Yhdista() As Boolean
-  On Error Resume Next
-  
-  ' Yhdistetään käynnissä olevaan AutoCADiin
+  On Error GoTo ErrorHandler
   Set oACAD = GetObject(, "AutoCAD.Application")
-  If Err <> 0 Then
-    MsgBox "Käynnissä olevaa AutoCADiä ei löytynyt!", vbCritical, "Virhe!"
-    Set oACAD = Nothing
-    Yhdista = False
-    Exit Function
-  Else
-    Yhdista = True
-  End If
-  On Error GoTo 0
+  Yhdista = True
+  Exit Function
+ErrorHandler:
+  Err.Raise vbObjectError + 1103, "Yhdista", "Käynnissä olevaan AutoCADiin ei saatu yhteyttä: " & Err.Description
 End Function
 
 '================================================================================
 ' Funktio: SeuraavaKuva
-' Tarkoitus: Avaa seuraava .DWG-tiedosto määritetystä kansiosta eräajoa varten
-' Palautusarvo: True jos tiedosto avattu, False jos ei enää tiedostoja
+' Tarkoitus: Ottaa seuraavan DWG-piirustuksen käyttöön eräajossa
+' Palautusarvo: True, jos piirustus on käytettävissä; False, kun tiedostot loppuvat
 '================================================================================
 Private Function SeuraavaKuva() As Boolean
   Dim Polku As String
+  Dim Tiedosto As String
+  Dim AvoinKuva As Object
+  Dim Tiedostot As Object
   
   On Error GoTo ErrorHandler
   
   If oACAD Is Nothing Then
-    If Yhdista = False Then
-      SeuraavaKuva = False
-      Exit Function
-    End If
+    If Not Yhdista() Then Err.Raise vbObjectError + 1103, "SeuraavaKuva", "AutoCAD-yhteyden muodostaminen epäonnistui."
   End If
   
   Polku = Left$(CurrentDb.Name, InStrRev(CurrentDb.Name, "\"))
@@ -673,35 +692,63 @@ Private Function SeuraavaKuva() As Boolean
     Exit Function
   End If
   
-  ' Suljetaan edellinen piirustus
-  If Not oDOC Is Nothing Then
-    oDOC.Close False
-  End If
-  
-  ' Avataan seuraava piirustus
-  Set oDOC = oACAD.Documents.Open(Polku & Tied)
+  Set Tiedostot = CreateObject("Scripting.FileSystemObject")
+  Tiedosto = Tiedostot.GetAbsolutePathName(Polku & Tied)
+  For Each AvoinKuva In oACAD.Documents
+    If StrComp(Tiedostot.GetAbsolutePathName(AvoinKuva.FullName), Tiedosto, vbTextCompare) = 0 Then
+      Set oDOC = AvoinKuva
+      KuvaAvattuHaussa = False
+      SeuraavaKuva = True
+      Exit Function
+    End If
+  Next AvoinKuva
+
+  Set oDOC = oACAD.Documents.Open(Tiedosto)
+  KuvaAvattuHaussa = True
   SeuraavaKuva = True
   Exit Function
   
 ErrorHandler:
-  MsgBox "Virhe piirustuksen avaamisessa: " & Err.Description, vbExclamation
-  SeuraavaKuva = False
+  Err.Raise Err.Number, "SeuraavaKuva", "Piirustuksen avaaminen epäonnistui: " & Err.Description
 End Function
+
+Private Sub VapautaPiirustus()
+  If Not oDOC Is Nothing Then
+    If KuvaAvattuHaussa Then
+      If Not oDOC.Saved Then
+        Err.Raise vbObjectError + 1111, "VapautaPiirustus", "Haun avaamassa piirustuksessa on tallentamattomia muutoksia; piirustus jätettiin auki: " & oDOC.Name
+      End If
+      oDOC.Close False
+    End If
+    Set oDOC = Nothing
+  End If
+  KuvaAvattuHaussa = False
+End Sub
+
+Private Sub PoistaVanhaValintajoukko()
+  Dim VanhaJoukko As Object
+  For Each VanhaJoukko In oDOC.SelectionSets
+    If StrComp(VanhaJoukko.Name, "APUPICK", vbTextCompare) = 0 Then
+      VanhaJoukko.Delete
+      Exit Sub
+    End If
+  Next VanhaJoukko
+End Sub
 
 '================================================================================
 ' Aliohjelma: PoimiJoukko
 ' Tarkoitus: Luo suodatettu valintajoukko määritetyistä blokkityypeistä
 ' Parametrit:
-'   Nimet - Blokin nimi/nimet, pilkuilla erotettu useampaa tyyppiä varten
+'   Nimet - Haettavat blokkien nimet pilkuilla erotettuina
 '================================================================================
 Private Sub PoimiJoukko(Nimet As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
-  Dim i As Integer
-  Dim j As Integer
+  Dim i As Long
+  Dim j As Long
   Dim Blokit As Variant
-  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
-  Dim L As Integer
+  Dim Poista() As Object  ' AutoCAD-olio myöhäisellä sidonnalla
+  Dim L As Long
   Dim EiPoisteta As Boolean
   
   On Error GoTo ErrorHandler
@@ -716,17 +763,13 @@ Private Sub PoimiJoukko(Nimet As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen (jos edellinen ajo
-  ' kaatui ennen joukon tuhoamista, Add heittäisi virheen ilman tätä)
-  On Error Resume Next
-  oDOC.SelectionSets.Item("APUPICK").Delete
-  On Error GoTo ErrorHandler
+  PoistaVanhaValintajoukko
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
   ' Suodatus: poistetaan blokit, jotka eivät ole listalla
-  ' Huom: xref-blokeilla EffectiveName on muodossa "XREF|BLOKKI" -> otetaan vain loppuosa vertailua varten
+  ' Vertailussa poistetaan mahdollinen ulkoisen viitteen nimen etuliite.
   Dim sNimi As String
   L = 0
   For j = 0 To Joukko.Count - 1
@@ -752,25 +795,25 @@ Private Sub PoimiJoukko(Nimet As String)
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Virhe valintajoukon luomisessa: " & Err.Description, vbExclamation
+  Err.Raise Err.Number, "PoimiJoukko", "Virhe valintajoukon luomisessa: " & Err.Description
 End Sub
 
 '================================================================================
 ' Aliohjelma: PoimiJoukkoByAttribute
-' Tarkoitus: Luo valintajoukko blokeista, joilla on tietyt attribuutit
+' Tarkoitus: Luo valintajoukko blokeista, joilla on vähintään yksi annetuista attribuuteista
 ' Parametrit:
-'   AttribNames - Etsittävä attribuuttitagi/tagit, pilkuilla erotettu
+'   AttribNames - Etsittävät attribuuttien tunnisteet pilkuilla erotettuina
 '================================================================================
 Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
-  Dim i As Integer
-  Dim j As Integer
-  Dim k As Integer
+  Dim i As Long
+  Dim j As Long
+  Dim k As Long
   Dim Attribs As Variant
   Dim AttribList As Variant
-  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
-  Dim L As Integer
+  Dim Poista() As Object  ' AutoCAD-olio myöhäisellä sidonnalla
+  Dim L As Long
   Dim HasAttribute As Boolean
   
   On Error GoTo ErrorHandler
@@ -785,15 +828,12 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen
-  On Error Resume Next
-  oDOC.SelectionSets.Item("APUPICK").Delete
-  On Error GoTo ErrorHandler
+  PoistaVanhaValintajoukko
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Suodatus: pidetään vain blokit, joilla on määritetyt attribuutit
+  ' Mukaan jäävät blokit, joilla on vähintään yksi haetuista attribuuteista.
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
@@ -829,54 +869,58 @@ Private Sub PoimiJoukkoByAttribute(AttribNames As String)
   Exit Sub
   
 ErrorHandler:
-  MsgBox "Virhe attribuuttisuodatetun valintajoukon luomisessa: " & Err.Description, vbExclamation
+  Err.Raise Err.Number, "PoimiJoukkoByAttribute", "Virhe attribuuttisuodatetun valintajoukon luomisessa: " & Err.Description
 End Sub
 
 '================================================================================
 ' Aliohjelma: PoimiJoukkoByBlockAndAttributeValue
-' Tarkoitus: Luo valintajoukko tietyistä blokeista, joiden attribuutti sisältää arvon
+' Tarkoitus: Luo valintajoukko joko hyväksyen tai pois sulkien annetut attribuuttiarvot
 ' Parametrit:
-'   BlockName - Etsittävän blokin nimi
-'   AttribName - Tarkistettavan attribuutin tagi
-'   ContainsValue - Arvo, jonka attribuutin täytyy sisältää (ei kirjainkokoherkkä)
+'   BlockName - Haettavan blokin nimi
+'   AttribName - Tarkistettavan attribuutin tunniste
+'   AttributeValues - Vertailtavat arvot pilkuilla erotettuina; kirjainkoolla ei ole merkitystä
+'   SuljeArvot - True sulkee täsmäävät arvot pois; puuttuva attribuutti jää mukaan
 '================================================================================
-Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, ContainsValue As String)
+Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName As String, AttributeValues As String, Optional SuljeArvot As Boolean = False)
   Dim FilterType(0) As Integer
   Dim FilterData(0) As Variant
-  Dim i As Integer
-  Dim j As Integer
+  Dim i As Long
+  Dim j As Long
   Dim Attribs As Variant
-  Dim Poista() As Object  ' AcadEntity - muutettu late binding (64-bit)
-  Dim L As Integer
+  Dim Poista() As Object  ' AutoCAD-olio myöhäisellä sidonnalla
+  Dim L As Long
   Dim HasMatch As Boolean
+  Dim NimiTasmaa As Boolean
   Dim AttribValue As String
+  Dim Arvot As Variant
+  Dim k As Long
+  Dim BlockNimi As String
   
   On Error GoTo ErrorHandler
   
   BlockName = UCase$(Trim$(BlockName))
   AttribName = UCase$(Trim$(AttribName))
-  ContainsValue = UCase$(Trim$(ContainsValue))
+  Arvot = Split(AttributeValues, ",")
   
   ' Luodaan valintajoukko kaikista blokeista
   FilterType(0) = 0
   FilterData(0) = "INSERT"
   
-  ' KORJATTU: On Error Resume Next -poisto estää nimitörmäyksen
-  On Error Resume Next
-  oDOC.SelectionSets.Item("APUPICK").Delete
-  On Error GoTo ErrorHandler
+  PoistaVanhaValintajoukko
   
   Set Joukko = oDOC.SelectionSets.Add("APUPICK")
   Joukko.Select acSelectionSetAll, , , FilterType, FilterData
   
-  ' Suodatus: pidetään vain vastaavat blokit, joiden attribuuttiarvo täsmää
+  ' Attribuuttiarvot joko hyväksytään tai suljetaan pois hakutavan mukaan.
   L = 0
   For j = 0 To Joukko.Count - 1
     If Joukko(j).EntityName = "AcDbBlockReference" Then
       HasMatch = False
       
-      ' Tarkistetaan blokin nimi
-      If UCase$(Joukko(j).EffectiveName) = BlockName Then
+      BlockNimi = UCase$(Joukko(j).EffectiveName)
+      If InStr(BlockNimi, "|") > 0 Then BlockNimi = Mid$(BlockNimi, InStrRev(BlockNimi, "|") + 1)
+      NimiTasmaa = (BlockNimi = BlockName)
+      If NimiTasmaa Then
         ' Tarkistetaan, onko blokilla attribuutteja
         If Joukko(j).HasAttributes Then
           Attribs = Joukko(j).GetAttributes
@@ -884,19 +928,21 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
           ' Käydään läpi kaikki attribuutit
           For i = 0 To UBound(Attribs)
             If UCase$(Attribs(i).TagString) = AttribName Then
-              AttribValue = UCase$(Attribs(i).TextString)
-              ' Tarkistetaan, alkaako attribuutin arvo määritetyllä arvolla
-              If Left$(AttribValue, Len(ContainsValue)) = ContainsValue Then
-                HasMatch = True
-                Exit For
-              End If
+              AttribValue = Trim$(Attribs(i).TextString)
+              For k = LBound(Arvot) To UBound(Arvot)
+                If StrComp(AttribValue, Trim$(Arvot(k)), vbTextCompare) = 0 Then
+                  HasMatch = True
+                  Exit For
+                End If
+              Next k
+              If HasMatch Then Exit For
             End If
           Next i
         End If
       End If
       
       ' Jos blokki ei täsmää kriteereihin, merkitään poistettavaksi
-      If Not HasMatch Then
+      If Not NimiTasmaa Or (HasMatch = SuljeArvot) Then
         ReDim Preserve Poista(L)
         Set Poista(L) = Joukko(j)
         L = L + 1
@@ -908,5 +954,5 @@ Private Sub PoimiJoukkoByBlockAndAttributeValue(BlockName As String, AttribName 
   Exit Sub
   
 ErrorHandler:
-MsgBox "Virhe suodatetun valintajoukon luomisessa: " & Err.Description, vbExclamation
+  Err.Raise Err.Number, "PoimiJoukkoByBlockAndAttributeValue", "Virhe suodatetun valintajoukon luomisessa: " & Err.Description
 End Sub
