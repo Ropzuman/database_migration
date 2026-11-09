@@ -13,7 +13,7 @@ Private Const acSelectionSetAll As Long = 5
 '   Keskuslomake P&I-kaaviotietojen tuontiin ja päivitykseen AutoCADista:
 '   - Käsittelee DWG-tiedostot eräajona LPolku-otsikon määrittämästä kansiosta
 '   - Tuo putkilinja-, venttiili-, kenttälaite- ja instrumenttisilmukkatiedot
-'   - Kunkin tietotyypin työnkulku (esimerkiksi Command11–13):
+'   - Kunkin tietotyypin työkalut (esimerkiksi Command11–13):
 '     1. Lue AutoCADista välitauluun.
 '     2. Lisää tiedot välitaulusta tietokannan tauluihin.
 '     3. Päivitä tietokannan tiedot välitaulusta.
@@ -43,11 +43,11 @@ Private Const acSelectionSetAll As Long = 5
 '     LOOPNO-attribuutin viidestä ensimmäisestä ja viidestä viimeisestä merkistä.
 '
 ' Kontrollit:
-'   - Command11-13: Putkilinjatyönkulku
-'   - Command21-23: Käsiventtiilityönkulku
-'   - Command31-33: Instrumenttiventtiilityönkulku
-'   - Command41-43: Kenttälaitetyönkulku
-'   - Command51-53: Instrumenttisilmukkatyönkulku
+'   - Command11-13: Putkilinjatyökalut
+'   - Command21-23: Käsiventtiilityökalut
+'   - Command31-33: Instrumenttiventtiilityökalut
+'   - Command41-43: Kenttälaitetyökalut
+'   - Command51-53: Instrumenttisilmukkatyökalut
 '   - Command18, 19, 40: Avaavat editorilomakkeet
 '   - BPipelineToManval: Avaa putkilinjojen ja käsiventtiilien linkityslomakkeen
 '================================================================================
@@ -75,7 +75,7 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-lomakkeen avaamisessa (käsiventtiilit): " & Err.Description, vbExclamation
 End Sub
 
-'===== Putkilinjatyönkulku (komennot 11–13) =====
+'===== Putkilinjatyökalut (komennot 11–13) =====
 '================================================================================
 ' Tapahtuma: Command11_Click
 ' Tarkoitus: Lukee putkilinjatiedot AutoCAD-piirustuksista
@@ -156,7 +156,7 @@ ErrorHandler:
   MsgBox "Virhe PipeFromTo-lomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Käsiventtiilityönkulku (komennot 21–23) =====
+'===== Käsiventtiilityökalut (komennot 21–23) =====
 '================================================================================
 ' Tapahtuma: Command21_Click
 ' Tarkoitus: Lukee käsiventtiilitiedot AutoCAD-piirustuksista
@@ -207,7 +207,7 @@ ErrorHandler:
   MsgBox "Virhe käsiventtiilien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttiventtiilityönkulku (komennot 31–33) =====
+'===== Instrumenttiventtiilityökalut (komennot 31–33) =====
 '================================================================================
 ' Tapahtuma: Command31_Click
 ' Tarkoitus: Lukee instrumenttiventtiilitiedot AutoCAD-piirustuksista
@@ -275,7 +275,7 @@ ErrorHandler:
   MsgBox "Virhe PipeToOther-instrumenttipiirilomakkeen avaamisessa: " & Err.Description, vbExclamation
 End Sub
 
-'===== Kenttälaitetyönkulku (komennot 41–43) =====
+'===== Kenttälaitetyökalut (komennot 41–43) =====
 '================================================================================
 ' Tapahtuma: Command41_Click
 ' Tarkoitus: Lukee kenttälaitetiedot AutoCAD-piirustuksista (UP080D-blokit)
@@ -326,7 +326,7 @@ ErrorHandler:
   MsgBox "Virhe kenttäinstrumenttien päivityksessä: " & Err.Description, vbExclamation
 End Sub
 
-'===== Instrumenttisilmukkatyönkulku (komennot 51–53) =====
+'===== Instrumenttisilmukkatyökalut (komennot 51–53) =====
 '================================================================================
 ' Tapahtuma: Command51_Click
 ' Tarkoitus: Lukee UP079D-blokit, joiden FUNCTION ei ole HIC tai HS
