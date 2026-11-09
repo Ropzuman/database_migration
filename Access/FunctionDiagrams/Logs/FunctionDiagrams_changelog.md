@@ -1,26 +1,26 @@
-# Muutosloki ‚Äî FunctionDiagrams
+# Muutosloki - FunctionDiagrams
 
 **Tiedosto:** `Access/FunctionDiagrams/` (kaikki moduulit)  
-**P√§iv√§m√§√§r√§:** 2026-03-06  
-**Projekti:** 64-bittinen siirtym√§ ‚Äî VBA7 / Microsoft 365, tietoturva- ja vakauskorjaukset
+**P‰iv‰m‰‰r‰:** 2026-03-06
+**Projekti:** 64-bittinen siirtym‰ - VBA7 / Microsoft 365, tietoturva- ja vakauskorjaukset
 
 ---
 
-## 2026-03-07 ‚Äî Code Review -korjaukset (suorituskyky & vakaus)
+## 2026-03-07 - Code Review -korjaukset (suorituskyky & vakaus)
 
-### Form_Lis√§√§Kuviin_ACAD.cls
+### Form_Lis‰‰ Kuviin_ACAD.cls
 
-- **Datan menetysriski poistettu ‚Äî `HaeTekstit_Click`:** `DELETE * FROM Blokit` (koko taulu) korvattu `DELETE * FROM Blokit WHERE Path='...'` ‚Äî muiden projektien attribuuttitiedot eiv√§t en√§√§ tuhoudu hakemistovaihtoa l√§hest√§ess√§.
-- **GetObject-fallback lis√§tty ‚Äî `HaeTekstit_Click`:** `GetObject(, "AutoCAD.Application")` yritet√§√§n ensin; vasta virheen sattuessa avataan `CreateObject` ‚Äî ei turhaa raskaita instansseja.
-- **Busy wait poistettu ‚Äî `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla; CPU ei en√§√§ kuormitu 100 %:sti odotusajalla.
-- **Sleep API -deklaraatio lis√§tty:** `#If VBA7 / PtrSafe` -lohko moduulin alkuun.
-- **`CurrentDb`-kutsuketju korvattu `db`-muuttujalla ‚Äî `HaeTekstit_Click`:** Yksi `Set db = CurrentDb` -viittaus riitt√§√§ koko aliohjelmalle; s√§√§st√§√§ uusien viittausten luomiselta ja muistivuodoilta.
-- **Cleanup-lohko ‚Äî `HaeTekstit_Click`:** Lisatty `Loppu:`-siivouslohko (GoTo Loppu / Resume Loppu) ‚Äî resurssit vapautetaan my√∂s virhetilanteessa.
+- **Datan menetysriski poistettu - `HaeTekstit_Click`:** `DELETE * FROM Blokit` (koko taulu) korvattu `DELETE * FROM Blokit WHERE Path='...'` - muiden projektien attribuuttitiedot eiv‰t en‰‰ tuhoudu hakemistovaihtoa l‰hestess‰.
+- **GetObject-fallback lis‰tty - `HaeTekstit_Click`:** `GetObject(, "AutoCAD.Application")` yritet‰‰n ensin; vasta virheen sattuessa avataan `CreateObject` - ei turhaa raskaita instansseja.
+- **Busy wait poistettu - `Odota`:** `Do While odotus > Timer / DoEvents / Loop` -rakenne korvattu `Sleep`-kutsulla; CPU ei en‰‰ kuormitu 100 %:sti odotusajalla.
+- **Sleep API -deklaraatio lis‰tty:** `#If VBA7 / PtrSafe` -lohko moduulin alkuun.
+- **`CurrentDb`-kutsuketju korvattu `db`-muuttujalla - `HaeTekstit_Click`:** Yksi `Set db = CurrentDb` -viittaus riitt‰‰ koko aliohjelmalle; s‰‰st‰‰ uusien viittausten luomiselta ja muistivuodoilta.
+- **Cleanup-lohko - `HaeTekstit_Click`:** Lisatty `Loppu:`-siivouslohko (GoTo Loppu / Resume Loppu) - resurssit vapautetaan myˆs virhetilanteessa.
 
 ### Form_LukituskaavioLinkit.cls
 
-- **DAO-transaktio lis√§tty ‚Äî `Command0_Click`:** Koko `Do Until qry.EOF` -silmukka kapseloitu `DBEngine.Workspaces(0).BeginTrans` / `CommitTrans` -rakenteeseen. Kaikki `.Edit/.Update`-kutsut k√§sitell√§√§n yhten√§ blokkina ‚Äî kymmenkertaistaa nopeuden verkkolevyll√§.
-- **Rollback virheenk√§sittelijess√§:** `DBEngine.Workspaces(0).Rollback` lis√§tty `ErrorHandler`-lohkoon ‚Äî virhetilanteessa tietokanta palautuu ehjeen tilaan.
+- **DAO-transaktio lis‰tty - `Command0_Click`:** Koko `Do Until qry.EOF` -silmukka kapseloitu `DBEngine.Workspaces(0).BeginTrans` / `CommitTrans` -rakenteeseen. Kaikki `.Edit/.Update`-kutsut k‰sitell‰‰n yhten‰ blokkina - kymmenkertaistaa nopeuden verkkolevyll‰.
+- **Rollback virheenk‰sittelijess‰:** `DBEngine.Workspaces(0).Rollback` lis‰tty `ErrorHandler`-lohkoon - virhetilanteessa tietokanta palautuu ehjeen tilaan.
 
 ---
 
@@ -28,26 +28,26 @@
 
 ### Form_FuncBlock.cls
 
-- **SQL-injektiosuojaus ‚Äî `NEWVALUE_Enter`:** `Atag`-kentt√§ sanitoitu `sAtag = Replace(Atag, "'", "''")` ennen RowSource-SQL-lauseen rakentamista
-- **SQL-injektiosuojaus ‚Äî `SelectValue_Enter`:** `Atag`, `AreaCode`, `LoopNo` ja `Suffix` sanitoitu `Replace(..., "'", "''")` kaikissa SQL-lausehaaroissa ‚Äî heittomerkki attribuutin nimess√§ ei en√§√§ kaada kysely√§
+- **SQL-injektiosuojaus - `NEWVALUE_Enter`:** `Atag`-kentt‰ sanitoitu `sAtag = Replace(Atag, "'", "''")` ennen RowSource-SQL-lauseen rakentamista
+- **SQL-injektiosuojaus - `SelectValue_Enter`:** `Atag`, `AreaCode`, `LoopNo` ja `Suffix` sanitoitu `Replace(..., "'", "''")` kaikissa SQL-lausehaaroissa - heittomerkki attribuutin nimess‰ ei en‰‰ kaada kysely‰
 
 ### Form_Funktiokaavio.cls
 
-- **SQL-injektiosuojaus ‚Äî `Command50_Click`:** `KAYTTAJA()`-palaute (yks√∂islainaus) sek√§ `Muokkaus0`, `Muokkaus4` ja `Muokkaus3` -kentt√§arvot (kaksoislainaus) sanitoitu paikallisiin muuttujiin ennen UPDATE-lauseen rakentamista
-- **SQL-injektiosuojaus ‚Äî `Komento67_Click`:** `RProcess.Value` ja `RCode.Value` sanitoitu muuttujiin `sProcess`/`sCode`; `Me.AreaCode` ja `Me.LoopNo` sanitoitu `sAreaCode2`/`sLoopNo2` INSERT- ja UPDATE-lauseita varten
-- **Resurssivuoto poistettu ‚Äî `Komento67_Click` (varhainen poistumapolku):** `Taul.Close` ja `Set Taul = Nothing` lis√§tty ennen varhaisinta `Exit Sub` ‚Äî tietueisto ei en√§√§ j√§√§ avoimeksi kun resepti l√∂ytyy jo kannasta
-- **RecordCount ‚Üí EOF ‚Äî `Komento67_Click`:** `Taul.RecordCount > 0` korvattu `Not Taul.EOF` ‚Äî luotettavampi olemassaolotarkistus ilman `MoveLast`-kutsua
+- **SQL-injektiosuojaus - `Command50_Click`:** `KAYTTAJA()`-palaute (yksˆislainaus) sek‰ `Muokkaus0`, `Muokkaus4` ja `Muokkaus3` -kentt‰arvot (kaksoislainaus) sanitoitu paikallisiin muuttujiin ennen UPDATE-lauseen rakentamista
+- **SQL-injektiosuojaus - `Komento67_Click`:** `RProcess.Value` ja `RCode.Value` sanitoitu muuttujiin `sProcess`/`sCode`; `Me.AreaCode` ja `Me.LoopNo` sanitoitu `sAreaCode2`/`sLoopNo2` INSERT- ja UPDATE-lauseita varten
+- **Resurssivuoto poistettu - `Komento67_Click` (varhainen poistumapolku):** `Taul.Close` ja `Set Taul = Nothing` lis‰tty ennen varhaisinta `Exit Sub` - tietueisto ei en‰‰ j‰‰ avoimeksi kun resepti lˆytyy jo kannasta
+- **RecordCount ? EOF - `Komento67_Click`:** `Taul.RecordCount > 0` korvattu `Not Taul.EOF` - luotettavampi olemassaolotarkistus ilman `MoveLast`-kutsua
 
-### Form_Lis√§√§Kuviin_ACAD.cls
+### Form_Lis‰‰Kuviin_ACAD.cls
 
-- **COM-haamuprosessin esto ‚Äî `TeeKuvat_Click`:** `Exit Sub` vaihdettu `GoTo Loppu` ‚Äî siivouslohko suoritetaan aina my√∂s onnistumisreitill√§; `ErrorHandler` ohjaa `Resume Loppu` ‚Üí AutoCAD ei j√§√§ Teht√§vienhallintaan n√§kym√§tt√∂m√§ksi prosessiksi my√∂sk√§√§n virhetilanteessa
-- **COM-siivouslohko ‚Äî `TeeKuvat_Click` `Loppu:`:** Lis√§tty `On Error Resume Next` + `If Not oAcad Is Nothing Then oAcad.Quit` ‚Äî kaikkien resurssien vapautus taattu
-- **Resurssivuoto poistettu ‚Äî `PaivitaDocRev_Click`:** `rstSnapshot.Close / Set = Nothing`, `dbsDocuments.Close / Set = Nothing` ja `Set dbs = Nothing` lis√§tty sek√§ normaali- ett√§ virhepolkuun ‚Äî ulkoinen Documents-kantayhteys suljetaan aina
-- **SQL-injektion esto INSERT-silmukoissa ‚Äî `PaivitaDocRev_Click`:** `DocumentsDetail`- ja `DocumentsRevision`-INSERT-lauseiden kentt√§arvot sanitoitu `Replace(CStr(...), "'", "''")` ‚Äî heittomerkki√§ sis√§lt√§v√§t dokumenttinimet (esim. "O'Brien") eiv√§t en√§√§ kaada lausetta
+- **COM-haamuprosessin esto - `TeeKuvat_Click`:** `Exit Sub` vaihdettu `GoTo Loppu` - siivouslohko suoritetaan aina myˆs onnistumisreitill‰; `ErrorHandler` ohjaa `Resume Loppu` ? AutoCAD ei j‰‰ Teht‰vienhallintaan n‰kym‰ttˆm‰ksi prosessiksi myˆsk‰‰n virhetilanteessa
+- **COM-siivouslohko - `TeeKuvat_Click` `Loppu:`:** Lis‰tty `On Error Resume Next` + `If Not oAcad Is Nothing Then oAcad.Quit` - kaikkien resurssien vapautus taattu
+- **Resurssivuoto poistettu - `PaivitaDocRev_Click`:** `rstSnapshot.Close / Set = Nothing`, `dbsDocuments.Close / Set = Nothing` ja `Set dbs = Nothing` lis‰tty sek‰ normaali- ett‰ virhepolkuun - ulkoinen Documents-kantayhteys suljetaan aina
+- **SQL-injektion esto INSERT-silmukoissa - `PaivitaDocRev_Click`:** `DocumentsDetail`- ja `DocumentsRevision`-INSERT-lauseiden kentt‰arvot sanitoitu `Replace(CStr(...), "'", "''")` - heittomerkki‰ sis‰lt‰v‰t dokumenttinimet (esim. "O'Brien") eiv‰t en‰‰ kaada lausetta
 
 ### Form_LukituskaavioLinkit.cls
 
-- **Virheenk√§sittely lis√§tty ‚Äî `Command0_Click`:** `On Error GoTo ErrorHandler` ja t√§ydellinen `ErrorHandler`-lohko ‚Äî virhetilanteessa `tbl`/`qry` suljetaan, tiimalasi poistetaan ja k√§ytt√§j√§lle n√§ytet√§√§n virheilmoitus
+- **Virheenk‰sittely lis‰tty - `Command0_Click`:** `On Error GoTo ErrorHandler` ja t‰ydellinen `ErrorHandler`-lohko - virhetilanteessa `tbl`/`qry` suljetaan, tiimalasi poistetaan ja k‰ytt‰j‰lle n‰ytet‰‰n virheilmoitus
 
 ---
 
@@ -55,7 +55,29 @@
 
 ### Form_LukituskaavioLinkit.cls
 
-- **O(N¬≤) ‚Üí O(N) suorituskykyjkorjaus ‚Äî `Command0_Click`:** Sis√§kk√§inen `Do Until tbl.EOF` -silmukka (1&nbsp;000&nbsp;√ó&nbsp;1&nbsp;000 = 1&nbsp;000&nbsp;000 vertailua) korvattu `tbl.FindFirst`-kutsulla (1&nbsp;000 hakua) ‚Äî suorituskyky kasvaa eksponentiaalisesti suurilla tietom√§√§rill√§
-- **Avaustyyppi eksplisiittiseksi:** `InterlockingLinkPage` avattu `dbOpenSnapshot`-tilassa (ei muokkausta ‚Üí nopeampi); `IntLinkPage` avattu `dbOpenDynaset`-tilassa (muokkaus vaaditaan)
-- **Null-turvallinen tyhjyystarkistus:** `tbl!page1 = ""` korvattu `Nz(tbl!page1, "") = ""` ‚Äî Null-arvo ei en√§√§ aiheuta Type Mismatch -virhett√§
-- **SQL-sanitointi FindFirst-kutsussa:** `qry!TXT1` sanitoitu `Replace(..., "'", "''")` ‚Äî heittomerkki TXT1-kent√§ss√§ ei kaada FindFirst-hakua
+- **O(N≤) ? O(N) suorituskykyjkorjaus - `Command0_Click`:** Sis‰kk‰inen `Do Until tbl.EOF` -silmukka (1&nbsp;000&nbsp;◊&nbsp;1&nbsp;000 = 1&nbsp;000&nbsp;000 vertailua) korvattu `tbl.FindFirst`-kutsulla (1&nbsp;000 hakua) - suorituskyky kasvaa eksponentiaalisesti suurilla tietom‰‰rill‰
+- **Avaustyyppi eksplisiittiseksi:** `InterlockingLinkPage` avattu `dbOpenSnapshot`-tilassa (ei muokkausta ? nopeampi); `IntLinkPage` avattu `dbOpenDynaset`-tilassa (muokkaus vaaditaan)
+- **Null-turvallinen tyhjyystarkistus:** `tbl!page1 = ""` korvattu `Nz(tbl!page1, "") = ""` - Null-arvo ei en‰‰ aiheuta Type Mismatch -virhett‰
+- **SQL-sanitointi FindFirst-kutsussa:** `qry!TXT1` sanitoitu `Replace(..., "'", "''")` - heittomerkki TXT1-kent‰ss‰ ei kaada FindFirst-hakua
+
+---
+
+## Viimeistely ñ 2026-11-09
+
+**Tiedosto:** `Access/FunctionDiagrams/` (VBA-l‰hdemoduulit)
+**P‰iv‰m‰‰r‰:** 2026-11-09
+
+### Kriittiset muutokset
+
+- K‰ytt‰j‰ vahvisti edelt‰v‰n toiminnallisuustestin onnistuneeksi ennen viimeistely‰.
+- `General.bas` s‰ilytt‰‰ 32- ja 64-bittisen `OPENFILENAME`-rakenteen. K‰ytt‰m‰tˆn `wu_GetUserName`-julistus poistettiin; k‰ytˆss‰ oleva k‰ytt‰j‰nimen haku on `USysCheck.bas`-moduulissa.
+- Toiminnalliseen VBA-logiikkaan ei tehty uusia muutoksia t‰ss‰ viimeistelyvaiheessa.
+
+### Siivous ja optimointi
+
+- Poistettiin `General.bas`-moduulin viitteettˆm‰t `Set_last`, `Show_last` ja `Show_last_criteria` -funktiot sek‰ niihin liittyv‰t muuttujat.
+- Poistettiin `For ACAD Utility.bas`, jonka tyyppeihin, muuttujaan ja API-kutsuun ei lˆytynyt viittauksia FunctionDiagrams-l‰hteist‰.
+- Poistettiin revisiosivujen luontiin j‰‰neet vanhat kommentoidut koodilohkot ja kommentoidut k‰ytt‰m‰ttˆm‰t deklaroinnit.
+- Suomennettiin VBA:n diagnostiikkalokit ja korjattiin tarkastuksessa havaitut kommenttien kirjoitusasu- ja koodausvirheet.
+- `Form_FUNC`-lomakkeen tyhj‰ `FBlock_DblClick`-tapahtumank‰sittelij‰ s‰ilytettiin, koska lomake voi olla sidottu siihen.
+- Staattisesti tarkistettiin proseduurien ja ehdollisten k‰‰nnˆslohkojen paritasapaino, cp1252-koodauksen s‰ilyminen sek‰ 32-bittisten `#Else`-haarojen API-julistukset. Access-k‰‰nnˆst‰ ei voitu ajaa t‰ss‰ ymp‰ristˆss‰.

@@ -1,14 +1,14 @@
-# Access/FunctionDiagrams & Function_descriptions_html ‚Äî Phase 3 Viimeistely
+# Access/FunctionDiagrams & Function_descriptions_html - Phase 3 Viimeistely
 
 **Tiedosto:** Access/FunctionDiagrams, Access/Function_descriptions_html  
-**P√§iv√§m√§√§r√§:** 2026-03-09  
-**Tekij√§:** GitHub Copilot ‚Äî 64-bit migraatioagentti
+**P‰iv‰m‰‰r‰:** 2026-03-09  
+**Tekij‰:** GitHub Copilot - 64-bit migraatioagentti
 
 ---
 
 ## Kriittiset muutokset
 
-_Ei kriittisi√§ 32-bit/driver-ongelmia l√∂ytynyt._
+_Ei kriittisi‰ 32-bit/driver-ongelmia lˆytynyt._
 
 ---
 
@@ -16,20 +16,20 @@ _Ei kriittisi√§ 32-bit/driver-ongelmia l√∂ytynyt._
 
 ### FunctionDiagrams
 
-- **`Form_Funktiokaavio.cls`** ‚Äî Poistettu 8 rivi√§ vanhentunutta kommentoitua koodia, joka viittasi poistuneeseen `api_GetUserName`-API-kutsuun. Korvaus (`Me!RevBy`) on jo k√§yt√∂ss√§.
+- **`Form_Funktiokaavio.cls`** - Poistettu 8 rivi‰ vanhentunutta kommentoitua koodia, joka viittasi poistuneeseen `api_GetUserName`-API-kutsuun. Korvaus (`Me!RevBy`) on jo k‰ytˆss‰.
 
-- **`Form_Lis√§√§Kuviin_ACAD.cls`** ‚Äî Poistettu tyhj√§ tapahtumank√§sittelij√§ `Private Sub TTitleBlokki_BeforeUpdate(Cancel As Integer)`.
+- **`Form_Lis‰‰Kuviin_ACAD.cls`** - Poistettu tyhj‰ tapahtumank‰sittelij‰ `Private Sub TTitleBlokki_BeforeUpdate(Cancel As Integer)`.
 
-- **`Form_FuncBlock.cls`**, **`Form_Linkkien vaihto.cls`**, **`Form_Sub_RECIPES.cls`**, **`USysCheck.bas`**: analysoitu ‚Äî DAO-cleanup (`Set x = Nothing`) l√∂ytyy oikein, ei muutoksia tarvittu.
+- **`Form_FuncBlock.cls`**, **`Form_Linkkien vaihto.cls`**, **`Form_Sub_RECIPES.cls`**, **`USysCheck.bas`**: analysoitu - DAO-cleanup (`Set x = Nothing`) lˆytyy oikein, ei muutoksia tarvittu.
 
 ### Function_descriptions_html
 
-- **`GeneralCodes.bas`** ‚Äî Lis√§tty defensiivinen `oTaulu`-cleanup `MuutaRev`-funktion alkuun: jos julkinen `oTaulu`-tietue on jo auki, se suljetaan ja vapautetaan ennen uuden avaamista. T√§m√§ est√§√§ muistivuodon kun funktiota kutsutaan useita kertoja.
+- **`GeneralCodes.bas`** - Lis‰tty defensiivinen `oTaulu`-cleanup `MuutaRev`-funktion alkuun: jos julkinen `oTaulu`-tietue on jo auki, se suljetaan ja vapautetaan ennen uuden avaamista. T‰m‰ est‰‰ muistivuodon kun funktiota kutsutaan useita kertoja.
 
 ---
 
 ## Huomiot
 
-- `Form_FUNC.cls`: `FBlock_DblClick` on tahallaan tyhj√§ ja dokumentoitu ‚Äî varattuna tulevaa toiminnallisuutta varten. Ei poistettu.
-- `Form_FrmASETUKSET.cls`, `Form_FrmMUOKKAUS.cls`, `Form_MOTORS subform.cls`, `Form_PIIRIT subform.cls`: analysoitu ‚Äî ei merkitt√§vi√§ ongelmia.
-- `KAANNOS.bas`, `USysCheck.bas` (Function_descriptions_html): analysoitu ‚Äî ei muutoksia tarvittu.
+- `Form_FUNC.cls`: `FBlock_DblClick` on tahallaan tyhj‰ ja dokumentoitu - varattuna tulevaa toiminnallisuutta varten. Ei poistettu.
+- `Form_FrmASETUKSET.cls`, `Form_FrmMUOKKAUS.cls`, `Form_MOTORS subform.cls`, `Form_PIIRIT subform.cls`: analysoitu - ei merkitt‰vi‰ ongelmia.
+- `KAANNOS.bas`, `USysCheck.bas` (Function_descriptions_html): analysoitu - ei muutoksia tarvittu.

@@ -2,26 +2,28 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE   : Form_DBUsers
-' SOVELLUS : FunctionDiagrams ‚Äî K√§ytt√§j√§seuranta
-' KUVAUS   : N√§ytt√§√§ kaikki aktiiviset k√§ytt√§j√§t lukemalla .LACCDB-
+' SOVELLUS : FunctionDiagrams - K‰ytt‰j‰seuranta
+' KUVAUS   : N‰ytt‰‰ kaikki aktiiviset k‰ytt‰j‰t lukemalla .LACCDB-
 '            tiedoston WhosOn()-funktiolla. Tiedosto on 64-tavuinen
-'            binaaritietue: koneen nimi tavuissa 1‚Äì32, k√§ytt√§j√§nimi 33‚Äì64.
-'            Lomake mahdollistaa my√∂s viestin l√§hett√§misen yksitt√§iselle
-'            k√§ytt√§j√§lle Shell-komennon kautta.
-' DIPLE    : InputBox-kirjoitusasun korjaus; dbCurrent.Close ‚Üí Set = Nothing.
-' P√ÑIVITETTY: 2026-03-03
+'            binaaritietue: koneen nimi tavuissa 1ñ32, k‰ytt‰j‰nimi 33ñ64.
+'            Lomake mahdollistaa myˆs viestin l‰hett‰misen yksitt‰iselle
+'            k‰ytt‰j‰lle Shell-komennon kautta.
+' HUOM    : InputBox-kirjoitusasun korjaus; dbCurrent.Close korvattu Set = Nothing.
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
-' Tietuem√§√§ritys LACCDB-tiedoston 64-tavuisen tietueen lukemiseen
+' Tietuem‰‰ritys LACCDB-tiedoston 64-tavuisen tietueen lukemiseen
 Private Type UserRec
-   bMach(1 To 32) As Byte  ' Koneen nimi (tavut 1‚Äì32)
-   bUser(1 To 32) As Byte  ' K√§ytt√§j√§nimi (tavut 33‚Äì64)
+   bMach(1 To 32) As Byte  ' Koneen nimi (tavut 1ñ32)
+   bUser(1 To 32) As Byte  ' K‰ytt‰j‰nimi (tavut 33ñ64)
 End Type
 Private Sub Command27_Click()
 Dim Viesti As String
-  ' L√§hetet√§√§n viesti valitulle verkkok√§ytt√§j√§lle net send -komennolla
+  ' L‰hetet‰‰n viesti valitulle verkkok‰ytt‰j‰lle net send -komennolla
   Viesti = InputBox("Send message to user " & NetworkName.Value & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & vbCrLf & "Give message:", "Send message")
   If Viesti <> "" Then
+    ' Lainausmerkit korvataan, jotta viesti ei riko komentorivi‰
+    Viesti = Replace(Viesti, """", "'")
     Call Shell("net send " & NetworkName.Value & " """ & Viesti & """")
   End If
 End Sub
@@ -44,68 +46,85 @@ Private Sub UpdateBtn_Click()
 End Sub
 
 '--------------------------------------------------------------------------
-' WhosOn() ‚Äî Lukee aktiivisen .LACCDB-tiedoston ja palauttaa
-' puolipisteell√§ eroteltujen "KoneNimi -- K√§ytt√§j√§Nimi" -parien listan.
-' LACCDB-tietue on 64 tavua: koneen nimi tavuissa 1‚Äì32, k√§ytt√§j√§nimi 33‚Äì64.
-'--------------------------------------------------------------------------
+' WhosOn() ó Lukee aktiivisen .LACCDB-tiedoston ja palauttaa
+' puolipisteell‰ eroteltujen "KoneNimi -- K‰ytt‰j‰Nimi" -parien listan.
+' LACCDB-tietue on 64 tavua: koneen nimi tavuissa 1ñ32, k‰ytt‰j‰nimi 33ñ64.
+' Luetaan nykyisen tietokannan lukitustiedoston kone- ja k‰ytt‰j‰tiedot.
 Private Function WhosOn() As String
+  Dim Tiedosto As Integer
+  Dim TiedostoAuki As Boolean
+  Dim Tietueita As Long
+  Dim TietueNro As Long
+  Dim i As Long
+  Dim PaatePos As Long
+  Dim Polku As String
+  Dim Paate As String
+  Dim Kone As String
+  Dim Kayttaja As String
+  Dim Rivi As String
+  Dim Kirjautumiset As String
+  Dim Virhekuvaus As String
+  Dim Tietue As UserRec
+  Dim DB As DAO.Database
 
-On Error GoTo Err_WhosOn
+  On Error GoTo Virhe
 
-   Dim iLDBFile As Integer
-   Dim i As Integer
-   Dim SPath As String
-   Dim sLogStr As String, sLogins As String
-   Dim sMach As String, sUser As String
-   Dim rUser As UserRec    ' Defined in General
-   Dim dbCurrent As DAO.Database
+  Set DB = CurrentDb
+  Polku = DB.Name
+  PaatePos = InStrRev(Polku, ".")
+  If PaatePos <= InStrRev(Polku, "\") Then
+    Err.Raise vbObjectError + 1000, "WhosOn", "Tietokannan tiedostop‰‰te puuttuu."
+  End If
 
-   ' Nykyisen tietokannan polku LACCDB-tiedoston etsint√§√§n
-   Set dbCurrent = CurrentDb
-   SPath = dbCurrent.Name
-   Set dbCurrent = Nothing
+  Paate = LCase$(Mid$(Polku, PaatePos + 1))
+  Select Case Paate
+    Case "mdb", "mde"
+      Polku = Left$(Polku, PaatePos) & "ldb"
+    Case "accdb", "accde", "accdr"
+      Polku = Left$(Polku, PaatePos) & "laccdb"
+    Case Else
+      Err.Raise vbObjectError + 1001, "WhosOn", "Tuntematon tietokannan tiedostop‰‰te: " & Paate
+  End Select
 
-   ' Muodostetaan LACCDB-tiedostopolku (.accdb ‚Üí .LACCDB)
-   SPath = Left$(SPath, InStr(1, SPath, ".")) + "LACCDB"
+  Tiedosto = FreeFile
+  Open Polku For Binary Access Read Shared As #Tiedosto
+  TiedostoAuki = True
+  If LOF(Tiedosto) Mod 64 <> 0 Then
+    Err.Raise vbObjectError + 1002, "WhosOn", "Lukitustiedoston koko ei vastaa 64 tavun tietueita."
+  End If
+  Tietueita = LOF(Tiedosto) \ 64
 
-   iLDBFile = FreeFile
+  For TietueNro = 1 To Tietueita
+    Get #Tiedosto, , Tietue
+    Kone = ""
+    Kayttaja = ""
+    For i = 1 To 32
+      If Tietue.bMach(i) = 0 Then Exit For
+      Kone = Kone & Chr$(Tietue.bMach(i))
+    Next i
+    For i = 1 To 32
+      If Tietue.bUser(i) = 0 Then Exit For
+      Kayttaja = Kayttaja & Chr$(Tietue.bUser(i))
+    Next i
+    Rivi = Kone & " -- " & Kayttaja
+    If InStr(1, ";" & Kirjautumiset, ";" & Rivi & ";", vbTextCompare) = 0 Then
+      Kirjautumiset = Kirjautumiset & Rivi & ";"
+    End If
+  Next TietueNro
 
-   Open SPath For Binary Access Read Shared As iLDBFile
-   Do While Not EOF(iLDBFile)
-      Get iLDBFile, , rUser
-      With rUser
-         i = 1
-         sMach = ""
-         While .bMach(i) <> 0
-            sMach = sMach & Chr(.bMach(i))
-            i = i + 1
-         Wend
-         i = 1
-         sUser = ""
-         While .bUser(i) <> 0
-            sUser = sUser & Chr(.bUser(i))
-            i = i + 1
-         Wend
-      End With
-      sLogStr = sMach & " -- " & sUser
-      If InStr(sLogins, sLogStr) = 0 Then
-         sLogins = sLogins & sLogStr & ";"
-      End If
-   Loop
-   Close iLDBFile
-   WhosOn = sLogins
+  Close #Tiedosto
+  TiedostoAuki = False
+  Set DB = Nothing
+  WhosOn = Kirjautumiset
+  Exit Function
 
-Exit_WhosOn:
-   Exit Function
-
-Err_WhosOn:
-   If Err = 68 Then
-      MsgBox "LACCDB-tiedostoa ei l√∂ytynyt", 48, "Kirjautuneet k√§ytt√§j√§t"
-   Else
-      MsgBox "Virhe " & Err.Number & vbCrLf & Err.Description
-      Close iLDBFile
-   End If
-   Resume Exit_WhosOn
-
+Virhe:
+  Virhekuvaus = Err.Description
+  If TiedostoAuki Then
+    On Error Resume Next
+    Close #Tiedosto
+    On Error GoTo 0
+  End If
+  Set DB = Nothing
+  MsgBox "K‰ytt‰j‰listan lukeminen ep‰onnistui: " & Virhekuvaus, vbExclamation, "K‰ytt‰j‰lista"
 End Function
-

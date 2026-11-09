@@ -6,7 +6,7 @@ Option Explicit
 ' KUVAUS   : Funktiokaavion FUNC-alilomake. Sisältää FBlock_DblClick-
 '            tapahtumankäsittelijän, joka on varattuna tulevaa
 '            toiminnallisuutta varten.
-' DIPLE    : Option Explicit lisätty.
+' HUOM    : Option Explicit lisätty.
 ' PÄIVITETTY: 2026-03-03
 '==========================================================================
 

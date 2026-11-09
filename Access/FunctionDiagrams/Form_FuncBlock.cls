@@ -8,8 +8,8 @@ Option Explicit
 '            uuden arvon FunBlockAttr-tauluun. NEWVALUE_Enter ja
 '            SelectValue_Enter päivittävät listalaatikon lähteen attribuutin
 '            tyypin mukaan (FTAGI, REFFROM, REFTO tai yleinen arvo).
-' DIPLE    : Option Explicit; Set Taulu/DB = Nothing muistivuodon ehkäisyyn.
-' PÄIVITETTY: 2026-03-03  
+' HUOM     : DAO-oliot vapautetaan sekä onnistumis- että virhepolulla.
+' PÄIVITETTY: 2026-11-09
 '==========================================================================
 
 Private Sub NEWVALUE_DblClick(Cancel As Integer)
@@ -24,8 +24,15 @@ Dim tagi As String
 Dim taginarvo As String
 Dim tagiid As String
 
+On Error GoTo Virhe
+If IsNull(Me!NEWVALUE) Then
+  MsgBox "Anna ensin uusi arvo.", vbExclamation
+  Exit Sub
+End If
+
 Set DB = CurrentDb
-Set Taulu = DB.OpenRecordset("FunBlockAttr", dbOpenTable)
+' dbOpenDynaset: dbOpenTable ei toimi linkitetylle taululle
+Set Taulu = DB.OpenRecordset("FunBlockAttr", dbOpenDynaset)
 Blokki = Me!BLOCK
 tagi = Me!Atag
 taginarvo = Me!NEWVALUE
@@ -49,16 +56,26 @@ Taulu.Update
 Me.Requery
 
 ' Vapautetaan DAO-resurssit muistivuodon ehkäisemiseksi
+Taulu.Close
 Set Taulu = Nothing
 Set DB = Nothing
 
 MsgBox "Uusi arvo lisätty"
 
+Exit Sub
+
+Virhe:
+  Debug.Print "*** VIRHE NEWVALUE_DblClick: " & Err.Number & " - " & Err.Description
+  MsgBox "Virhe uuden arvon tallennuksessa: " & Err.Description, vbCritical
+  On Error Resume Next
+  If Not Taulu Is Nothing Then Taulu.Close
+  Set Taulu = Nothing
+  Set DB = Nothing
 End Sub
 
 Private Sub NEWVALUE_Enter()
   Dim sAtag As String
-  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion estämiseksi
+  sAtag = Replace(Nz(Atag, ""), "'", "''")  ' Heittomerkit kaksinkertaistetaan dynaamista SQL-ehtoa varten
   If UCase$(Left$(sAtag, 5)) = "FTAGI" Then
       NEWVALUE.RowSource = "SELECT POS FROM POS_List;"
   ElseIf UCase$(Left$(sAtag, 7)) = "REFFROM" Or UCase$(Left$(sAtag, 5)) = "REFTO" Then
@@ -80,9 +97,9 @@ Dim tagi As String
 Dim Sfx As String
 Dim sAtag As String
 
-  sAtag = Replace(Atag, "'", "''")  ' Suojataan heittomerkki SQL-injektion estämiseksi
+  sAtag = Replace(Nz(Atag, ""), "'", "''")  ' Heittomerkit kaksinkertaistetaan dynaamista SQL-ehtoa varten
   SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
-  If UCase$(Atag) = "RANGE" Then
+  If UCase$(Nz(Atag, "")) = "RANGE" Then
       ALUE   = Replace(Me.Parent.Parent.AreaCode, "'", "''")
       looppi = Replace(Me.Parent.Parent.LoopNo,   "'", "''")
       tagi = "T" ' Käytetään kiinteää T-tunnistetyyppiä alueeseen sidotuissa hauissa
@@ -93,12 +110,12 @@ Dim sAtag As String
       SelectValue.RowSource = "SELECT LRange & '-' & URange & EngUnits as RANGE From Devtable WHERE AreaCOde = '" & ALUE & "' AND TagID = '" & tagi & "' AND LoopNo = '" & looppi & "' AND  Suffix = '" & Sfx & "';"
       SelectValue.ColumnWidths = ""
     
-  ElseIf UCase$(Left$(Atag, 5)) = "FTAGI" Then
+  ElseIf UCase$(Left$(Nz(Atag, ""), 5)) = "FTAGI" Then
       SelectValue.BoundColumn = 2
       SelectValue.ColumnCount = 2
       SelectValue.RowSource = "SELECT Number, POS FROM POS_List;"
       SelectValue.ColumnWidths = "567;1701"
-  ElseIf UCase$(Left$(Atag, 7)) = "REFFROM" Or UCase$(Left$(Atag, 5)) = "REFTO" Then
+  ElseIf UCase$(Left$(Nz(Atag, ""), 7)) = "REFFROM" Or UCase$(Left$(Nz(Atag, ""), 5)) = "REFTO" Then
       SelectValue.BoundColumn = 1
       SelectValue.ColumnCount = 1
       SelectValue.RowSource = "SELECT FunBlockAttr.Value FROM FunBlockAttr GROUP BY FunBlockAttr.Value, FunBlockAttr.Atag HAVING (((FunBlockAttr.Atag) Like 'REFTO*'));"

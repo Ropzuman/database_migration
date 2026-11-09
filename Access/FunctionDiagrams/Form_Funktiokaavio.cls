@@ -2,17 +2,17 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' LOMAKE    : Form_Funktiokaavio
-' SOVELLUS : FunctionDiagrams ‚Äì Funktiokaavion p√§√§lomake
-' KUVAUS    : P√§√§lomake funktio- ja moottoripiirustusj√§rjestelm√§lle.
+' SOVELLUS : FunctionDiagrams - Funktiokaavion p‰‰lomake
+' KUVAUS    : P‰‰lomake funktio- ja moottoripiirustusj‰rjestelm‰lle.
 '            Hallinnoi revisioita (ADDNEWREV), ohjausrivilistauksia
-'            (Command50, Komento47), reseptej√§ (Komento67, Komento80,
-'            Command83) sek√§ AutoCAD-indeksisivujen luontia (Command98,
-'            CommandJANI). Lukituskaavioiden sivutiedot p√§ivitet√§√§n
-'            Intpage-tauluun (Komento46). N√§kym√§nvaihtot MOTORS/LOOPS
-'            (Komento57, Komento58) s√§√§delt√§v√§t RecordSource-kytkinn√§ll√§.
-' DIPLE     : Option Explicit; Late Binding kaikissa olioissa ja MsgBox-
+'            (Command50, Komento47), reseptej‰ (Komento67, Komento80,
+'            Command83) sek‰ AutoCAD-indeksisivujen luontia (Command98,
+'            Lukituskaavioiden sivutiedot p‰ivitet‰‰n
+'            Intpage-tauluun (Komento46). N‰kym‰nvaihtot MOTORS/LOOPS
+'            (Komento57, Komento58) s‰‰delt‰v‰t RecordSource-kytkinn‰ll‰.
+' HUOM     : Option Explicit; Late Binding kaikissa olioissa ja MsgBox-
 '            vakioissa (ei riippuvuuksia ulkoisista kirjastoista).
-' P√ÑIVITETTY: 2026-09-23 (MsgBox-vakiot korvattu numeerisilla arvoilla)
+' PƒIVITETTY: 2026-09-23 (MsgBox-vakiot korvattu numeerisilla arvoilla)
 '==========================================================================
 
 ' AutoCAD-yhteys ja aktiivinen piirustus (late binding, 64-bit yhteens.)
@@ -25,7 +25,7 @@ Private SavePath As String
 
 Private Sub ADDNEWREV_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "ADDNEWREV_Click: Starting operation"
+    Debug.Print "ADDNEWREV_Click: Toiminto alkaa"
     Dim DB As Object
     Dim Taulu As Object
     
@@ -40,7 +40,7 @@ On Error GoTo ErrorHandler
     Dim revteki As String
 
     Set DB = CurrentDb
-    Debug.Print "  Database connection established"
+    Debug.Print "  Tietokantayhteys avattu"
 
     revteki = Nz(Me!RevBy.Value, "")
     urev = Nz(Me!NEWREV.Value, "")
@@ -53,18 +53,18 @@ On Error GoTo ErrorHandler
     vuosi = Year(Date)
     revpaiva = paiva & "." & kk & "." & vuosi
 
-    Debug.Print "  NewRev: " & urev & ", Area: " & ALUE & ", LoopNo: " & LooppiNo
+    Debug.Print "  Uusi revisio: " & urev & ", Alue: " & ALUE & ", Silmukkanumero: " & LooppiNo
 
     If Me!FReV = urev Then
-        Debug.Print "  WARNING: Revision already exists: " & urev
+        Debug.Print "  VAROITUS: Revisio on jo olemassa: " & urev
         ' 0 = vbOKOnly
         MsgBox "Uusi revisio on jo olemassa!", 0
         GoTo CleanExit
     End If
 
-    ' 1 = dbOpenTable
-    Set Taulu = DB.OpenRecordset("rev", 1)
-    Debug.Print "  Adding new revision to 'rev' table"
+    ' 2 = dbOpenDynaset (dbOpenTable ei toimi linkitetylle taululle)
+    Set Taulu = DB.OpenRecordset("rev", 2)
+    Debug.Print "  Lis‰t‰‰n uusi revisio rev-tauluun"
     
     Taulu.AddNew
     Taulu.Fields("Area") = ALUE
@@ -76,10 +76,10 @@ On Error GoTo ErrorHandler
     Taulu.Fields("doctype") = "F"
     Taulu.Fields("revdesc") = Nz(Me!RevDesc.Value, "")
     Taulu.Update
-    Debug.Print "  Revision record updated successfully"
+    Debug.Print "  Revisiotietue p‰ivitetty onnistuneesti"
 
     Me!FReV = urev
-    Debug.Print "ADDNEWREV_Click: COMPLETED successfully"
+    Debug.Print "ADDNEWREV_Click: VALMIS onnistuneesti"
 
 CleanExit:
     If Not Taulu Is Nothing Then
@@ -90,27 +90,27 @@ CleanExit:
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in ADDNEWREV_Click: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Area: " & ALUE & ", LoopNo: " & LooppiNo & ", NewRev: " & urev
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    Debug.Print "*** VIRHE aliohjelmassa ADDNEWREV_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    Alue: " & ALUE & ", Silmukkanumero: " & LooppiNo & ", Uusi revisio: " & urev
+    Debug.Print "    L‰hde: " & Err.Source & ", Rivi: " & Erl
     ' 16 = vbCritical
-    MsgBox "Virhe revision lis√§yksess√§: " & Err.Description, 16
+    MsgBox "Virhe revision lis‰yksess‰: " & Err.Description, 16
     Resume CleanExit
 End Sub
 Private Sub Command50_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Command50_Click: Starting control update operation"
+    Debug.Print "Command50_Click: Ohjaustietojen p‰ivitys alkaa"
 
     Dim sAreaCode As String, sLoopNo As String, sTagID As String, sSivu As String, sUser As String
     Dim strWhere As String, strSQL As String
     Dim DB As Object
 
-    ' 1. Luetaan arvot lomakkeen kentist√§
+    ' 1. Luetaan arvot lomakkeen kentist‰
     sAreaCode = Replace(CStr(Nz(Me!Muokkaus0.Value, "")), "'", "''")
     sLoopNo = Replace(CStr(Nz(Me!Muokkaus4.Value, "")), "'", "''")
     sTagID = Replace(CStr(Nz(Me!Muokkaus3.Value, "")), "'", "''")
     
-    ' Luetaan KAYTTAJA()-funktion koko paluuarvo (t√§sm√§√§ Funtitle_Func HAVING-ehdon kanssa!)
+    ' Luetaan KAYTTAJA()-funktion koko paluuarvo (t‰sm‰‰ Funtitle_Func HAVING-ehdon kanssa!)
     sUser = Replace(CStr(KAYTTAJA()), "'", "''")
 
     ' Luetaan sivunumero
@@ -120,15 +120,15 @@ On Error GoTo ErrorHandler
     If sSivu = "" Then sSivu = Replace(CStr(Nz(Me!Muokkaus5.Value, "")), "'", "''")
     On Error GoTo ErrorHandler
 
-    Debug.Print "  AreaCode: " & sAreaCode & ", LoopNo: " & sLoopNo & ", TagID: " & sTagID & ", Sivu: " & sSivu & ", User: " & sUser
+    Debug.Print "  Aluetunnus: " & sAreaCode & ", Silmukkanumero: " & sLoopNo & ", Tagitunnus: " & sTagID & ", Sivu: " & sSivu & ", K‰ytt‰j‰: " & sUser
 
-    ' 2. Suoritetaan vanhojen valintojen poisto kyselyll√§ (Control_Poistatulostus)
+    ' 2. Suoritetaan vanhojen valintojen poisto kyselyll‰ (Control_Poistatulostus)
     DoCmd.SetWarnings False
     DoCmd.OpenQuery "Control_Poistatulostus"
     DoCmd.SetWarnings True
 
     ' 3. Muodostetaan Hakuehto.
-    ' Jos sivunumero on lomakkeella, rajataan p√§ivitys vain auki olevaan sivuun!
+    ' Jos sivunumero on lomakkeella, rajataan p‰ivitys vain auki olevaan sivuun!
     strWhere = "AreaCode = '" & sAreaCode & "' AND LoopNo = '" & sLoopNo & "' AND TagID = '" & sTagID & "'"
     If sSivu <> "" Then
         strWhere = strWhere & " AND Sivu = '" & sSivu & "'"
@@ -140,64 +140,73 @@ On Error GoTo ErrorHandler
     Set DB = CurrentDb
     DB.Execute strSQL, 128
 
-    Debug.Print "  Control table updated with '" & sUser & "', Affected records: " & DB.RecordsAffected
+    Debug.Print "  Ohjaustauluun p‰ivitettiin k‰ytt‰j‰ '" & sUser & "', p‰ivitetyt tietueet: " & DB.RecordsAffected
 
-    ' Virkistet√§√§n v√§limuisti ja lomake
+    ' Virkistet‰‰n v‰limuisti ja lomake
     DBEngine.Idle 8
     Set DB = Nothing
     Me.Refresh
 
-    Debug.Print "Command50_Click: COMPLETED successfully"
+    Debug.Print "Command50_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
     DoCmd.SetWarnings True
-    Debug.Print "*** ERROR in Command50_Click: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    Debug.Print "*** VIRHE aliohjelmassa Command50_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    L‰hde: " & Err.Source & ", Rivi: " & Erl
     Set DB = Nothing
-    MsgBox "Virhe ohjausrivin p√§ivityksess√§: " & Err.Description, 16
+    MsgBox "Virhe ohjausrivin p‰ivityksess‰: " & Err.Description, 16
 End Sub
 
 Private Sub Command83_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Command83_Click: Starting recipe update operation"
+    Debug.Print "Command83_Click: Reseptin p‰ivitys alkaa"
     Dim Vastaus As Integer
     Dim strPrompt As String
+    Dim Transaktio As Boolean
 
-    Debug.Print "  RecipeID: " & RECIPES.Form.ID
+    Debug.Print "  Reseptitunnus: " & RECIPES.Form.ID
     
-    strPrompt = "T√§m√§ p√§ivitt√§√§ reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireist√§, joille on m√§√§ritelty resepti?"
+    strPrompt = "T‰m‰ p‰ivitt‰‰ reseptin (ID=" & RECIPES.Form.ID & ")niille piireille, joissa on alla mainittu resepti." & vbCrLf & "Poistetaanko vanhat blokit piireist‰, joille on m‰‰ritelty resepti?"
     ' 3 = vbYesNoCancel
-    Vastaus = MsgBox(strPrompt, 3, "P√ÑIVIT√Ñ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
+    Vastaus = MsgBox(strPrompt, 3, "PƒIVITƒ VALITTU RESEPTI KAIKKIIN PIIREIHIN")
     
+    ' Poisto ja lis‰ys tehd‰‰n samassa transaktiossa, ettei virhe j‰t‰ piirej‰ ilman blokkeja
+    If Vastaus <> 2 Then
+        DBEngine.BeginTrans
+        Transaktio = True
+    End If
     ' 6 = vbYes
     If Vastaus = 6 Then
-        Debug.Print "  Deleting old blocks from Control table"
+        Debug.Print "  Poistetaan vanhat blokit Control-taulusta"
         CurrentDb.Execute "DELETE * FROM Control where Recipeid = " & RECIPES.Form.ID, 128
     End If
     
     ' 2 = vbCancel
     If Vastaus <> 2 Then
-        Debug.Print "  Inserting recipe data into control table"
+        Debug.Print "  Lis‰t‰‰n reseptin tiedot Control-tauluun"
         CurrentDb.Execute "INSERT INTO control ( RecipeID, AreaCode, LoopNo, FBlock, LoopSymb, Suffix, BlockPlace, Description2, [Note], Sivu, Sivuja ) SELECT * FROM RECIPES_ADD_ID where RecipeID=" & RECIPES.Form.ID, 128
-        Debug.Print "  Recipe update completed"
+        DBEngine.CommitTrans
+        Transaktio = False
+        Debug.Print "  Reseptin p‰ivitys valmis"
         ' 0 = vbOKOnly
-        MsgBox "Piirit p√§ivitetty!", 0, "P√ÑIVIT√Ñ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
+        MsgBox "Piirit p‰ivitetty!", 0, "PƒIVITƒ VALITTU RESEPTI KAIKKIIN PIIREIHIN"
         Me.Refresh
     End If
-    Debug.Print "Command83_Click: COMPLETED successfully"
+    Debug.Print "Command83_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Command83_Click: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    Debug.Print "*** VIRHE aliohjelmassa Command83_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    L‰hde: " & Err.Source & ", Rivi: " & Erl
     ' 16 = vbCritical
-    MsgBox "Virhe reseptin p√§ivityksess√§: " & Err.Description, 16
+    If Transaktio Then DBEngine.Rollback: Transaktio = False
+    MsgBox "Virhe reseptin p‰ivityksess‰: " & Err.Description, 16
 End Sub
 
 Private Sub Command97_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Command97_Click: Starting link cleanup operation"
+    Debug.Print "Command97_Click: Linkkikyselyiden ajo alkaa"
     DoCmd.SetWarnings False
     DoCmd.OpenQuery "Delete tolink from FunckblockAttr"
     DoCmd.OpenQuery "Delete todesc from FunckblockAttr"
@@ -211,12 +220,12 @@ On Error GoTo ErrorHandler
     DoCmd.OpenQuery "TODESCADD"
     DoCmd.OpenQuery "FROMDESCADD"
     DoCmd.SetWarnings True
-    Debug.Print "Command97_Click: COMPLETED successfully - All link queries executed"
+    Debug.Print "Command97_Click: VALMIS onnistuneesti - All link queries executed"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Command97_Click: " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source & ", Line: " & Erl
+    Debug.Print "*** VIRHE aliohjelmassa Command97_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "    L‰hde: " & Err.Source & ", Rivi: " & Erl
     DoCmd.SetWarnings True
     ' 16 = vbCritical
     MsgBox "Virhe linkkikyselyjen ajossa: " & Err.Description, 16
@@ -224,12 +233,13 @@ End Sub
 
 Private Sub Command98_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Command98_Click: Starting index page creation (AutoCAD)"
+    Debug.Print "Command98_Click: Indeksisivujen luonti alkaa (AutoCAD)"
     Dim Taul As Object
     Dim edPOS As String
     Dim Sivut As String
     Dim IndexBase As String
     Dim edPiir As String
+    Dim viimPiir As String
     Dim Piste(2) As Double
     Dim Piste2(2) As Double
     Dim ind As Integer
@@ -242,12 +252,19 @@ On Error GoTo ErrorHandler
     Dim RiviVali As Double
     Dim TextSize As Double
 
-    IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
-    Debug.Print "  IndexBase: " & IndexBase
+    IndexBase = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'"), "")
+    If IndexBase = "" Then
+        ' 16 = vbCritical
+        MsgBox "INDEXBASE puuttuu SETTINGS-taulusta! Indeksisivuja ei voi luoda.", 16
+        Exit Sub
+    End If
+    Debug.Print "  Indeksipohja: " & IndexBase
     
-    BasePath = "Y:\base\int\"
+    ' Pohjakuvien hakemisto luetaan SETTINGS-taulusta, oletuksena aiempi kiinte‰ polku
+    BasePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXPATH'"), "Y:\base\int\")
+    If Right$(BasePath, 1) <> "\" Then BasePath = BasePath & "\"
     SavePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'SAVEPATH'"), "")
-    Debug.Print "  BasePath: " & BasePath & "  SavePath: " & SavePath
+    Debug.Print "  Pohjapolku: " & BasePath & "  tallennuspolku: " & SavePath
     
     If SavePath = "" Then
         ' 16 = vbCritical
@@ -256,11 +273,11 @@ On Error GoTo ErrorHandler
     End If
     
     Set oAcad = GetObject(, "AutoCAD.Application")
-    Debug.Print "  AutoCAD connection established"
+    Debug.Print "  AutoCAD-yhteys avattu"
     
     Set Taul = CurrentDb.OpenRecordset("Funtitle_Func")
     Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
-    Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
+    Debug.Print "  Pohjapiirustus avattu: " & BasePath & IndexBase & ".dwg"
 
     aX = 30
     aY = 285
@@ -276,8 +293,9 @@ On Error GoTo ErrorHandler
     Piste2(0) = aX + PosSivu
     Piste2(1) = aY
 
-    Debug.Print "  Processing records..."
+    Debug.Print "  K‰sitell‰‰n tietueita..."
     Do While Not Taul.EOF
+        viimPiir = Nz(Taul.Fields("Piir"), "")
         If edPOS <> Taul.Fields("position") Then
             If Sivut <> "" Then
                 If Piste(1) = aY Then
@@ -323,11 +341,14 @@ On Error GoTo ErrorHandler
     
     oDoc.ModelSpace.AddText edPOS, Piste, TextSize
     oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
+    ' Viimeisen sivun nimeen k‰ytet‰‰n viimeisen rivin piiri‰
+    If viimPiir <> edPiir Then ind = 0
     ind = ind + 1
-    Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
-    oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
+    Debug.Print "  Tallennetaan indeksisivu: " & SavePath & viimPiir & "_IDX_" & ind
+    oDoc.SaveAs SavePath & viimPiir & "_IDX_" & ind
+    oDoc.Close
     
-    Debug.Print "Command98_Click: COMPLETED successfully - Index pages created"
+    Debug.Print "Command98_Click: VALMIS onnistuneesti - indeksisivut luotu"
     MsgBox "Valmis"
 
 CleanExit:
@@ -340,7 +361,7 @@ CleanExit:
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Command98_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Command98_Click: " & Err.Number & " - " & Err.Description
     ' 16 = vbCritical
     MsgBox "Virhe indeksisivujen luonnissa: " & Err.Description, 16
     Resume CleanExit
@@ -348,7 +369,7 @@ End Sub
 
 Private Sub Komento46_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento46_Click: Starting interlocking page update"
+    Debug.Print "Komento46_Click: Lukituskaavion sivutietojen p‰ivitys alkaa"
     Dim DB As DAO.Database
     Dim Taul As DAO.Recordset
     Dim Intpage As DAO.Recordset
@@ -356,6 +377,7 @@ On Error GoTo ErrorHandler
     Dim NRO As String, Tyyppi As String
     Dim underscorePos As Integer
     Dim lSrc As Long, lOut As Long
+    Dim Transaktio As Boolean
 
     Set DB = CurrentDb
 
@@ -365,14 +387,16 @@ On Error GoTo ErrorHandler
         "GROUP BY DWG, TEXT_4, PAGE HAVING (TEXT_4<>'') ORDER BY TEXT_4, PAGE;", _
         dbOpenSnapshot)
     If Not Taul.EOF Then Taul.MoveLast: lSrc = Taul.RecordCount: Taul.MoveFirst
-    Debug.Print "  Source rows: " & lSrc
+    Debug.Print "  L‰hderivej‰: " & lSrc
 
     If lSrc = 0 Then
-        MsgBox "POSANDPAGES palautti 0 rivi√§ - Intpagea ei muutettu.", vbExclamation
+        MsgBox "POSANDPAGES palautti 0 rivi‰ - Intpagea ei muutettu.", vbExclamation
         GoTo CleanExit
     End If
 
-    ' 2) Only now clear the target
+    ' 2) Only now clear the target (tyhjennys ja t‰yttˆ samassa transaktiossa)
+    DBEngine.BeginTrans
+    Transaktio = True
     DB.Execute "DELETE * FROM Intpage", dbFailOnError
     Set Intpage = DB.OpenRecordset("Intpage", dbOpenDynaset)
 
@@ -396,11 +420,11 @@ On Error GoTo ErrorHandler
             NRO = PIIRI
         End If
 
-        If Nz(Intpage.Fields("Ensimm√§inenkohteestapage").Value, "") <> "" Then
-            Intpage.Fields("Ensimm√§inenkohteestapage").Value = _
-                Intpage.Fields("Ensimm√§inenkohteestapage").Value & "/" & Nz(Taul.Fields("PAGE").Value, "")
+        If Nz(Intpage.Fields("Ensimm‰inenkohteestapage").Value, "") <> "" Then
+            Intpage.Fields("Ensimm‰inenkohteestapage").Value = _
+                Intpage.Fields("Ensimm‰inenkohteestapage").Value & "/" & Nz(Taul.Fields("PAGE").Value, "")
         Else
-            Intpage.Fields("Ensimm√§inenkohteestapage").Value = Nz(Taul.Fields("PAGE").Value, "")
+            Intpage.Fields("Ensimm‰inenkohteestapage").Value = Nz(Taul.Fields("PAGE").Value, "")
         End If
 
         Intpage.Fields("PIIRNRO").Value = PIIR
@@ -410,11 +434,14 @@ On Error GoTo ErrorHandler
     Loop
 
     If EdLoop <> "" Then Intpage.Update: lOut = lOut + 1
+    Intpage.Close
+    DBEngine.CommitTrans
+    Transaktio = False
 
-    Debug.Print "  Intpage rows written: " & lOut & _
+    Debug.Print "  Intpage-tauluun kirjoitettuja rivej‰: " & lOut & _
                 ", rows now in table: " & DCount("*", "Intpage")
     DBEngine.Idle dbRefreshCache
-    MsgBox "Lukituskaavioiden sivutiedot p√§ivitetty Intpage taulukkoon (" & lOut & " rivi√§).", _
+    MsgBox "Lukituskaavioiden sivutiedot p‰ivitetty Intpage taulukkoon (" & lOut & " rivi‰).", _
            vbInformation, "Lukituskaavion sivut"
 
 CleanExit:
@@ -425,25 +452,26 @@ CleanExit:
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento46_Click: " & Err.Number & " - " & Err.Description
-    MsgBox "Virhe lukituskaaviosivujen p√§ivityksess√§: " & Err.Description, vbCritical
+    Debug.Print "*** VIRHE aliohjelmassa Komento46_Click: " & Err.Number & " - " & Err.Description
+    If Transaktio Then DBEngine.Rollback: Transaktio = False
+    MsgBox "Virhe lukituskaaviosivujen p‰ivityksess‰: " & Err.Description, vbCritical
     Resume CleanExit
 End Sub
 Private Sub Komento47_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento47_Click: Starting control print update"
+    Debug.Print "Komento47_Click: Ohjauslistauksen p‰ivitys alkaa"
     DoCmd.SetWarnings False
     DoCmd.OpenQuery "Control_Poistatulostus"
     DoCmd.OpenQuery "Control_Lisaa_tulostus"
     DoCmd.SetWarnings True
-    Debug.Print "Komento47_Click: COMPLETED successfully"
+    Debug.Print "Komento47_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento47_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Komento47_Click: " & Err.Number & " - " & Err.Description
     DoCmd.SetWarnings True
     ' 16 = vbCritical
-    MsgBox "Virhe tulostuslistauksen p√§ivityksess√§: " & Err.Description, 16
+    MsgBox "Virhe tulostuslistauksen p‰ivityksess‰: " & Err.Description, 16
 End Sub
 
 Private Sub hae_Click()
@@ -459,37 +487,37 @@ End Sub
 
 Private Sub Komento57_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento57_Click: Switching to MOTORS view"
+    Debug.Print "Komento57_Click: Vaihdetaan MOTORS-n‰kym‰‰n"
     LTITLE.Caption = "MOTORS"
     Me.RecordSource = "FuncDiag_Motors"
     Me.Requery
-    Debug.Print "Komento57_Click: COMPLETED successfully"
+    Debug.Print "Komento57_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento57_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Komento57_Click: " & Err.Number & " - " & Err.Description
     ' 16 = vbCritical
-    MsgBox "Virhe moottorin√§kym√§n avauksessa: " & Err.Description, 16
+    MsgBox "Virhe moottorin‰kym‰n avauksessa: " & Err.Description, 16
 End Sub
 
 Private Sub Komento58_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento58_Click: Switching to LOOPS view"
+    Debug.Print "Komento58_Click: Vaihdetaan LOOPS-n‰kym‰‰n"
     LTITLE.Caption = "LOOPS"
     Me.RecordSource = "FuncDiag_Loops"
     Me.Requery
-    Debug.Print "Komento58_Click: COMPLETED successfully"
+    Debug.Print "Komento58_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento58_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Komento58_Click: " & Err.Number & " - " & Err.Description
     ' 16 = vbCritical
-    MsgBox "Virhe piirin√§kym√§n avauksessa: " & Err.Description, 16
+    MsgBox "Virhe piirin‰kym‰n avauksessa: " & Err.Description, 16
 End Sub
 
 Private Sub Komento67_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento67_Click: Starting recipe creation from blocks"
+    Debug.Print "Komento67_Click: Reseptin luonti blokeista alkaa"
     Dim DB As Object
     Dim Taul As Object
     Dim RID As Long
@@ -498,11 +526,12 @@ On Error GoTo ErrorHandler
     Dim sCode As String
     Dim sAreaCode2 As String
     Dim sLoopNo2 As String
+    Dim Transaktio As Boolean
 
     If IsNull(RProcess.Value) Or IsNull(RCode.Value) Then
-        Debug.Print "  ERROR: Process or Code missing"
+        Debug.Print "  VIRHE: Process- tai Code-arvo puuttuu"
         ' 16 = vbCritical
-        MsgBox "Sy√∂t√§ ensin Process ja Code reseptille", 16, "Tee resepti"
+        MsgBox "Syˆt‰ ensin Process ja Code reseptille", 16, "Tee resepti"
         Exit Sub
     End If
 
@@ -512,22 +541,26 @@ On Error GoTo ErrorHandler
 
     Set Taul = DB.OpenRecordset("SELECT * FROM RECIPES WHERE Process='" & sProcess & "' and Code = '" & sCode & "'")
     If Not Taul.EOF Then
-        Debug.Print "  ERROR: Recipe already exists"
+        Debug.Print "  VIRHE: Resepti on jo olemassa"
         ' 16 = vbCritical
-        MsgBox "Anna reseptille Process ja Code, jota ei ole viel√§ k√§yt√∂ss√§.", 16, "Tee resepti"
+        MsgBox "Anna reseptille Process ja Code, jota ei ole viel‰ k‰ytˆss‰.", 16, "Tee resepti"
         GoTo CleanExit
     End If
 
-    Debug.Print "  Creating new recipe in RECIPES table"
+    Debug.Print "  Luodaan uusi resepti RECIPES-tauluun"
+    ' Resepti ja siihen liittyv‰t rivit tallennetaan samassa transaktiossa
+    DBEngine.BeginTrans
+    Transaktio = True
     Taul.AddNew
     Taul.Fields("PROCESS") = RProcess.Value
     Taul.Fields("CODE") = RCode.Value
     Taul.Fields("INFO") = RInfo.Value
-    RID = Taul.Fields("ID")
     Taul.Update
+    ' AutoNumber luetaan vasta p‰ivityksen j‰lkeen
+    Taul.Bookmark = Taul.LastModified
+    RID = Taul.Fields("ID")
 
-    Debug.Print "  New RecipeID: " & RID
-    Me.RecipeID = RID
+    Debug.Print "  New Reseptitunnus: " & RID
 
     sAreaCode2 = Replace(CStr(Me.AreaCode), "'", "''")
     sLoopNo2 = Replace(CStr(Me.LoopNo), "'", "''")
@@ -538,9 +571,12 @@ On Error GoTo ErrorHandler
     sSQL = "UPDATE Control SET Control.RecipeID = " & RID & " WHERE (((Control.AreaCode)='" & sAreaCode2 & "') AND ((Control.LoopNo)='" & sLoopNo2 & "'));"
     DB.Execute sSQL, 128
 
-    Debug.Print "  Recipe assigned to control loops"
+    DBEngine.CommitTrans
+    Transaktio = False
+    Me.RecipeID = RID
+    Debug.Print "  Resepti liitetty ohjauspiireihin"
     Me.Refresh
-    Debug.Print "Komento67_Click: COMPLETED successfully - Recipe created"
+    Debug.Print "Komento67_Click: VALMIS onnistuneesti - resepti luotu"
 
 CleanExit:
     If Not Taul Is Nothing Then
@@ -551,7 +587,8 @@ CleanExit:
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento67_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Komento67_Click: " & Err.Number & " - " & Err.Description
+    If Transaktio Then DBEngine.Rollback: Transaktio = False
     ' 16 = vbCritical
     MsgBox "Virhe reseptin luonnissa: " & Err.Description, 16
     Resume CleanExit
@@ -559,38 +596,47 @@ End Sub
 
 Private Sub Komento80_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "Komento80_Click: Starting recipe update to all circuits"
+    Debug.Print "Komento80_Click: Reseptin p‰ivitys kaikkiin piireihin alkaa"
     Dim Vastaus As Integer
+    Dim Transaktio As Boolean
 
     ' 3 = vbYesNoCancel
-    Vastaus = MsgBox("Poistetaanko vanhat blokit piireist√§, joille on m√§√§ritelty resepti?", 3, "P√ÑIVIT√Ñ RESEPTIT KAIKKIIN PIIREIHIN")
+    Vastaus = MsgBox("Poistetaanko vanhat blokit piireist‰, joille on m‰‰ritelty resepti?", 3, "PƒIVITƒ RESEPTIT KAIKKIIN PIIREIHIN")
 
+    ' Poisto ja lis‰ys tehd‰‰n samassa transaktiossa, ettei virhe j‰t‰ piirej‰ ilman blokkeja
+    If Vastaus <> 2 Then
+        DBEngine.BeginTrans
+        Transaktio = True
+    End If
     ' 6 = vbYes
     If Vastaus = 6 Then
-        Debug.Print "  Deleting old blocks from Control where RecipeID exists"
+        Debug.Print "  Poistetaan vanhat blokit niist‰ Control-taulun tietueista, joilla on RecipeID"
         CurrentDb.Execute "DELETE * FROM Control where Recipeid is not null", 128
     End If
     ' 2 = vbCancel
     If Vastaus <> 2 Then
-        Debug.Print "  Executing RECIPES_ADD query"
+        Debug.Print "  Suoritetaan RECIPES_ADD-kysely"
         CurrentDb.Execute "RECIPES_ADD", 128
-        Debug.Print "  All circuits updated with recipes"
+        DBEngine.CommitTrans
+        Transaktio = False
+        Debug.Print "  Kaikki piirit p‰ivitetty resepteill‰"
         ' 0 = vbOKOnly
-        MsgBox "Piirit p√§ivitetty!", 0, "P√ÑIVIT√Ñ RESEPTIT KAIKKIIN PIIREIHIN"
+        MsgBox "Piirit p‰ivitetty!", 0, "PƒIVITƒ RESEPTIT KAIKKIIN PIIREIHIN"
         Me.Refresh
     End If
-    Debug.Print "Komento80_Click: COMPLETED successfully"
+    Debug.Print "Komento80_Click: VALMIS onnistuneesti"
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in Komento80_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa Komento80_Click: " & Err.Number & " - " & Err.Description
     ' 16 = vbCritical
-    MsgBox "Virhe reseptien p√§ivityksess√§: " & Err.Description, 16
+    If Transaktio Then DBEngine.Rollback: Transaktio = False
+    MsgBox "Virhe reseptien p‰ivityksess‰: " & Err.Description, 16
 End Sub
 
 Private Sub CommandJANI_Click()
 On Error GoTo ErrorHandler
-    Debug.Print "CommandJANI_Click: Starting index page generation (Intpage)"
+    Debug.Print "CommandJANI_Click: Indeksisivujen luonti Intpage-taulusta alkaa"
     Dim Taul As Object
     Dim edPOS As String
     Dim Sivut As String
@@ -608,17 +654,24 @@ On Error GoTo ErrorHandler
     Dim RiviVali As Double
     Dim TextSize As Double
 
-    IndexBase = DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'")
-    Debug.Print "  IndexBase: " & IndexBase
+    IndexBase = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXBASE'"), "")
+    If IndexBase = "" Then
+        ' 16 = vbCritical
+        MsgBox "INDEXBASE puuttuu SETTINGS-taulusta! Indeksisivuja ei voi luoda.", 16
+        Exit Sub
+    End If
+    Debug.Print "  Indeksipohja: " & IndexBase
 
     If oAcad Is Nothing Then
         Set oAcad = GetObject(, "AutoCAD.Application")
-        Debug.Print "  AutoCAD connection established (CommandJANI)"
+        Debug.Print "  AutoCAD-yhteys avattu (CommandJANI)"
     End If
 
-    BasePath = "Y:\base\int\"
+    ' Pohjakuvien hakemisto luetaan SETTINGS-taulusta, oletuksena aiempi kiinte‰ polku
+    BasePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'INDEXPATH'"), "Y:\base\int\")
+    If Right$(BasePath, 1) <> "\" Then BasePath = BasePath & "\"
     SavePath = Nz(DLookup("[VALUE]", "[SETTINGS]", "SETTING = 'SAVEPATH'"), "")
-    Debug.Print "  BasePath: " & BasePath & "  SavePath: " & SavePath
+    Debug.Print "  Pohjapolku: " & BasePath & "  tallennuspolku: " & SavePath
     
     If SavePath = "" Then
         ' 16 = vbCritical
@@ -627,9 +680,9 @@ On Error GoTo ErrorHandler
     End If
 
     Set Taul = CurrentDb.OpenRecordset("Intpage")
-    Debug.Print "  Intpage recordset opened"
+    Debug.Print "  Intpage-tietuejoukko avattu"
     Set oDoc = oAcad.Documents.Open(BasePath & IndexBase & ".dwg")
-    Debug.Print "  Base document opened: " & BasePath & IndexBase & ".dwg"
+    Debug.Print "  Pohjapiirustus avattu: " & BasePath & IndexBase & ".dwg"
 
     aX = 30
     aY = 275
@@ -645,7 +698,7 @@ On Error GoTo ErrorHandler
     Piste2(0) = aX + PosSivu
     Piste2(1) = aY
 
-    Debug.Print "  Processing Intpage records..."
+    Debug.Print "  K‰sitell‰‰n Intpage-tietueita..."
     Do While Not Taul.EOF
         If edPOS <> Taul.Fields("TEXT_4") Then
             If Sivut <> "" Then
@@ -693,11 +746,11 @@ On Error GoTo ErrorHandler
     oDoc.ModelSpace.AddText edPOS, Piste, TextSize
     oDoc.ModelSpace.AddText Sivut, Piste2, TextSize
     ind = ind + 1
-    Debug.Print "  Saving index page: " & SavePath & edPiir & "_IDX_" & ind
+    Debug.Print "  Tallennetaan indeksisivu: " & SavePath & edPiir & "_IDX_" & ind
     oDoc.SaveAs SavePath & edPiir & "_IDX_" & ind
     oDoc.Close
     
-    Debug.Print "CommandJANI_Click: COMPLETED successfully - Index pages created"
+    Debug.Print "CommandJANI_Click: VALMIS onnistuneesti - indeksisivut luotu"
     MsgBox "Valmis"
 
 CleanExit:
@@ -710,7 +763,7 @@ CleanExit:
     Exit Sub
 
 ErrorHandler:
-    Debug.Print "*** ERROR in CommandJANI_Click: " & Err.Number & " - " & Err.Description
+    Debug.Print "*** VIRHE aliohjelmassa CommandJANI_Click: " & Err.Number & " - " & Err.Description
     ' 16 = vbCritical
     MsgBox "Virhe indeksisivujen luonnissa: " & Err.Description, 16
     Resume CleanExit

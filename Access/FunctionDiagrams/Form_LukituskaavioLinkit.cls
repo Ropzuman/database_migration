@@ -7,7 +7,7 @@ Option Explicit
 '            IntLinkPage-taulun page1-sarakkeen pilkulla erotettuun
 '            muotoon "See Page X, Y". T‰m‰n avulla lukituskaavion ristii
 '            viittaukset saavat oikeat sivuviitteet piirustuksiin.
-' DIPLE    : Option Explicit; Set tbl/qry/DB = Nothing muistivuodon ehk‰isyyn;
+' HUOM    : Option Explicit; Set tbl/qry/DB = Nothing muistivuodon ehk‰isyyn;
 '            O(N≤) sis‰kk‰inen silmukka korvattu FindFirst-metodilla (suorit.)
 ' PƒIVITETTY: 2026-03-06
 '==========================================================================
@@ -18,9 +18,9 @@ On Error GoTo ErrorHandler
 DoCmd.Hourglass True
 
 Dim DB As DAO.Database
-'Dim MyQuery As QueryDef
 Dim qry As DAO.Recordset
 Dim tbl As DAO.Recordset
+Dim TransaktioKaynnissa As Boolean
 
 Set DB = CurrentDb
 
@@ -34,10 +34,11 @@ If Not qry.EOF Then qry.MoveFirst
 
 ' Kaikki p‰ivitykset yhdess‰ transaktiossa ó kymmenkertaistaa nopeuden verkkolevyll‰
 DBEngine.Workspaces(0).BeginTrans
+TransaktioKaynnissa = True
 
 Do Until qry.EOF
     ' FindFirst korvaa O(N≤) sis‰kk‰isen silmukan ó suorituskyky kasvaa eksponentiaalisesti suurilla tietom‰‰rill‰
-    tbl.FindFirst "TXT1 = '" & Replace(qry!TXT1, "'", "''") & "'"
+    tbl.FindFirst "TXT1 = '" & Replace(Nz(qry!TXT1, ""), "'", "''") & "'"
     If Not tbl.NoMatch Then
         tbl.Edit
         If Nz(tbl!page1, "") = "" Then
@@ -51,6 +52,7 @@ Do Until qry.EOF
 Loop
 
 DBEngine.Workspaces(0).CommitTrans ' Hyv‰ksyt‰‰n kaikki muutokset yhten‰ blokkina
+TransaktioKaynnissa = False
 
 DoCmd.Hourglass False
 
@@ -64,9 +66,9 @@ Set DB = Nothing
 Exit Sub
 
 ErrorHandler:
-    DBEngine.Workspaces(0).Rollback ' Perutaan muutokset virhetilanteessa ó tietokanta palautuu ehj‰‰n tilaan
-    Debug.Print "*** ERROR in Command0_Click (LukituskaavioLinkit): " & Err.Number & " - " & Err.Description
-    Debug.Print "    Source: " & Err.Source
+    If TransaktioKaynnissa Then DBEngine.Workspaces(0).Rollback ' Perutaan muutokset virhetilanteessa ó tietokanta palautuu ehj‰‰n tilaan
+    Debug.Print "*** VIRHE aliohjelmassa Command0_Click (LukituskaavioLinkit): " & Err.Number & " - " & Err.Description
+    Debug.Print "    L‰hde: " & Err.Source
     DoCmd.Hourglass False
     On Error Resume Next
     If Not tbl Is Nothing Then tbl.Close

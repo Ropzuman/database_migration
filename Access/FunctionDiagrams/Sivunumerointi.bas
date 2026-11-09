@@ -2,27 +2,30 @@ Option Compare Database
 Option Explicit
 '==========================================================================
 ' MODUULI  : Sivunumerointi
-' SOVELLUS : FunctionDiagrams ‚Äî Raporttien sivunumerointi
+' SOVELLUS : FunctionDiagrams - Raporttien sivunumerointi
 ' KUVAUS   : Julkinen Sivu()-funktio laskee sivunumerot aluepohjaisesti:
 '            kun alueen (ALUE) arvo muuttuu, laskuri nollautuu. Yhdelle
-'            sivulle mahtuu enint√§√§n kolme merkint√§√§ (Sivuja = 3).
-'            Moduulitason tilamuuttujat (Private) varmistavat, ett√§ tila
-'            s√§ilyy kutsujen v√§lill√§.
-' DIPLE    : CInt ‚Üí CLng tyyppiristiriidan korjaukseksi (EdelArea As Long).
-' P√ÑIVITETTY: 2026-03-03
+'            sivulle mahtuu enint‰‰n kolme merkint‰‰ (Sivuja = 3).
+'            Moduulitason tilamuuttujat (Private) varmistavat, ett‰ tila
+'            s‰ilyy kutsujen v‰lill‰.
+' HUOM    : CInt korvattu CLng-muunnoksella tyyppiristiriidan korjaamiseksi (EdelArea As Long).
+' PƒIVITETTY: 2026-03-03
 '==========================================================================
 
 ' --- Moduulitason tilamuuttujat sivunumerointia varten ---
 Private EdelArea As Long    ' Edellinen alue (nollaus tunnistusta varten)
 Private Sivunro  As Long    ' Nykyinen sivunumero
-Private Sivuja   As Long    ' Sivujen lukum√§√§r√§ nykyisell√§ alueella
+Private Sivuja   As Long    ' Sivujen lukum‰‰r‰ nykyisell‰ alueella
 
 Public Function Sivu(ALUE As String) As String
-  ' CLng k√§ytet√§√§n CInt:n sijaan, koska EdelArea on Long-tyyppi√§ ‚Äî tyypit t√§sm√§√§v√§t
+  Dim AlueNro As Long
+  ' Val ei kaadu ei-numeeriseen arvoon, toisin kuin CLng
+  AlueNro = CLng(Val(ALUE))
+  ' CLng k‰ytet‰‰n CInt:n sijaan, koska EdelArea on Long-tyyppi‰ ó tyypit t‰sm‰‰v‰t
   If EdelArea = 0 Or Sivunro = 0 Then
     Sivunro = 1
     Sivuja = 0
-  ElseIf EdelArea <> CLng(ALUE) Then
+  ElseIf EdelArea <> AlueNro Then
     Sivunro = 1
     Sivuja = 0
   End If
@@ -31,6 +34,6 @@ Public Function Sivu(ALUE As String) As String
     Sivuja = 0
   End If
   Sivuja = Sivuja + 1
-  EdelArea = CLng(ALUE)
+  EdelArea = AlueNro
   Sivu = CStr(Sivunro)
 End Function

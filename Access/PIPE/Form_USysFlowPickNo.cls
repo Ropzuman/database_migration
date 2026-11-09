@@ -402,7 +402,7 @@ ErrorHandler:
     DoCmd.Close acForm
 End Sub
 '--------------------------------------------------------------------------------
-' Funktio: Yhdista
+' Funktio: Yhdist‰
 ' Tarkoitus: Yhdist‰‰ k‰ynniss‰ olevaan AutoCAD-instanssiin
 '
 ' Palautusarvo: Boolean - True jos yhteys onnistui, False jos AutoCAD ei k‰ynniss‰
