@@ -6,6 +6,8 @@ Option Explicit
 ' Tarkoitus: N‰ytt‰‰ tietokantaan t‰ll‰ hetkell‰ kirjautuneet k‰ytt‰j‰t
 ' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
 '             2026-03-03 ó Korjattu dbCurrent.Close-virhe; poistettu orvokoodi
+'             2026-11-10 - WhosOn: indeksi ei ylity (ei oikosulkevaa And-ehtoa); InStrRev polun pisteille
+'             2026-11-10 - Viimeistely: tietueen koko korjattu kommenttiin (64 tavua); muuttuja X nimetty uudelleen
 '
 ' Kuvaus:
 '   Lukee .LACCDB-lukitustiedoston, jotta n‰hd‰‰n ketk‰ k‰ytt‰v‰t tietokantaa.
@@ -17,7 +19,7 @@ Option Explicit
 '   - LoggedOn-ohjain (lista-/yhdistelm‰ruutu)
 '
 ' Lukitustiedoston rakenne:
-'   - 64 bitin tietueet
+'   - 64 tavun tietueet
 '   - Tavut 1ñ32: Tietokoneen nimi (null-p‰‰tetty merkkijono)
 '   - Tavut 33ñ64: K‰ytt‰j‰n kirjautumisnimi (null-p‰‰tetty merkkijono)
 '================================================================================
@@ -82,7 +84,7 @@ Private Function WhosOn() As String
     Dim iLDBFile As Integer
     Dim i As Integer
     Dim SPath As String
-    Dim X As String
+    Dim sTiedosto As String
     Dim sLogins As String
     Dim sMach As String
     Dim sUser As String
@@ -94,11 +96,11 @@ Private Function WhosOn() As String
     SPath = DBEngine.Workspaces(0).Databases(0).Name
 
     ' Muodostetaan lukitustiedoston polku (.LACCDB-p‰‰te)
-    SPath = Left$(SPath, InStr(1, SPath, ".")) & "LACCDB"
+    SPath = Left$(SPath, InStrRev(SPath, ".")) & "LACCDB"
 
     ' Tarkistetaan, onko lukitustiedosto olemassa
-    X = Dir$(SPath)
-    If X = "" Then
+    sTiedosto = Dir$(SPath)
+    If sTiedosto = "" Then
         WhosOn = "Ei aktiivisia k‰ytt‰ji‰"
         Exit Function
     End If
@@ -115,18 +117,20 @@ Private Function WhosOn() As String
         With rUser
             i = 1
             sMach = ""
-            While .bMach(i) <> 0 And i <= 32
+            Do While i <= 32
+                If .bMach(i) = 0 Then Exit Do
                 sMach = sMach & Chr$(.bMach(i))
                 i = i + 1
-            Wend
+            Loop
 
             ' Poimitaan k‰ytt‰j‰nimi (null-p‰‰tetty merkkijono)
             i = 1
             sUser = ""
-            While .bUser(i) <> 0 And i <= 32
+            Do While i <= 32
+                If .bUser(i) = 0 Then Exit Do
                 sUser = sUser & Chr$(.bUser(i))
                 i = i + 1
-            Wend
+            Loop
         End With
 
         ' Lis‰t‰‰n tuloksiin (puolipisteell‰ eroteltu RowSource-arvo)

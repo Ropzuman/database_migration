@@ -4,16 +4,23 @@
 
 USysCheck.bas
 
-## P√§iv√§m√§√§r√§
+## P‰iv‰m‰‰r‰
 
-2026-03-13
+2026-11-10
 
 ## Kriittiset muutokset
 
-- `api_GetUserName` ja `api_GetComputerName` -declarit p√§ivitetty `PtrSafe`-muotoon.
-- 64-bit-k√§√§nn√∂st√§ rikkova ei-PtrSafe-Declare poistettu k√§yt√∂st√§.
+- API-aliakset `GetUserNameW`/`GetComputerNameW` vaihdettu `ÖA`-muotoon: `ByVal String` -puskuri on VBA:ssa ANSI, joten W-versio tuotti typistyneen tai sotkuisen nimen.
+- Merkkijonon p‰‰tt‰minen
+: `InStr(NBuffer & vbNullChar, vbNullChar)` est‰‰ `Left$`-virheen, jos nollamerkki‰ ei lˆydy.
+- `OpenRecordset("UsysUsers", dbOpenDynaset, dbAppendOnly)` toimii myˆs, kun `UsysUsers` on linkitetty taulu (aiemmin `dbOpenTable`).
 
 ## Siivous ja optimointi
 
-- Muutos toteutettu ilman tietokantakirjauslogiikan muutoksia.
-- Moduulin k√§ytt√§ytyminen s√§ilytetty ennallaan, mutta k√§√§nn√∂svakaus parannettu.
+- `DB` ja `Taulu` tyypitetty `DAO.Database`/`DAO.Recordset` (aiemmin `Object`).
+- Virheenk‰sittelij‰ kirjaa virheen Immediate-ikkunaan (`Debug.Print`), vaikka kirjaus pysyy hiljaisena k‰ytt‰j‰lle.
+
+## Aiemmat muutokset (2026-03-13)
+
+- `api_GetUserName` ja `api_GetComputerName` -declarit p‰ivitetty `PtrSafe`-muotoon.
+- 64-bit-k‰‰nnˆst‰ rikkova ei-PtrSafe-Declare poistettu k‰ytˆst‰.

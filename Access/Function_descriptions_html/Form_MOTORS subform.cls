@@ -6,6 +6,7 @@ Option Explicit
 ' Tarkoitus: Laiteviittauksen lisäämisapuri päälomakkeen tekstikenttiin
 ' Päivitetty: 2025-11-13 — Virheenkäsittely ja null-suojaus lisätty
 '             2026-03-03 — Me.-etuliite, SelStart-suojaus (Virhe 2185)
+'             2026-11-10 - Viimeistely: kommenttien oikoluku; Me.Parent Form.Parent-viittauksen tilalla
 '
 ' Kuvaus:
 '   Alilomake laiteviittausten lisäämiseksi päälomakkeen tekstikenttiin.
@@ -22,9 +23,9 @@ Option Explicit
 ' Tarkoitus: Lisää laiteviittaus kursorin kohdalle tai kentän loppuun
 '
 ' Kuvaus:
-'   Lisää tekstin {hakasulkeissa} nykyiseen kursorin sijaintiin tai kentän
-'   loppuun. Käsittelee null-arvot ja yllapitää kursorin sijainnin.
-' Huom: SelStart vaatii fokuksen — kietotaan virheensuojauksen sisään (Virhe 2185)
+'   Lisää tekstin {aaltosulkeissa} nykyiseen kursorin sijaintiin tai kentän
+'   loppuun. Käsittelee null-arvot ja ylläpitää kursorin sijainnin.
+' Huom: SelStart vaatii fokuksen — kiedotaan virheensuojauksen sisään (Virhe 2185)
 '================================================================================
 Private Sub LisaaTeksti()
     Dim Alku As String
@@ -41,7 +42,7 @@ Private Sub LisaaTeksti()
         If TurvallinenKursori > Len(KohdeTeksti) Then TurvallinenKursori = Len(KohdeTeksti)
         If TurvallinenKursori < 0 Then TurvallinenKursori = 0
 
-        If Form.Parent.CLoppuun = True Then
+        If Me.Parent.CLoppuun = True Then
             ' Lisätään kentän loppuun
             Alku = KohdeTeksti
             Loppu = ""
@@ -53,7 +54,7 @@ Private Sub LisaaTeksti()
 
         KohdeTextBox.Value = Alku & " {" & Me.TEKSTI.Value & "}" & Loppu
         KohdeTextBox.SetFocus
-        ' SelStart ja SelLength vaativat fokuksen — estätään Virhe 2185
+        ' SelStart ja SelLength vaativat fokuksen — estetään Virhe 2185
         On Error Resume Next
         KohdeTextBox.SelStart = TurvallinenKursori + Len(Me.TEKSTI.Value) + 3
         KohdeTextBox.SelLength = 0

@@ -7,6 +7,8 @@ Option Explicit
 ' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
 '             2026-03-03 ó Poistettu virheellinen DB.Close CurrentDb-viittaukselta
 '             2026-03-06 ó Kentt‰indeksit korvattu nimetyill‰ sarakkeilla (yll‰pidett‰vyys)
+'             2026-11-10 - API-aliakset W -> A (ByVal String -puskuri on ANSI); dbAppendOnly; Left$-suojaus
+'             2026-11-10 - Viimeistely: DAO-tyypit Object-muuttujien tilalle; virheen kirjaus Immediate-ikkunaan
 '
 ' Kuvaus:
 '   Kirjaa tietokantaan kirjautuvat k‰ytt‰j‰t tallentamalla verkkok‰ytt‰j‰nimen,
@@ -23,11 +25,11 @@ Option Explicit
 ' Huom: nSize on Long (32-bit DWORD), ei LongPtr ó v‰ltet‰‰n Type Mismatch
 '---------------------------------------------
 #If VBA7 Then
-    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Private Declare PtrSafe Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+    Private Declare PtrSafe Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #Else
-  Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-  Private Declare Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameW" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+  Private Declare Function api_GetUserName Lib "advapi32.dll" Alias "GetUserNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+  Private Declare Function api_GetComputerName Lib "Kernel32" Alias "GetComputerNameA" (ByVal lpBuffer As String, ByRef nSize As Long) As Long
 #End If
 
 '================================================================================
@@ -41,8 +43,8 @@ Option Explicit
 '   UsysUsers-tauluun aikaleiman kera.
 '================================================================================
 Function SniffUser()
-    Dim DB As Object
-    Dim Taulu As Object
+    Dim DB As DAO.Database
+    Dim Taulu As DAO.Recordset
     Dim NWUserName As String
     Dim CName As String
     Dim BuffSize As Long
@@ -55,7 +57,7 @@ Function SniffUser()
     
     ' Haetaan Windows-verkkok‰ytt‰j‰nimi
     If api_GetUserName(NBuffer, BuffSize) Then
-      NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+      NWUserName = Left$(NBuffer, InStr(NBuffer & vbNullChar, vbNullChar) - 1)
     Else
       NWUserName = "Unknown"
     End If
@@ -64,14 +66,14 @@ Function SniffUser()
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     If api_GetComputerName(NBuffer, BuffSize) Then
-      CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+      CName = Left$(NBuffer, InStr(NBuffer & vbNullChar, vbNullChar) - 1)
     Else
       CName = "Unknown"
     End If
        
     ' Kirjataan tiedot tietokantaan
     Set DB = CurrentDb
-    Set Taulu = DB.OpenRecordset("UsysUsers", 1)
+    Set Taulu = DB.OpenRecordset("UsysUsers", dbOpenDynaset, dbAppendOnly)
     
     With Taulu
         .AddNew
@@ -90,7 +92,8 @@ Function SniffUser()
     Exit Function
     
 ErrorHandler:
-    ' Hiljainen virheenk‰sittely ó ei keskeytet‰ sovelluksen toimintaa
+    Debug.Print "SniffUser-virhe: " & Err.Description
+    ' Hiljainen virheenk‰sittely - ei keskeytet‰ sovelluksen toimintaa
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
     Set Taulu = Nothing

@@ -6,6 +6,8 @@ Option Explicit
 ' Tarkoitus: Kääntää laite- ja piiriviittaukset kuvaaviksi nimiksi
 ' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
 '             2026-03-03 — Kommentit suomeksi
+'             2026-11-10 - Kaanna: puuttuva }/väli/positio-osa ei kaada; seuraavan viittauksen { säilyy tuloksessa
+'             2026-11-10 - Viimeistely: kommenttien oikoluku
 '
 ' Kuvaus:
 '   Käsittelee tekstiä, joka sisältää laiteviittauksia muodossa
@@ -29,7 +31,7 @@ Option Explicit
 ' Tarkoitus: Kääntää laite-/piiriviittaukset todellisiksi nimiksi
 ' Parametrit:
 '   Tieto — Teksti, joka sisältää {Alue-Tyyppi-Nro kuvaus} -muotoisia viittauksia
-' Palauttaa: Käännetty teksti tai virheimärkität viittaukset
+' Palauttaa: Käännetty teksti, jossa virheelliset viittaukset on merkitty virhetunnisteilla
 '
 ' Kuvaus:
 '   Jäsentää tekstistä {POS kuvaus} -muodot, missä:
@@ -49,6 +51,7 @@ Function Kaanna(Tieto As Variant) As Variant
     Dim Nimitys As Variant
     Dim Poistettu As Variant
     Dim Virheet As Long
+    Dim sKuvaus As String
     Dim sPar0 As String, sPar1 As String, sPar2 As String  ' Sanitoidut DLookup-parametrit (heittomerkki duplikoitu)
     
     On Error GoTo ErrorHandler
@@ -70,13 +73,22 @@ Function Kaanna(Tieto As Variant) As Variant
     
     Do While OS > 0
         ' Haetaan sijaintimerkit: { POS } -rakenne
-        OS2 = InStr(OS + 1, Tieto, " ")    ' Välilyönti position jälkeen
+        OS2 = InStr(OS + 1, Tieto, " ")    ' Väli positiokoodin ja kuvauksen välissä
         OS3 = InStr(OS + 1, Tieto, "}")    ' Sulkeva aaltosulku
+        If OS3 = 0 Then
+            ' Sulkeva aaltosulku puuttuu: liitetään loppuosa sellaisenaan
+            Kaanna = Kaanna & Mid$(Tieto, OS + 1)
+            Exit Do
+        End If
+        If OS2 = 0 Or OS2 > OS3 Then OS2 = OS3   ' Viittauksessa ei ole kuvausta
         OS4 = InStr(OS3 + 1, Tieto, "{")   ' Seuraava avautuva aaltosulku
+        If OS3 > OS2 Then sKuvaus = Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1) Else sKuvaus = ""
         
         ' Poimitaan positiokoodi (esim. "60-20-01" tai "10-TIC-001")
         tPOS = Mid$(Tieto, OS + 1, OS2 - OS - 1)
         Osat = Split(tPOS, "-")
+        ' Puutteellinen positio ei saa kaataa käännöstä: puuttuvat osat jäävät tyhjiksi
+        If UBound(Osat) < 2 Then ReDim Preserve Osat(0 To 2)
         
         ' Sanitoidaan DLookup-parametrit heittomerkkien varalta — SQL-injektion esto
         sPar0 = Replace(Nz(Osat(0), ""), "'", "''")
@@ -96,13 +108,13 @@ Function Kaanna(Tieto As Variant) As Variant
         
         ' Tarkistetaan virheet ja merkitään tuntemattomiksi tarvittaessa
         If IsNull(Poistettu) Then
-            Nimitys = "[ERR: Not found] " & Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1)
+            Nimitys = "[ERR: Not found] " & sKuvaus
             Virheet = Virheet + 1
         ElseIf Poistettu Then
-            Nimitys = "[DELETED!] " & Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1)
+            Nimitys = "[DELETED!] " & sKuvaus
             Virheet = Virheet + 1
         ElseIf IsNull(Nimitys) Then
-            Nimitys = "[ERR: No translation] " & Mid$(Tieto, OS2 + 1, OS3 - OS2 - 1)
+            Nimitys = "[ERR: No translation] " & sKuvaus
             Virheet = Virheet + 1
         End If
         
@@ -111,7 +123,7 @@ Function Kaanna(Tieto As Variant) As Variant
         
         ' Lisätään teksti tämän viittauksen jälkeen (tai loppuun)
         If OS4 <> 0 Then
-            Kaanna = Kaanna & Mid$(Tieto, OS3, OS4 - OS3)
+            Kaanna = Kaanna & Mid$(Tieto, OS3, OS4 - OS3 + 1)
         Else
             Kaanna = Kaanna & Mid$(Tieto, OS3)
         End If

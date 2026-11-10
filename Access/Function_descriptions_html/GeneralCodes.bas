@@ -6,6 +6,7 @@ Option Explicit
 ' Tarkoitus: Yleiset apufunktiot ja yhteiset muuttujat
 ' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
 '             2026-03-03 ó Kommentit suomeksi
+'             2026-11-10 - Viimeistely: moodi- ja lomakekuvausten kommentit korjattu
 '
 ' Kuvaus:
 '   Tarjoaa apufunktiot laitteen revisiomuokkaukseen, taulunselaukseen
@@ -59,7 +60,7 @@ End Function
 
 '================================================================================
 ' Funktio: NaytaTables
-' Tarkoitus: Avaa taulujenselauslomake
+' Tarkoitus: Avaa taulujen selauslomake
 ' Palauttaa: Ei paluuarvoa
 '================================================================================
 Public Function NaytaTables()
@@ -72,15 +73,15 @@ End Function
 
 '================================================================================
 ' Funktio: Moodit
-' Tarkoitus: K‰‰nt‰‰ pilkulla eroteltujen moodikolmien koodit kuvaavaksi tekstiksi
+' Tarkoitus: K‰‰nt‰‰ pilkulla eroteltujen moodikoodit kuvaavaksi tekstiksi
 ' Parametrit:
-'   Tieto ó Pilkulla eroteltu moodi-koodi lista (A, M, E, L)
-' Palauttaa: Moodi kuvaukset rivinvaihdolla eroteltuina, tai "-" jos Null
+'   Tieto ó Pilkulla eroteltu moodikoodilista (A, M, E, L)
+' Palauttaa: Moodikuvaukset rivinvaihdolla eroteltuina, tai "-" jos Null
 '
 ' Kuvaus:
-'   K‰‰nt‰‰ moodikolmit:
+'   K‰‰nt‰‰ moodikoodit:
 '     A = AUTO, M = MANUAL, E = EXTERNAL, L = LOCAL
-'   Muut koodit pass-through-k‰‰nnˆs. Palauttaa "-" Null-syˆtteen yhteydess‰.
+'   Muut koodit palautetaan sellaisinaan isoin kirjaimin. Null-syˆtteell‰ palautetaan "-".
 '================================================================================
 Function Moodit(Tieto As Variant) As Variant
     Dim Tiedot As Variant

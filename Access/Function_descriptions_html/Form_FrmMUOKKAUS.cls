@@ -6,6 +6,8 @@ Option Explicit
 ' Tarkoitus: Luo Word- ja HTML-toimintakuvaukset piireille ja laitteistolle
 ' P‰ivitetty: 2025-11-13 ó VBA7/64-bit tuki lis‰tty
 '             2026-03-03 ó Me.-etuliite lomakeohjaimille; SelStart-suojaukset
+'             2026-11-10 - Katsaus: ryhm‰n ohitus virhetilanteessa, HTML-escape, Null-suojaukset, h‰lytyskuvauksen kielivalinta, tiedostonimen siivous, SQL-heittomerkit, resurssien sulku
+'             2026-11-10 - Viimeistely: kuollut Samaan/Eka-haara ja kommentoitu koodi poistettu, k‰ytt‰m‰ttˆm‰t muuttujat poistettu, ByVal-parametrit, kommentit korjattu (paikkamerkit), p‰iv‰m‰‰r‰ Format-funktiolla
 '
 ' Kuvaus:
 '   P‰‰lomake toimintakuvausten muokkaukseen ja luontiin.
@@ -20,13 +22,15 @@ Option Explicit
 '      - {Laiteviittaukset} lis‰‰v‰t laitetagit
 '      - "-"-alkuiset rivit sisennet‰‰n listaan
 '      - "--"-alkuiset rivit sisennet‰‰n kaksinkertaisesti
-'   4. Word-muoto: avaa mallin, korvaa kirjanmerkit, tallentaa uutena dokumenttina
+'   4. Word-muoto: avaa mallin, korvaa paikkamerkit, tallentaa uutena dokumenttina
 '   5. HTML-muoto: luo HTML-tiedoston CSS-tyyleill‰ ja hyperlinkill‰
 '
-' Word-mallin kirjanmerkit:
-'   - _REV, _STAT, _AUTH, _DOCNO, _PL1, _PL2 (otsikkokent‰t)
-'   - _LTAG, _DESCR, _FUNCT, _INTERL, _ALARMS, _CROSS, _REV1 (sis‰ltˆkent‰t)
-'   - H‰lytysehdot: _HH, _H, _LL, _L sek‰ _ALARMDESCR
+' Word-mallin paikkamerkit (korvataan tekstihaulla):
+'   - Otsikko: [REV], [STATUS], [AUTHOR], [DOCNO], [PROJECT_LINE1], [PROJECT_LINE2], [DATE]
+'   - Sis‰ltˆ: [LOOPTAG], [LOOPDESCR], [PROCESS], [FUNCTION], [LINKS], [CHANGES],
+'              [PIDwgNo], [CONTROLMODES], [INTERLOCKS], [ALARMS], [EQUIPMENT]
+'   - Valinnaiset (poistetaan, jos tieto puuttuu): [ACTION_T], [ACTION], [SETPOINT],
+'              [RANGE_T], [RANGE], [OTHER_T], [OTHER]
 '
 ' Riippuvuudet:
 '   - Word-automaatio (myˆh‰inen sidonta)
@@ -41,30 +45,26 @@ Option Explicit
 '             Alarms, Function, Interlocks, Crossref, RevHistoria
 '================================================================================
 
-' Module-level variables
+' Moduulitason muuttujat
 Dim POHJA As String            ' Mallitiedoston polku
 Dim POLKU As String            ' Tulostushakemiston polku
 Dim REV As String              ' Revisionumero
 Dim STATUS As String           ' Dokumentin tila
 Dim AUTHOR As String           ' Dokumentin tekij‰
 Dim DOCNO As String            ' Dokumenttinumero
-Dim PROJECT_L1 As String       ' Project line 1
-Dim PROJECT_L2 As String       ' Project line 2
-Dim oWord As Object            ' Word application object (myˆh‰inen sidonta)
-Dim oTemplate As Object        ' Word document object (myˆh‰inen sidonta)
-Dim Tiedot As DAO.Recordset    ' Data recordset
-Dim Samaan As Boolean          ' Generate all into one file
-Dim Eka As Boolean             ' First document flag
-Dim Suomeksi As Boolean        ' Finnish language flag
-Dim TOUT As Object             ' HTML output file stream (myˆh‰inen sidonta)
+Dim PROJECT_L1 As String       ' Projektin otsikkorivi 1
+Dim PROJECT_L2 As String       ' Projektin otsikkorivi 2
+Dim oWord As Object            ' Wordin sovellusolio (myˆh‰inen sidonta)
+Dim oTemplate As Object        ' Wordin dokumenttiolio (myˆh‰inen sidonta)
+Dim Tiedot As DAO.Recordset    ' Tietuejoukko (piirit tai moottorit)
+Dim Suomeksi As Boolean        ' Kielilippu: True = suomi, False = englanti
+Dim TOUT As Object             ' HTML-tulostiedoston virta (myˆh‰inen sidonta)
 
 ' Word-kirjaston vakiot pidet‰‰n paikallisina, jotta Word-viitett‰ ei tarvita k‰‰nnˆksess‰.
 Private Const wdMainTextStory As Long = 1
 Private Const wdPrimaryHeaderStory As Long = 7
 Private Const wdFindContinue As Long = 1
 Private Const wdReplaceAll As Long = 2
-Private Const wdStory As Long = 6
-Private Const wdPageBreak As Long = 7
 
 '================================================================================
 ' Tapahtumat: Tekstikenttien fokus ja kursoriseuranta
@@ -138,23 +138,17 @@ End Sub
 Private Sub TeeSelostus(Kaikki As Boolean)
     Dim Nimi As String
     Dim TTIEDOT As String
-    Dim oPohja As Object
     Dim FS As Object
     Dim sTagiEnnen As String
     
     On Error GoTo ErrorHandler
     
     Suomeksi = False
-    ' If Me.FKieli.Value = 2 Then Suomeksi = True
+    ' Kieli on toistaiseksi kiinte‰ (englanti); suomenkielinen haara otetaan k‰yttˆˆn asettamalla Suomeksi = True
 
     Set FS = CreateObject("Scripting.FileSystemObject")
 
     PoimiAsetukset
-    Samaan = False
-    Eka = True
-    
-    ' Jos Kaikki = True, voidaan t‰ss‰ kysy‰ halutaanko kaikki yhteen tiedostoon
-    ' (Samaan-muuttujan asetus vaatii omat koodipolkunsa)
 
     ' Varmistetaan, ett‰ tulostuspolku on m‰‰ritelty
     If POLKU = "" Then
@@ -176,7 +170,7 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     End If
   
     ' Alustetaan Word tarvittaessa
-    If Me.FTyyppi = 1 Then 
+    If Me.FTyyppi = 1 Then
         Set oWord = CreateObject("Word.Application")
         oWord.Visible = True
     End If
@@ -185,77 +179,130 @@ Private Sub TeeSelostus(Kaikki As Boolean)
     If Kaikki Then
       Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " ORDER BY LOOPTAG, AreaCode, LoopNo")
     Else
-      Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Me.LOOPTAG & "' ORDER BY AreaCode, LoopNo")
+      Set Tiedot = CurrentDb.OpenRecordset("SELECT * FROM " & TTIEDOT & " WHERE Looptag='" & Replace(Nz(Me.LOOPTAG, ""), "'", "''") & "' ORDER BY AreaCode, LoopNo")
     End If
     
-    ' --- PƒƒSILMUKKA ---
-    If Samaan Then
-        ' Kirjoitus yhteen suureen tiedostoon
-        Set oTemplate = oWord.Documents.Open(POHJA)
-        Nimi = POLKU & DOCNO & "_KAIKKI.docx"
-        oTemplate.SaveAs Nimi
-        Set oPohja = oWord.Documents.Open(POHJA, , True)
-        oTemplate.Activate
-        
-        Do While Not Tiedot.EOF
-          sTagiEnnen = Nz(Tiedot.Fields("LoopTAG"), "")
-          If sTagiEnnen = "" Then
-            Tiedot.MoveNext
-          ElseIf Not RyhmassaOnSisaltoa(TTIEDOT, sTagiEnnen) Then
-            Do While Not Tiedot.EOF And Nz(Tiedot.Fields("LoopTAG"), "") = sTagiEnnen
-              Tiedot.MoveNext
-            Loop
-          Else
-            MuutaTiedot ' K‰sittelee yhden piirin ja siirt‰‰ kursorin seuraavaan
-            oPohja.Activate
-            oWord.Selection.WholeStory
-            oWord.Selection.Copy
-            oTemplate.Activate
-            oWord.Selection.EndKey 6 ' wdStory
-            oWord.Selection.InsertBreak 7 ' wdPageBreak
-            oWord.Selection.Paste
-            DoEvents ' Est‰‰ j‰‰tymisen
-          End If
-        Loop
-    Else
-        ' Kirjoitus erillisiin tiedostoihin (Yksi tiedosto per piiri)
-        Do While Not Tiedot.EOF
-            sTagiEnnen = Nz(Tiedot.Fields("LoopTAG"), "")
-            
-            If sTagiEnnen = "" Then
-                Tiedot.MoveNext ' Ohitetaan tyhj‰t tagit
-          ElseIf Not RyhmassaOnSisaltoa(TTIEDOT, sTagiEnnen) Then
+    ' K‰yd‰‰n tietueet l‰pi LoopTAG-ryhmitt‰in: yksi tiedosto per piiri
+    Do While Not Tiedot.EOF
+        sTagiEnnen = Nz(Tiedot.Fields("LoopTAG"), "")
+
+        If sTagiEnnen = "" Then
+            Tiedot.MoveNext ' Ohitetaan tyhj‰t tagit
+        ElseIf Not RyhmassaOnSisaltoa(TTIEDOT, sTagiEnnen) Then
             ' Ryhm‰ss‰ on vain tunnistetiedot, joten tiedostoa ei luoda
-            Do While Not Tiedot.EOF And Nz(Tiedot.Fields("LoopTAG"), "") = sTagiEnnen
-              Tiedot.MoveNext
-            Loop
-            Else
-                If Me.FTyyppi = 1 Then ' WORD-versiot
-                    Set oTemplate = oWord.Documents.Open(POHJA)
-                    Nimi = POLKU & DOCNO & "_" & sTagiEnnen & ".docx"
-                    
-                    ' HUOM: MuutaTiedot hoitaa kursorin siirron piirin loppuun (MoveNext)
-                    MuutaTiedot 
-                    
-                    oTemplate.SaveAs Nimi
-                    If Kaikki Then oTemplate.Close False
-                Else  ' HTML-versiot
-                    Set TOUT = FS.CreateTextFile(POLKU & sTagiEnnen & ".html")
-                    TeeHTML ' Varmista, ett‰ t‰m‰kin sis‰lt‰‰ LoopTAG-kohtaisen MoveNext-silmukan
-                    TOUT.Close
-                End If
-            End If
-            DoEvents ' Sallii Windowsin v‰liprosessoinnin (est‰‰ "Ei vastaa" -tilan)
-        Loop
-    End If
-    
+            OhitaRyhma sTagiEnnen
+        ElseIf Me.FTyyppi = 1 Then ' Word-versio
+            Set oTemplate = oWord.Documents.Open(POHJA)
+            Nimi = POLKU & TiedostoNimi(DOCNO & "_" & sTagiEnnen) & ".docx"
+
+            ' MuutaTiedot siirt‰‰ kursorin ryhm‰n loppuun; OhitaRyhma varmistaa etenemisen virhetilanteessa
+            MuutaTiedot
+            OhitaRyhma sTagiEnnen
+
+            oTemplate.SaveAs Nimi
+            If Kaikki Then oTemplate.Close False
+        Else ' HTML-versio
+            Set TOUT = FS.CreateTextFile(POLKU & TiedostoNimi(sTagiEnnen) & ".html")
+            TeeHTML
+            OhitaRyhma sTagiEnnen
+            TOUT.Close
+            Set TOUT = Nothing
+        End If
+        DoEvents ' Pit‰‰ Windowsin vastaamassa pitk‰n ajon aikana (est‰‰ "Ei vastaa" -tilan)
+    Loop
+
+    Set FS = Nothing
+    SuljeTiedot
     MsgBox "Valmis", vbInformation
     Exit Sub
 
 ErrorHandler:
     MsgBox "Virhe TeeSelostus-ajossa: " & Err.Description, vbCritical
     If Not oWord Is Nothing Then oWord.Visible = True
+    Set FS = Nothing
+    SuljeTiedot
 End Sub
+
+'================================================================================
+' Funktio: HtmlEsc
+' Tarkoitus: Muuntaa tekstin HTML-turvalliseen muotoon (&, < ja >)
+' Parametrit:
+'   Teksti - Muunnettava arvo (Null palauttaa tyhj‰n merkkijonon)
+'================================================================================
+Private Function HtmlEsc(ByVal Teksti As Variant) As String
+    If IsNull(Teksti) Then Exit Function
+    HtmlEsc = CStr(Teksti)
+    HtmlEsc = Replace(HtmlEsc, "&", "&amp;")
+    HtmlEsc = Replace(HtmlEsc, "<", "&lt;")
+    HtmlEsc = Replace(HtmlEsc, ">", "&gt;")
+End Function
+
+'================================================================================
+' Funktio: TiedostoNimi
+' Tarkoitus: Poistaa tiedostonimest‰ merkit, jotka eiv‰t ole sallittuja Windowsissa
+'================================================================================
+Private Function TiedostoNimi(ByVal Nimi As String) As String
+    Dim Merkki As Variant
+    TiedostoNimi = Nimi
+    For Each Merkki In Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+        TiedostoNimi = Replace(TiedostoNimi, Merkki, "_")
+    Next Merkki
+End Function
+
+'================================================================================
+' Aliohjelma: OhitaRyhma
+' Tarkoitus: Siirt‰‰ tietuekursorin annetun LoopTAG-ryhm‰n ohi
+'
+' Kuvaus:
+'   Normaalisti MuutaTiedot ja TeeHTML siirt‰v‰t kursorin ryhm‰n loppuun itse.
+'   Virhetilanteessa kursori j‰‰ paikalleen, jolloin p‰‰silmukka j‰isi
+'   k‰sittelem‰‰n samaa tietuetta loputtomasti. T‰m‰ ohittaa ryhm‰n.
+'================================================================================
+Private Sub OhitaRyhma(Tagi As String)
+    Do While Not Tiedot.EOF
+        If Nz(Tiedot.Fields("LoopTAG"), "") <> Tagi Then Exit Do
+        Tiedot.MoveNext
+    Loop
+End Sub
+
+'================================================================================
+' Aliohjelma: SuljeTiedot
+' Tarkoitus: Sulkee tietuejoukon ja HTML-tiedostovirran sek‰ vapauttaa Word-viittaukset
+'            (Word j‰‰ auki, jotta k‰ytt‰j‰ voi tarkastella dokumentteja)
+'================================================================================
+Private Sub SuljeTiedot()
+    On Error Resume Next
+    If Not Tiedot Is Nothing Then Tiedot.Close
+    Set Tiedot = Nothing
+    If Not TOUT Is Nothing Then TOUT.Close
+    Set TOUT = Nothing
+    Set oTemplate = Nothing
+    Set oWord = Nothing
+End Sub
+
+'================================================================================
+' Funktio: HtmlEscTeksti
+' Tarkoitus: HTML-escape kuvaustekstille niin, ett‰ painikkeilla lis‰tyt
+'            v‰liotsikot (<h3>, <h4>) s‰ilyv‰t otsikoina
+'================================================================================
+Private Function HtmlEscTeksti(ByVal Teksti As Variant) As String
+    Dim Tunniste As Variant
+    HtmlEscTeksti = HtmlEsc(Teksti)
+    For Each Tunniste In Array("h3", "h4")
+        HtmlEscTeksti = Replace(HtmlEscTeksti, "&lt;" & Tunniste & "&gt;", "<" & Tunniste & ">", , , vbTextCompare)
+        HtmlEscTeksti = Replace(HtmlEscTeksti, "&lt;/" & Tunniste & "&gt;", "</" & Tunniste & ">", , , vbTextCompare)
+    Next Tunniste
+End Function
+
+'================================================================================
+' Funktio: TFunctionValittu
+' Tarkoitus: Palauttaa True, jos kohdekentt‰n‰ on Toiminta-kentt‰ (TFunction)
+'            Suojaa virheelt‰ 91, kun kentt‰‰ ei ole viel‰ valittu
+'================================================================================
+Private Function TFunctionValittu() As Boolean
+    If KohdeTextBox Is Nothing Then Exit Function
+    TFunctionValittu = (KohdeTextBox.Name = "TFunction")
+End Function
 
 '================================================================================
 ' Funktio: RyhmassaOnSisaltoa
@@ -307,15 +354,10 @@ End Function
 '   Erikoismuotoilu: {LOOPTAG} muuttuu hyperlinkiksi, "-"-rivit sisennet‰‰n
 '================================================================================
 Private Sub TeeHTML()
-    'Luodaan html muotoinen selostus. TOUT on tiedosto-objekti, joka on jo m‰‰ritelty
-    'Luodaan ensin header osuus
+    ' TOUT-tiedostovirta on avattu kutsujassa (TeeSelostus)
     Dim TEKSTI As String
-    Dim Rivit As Variant
-    Dim r As Integer
     Dim ADescr As String
-    Dim Halyt As String
     Dim Tagi As String
-    Dim Laitteet As String
     
     On Error GoTo ErrorHandler
 
@@ -324,18 +366,18 @@ Private Sub TeeHTML()
 TOUT.WriteLine "<!DOCTYPE html>"
 TOUT.WriteLine "<html lang=""fi"">"
 TOUT.WriteLine "<head>"
-TOUT.WriteLine "    <meta charset=""ISO-8859-1"">"
+TOUT.WriteLine "    <meta charset=""windows-1252"">"
 TOUT.WriteLine "    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">"
 TOUT.WriteLine "    <link rel=""stylesheet"" href=""FuncDesc.css"">"
-TOUT.WriteLine "    <title>" & Tiedot.Fields("LoopTAG") & " " & Tiedot.Fields("Description") & "</title>"
+TOUT.WriteLine "    <title>" & HtmlEsc(Tiedot.Fields("LoopTAG")) & " " & HtmlEsc(Tiedot.Fields("Description")) & "</title>"
 TOUT.WriteLine "</head>"
 TOUT.WriteLine "<body>"
 
 'OTSIKKO - Piirin positio ja nimitys
 TOUT.WriteLine "    <h1 id=""loopname"">"
-TOUT.WriteLine "        <a href=""" & Tiedot.Fields("LOOPTAG") & ".html"" target=""_parent"">" _
-        & Tiedot.Fields("LOOPTAG") & "</a> " _
-        & Tiedot.Fields("Description") '& "<br>"
+TOUT.WriteLine "        <a href=""" & HtmlEsc(TiedostoNimi(Tagi)) & ".html"" target=""_parent"">" _
+        & HtmlEsc(Tiedot.Fields("LOOPTAG")) & "</a> " _
+        & HtmlEsc(Tiedot.Fields("Description")) '& "<br>"
 TOUT.WriteLine "    </h1>"
 
 'TOIMINTA
@@ -363,28 +405,20 @@ TOUT.WriteLine "    </h2>"
 TEKSTI = Nz(Tiedot.Fields("Alarms"))
 MuutaTeksti TEKSTI
     
-  If IsNull(Tiedot.Fields("AlarmDescrBL")) And IsNull(Tiedot.Fields("Alarms")) Then
-'    TOUT.WriteLine "    <p>"
-'    TOUT.WriteLine "Ei erityisi‰ h‰lytyksi‰"
-'    TOUT.WriteLine "    </p>"
-  Else
-    If IsNull(Tiedot.Fields("HH")) And IsNull(Tiedot.Fields("H")) And IsNull(Tiedot.Fields("LL")) And IsNull(Tiedot.Fields("L")) Then
-      If IsNull(Tiedot.Fields("Alarms")) Then
-'        TOUT.WriteLine "    <p>"
-'        TOUT.WriteLine "Ei h‰lytyksi‰"
-'        TOUT.WriteLine "    </p>"
-      End If
-    Else
-      ADescr = Tiedot.Fields("AlarmDescrBL")
-      TOUT.WriteLine "<dl>"
+' H‰lytysrajat kirjoitetaan vain, jos h‰lytyskuvaus tai h‰lytysteksti on annettu
+' ja v‰hint‰‰n yksi raja-arvo (HH/H/L/LL) on asetettu
+If Not (IsNull(Tiedot.Fields("AlarmDescrBL")) And IsNull(Tiedot.Fields("Alarms"))) Then
+    If Not (IsNull(Tiedot.Fields("HH")) And IsNull(Tiedot.Fields("H")) _
+            And IsNull(Tiedot.Fields("LL")) And IsNull(Tiedot.Fields("L"))) Then
+        ADescr = Nz(Tiedot.Fields("AlarmDescrBL"), "")
+        TOUT.WriteLine "<dl>"
         LisaaHalyHTML Tiedot.Fields("HH"), "HH: " & ADescr & " > "
         LisaaHalyHTML Tiedot.Fields("H"), "H: " & ADescr & " > "
         LisaaHalyHTML Tiedot.Fields("L"), "L: " & ADescr & " < "
         LisaaHalyHTML Tiedot.Fields("LL"), "LL: " & ADescr & " < "
-      TOUT.WriteLine "</dl>"
+        TOUT.WriteLine "</dl>"
     End If
-  End If
-'----------------------------------------
+End If
 
 
 'TIEDOT MUIHIN PIIREIHIN
@@ -406,13 +440,8 @@ MuutaTeksti TEKSTI                     'Muuttaa tekstin ja kirjoittaa sen suoraa
 TOUT.WriteLine "</body>"
 TOUT.WriteLine "</html>"
 
-'Muilla riveill‰ olisi piirin kaikki laitteet, mutta niit‰ ei tuloste n‰kyviin, joten ohitetaan ne
-  Do While Not Tiedot.EOF
-    If Tiedot.Fields("LoopTAG") <> Tagi Then Exit Do
-    If Laitteet <> "" Then Laitteet = Laitteet & "<br>"
-'    Laitteet = Laitteet & Tiedot.Fields("TAGNAME")
-    Tiedot.MoveNext
-  Loop
+' Muilla riveill‰ on piirin laitteet, joita ei tulosteta; siirret‰‰n kursori ryhm‰n ohi
+OhitaRyhma Tagi
   
   Exit Sub
   
@@ -442,7 +471,7 @@ Private Sub MuutaTeksti(TEKSTI As String)
     On Error GoTo ErrorHandler
 
     If TEKSTI <> "" Then
-        TEKSTI = MuutaLinkit(TEKSTI)  'Muutetaan aaltosulkeissa olevat piiripositiot linkeiksi
+        TEKSTI = MuutaLinkit(HtmlEscTeksti(TEKSTI))  'Muutetaan aaltosulkeissa olevat piiripositiot linkeiksi
         Rivit = Split(TEKSTI, vbCrLf) 'Splitataan rivit ja muutetaan html kappeliksi
         Riveja = UBound(Rivit)
         For r = 0 To Riveja
@@ -547,7 +576,7 @@ Private Function MuutaLinkit(Tieto As String) As String
         End If
       DESC = ""
         OS2 = InStr(OS, MuutaLinkit, " ")
-        OS3 = InStr(MuutaLinkit, "}")
+        OS3 = InStr(OS, MuutaLinkit, "}")
       If OS3 = 0 Then Exit Do
       If OS2 = 0 Or OS2 > OS3 Then OS2 = OS3
         POS = Mid$(MuutaLinkit, OS + 1, OS2 - OS - 1)
@@ -613,12 +642,12 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: MuutaTiedot
-' Tarkoitus: T‰ytt‰‰ Word-mallin kirjanmerkit piirin/laitteen tiedoilla
+' Tarkoitus: T‰ytt‰‰ Word-mallin paikkamerkit piirin/laitteen tiedoilla
 '
 ' Kuvaus:
-'   Korvaa Word-mallin kirjanmerkit nykyisen tietueen tiedoilla.
-'   K‰sittelee otsikkokent‰t (_REV, _STAT, _AUTH jne.) ja sis‰ltˆkent‰t
-'   (_LTAG, _DESCR, _FUNCT jne.). Rakentaa h‰lytyslistan ja laitelistan.
+'   Korvaa Word-mallin paikkamerkit nykyisen tietueen tiedoilla.
+'   K‰sittelee otsikkotiedot ([REV], [STATUS], [AUTHOR] jne.) ja sis‰ltˆkent‰t
+'   ([LOOPTAG], [FUNCTION], [ALARMS] jne.). Rakentaa h‰lytys- ja laitelistan.
 '================================================================================
 Private Sub MuutaTiedot()
     Dim Tagi As String
@@ -632,17 +661,8 @@ Private Sub MuutaTiedot()
     On Error GoTo ErrorHandler
     
     Tagi = Tiedot.Fields("LOOPTAG")
-    If IsNull(Tiedot.Fields("AlarmDescrBL")) Then
-'    If Tiedot.Fields("VakioHaly") = "" Then
-'      If Suomeksi Then
-'        Halyt = "Ei erityisi‰ h‰lytyksi‰"
-'      Else
-'        Halyt = "No special alarms"
-'      End If
-'    Else
-'      Halyt = Tiedot.Fields("VakioHaly")
-'    End If
-  Else
+    ' H‰lytysteksti muodostetaan vain, jos h‰lytyskuvaus on annettu
+    If Not IsNull(Tiedot.Fields("AlarmDescrBL")) Then
     If IsNull(Tiedot.Fields("HH")) And IsNull(Tiedot.Fields("H")) And IsNull(Tiedot.Fields("LL")) And IsNull(Tiedot.Fields("L")) Then
       If Suomeksi Then
         Halyt = "Ei h‰lytyksi‰"
@@ -651,9 +671,9 @@ Private Sub MuutaTiedot()
       End If
     Else
       If Suomeksi Then
-        ADescr = Nz(Tiedot.Fields("AlarmDescrBL"), "")
-      Else
         ADescr = Nz(Tiedot.Fields("AlarmDescrBL_FI"), "")
+      Else
+        ADescr = Nz(Tiedot.Fields("AlarmDescrBL"), "")
       End If
       LisaaHaly Tiedot.Fields("HH"), Halyt, "HH: " & ADescr & " > "
       LisaaHaly Tiedot.Fields("H"), Halyt, "H: " & ADescr & " > "
@@ -663,25 +683,22 @@ Private Sub MuutaTiedot()
   End If
 
   
-  ' Me.LomakePohja.Value tarkistettu ylemp‰n‰ ó t‰ss‰ otetaan arvo moduulitasolta
-  If Samaan = False Or Eka = True Then
-    KorvaaOts "[REV]", REV
-    KorvaaOts "[PROJECT_LINE1]", PROJECT_L1
-    KorvaaOts "[PROJECT_LINE2]", PROJECT_L2
-    KorvaaOts "[STATUS]", STATUS
-    KorvaaOts "[DOCNO]", DOCNO
-    KorvaaOts "[AUTHOR]", AUTHOR
-    KorvaaOts "[DATE]", Day(Now()) & "." & Month(Now()) & "." & Year(Now())
-    Eka = False
-  End If
+  ' Otsikkotiedot korvataan mallin yl‰tunnisteeseen
+  KorvaaOts "[REV]", REV
+  KorvaaOts "[PROJECT_LINE1]", PROJECT_L1
+  KorvaaOts "[PROJECT_LINE2]", PROJECT_L2
+  KorvaaOts "[STATUS]", STATUS
+  KorvaaOts "[DOCNO]", DOCNO
+  KorvaaOts "[AUTHOR]", AUTHOR
+  KorvaaOts "[DATE]", Format$(Date, "d.m.yyyy")
   Korvaa "[PIDwgNo]", Nz(Tiedot.Fields("PIDwgNo"))
   If Suomeksi Then
-    Korvaa "[LOOPDESCR]", UCase$(Tiedot.Fields("DescriptionFI"))
+    Korvaa "[LOOPDESCR]", UCase$(Nz(Tiedot.Fields("DescriptionFI"), ""))
     Korvaa "[LOOPTAG]", Tagi
     Korvaa "[PROCESS]", Nz(Tiedot.Fields("ProcessFI"))
-    Korvaa "[FUNCTION]", Tiedot.Fields("FunctionFI")
+    Korvaa "[FUNCTION]", Nz(Tiedot.Fields("FunctionFI"), "")
   Else
-    Korvaa "[LOOPDESCR]", UCase$(Tiedot.Fields("Description"))
+    Korvaa "[LOOPDESCR]", UCase$(Nz(Tiedot.Fields("Description"), ""))
     Korvaa "[LOOPTAG]", Tagi
     Korvaa "[PROCESS]", Nz(Tiedot.Fields("Process"))
     Korvaa "[FUNCTION]", Nz(Tiedot.Fields("Function"))
@@ -690,8 +707,12 @@ Private Sub MuutaTiedot()
   Korvaa "[CHANGES]", Nz(Tiedot.Fields("Muutokset"))
   
   If Me.LomakePohja.Value = 1 Then ' Kysymyksess‰ piiri
+    PID_D = Null
+    PID_U = Null
+    On Error Resume Next  ' CONTROL-taulu voi puuttua linkityksist‰, jolloin s‰‰timen toimintaa ei m‰‰ritet‰
     PID_D = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_D'")
     PID_U = DLookup("FBlock", "CONTROL", "AreaCode = '" & Tiedot.Fields("AreaCode") & "' AND LoopNo='" & Tiedot.Fields("LoopNo") & "' AND FBlock='PID_U'")
+    On Error GoTo ErrorHandler
      
    If IsNull(PID_D) = False Or IsNull(PID_U) = False Then
      If Suomeksi Then
@@ -731,7 +752,6 @@ Private Sub MuutaTiedot()
      POISTA "[ACTION]"
   End If
   If IsNull(Tiedot.Fields("RANGE")) Then
-  'If (Tiedot.Fields("RANGE") = "-") Then
     POISTA "[RANGE_T]"
     POISTA "[RANGE]"
   Else
@@ -764,7 +784,7 @@ Private Sub MuutaTiedot()
   
   Korvaa2 "[ALARMS]", Halyt
   
-  ' Ker‰t‰‰n laitelistaus (TAGNAME) ó Nz() v‰ltt‰‰ Invalid use of Null -virhen
+  ' Ker‰t‰‰n piirin laitteet (TAGNAME); Nz() est‰‰ Null-arvon aiheuttaman virheen
   Do While Not Tiedot.EOF
     If Tiedot.Fields("LoopTAG") <> Tagi Then Exit Do
     If Laitteet <> "" Then Laitteet = Laitteet & vbCrLf
@@ -773,13 +793,6 @@ Private Sub MuutaTiedot()
     Else
       Laitteet = Laitteet & Nz(Tiedot.Fields("TAGNAME"), "")
     End If
-'    If Tiedot.Fields("suffix") <> "-" Then Laitteet = Laitteet & " (" & Tiedot.Fields("suffix") & ")"
-'    Laitteet = Laitteet & Tiedot.Fields("maara")
-'    If Tiedot.Fields("maara") > 1 Then
-'      Laitteet = Laitteet & " pcs)"
-'    Else
-'      Laitteet = Laitteet & " pc)"
-'    End If
     Tiedot.MoveNext
   Loop
   Korvaa2 "[EQUIPMENT]", Laitteet
@@ -797,8 +810,7 @@ End Sub
 '   VanhaTeksti ó Korvattava teksti
 '   UusiTeksti  ó Uusi teksti
 '================================================================================
-Private Sub KorvaaOts(VanhaTeksti As String, UusiTeksti As String)
-    Dim rngStory As Variant
+Private Sub KorvaaOts(ByVal VanhaTeksti As String, ByVal UusiTeksti As String)
     
     On Error Resume Next  ' Otsikko saattaa puuttua ó jatketaan hiljaisesti
     
@@ -827,17 +839,16 @@ End Sub
 ' Aliohjelma: Korvaa
 ' Tarkoitus: Korvaa teksti Word-dokumentin p‰‰tekstiss‰
 ' Parametrit:
-'   VanhaTeksti ó Korvattava teksti (kirjanmerkki)
+'   VanhaTeksti ó Korvattava teksti (paikkamerkki)
 '   UusiTeksti  ó Uusi teksti
 '
 ' Kuvaus:
-'   Korvaa kirjanmerkin tekstin dokumentissa. Pitk‰ teksti (>255 merkki‰)
+'   Korvaa paikkamerkin tekstin dokumentissa. Pitk‰ teksti (>255 merkki‰)
 '   k‰sitell‰‰n erikseen Word-rajoituksen vuoksi. Poistaa {aaltosulkeet}.
 '================================================================================
-Private Sub Korvaa(VanhaTeksti As String, UusiTeksti As String)
-    Dim rngStory As Variant
+Private Sub Korvaa(ByVal VanhaTeksti As String, ByVal UusiTeksti As String)
     
-    On Error Resume Next  ' Kirjanmerkki saattaa puuttua ó jatketaan hiljaisesti
+    On Error Resume Next  ' Paikkamerkki saattaa puuttua ó jatketaan hiljaisesti
     
     UusiTeksti = Replace(UusiTeksti, "{", "")
     UusiTeksti = Replace(UusiTeksti, "}", "")
@@ -887,19 +898,18 @@ End Sub
 ' Aliohjelma: Korvaa2
 ' Tarkoitus: Korvaa teksti Word-dokumentissa s‰ilytt‰en kappaleiden vaihdot
 ' Parametrit:
-'   VanhaTeksti ó Korvattava teksti (kirjanmerkki)
+'   VanhaTeksti ó Korvattava teksti (paikkamerkki)
 '   UusiTeksti  ó Uusi teksti, kappaleet erotettu vbCrLf-merkill‰
 '
 ' Kuvaus:
-'   Korvaa kirjanmerkin tekstin ja muuntaa vbCrLf-erottimet Word-kappaleiksi.
+'   Korvaa paikkamerkin tekstin ja muuntaa vbCrLf-erottimet Word-kappaleiksi.
 '   Poistaa {aaltosulkeet} tekstist‰.
 '================================================================================
 Private Sub Korvaa2(VanhaTeksti As String, ByVal UusiTeksti As String)
-    Dim rngStory As Variant
     Dim Tekstit As Variant
     Dim i As Integer
     
-    On Error Resume Next  ' Kirjanmerkki saattaa puuttua ó jatketaan hiljaisesti
+    On Error Resume Next  ' Paikkamerkki saattaa puuttua ó jatketaan hiljaisesti
     
     UusiTeksti = Replace(UusiTeksti, "{", "")
     UusiTeksti = Replace(UusiTeksti, "}", "")
@@ -932,15 +942,13 @@ End Sub
 
 '================================================================================
 ' Aliohjelma: POISTA
-' Tarkoitus: Poistaa kirjanmerkin tekstin Word-dokumentista
+' Tarkoitus: Poistaa paikkamerkin tekstin Word-dokumentista
 ' Parametrit:
-'   TEKSTI ó Poistettava kirjanmerkkiteksti
+'   TEKSTI ó Poistettava paikkamerkki
 '================================================================================
-Private Sub POISTA(TEKSTI As String)
-    Dim rngStory As Variant
-    Dim i As Integer
+Private Sub POISTA(ByVal TEKSTI As String)
     
-    On Error Resume Next  ' Kirjanmerkki saattaa puuttua ó jatketaan hiljaisesti
+    On Error Resume Next  ' Paikkamerkki saattaa puuttua ó jatketaan hiljaisesti
     
     oWord.Activate
     oTemplate.StoryRanges(wdMainTextStory).Select
@@ -987,7 +995,7 @@ Private Sub LisaaHalyHTML(Tieto As Variant, Alku As String)
     On Error Resume Next
     If IsNull(Tieto) Then Exit Sub
     TOUT.WriteLine "<dd>"
-    TOUT.WriteLine Alku & Tieto & Tiedot.Fields("Unit")
+    TOUT.WriteLine HtmlEsc(Alku & Tieto & Tiedot.Fields("Unit"))
     TOUT.WriteLine "</dd>"
 End Sub
 
@@ -1141,7 +1149,7 @@ LisaaTeksti "Ei lukituksia" & vbCrLf & vbCrLf
 End Sub
 
 Private Sub Command99_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & "-Odotusaika: 0 s" & vbCrLf & _
                 "-Valvonta-aika: 1 s" & vbCrLf & vbCrLf & _
                 "-Toimenpiteet:" & vbCrLf
@@ -1149,25 +1157,25 @@ End If
 End Sub
 
 Private Sub Command100_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & "-Toimenpiteet:" & vbCrLf
 End If
 End Sub
 
 Private Sub Command101_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & vbCrLf & "-Ehdot:" & vbCrLf & "-"
 End If
 End Sub
 
 Private Sub Command102_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & "<h3>K‰siajolla</h3>" & vbCrLf
 End If
 End Sub
 
 Private Sub Command104_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & vbCrLf & "<h4>Askel nro. " & Me.Text105.Value & ": " & Me.Text107.Value & "</h4>" & _
                 vbCrLf & "-Odotusaika: 0 s" & vbCrLf & _
                 "-Valvonta-aika: 1 s" & vbCrLf & vbCrLf & _
@@ -1178,7 +1186,7 @@ End If
 End Sub
 
 Private Sub Command103_Click()
-If KohdeTextBox.Name = "TFunction" Then
+If TFunctionValittu Then
     LisaaTeksti vbCrLf & "<h3>Automaatilla</h3>" & vbCrLf
 End If
 End Sub

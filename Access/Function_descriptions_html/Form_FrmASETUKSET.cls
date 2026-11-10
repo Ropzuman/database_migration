@@ -1,11 +1,15 @@
 Option Compare Database
 Option Explicit
 
+Private LinkkausVirheet As Long  ' Linkityksessä epäonnistuneiden taulujen lukumäärä
+
 '================================================================================
 ' Lomake: FrmASETUKSET (Asetukset)
 ' Tarkoitus: Tietokannan konfigurointi ja taulujen linkitys
 ' Päivitetty: 2025-11-13 — VBA7/64-bit tuki lisätty
 '             2026-03-03 — Me.-etuliite lisätty kaikille lomakeohjaimille
+'             2026-11-10 - Linkitysvirheet raportoidaan yhteenvetoon; lähdetiedoston tarkistus; acForm-vakio
+'             2026-11-10 - Viimeistely: turha välilyönti poistettu, kommentin oikoluku
 '
 ' Kuvaus:
 '   Asetukset-lomake ulkoisten Access-tietokantojen taulujen linkittämiseen.
@@ -27,7 +31,7 @@ Option Explicit
 Private Sub Command11_Click()
     On Error GoTo ErrorHandler
     DoCmd.OpenForm "frmMUOKKAUS"
-    DoCmd.Close , "FrmASETUKSET"
+    DoCmd.Close acForm, "FrmASETUKSET"
     Exit Sub
 ErrorHandler:
     MsgBox "Virhe lomakkeen avauksessa: " & Err.Description, vbExclamation
@@ -40,6 +44,8 @@ End Sub
 Private Sub Command2_Click()
     On Error GoTo ErrorHandler
     
+    LinkkausVirheet = 0
+
     ' Instrumenttitietokannan taulut
     Linkkaa "Alarms", Me.TINSTRU.Value
     Linkkaa "Loops", Me.TINSTRU.Value
@@ -54,7 +60,11 @@ Private Sub Command2_Click()
     ' Toimintakaaviot (toistaiseksi pois käytöstä)
     ' Linkkaa "CONTROL", Me.TFUNCDIAG.Value
     
-    MsgBox "Taulukot linkattu", vbOKOnly, "Linkkaa taulukot"
+    If LinkkausVirheet = 0 Then
+        MsgBox "Taulukot linkattu", vbOKOnly, "Linkkaa taulukot"
+    Else
+        MsgBox "Linkitys epäonnistui " & LinkkausVirheet & " taululle.", vbExclamation, "Linkkaa taulukot"
+    End If
     Exit Sub
     
 ErrorHandler:
@@ -82,6 +92,13 @@ Private Sub Linkkaa(Taulukko As String, KANTA As String)
     ' Välimuistitetaan CurrentDb — vältetään toistuva uuden instanssin luonti per kutsu
     Set db = CurrentDb
     
+    ' Tarkistetaan lähdetietokannan olemassaolo ennen vanhan linkin poistoa
+    If Dir$(KANTA) = "" Then
+        LinkkausVirheet = LinkkausVirheet + 1
+        MsgBox "Lähdetietokantaa ei löydy:" & vbCrLf & KANTA, vbExclamation
+        Exit Sub
+    End If
+
     ' Poistetaan olemassa oleva taulu ennen uudelleenlinkitystä
     For i = 0 To db.TableDefs.Count - 1
         If LCase$(db.TableDefs(i).Name) = LCase$(Taulukko) Then
@@ -107,12 +124,13 @@ Private Sub Linkkaa(Taulukko As String, KANTA As String)
 ErrorHandler:
     Set tdf = Nothing
     Set db = Nothing
+    LinkkausVirheet = LinkkausVirheet + 1
     MsgBox "Virhe taulun '" & Taulukko & "' linkityksessä: " & Err.Description, vbExclamation
 End Sub
 
 '================================================================================
 ' Tapahtuma: Form_Load
-' Tarkoitus: Alustaa lomake oletuspolkiilla ja kirjaa käyttäjän
+' Tarkoitus: Alustaa lomake oletuspoluilla ja kirjaa käyttäjän
 '================================================================================
 Private Sub Form_Load()
     Dim POLKU As String
