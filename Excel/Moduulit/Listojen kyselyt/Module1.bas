@@ -211,6 +211,7 @@ Dim CurrentQuery As String
 Dim errorNumber As Long
 Dim errorDescription As String
 Dim unresolvedNames As String
+Dim db2DataFound As Boolean
 
 ' DAO-muuttujat DB1:lle (tallennetut kyselyt)
 Dim dbDAO As Object      ' DAO.Database
@@ -224,21 +225,23 @@ Dim rs As Object         ' ADODB.Recordset
 Dim fld As Object        ' ADODB.Field
 
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Aloitetaan datan haku"
+  ' Uusi tietokantahaku mitätöi aiemman tarkistuksen ja sen metatiedot.
+  CheckOK = False
   
   ' Valitaan mikä SQL-kysely käytetään Main-sheetiltä
   On Error Resume Next
-  If Sheets("Main").Valinta1.Value = True Then
+  If ThisWorkbook.Sheets("Main").Valinta1.Value = True Then
     Valinta = 0
-  ElseIf Sheets("Main").Valinta2.Value = True Then
+  ElseIf ThisWorkbook.Sheets("Main").Valinta2.Value = True Then
     Valinta = 1
   Else
     Valinta = 2
   End If
   On Error GoTo 0
   
-  Kanta = Sheets("Main").Range("C6").Value
-  sSQL(1) = Sheets("Main").Cells(8 + Valinta, 3).Value
-  sSQL(2) = Sheets("Main").Cells(12 + Valinta, 3).Value
+  Kanta = ThisWorkbook.Sheets("Main").Range("C6").Value
+  sSQL(1) = ThisWorkbook.Sheets("Main").Cells(8 + Valinta, 3).Value
+  sSQL(2) = ThisWorkbook.Sheets("Main").Cells(12 + Valinta, 3).Value
   
   Debug.Print "  Tietokanta: " & Kanta
   Debug.Print "  SQL-valinta: " & Valinta
@@ -402,6 +405,7 @@ Dim fld As Object        ' ADODB.Field
     Debug.Print "    Recordset avattu - Fields: " & rs.Fields.Count & ", EOF: " & rs.EOF
     
     If Not rs.EOF Then
+      db2DataFound = True
       ' Kirjoitetaan sarakkeiden nimet (header)
       colData = 1
       For Each fld In rs.Fields
@@ -437,6 +441,8 @@ Dim fld As Object        ' ADODB.Field
       If rc > 1 Then
         Debug.Print "    A2 (data):   '" & ws.Cells(2, 1).Value & "'"
       End If
+    Else
+      Debug.Print "  VAROITUS: DB2-kysely puuttuu; Info- ja Revisions-metatietoja ei voida päivittää"
     End If
   End If
   
@@ -449,8 +455,13 @@ Dim fld As Object        ' ADODB.Field
   On Error GoTo 0
   
   Debug.Print Format(Now, "hh:mm:ss") & " [HaeData] Valmis!"
-  MsgBox "Data haettu onnistuneesti!", vbOKOnly, "Valmis"
-  Sheets("Main").Select
+  If Len(Trim$(sSQL(2))) = 0 Or Not db2DataFound Then
+    MsgBox "DB1-data haettiin, mutta DB2-kysely puuttuu tai ei palauttanut rivejä." & vbCrLf & _
+           "Info- ja Revisions-välilehtien metatiedot eivät tällöin päivity.", vbExclamation, "Metatiedot puuttuvat"
+  Else
+    MsgBox "Data haettu onnistuneesti!", vbOKOnly, "Valmis"
+  End If
+  ThisWorkbook.Sheets("Main").Select
 
 SafeExit:
   ' Try-Finally -malli VBA:ssa: siivoo resurssit ja palauttaa UI-tilan AINA
@@ -529,19 +540,22 @@ Sub GenPrintout()
   Dim templateRange As Range
   Dim stagingSheet As Worksheet     ' Fix1: cross-WB staging (1 kopio loopille)
   Dim wsLinking As Worksheet
+  Dim capturedErrNumber As Long
+  Dim capturedErrDescription As String
+  Dim capturedErrSource As String
   
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   BeginFastMode
   
   ' Haetaan POSheet-nimi faceplatesta
   On Error Resume Next
-  POSheet = Sheets("Main").Range("C16").Value
+  POSheet = ThisWorkbook.Sheets("Main").Range("C16").Value
   If Err.Number <> 0 Then
     Debug.Print "  [GenPrintout] POSheet-luku epäonnistui: " & Err.Number & " - " & Err.Description
     Err.Clear
     POSheet = "Printout"
   End If
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   If Trim(POSheet) = "" Then POSheet = "Printout" ' Oletusnimi jos ei asetettu
   Debug.Print "  POSheet nimi: " & POSheet
   
@@ -550,7 +564,7 @@ Sub GenPrintout()
   If Trim(DocInfo.Path) = "" Or Trim(DocInfo.File) = "" Then HaeDocTiedot
   If Err.Number <> 0 Then Debug.Print "  [GenPrintout] HaeDocTiedot virhe: " & Err.Number & " - " & Err.Description
   Err.Clear
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   
   Application.StatusBar = "Alustetaan tulosteen generointi..."
     
@@ -565,7 +579,7 @@ Sub GenPrintout()
     AddFooter = False
     HideLINKING = False
   End If
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   Debug.Print "  AddFooter: " & AddFooter & ", HideLINKING: " & HideLINKING
     
   ' Asetetaan työkirjaviittaukset
@@ -604,13 +618,13 @@ Sub GenPrintout()
   If Err.Number <> 0 Then
     Debug.Print "  [GenPrintout] Info-sheet Copy epäonnistui: " & Err.Number & " - " & Err.Description
     Err.Clear
-    MsgBox "Info-sheetin kopiointi epäonnistui: " & Err.Description, vbCritical, "Printout Generation Error"
-    Exit Sub
+    MsgBox "Info-sheetin kopiointi epäonnistui. Katso lisätiedot Immediate-ikkunasta.", vbCritical, "Printout Generation Error"
+    GoTo GenPrintoutCleanup
   End If
   Set destWB = Workbooks(Workbooks.Count)
   destWB.Sheets(1).Cells.ClearComments
   Debug.Print "  [GenPrintout] STEP 1 OK: uusi työkirja luotu"
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   
   ' Kopioidaan TEMPLATE, Legend ja Revisions uuteen työkirjaan
   Debug.Print "  [GenPrintout] STEP 2: copy TEMPLATE/Legend/Revisions"
@@ -623,14 +637,14 @@ Sub GenPrintout()
     Debug.Print "  [GenPrintout] Puuttuva source-sheet: TEMPLATE=" & (srcTemplate Is Nothing) & ", Legend=" & (srcLegend Is Nothing) & ", Revisions=" & (srcRevisions Is Nothing)
     Err.Clear
     MsgBox "Puuttuva source-sheet tietolähdetyökirjasta: TEMPLATE, Legend tai Revisions. Tarkista työkalun sisäinen Excel-taulukko.", vbCritical, "Printout Generation Error"
-    Exit Sub
+    GoTo GenPrintoutCleanup
   End If
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
 
   srcTemplate.Copy After:=destWB.Worksheets(1)
   If destWB.Worksheets.Count < 2 Then
     MsgBox "Työkirjassa ei luotu odotettua templaten kopiointisheettiä.", vbCritical, "Printout Generation Error"
-    Exit Sub
+    GoTo GenPrintoutCleanup
   End If
   destWB.Worksheets(2).Name = POSheet
   Set destSheet = destWB.Worksheets(POSheet)
@@ -639,7 +653,7 @@ Sub GenPrintout()
   srcRevisions.Copy After:=destWB.Worksheets(1)
   Debug.Print "  [GenPrintout] STEP 2 OK: sheets copied"
   Application.StatusBar = "Täytetään revisiot..."
-  PopulateRevisionsSimple
+  PopulateRevisionsSimple destWB
   
   ' Tyhjennetään POSheet ja poistetaan muodot
   Application.StatusBar = "Valmistellaan tulostesheet..."
@@ -718,7 +732,7 @@ Sub GenPrintout()
   destWB.Sheets("__STAGING__").Delete
   If Err.Number <> 0 Then Debug.Print "  [GenPrintout] __STAGING__ delete virhe: " & Err.Number & " - " & Err.Description
   Err.Clear
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   Application.DisplayAlerts = True
 
   ' Yksi cross-WB kopio — kaikki loopin kopiot tapahtuvat tästä eteenpäin saman WB:n sisällä
@@ -770,7 +784,7 @@ Sub GenPrintout()
   stagingSheet.Delete
   If Err.Number <> 0 Then Debug.Print "  [GenPrintout] stagingSheet delete virhe: " & Err.Number & " - " & Err.Description
   Err.Clear
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   Application.DisplayAlerts = True
   Set stagingSheet = Nothing
   Debug.Print "  Staging-sheet poistettu"
@@ -834,11 +848,10 @@ Sub GenPrintout()
     Debug.Print "  LINKING-sheet puuttuu - ohitetaan näkyvyys/poisto"
   End If
   Set wsLinking = Nothing
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   
   destSheet.Activate
   Application.StatusBar = False
-  EndFastMode
   
   ' Kysytään tiedostonimeä ja tallennetaan
   ' Rakennetaan luotettava oletus polku+tiedosto tallennusdialogille
@@ -852,7 +865,7 @@ Sub GenPrintout()
     Debug.Print "  [GenPrintout] Path/File-luku virhe: " & Err.Number & " - " & Err.Description
     Err.Clear
   End If
-  On Error GoTo 0
+  On Error GoTo GenPrintoutError
   
   If defPath = "" Then defPath = ThisWorkbook.Path & Application.PathSeparator
   If Right$(defPath, 1) <> "\" And Right$(defPath, 1) <> "/" Then defPath = defPath & Application.PathSeparator
@@ -906,10 +919,17 @@ Sub GenPrintout()
   End If
   Debug.Print "======================================"
   Debug.Print Format(Now, "hh:mm:ss") & " [GenPrintout] VALMIS!"
-  
+  GoTo GenPrintoutCleanup
+
+GenPrintoutCleanup:
+  Application.StatusBar = False
+  EndFastMode
   Exit Sub
 
 GenPrintoutError:
+  capturedErrNumber = Err.Number
+  capturedErrDescription = Err.Description
+  capturedErrSource = Err.Source
   Application.StatusBar = False
   ' Siivotaan staging-sheet jos se jäi kesken virheen sattuessa
   On Error Resume Next
@@ -920,14 +940,12 @@ GenPrintoutError:
     Set stagingSheet = Nothing
   End If
   On Error GoTo 0
-  EndFastMode
-  
   ' Parannettu virhekäsittelijä kontekstispesifeillä viesteillä
   Dim errMsg As String
-  errMsg = "Error in GenPrintout: " & Err.Description & " (Error " & Err.Number & ")"
+  errMsg = "Error in GenPrintout: " & capturedErrDescription & " (Error " & capturedErrNumber & ")"
   
   ' Lisätään kontekstia virhekoodin perusteella
-  Select Case Err.Number
+  Select Case capturedErrNumber
     Case 91
       errMsg = errMsg & vbCrLf & vbCrLf & "Objektimuuttujaa ei ole asetettu." & vbCrLf & _
                "Tämä yleensä tarkoittaa että sheet tai range puuttuu." & vbCrLf & _
@@ -947,12 +965,13 @@ GenPrintoutError:
   
   ' Lokitetaan Immediate Windowiin debuggausta varten
   Debug.Print "GenPrintout ERROR:"
-  Debug.Print "  Number: " & Err.Number
-  Debug.Print "  Description: " & Err.Description
-  Debug.Print "  Source: " & Err.Source
+  Debug.Print "  Number: " & capturedErrNumber
+  Debug.Print "  Description: " & capturedErrDescription
+  Debug.Print "  Source: " & capturedErrSource
   
   Err.Clear
   On Error GoTo 0
+  GoTo GenPrintoutCleanup
 End Sub
 '''
 ' Checkout: Validoi TEMPLATE-rakenteen ja DB1-otsikot.
@@ -979,14 +998,14 @@ Dim wsErrors As Worksheet
   ' Käytetään BeginFastMode/EndFastMode yhtenäisesti kuten muissakin makroissa
   BeginFastMode
   
-  Set wsErrors = Sheets("ERRORS")
-  Set wsTemplate = Sheets("TEMPLATE")
+  Set wsErrors = ThisWorkbook.Sheets("ERRORS")
+  Set wsTemplate = ThisWorkbook.Sheets("TEMPLATE")
   
   ' Tyhjennetään ERRORS-sheet
   wsErrors.Cells.Clear
   
   ' Haetaan vakiot faceplatesta
-  POSheet = Sheets("Main").Range("C16").Value
+  POSheet = ThisWorkbook.Sheets("Main").Range("C16").Value
   HideLINKING = LueBooleanControl("Main", "HLINKING", False)
   Debug.Print "  POSheet: " & POSheet & ", HideLINKING: " & HideLINKING
   
@@ -1059,7 +1078,9 @@ Dim wsErrors As Worksheet
     Debug.Print "  VAROITUS: Ei dataa DB2:ssa - Info-sheet jää tyhjäksi"
   End If
   
-  VaihdaInfo   'Täytetään dokumentin tiedot vain Info-sheettiin (ei Revisions checkout-vaiheessa)
+  VaihdaInfo "Info", ThisWorkbook
+  ' Revisions täytetään jo tarkistuksessa, jotta lähdetyökirja ja tuloste pysyvät synkronoituina.
+  PopulateRevisionsSimple ThisWorkbook
   
   ' Etsitään rivimerkit TEMPLATEsta
   Debug.Print "  Etsitään rivimerkit (££ ja £1/2/3)..."
@@ -1120,7 +1141,7 @@ Dim wsErrors As Worksheet
     Debug.Print Format(Now, "hh:mm:ss") & " [Checkout ERROR] Puuttuvia otsikkoita DB1:ssä"
     MsgBox "Templatessa oli virheitä! Katso ERRORS-sheet.", vbCritical, "Virhe!"
   Else
-    Sheets("Main").Activate
+    ThisWorkbook.Sheets("Main").Activate
     EndFastMode
     ' Varmistetaan että RMAX on asetettu — tyhjä datasetti jättäisi sen 0:ksi
     If RMAX = 0 Then
@@ -1169,4 +1190,3 @@ CheckoutError:
   Err.Clear
   On Error GoTo 0
 End Sub
-

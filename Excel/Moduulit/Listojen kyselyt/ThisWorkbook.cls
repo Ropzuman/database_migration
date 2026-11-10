@@ -10,19 +10,19 @@ Attribute VB_Exposed = True
 Option Explicit
 
 '''
-' ThisWorkbook - Kytkent√§lista Excel-makroj√§rjestelm√§n ty√∂kirjatapahtumak√§sittelij√§.
+' ThisWorkbook - Kytkent‰lista Excel-makroj‰rjestelm‰n tyˆkirjatapahtumak‰sittelij‰.
 ' Workbook_Open nollaa ajokohtaiset globaalitilat avautuessa, jotta edellisen
-' istunnon CheckOK=True-tila ei j√§√§ virheellisesti voimaan.
+' istunnon CheckOK=True-tila ei j‰‰ virheellisesti voimaan.
 '''
 
 Private Sub Workbook_Open()
-  ' Nollataan globaali tila jotta edellisen istunnon CheckOK ei j√§√§ voimaan
+  ' Nollataan globaali tila jotta edellisen istunnon CheckOK ei j‰‰ voimaan
   AlustaTila
   Debug.Print Format(Now, "hh:mm:ss") & " [Workbook_Open] Tila nollattu AlustaTila-kutsulla"
 End Sub
 
 Private Sub Workbook_BeforeClose(Cancel As Boolean)
-  ' Nollataan tila my√∂s sulkeutuessa (varmuuden vuoksi jos ty√∂kirja avataan uudelleen)
+  ' Nollataan tila myˆs sulkeutuessa (varmuuden vuoksi jos tyˆkirja avataan uudelleen)
   AlustaTila
   Debug.Print Format(Now, "hh:mm:ss") & " [Workbook_BeforeClose] Tila nollattu"
 End Sub
