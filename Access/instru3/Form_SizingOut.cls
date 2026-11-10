@@ -62,6 +62,7 @@ On Error GoTo ErrorHandler
     Dim Path As String  ' Kohdehakemiston polku
     Dim i As Integer  ' Kentt‰laskuri
     Dim Osoitin As Long  ' Pilkun sijainti merkkijonossa
+    Dim Numeerinen As Boolean  ' Onko kentt‰ numeerinen (ei formula-injection-suojausta)
     Dim Arvo As String  ' Nykyinen kentt‰arvo
     
     Set FSO = CreateObject("Scripting.FileSystemObject")
@@ -80,51 +81,62 @@ On Error GoTo ErrorHandler
     End If
     
     ' Avataan l‰hde-kysely/taulu
-    Set Taulu = DB.OpenRecordset("SELECT * FROM " & Me.Taulukko.Value)
+    If Not LahdeOlemassa(DB, CStr(Nz(Me.Taulukko.Value, ""))) Then
+        MsgBox "Taulua tai kysely‰ '" & Me.Taulukko.Value & "' ei lˆydy", vbCritical, "Vientivirhe"
+        Exit Sub
+    End If
+    Set Taulu = DB.OpenRecordset("SELECT * FROM [" & Me.Taulukko.Value & "]")
     
     ' Luodaan CSV-tiedosto kohdepolkuun
     Set Tiedosto = FSO.CreateTextFile(Path & Me.FileName.Value & ".csv")
     
     ' Vied‰‰n kaikki rivit
     Do While Not Taulu.EOF
-        ' Kirjoitetaan ensimm‰inen kentt‰ lainausmerkeiss‰
-        Tiedosto.Write """" & Taulu.Fields(0).Value & """"
-        
-        ' Kirjoitetaan loput kent‰t puolipisteell‰ eroteltuina
-        For i = 1 To Taulu.Fields.Count - 1
-            ' K‰sitell‰‰n null-arvot tyhjin‰
+        For i = 0 To Taulu.Fields.Count - 1
+            Select Case Taulu.Fields(i).Type
+                Case dbByte, dbInteger, dbLong, dbBigInt, dbCurrency, dbSingle, dbDouble, dbDecimal
+                    Numeerinen = True
+                Case Else
+                    Numeerinen = False
+            End Select
+
+            ' Null-arvot kirjoitetaan tyhjin‰
             If IsNull(Taulu.Fields(i).Value) Then
                 Arvo = ""
             Else
-                Arvo = Taulu.Fields(i).Value
-                
-                ' Muunnetaan desimaalipilkku pisteeksi (FI -> kansainv‰linen)
-                Osoitin = InStr(Arvo, ",")
-                If Osoitin <> 0 Then
-                    Arvo = Left$(Arvo, Osoitin - 1) & "." & Mid$(Arvo, Osoitin + 1)
+                Arvo = CStr(Taulu.Fields(i).Value)
+
+                ' Desimaalipilkku muutetaan pisteeksi vain luvuille (tekstikenttien pilkut s‰ilyv‰t)
+                If Numeerinen Or IsNumeric(Arvo) Then
+                    Osoitin = InStr(Arvo, ",")
+                    If Osoitin <> 0 Then
+                        Arvo = Left$(Arvo, Osoitin - 1) & "." & Mid$(Arvo, Osoitin + 1)
+                    End If
                 End If
             End If
-            
-            ' Formula Injection -esto: lis‰t‰‰n heittomerkki vaarallisten =-@-alkuisten arvojen eteen
-            If Arvo <> "" Then
+
+            ' Formula Injection -esto: heittomerkki vaarallisten =-@+-alkuisten tekstiarvojen eteen
+            ' (numeerisia kentti‰, esim. negatiivisia lukuja, ei muokata)
+            If Arvo <> "" And Not Numeerinen Then
                 If Left$(Arvo, 1) = "=" Or Left$(Arvo, 1) = "@" Or _
                    Left$(Arvo, 1) = "+" Or Left$(Arvo, 1) = "-" Then
                     Arvo = "'" & Arvo
                 End If
             End If
-            ' RFC 4180: tuplaa lainausmerkit ó est‰‰ CSV-rakenteen rikkoutumisen (yksi " -> "")
-            Arvo = Replace(Nz(Arvo, ""), """", """""")
-            ' Kirjoitetaan kentt‰arvo lainausmerkeiss‰, puolipisteeroteltu
-            Tiedosto.Write ";""" & Arvo & """"    
+            ' RFC 4180: tuplataan lainausmerkit, jottei CSV-rakenne rikkoudu
+            Arvo = Replace(Arvo, """", """""")
+
+            If i > 0 Then Tiedosto.Write ";"
+            Tiedosto.Write """" & Arvo & """"
         Next i
-        
-        ' Rivinloppu
+
         Tiedosto.Write vbCrLf
         Taulu.MoveNext
     Loop
     
     ' Siivotaan resurssit
     Taulu.Close
+    Tiedosto.Close
     Set Taulu = Nothing
     Set DB = Nothing
     Set Tiedosto = Nothing
@@ -132,13 +144,14 @@ On Error GoTo ErrorHandler
     
     ' Ilmoitetaan k‰ytt‰j‰lle ja avataan hakemisto
     MsgBox "Valmis", vbInformation, "Vienti valmis"
-    Call Shell("EXPLORER " & Path, vbNormalFocus)
+    Call Shell("EXPLORER """ & Path & """", vbNormalFocus)
     Exit Sub
 
 ErrorHandler:
     MsgBox "Virhe tiedon vienniss‰: " & Err.Description, vbCritical, "Vientivirhe"
     On Error Resume Next
     If Not Taulu Is Nothing Then Taulu.Close
+    If Not Tiedosto Is Nothing Then Tiedosto.Close
     Set Taulu = Nothing
     Set DB = Nothing
     Set Tiedosto = Nothing
@@ -157,6 +170,25 @@ End Sub
 ' Huomiot:
 '   - Oletuskysely kohdistuu venttiilien mitoitusdatan vientiin
 '--------------------------------------------------------------------------------
+' Tarkistaa, ett‰ annettu nimi on olemassa oleva taulu tai kysely (est‰‰ mielivaltaisen SQL:n)
+Private Function LahdeOlemassa(ByVal DB As DAO.Database, ByVal Nimi As String) As Boolean
+    Dim Td As DAO.TableDef  ' Tarkistettava taulu
+    Dim Qd As DAO.QueryDef  ' Tarkistettava kysely
+
+    For Each Td In DB.TableDefs
+        If StrComp(Td.Name, Nimi, vbTextCompare) = 0 Then
+            LahdeOlemassa = True
+            Exit Function
+        End If
+    Next Td
+    For Each Qd In DB.QueryDefs
+        If StrComp(Qd.Name, Nimi, vbTextCompare) = 0 Then
+            LahdeOlemassa = True
+            Exit Function
+        End If
+    Next Qd
+End Function
+
 Private Sub Form_Load()
   Me.Taulukko.Value = "qryValveSizingOut"  ' Oletuskysely venttiilien mitoitusdatan vientiin
 End Sub

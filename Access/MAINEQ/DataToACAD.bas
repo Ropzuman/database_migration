@@ -1,4 +1,4 @@
-Option Compare Database   ' K‰yt‰ tietokantaj‰rjestyst‰ merkkijonovertailuissa
+Option Compare Database   ' K‰ytt‰‰ tietokantaj‰rjestyst‰ merkkijonovertailuissa
 Option Explicit           ' Muuttujaesittely pakollinen
 '==============================================================================
 ' Moduuli: DataToACAD
@@ -7,14 +7,27 @@ Option Explicit           ' Muuttujaesittely pakollinen
 ' Muokattu: 1997-03-19 We 15:46 /tw
 ' Muokattu: 1997-03-21 Fr 16:07 /tw
 ' Muokattu: 1997-07-14 Mo 14:29 /tw
-' P‰ivitetty: 2025-11-11 ó DAO-tyypit, virheenk‰sittely, kommentit lis‰tty
-' P‰ivitetty: 2026-03-09 ó CrsRefLink muutettu v‰limuisti-hakuun (N+1-pullonkaula poistettu)
+' P‰ivitetty: 2025-11-11 - DAO-tyypit, virheenk‰sittely, kommentit lis‰tty
+' P‰ivitetty: 2026-03-09 - CrsRefLink muutettu v‰limuisti-hakuun (N+1-pullonkaula poistettu)
+' P‰ivitetty: 2026-11-10 - Tiedostokahvat FreeFile-kutsuilla, tiedostot suljetaan aina,
+'             k‰ytt‰m‰tˆn MakeLocFiles (kovakoodatut agropm10-polut) poistettu,
+'             virheilmoitukset suomeksi
 '==============================================================================
 
 ' --- Moduulitason v‰limuisti CrsRefLisps-haulle ---
 ' Ladataan taulukko kerran Dictionary-objektiin; jokainen haku on O(1) levyluvun sijaan
 Private dictCrsRef As Object   ' Scripting.Dictionary
 Private blnCrsRefLoaded As Boolean
+
+'------------------------------------------------------------------------------
+' Alirutiini: NollaaCrsRefValimuisti
+' Tarkoitus: Tyhjent‰‰ CrsRefLisps-v‰limuistin, jotta taulun muutokset tulevat
+'            mukaan seuraavassa LISP-generoinnissa (v‰limuisti el‰‰ koko istunnon).
+'------------------------------------------------------------------------------
+Public Sub NollaaCrsRefValimuisti()
+    Set dictCrsRef = Nothing
+    blnCrsRefLoaded = False
+End Sub
 
 '------------------------------------------------------------------------------
 ' Alirutiini: LoadCrsRefCache
@@ -62,17 +75,17 @@ If tblnimi = "CRSREF" Then
     If dictCrsRef.Exists(teksti) Then
         CrsRefLink = dictCrsRef(teksti)
     Else
-        CrsRefLink = teksti  ' Ei lˆydetty ó palautetaan alkuper‰inen teksti
+        CrsRefLink = teksti  ' Ei lˆydetty - palautetaan alkuper‰inen teksti
     End If
 Else
-    ' Ei ristiviite ó palautetaan alkuper‰inen teksti
+    ' Ei ristiviite - palautetaan alkuper‰inen teksti
     CrsRefLink = teksti
 End If
 
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in CrsRefLink: " & Err.Description, vbCritical, "Cross-Reference Lookup Error"
+    MsgBox "Virhe CrsRefLink-funktiossa: " & Err.Description, vbCritical, "Ristiviitehaun virhe"
     CrsRefLink = teksti  ' Virhetilanteessa palautetaan alkuper‰inen teksti
 End Function
 
@@ -90,63 +103,67 @@ Dim ast As Integer
 
 ast = InStr(taulnimi, "*")
 If ast = 0 Then
-    ' Ei t‰hte‰ ó otetaan 8 ensimm‰ist‰ merkki‰
+    ' Ei t‰hte‰ - otetaan 8 ensimm‰ist‰ merkki‰
     get_filename = UCase$(Mid$(taulnimi, 1, 8))
 Else
-    ' T‰hti lˆytyi ó otetaan 8 ensimm‰ist‰ merkki‰ ennen sit‰
+    ' T‰hti lˆytyi - otetaan 8 ensimm‰ist‰ merkki‰ ennen sit‰
     get_filename = UCase$(Mid$(Mid$(taulnimi, 1, ast - 1), 1, 8))
 End If
 
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in get_filename: " & Err.Description, vbCritical, "Filename Extraction Error"
+    MsgBox "Virhe get_filename-funktiossa: " & Err.Description, vbCritical, "Tiedostonimen poimintavirhe"
     get_filename = "ERROR"
 End Function
 
 '------------------------------------------------------------------------------
 ' Funktio: inch
-' Tarkoitus: Korvaa lainausmerkit LISP-syntaksin \042-sekvenssill‰
+' Tarkoitus: Korvaa lainausmerkit LISP-syntaksin \042-sekvenssill‰, jottei
+'            merkkijono-arvo katkaise LISP-listan lainausmerkkej‰
 ' Parametrit:
 '   a - Merkkijono, joka sis‰lt‰‰ lainausmerkkej‰
 ' Palautusarvo: Merkkijono, jossa lainausmerkit korvattu \042-sekvenssill‰
 '------------------------------------------------------------------------------
 Function inch(a As String) As String
-On Error GoTo ErrorHandler
-
-Dim L As String     ' Lainausmerkki
-Dim E As String     ' K‰sitelt‰v‰ merkkijono
-Dim b As Integer    ' Lainausmerkin sijainti
-Dim c As String     ' Merkkijono ennen lainausmerkki‰
-Dim D As String     ' Merkkijono lainausmerkin j‰lkeen
-
-L = Chr(34)  ' Lainausmerkki
-E = a
-
-Do
-    b = InStr(1, E, L)
-    If b = 0 Then
-        ' Ei lis‰‰ lainausmerkkej‰ ó palautetaan tulos
-        inch = E
-        Exit Function
-    End If
-    ' Jaetaan merkkijono lainausmerkin kohdasta
-    c = Mid$(E, 1, b - 1)
-    D = Mid$(E, b + 1, Len(a))
-    ' Korvataan lainausmerkki LISP-erikoissekvenssill‰
-    E = c & "\042" & D
-Loop
-
-Exit Function
-
-ErrorHandler:
-    MsgBox "Error in inch: " & Err.Description, vbCritical, "LISP Quote Escaping Error"
-    inch = a  ' Virhetilanteessa palautetaan alkuper‰inen merkkijono
+    inch = Replace(a, Chr$(34), "\042")
 End Function
 
 '------------------------------------------------------------------------------
+' Funktio: NormalisoiHakemisto
+' Tarkoitus: Varmistaa, ett‰ hakemistopolku p‰‰ttyy kenoviivaan, jottei
+'            tiedostonimi liity suoraan kansion nimeen
+'------------------------------------------------------------------------------
+Private Function NormalisoiHakemisto(ByVal Polku As String) As String
+    If Len(Polku) > 0 And Right$(Polku, 1) <> "\" Then Polku = Polku & "\"
+    NormalisoiHakemisto = Polku
+End Function
+
+'------------------------------------------------------------------------------
+' Alirutiini: KirjoitaRivi
+' Tarkoitus: Kirjoittaa yhden rivin tekstitiedostoon ja sulkee tiedoston heti
+'            (oma FreeFile-kahva, ei tˆrm‰‰ muihin avoimiin tiedostoihin)
+' Parametrit:
+'   Polku - Tiedoston t‰ydellinen polku
+'   Teksti - Kirjoitettava rivi
+'   Uusi - True = luodaan tiedosto alusta, False = lis‰t‰‰n loppuun
+'------------------------------------------------------------------------------
+Private Sub KirjoitaRivi(ByVal Polku As String, ByVal Teksti As String, ByVal Uusi As Boolean)
+    Dim Kahva As Integer  ' Vapaa tiedostokahva
+
+    Kahva = FreeFile
+    If Uusi Then
+        Open Polku For Output As Kahva
+    Else
+        Open Polku For Append As Kahva
+    End If
+    Print #Kahva, Teksti
+    Close Kahva
+End Sub
+
+'------------------------------------------------------------------------------
 ' Funktio: makeFiles
-' Tarkoitus: P‰‰orkestraattori ó luo kaikki AutoCAD LISP-tiedostot tietokannasta
+' Tarkoitus: P‰‰orkestraattori - luo kaikki AutoCAD LISP-tiedostot tietokannasta
 ' Parametrit:
 '   common - Konfiguraatiotaulun nimi
 ' Toiminta:
@@ -154,121 +171,97 @@ End Function
 '   2. Alustaa .txt-tulostiedostot
 '   3. Luo silmukoimattomat listat
 '   4. Luo silmukoihin perustuvat listat (jos k‰ytˆss‰)
-'   5. Sulkee tiedostot asianmukaisesti
+'   5. Sulkee listat p‰‰tt‰v‰ll‰ sulkumerkill‰ (myˆs silloin, kun silmukkalistoja ei ole)
+'   6. Luo AutoCAD-skriptitiedoston
+' Palautusarvo: 0 = onnistui, -1 = virhe
 '------------------------------------------------------------------------------
 Function makeFiles(common As String) As Integer
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database
 Dim cmmn As DAO.Recordset   ' Konfiguraatiotietue
-Dim tbl As DAO.Recordset    ' Datatietue
-Dim L As String             ' Lainausmerkki
 Dim suod As Variant         ' Suodatusarvo
 Dim direc As String         ' Tulostushakemiston polku
 
 Set DB = CurrentDb
 Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
 
-L = Chr(34)  ' Lainausmerkki LISP-listoja varten
+' Ristiviitetaulun muutokset tulevat mukaan jokaisella ajokerralla
+NollaaCrsRefValimuisti
 
 cmmn.MoveFirst
 suod = cmmn.Fields("Filter")
-direc = cmmn!AcadDirectory  ' Hakemisto, jonne LISP-tiedostot tallennetaan
+direc = NormalisoiHakemisto(cmmn!AcadDirectory)  ' Hakemisto, jonne LISP-tiedostot tallennetaan
 
-' Jos vain skriptitiedosto ó ohitetaan LISP-tiedostojen luonti
-If cmmn!OnlyScript Then
-    GoTo scrtest
+' Jos vain skriptitiedosto - ohitetaan LISP-tiedostojen luonti
+If Not cmmn!OnlyScript Then
+
+    '--- Alustetaan kaikki tulostiedostot avaavalla sulkumerkill‰ ---
+    cmmn.MoveFirst
+    Do Until cmmn.EOF
+        If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
+            KirjoitaRivi direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt", "(", True
+        End If
+        If Not IsNull(cmmn!TablesOrQueries.Value) Then
+            KirjoitaRivi direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt", "(", True
+        End If
+        cmmn.MoveNext
+    Loop
+
+    '--- Luodaan silmukoimattomat LISP-listat ---
+    ' Yksinkertaiset listat ilman silmukka-ID-suodatusta
+    cmmn.MoveFirst
+    Do Until cmmn.EOF
+        If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
+            MakeListNoLoopID cmmn!TablesOrQueriesNoLoop.Value, direc
+        End If
+        cmmn.MoveNext
+    Loop
+
+    '--- Luodaan silmukkaan perustuvat LISP-listat ---
+    ' N‰m‰ listat suodatetaan silmukka-ID:n perusteella (ei, jos silmukkatauluja ei ole)
+    cmmn.MoveFirst
+    If Not cmmn!NoLoopIDTables Then
+        Do Until cmmn.EOF
+            If Not IsNull(cmmn!TablesOrQueries.Value) Then
+                MakeListWithLoopID cmmn!TablesOrQueries.Value, direc, CLng(Nz(cmmn!NoIDCount, 0)), suod, cmmn!LoopIDColumn
+            End If
+            cmmn.MoveNext
+        Loop
+    End If
+
+    '--- Suljetaan tiedostot p‰‰tt‰v‰ll‰ sulkumerkill‰ ---
+    ' Tehd‰‰n aina, jotta LISP-lista on sulkumerkeilt‰‰n validi silmukkalistojen puuttuessakin
+    cmmn.MoveFirst
+    Do Until cmmn.EOF
+        If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
+            KirjoitaRivi direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt", ")", False
+        End If
+        If Not IsNull(cmmn!TablesOrQueries.Value) Then
+            KirjoitaRivi direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt", ")", False
+        End If
+        cmmn.MoveNext
+    Loop
 End If
 
-'--- Alustetaan kaikki tulostiedostot avaavalla sulkumerkill‰ ---
-cmmn.MoveFirst
-Do Until cmmn.EOF
-    ' Alustetaan silmukoimattomat tiedostot
-    If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
-        Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Output As #1
-        Print #1, "("  ' LISP-listan avaava sulku
-        Close #1
-    End If
-    ' Alustetaan silmukkaan perustuvat tiedostot
-    If Not IsNull(cmmn!TablesOrQueries.Value) Then
-        Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Output As #1
-        Print #1, "("  ' LISP-listan avaava sulku
-        Close #1
-    End If
-    cmmn.MoveNext
-Loop
-
-cmmn.MoveFirst
-
-'--- Luodaan silmukoimattomat LISP-listat ---
-' Yksinkertaiset listat ilman silmukka-ID-suodatusta
-Do Until cmmn.EOF
-    If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
-        MakeListNoLoopID cmmn!TablesOrQueriesNoLoop.Value, direc
-    End If
-    cmmn.MoveNext
-Loop
-
-cmmn.MoveFirst
-' Jos ei silmukkatauluja ó hyp‰t‰‰n skriptinluontiin
-If cmmn!NoLoopIDTables Then
-    GoTo scrtest
-End If
-
-'--- Luodaan silmukkaan perustuvat LISP-listat ---
-' N‰m‰ listat suodatetaan silmukka-ID-sarakkeen mukaan
-cmmn.MoveFirst
-Do Until cmmn.EOF
-    If Not IsNull(cmmn!TablesOrQueries.Value) Then
-        MakeListWithLoopID cmmn!TablesOrQueries.Value, direc, cmmn!NoIDCount, suod, cmmn!LoopIDColumn
-    End If
-    cmmn.MoveNext
-Loop
-
-cmmn.MoveFirst
-
-'--- Suljetaan tiedostot p‰‰tt‰v‰ll‰ sulkumerkill‰ ---
-'--- Suljetaan tiedostot p‰‰tt‰v‰ll‰ sulkumerkill‰ ---
-cmmn.MoveFirst
-Do Until cmmn.EOF
-    ' Suljetaan silmukoimattomat tiedostot
-    If Not IsNull(cmmn!TablesOrQueriesNoLoop.Value) Then
-        Open direc & get_filename(cmmn!TablesOrQueriesNoLoop.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' LISP-listan p‰‰tt‰v‰ sulku
-        Close #1
-    End If
-    ' Suljetaan silmukkaan perustuvat tiedostot
-    If Not IsNull(cmmn!TablesOrQueries.Value) Then
-        Open direc & get_filename(cmmn!TablesOrQueries.Value) & ".txt" For Append As #1
-        Print #1, ")"  ' LISP-listan p‰‰tt‰v‰ sulku
-        Close #1
-    End If
-    cmmn.MoveNext
-Loop
-
-scrtest:
 ' Luodaan AutoCAD-skriptitiedosto er‰ajoa varten
 cmmn.MoveFirst
 MakeScript common, suod, cmmn!LoopIDColumn
 
-' Siivotaan objektit
-cmmn.Close
-Set cmmn = Nothing
-Set DB = Nothing
+makeFiles = 0
 
-Exit Function
+Cleanup:
+    On Error Resume Next
+    If Not cmmn Is Nothing Then cmmn.Close
+    Set cmmn = Nothing
+    Set DB = Nothing
+    Exit Function
 
 ErrorHandler:
-    MsgBox "Error in makeFiles: " & Err.Description & vbCrLf & _
-           "Error occurred while generating LISP files.", vbCritical, "File Generation Error"
-    ' Siivotaan objektit virhetilanteessa
-    On Error Resume Next
-    Close #1  ' Suljetaan mahdollisesti auki oleva tiedostokahva
-    If Not cmmn Is Nothing Then
-        cmmn.Close
-        Set cmmn = Nothing
-    End If
-    Set DB = Nothing
+    MsgBox "Virhe makeFiles-funktiossa: " & Err.Description & vbCrLf & _
+           "LISP-tiedostojen luonti ep‰onnistui.", vbCritical, "Tiedostojen luontivirhe"
+    makeFiles = -1
+    Resume Cleanup
 End Function
 
 '------------------------------------------------------------------------------
@@ -285,17 +278,17 @@ Dim DB As DAO.Database
 Dim tble As DAO.Recordset
 Dim L As String             ' Lainausmerkki
 Dim aster As Integer        ' T‰htimerkin sijainti taulukonnimess‰
-Dim filenum As Integer      ' Tiedostokahvan numero
+Dim filenum As Integer      ' Tiedostokahvan numero (0 = ei avattu)
 Dim i As Integer, ii As Integer  ' Silmukkalaskurit
 Dim preref As String        ' LISP-muuttujien etuliiteviite
 
 Set DB = CurrentDb
 
-L = Chr(34)  ' Lainausmerkki LISP-listoja varten
+L = Chr$(34)  ' Lainausmerkki LISP-listoja varten
 
 aster = InStr(tanimi, "*")
 
-'--- K‰sitell‰‰n jokerilliset taulukotnimet (esim. "CIRCUIT*") ---
+'--- K‰sitell‰‰n jokerilliset taulukonnimet (esim. "CIRCUIT*") ---
 If aster <> 0 Then
   filenum = FreeFile
   Open Hakem & get_filename(tanimi) & ".txt" For Append As filenum
@@ -305,12 +298,11 @@ If aster <> 0 Then
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tanimi) Then
         Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
         If Not tble.EOF Then tble.MoveFirst
-        preref = get_filename(tanimi)
-        
+
         ' K‰sitell‰‰n jokainen tietue
         Do Until tble.EOF
             preref = get_filename(tanimi)
-            ' Rakennetaan viittausprefiksi ID-kent‰t
+            ' Rakennetaan viittausprefiksi ID-kentist‰ (per‰kk‰iset ...ID-p‰‰tteiset kent‰t)
             For ii = 0 To tble.Fields.Count - 1
                 If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                     preref = preref & "." & tble.Fields(ii).Value
@@ -328,9 +320,11 @@ If aster <> 0 Then
             tble.MoveNext
         Loop
         tble.Close
+        Set tble = Nothing
       End If
   Next
   Close filenum
+  filenum = 0
 
 '--- K‰sitell‰‰n yksitt‰inen taulu/kysely ---
 Else
@@ -343,7 +337,7 @@ Else
   ' K‰sitell‰‰n jokainen tietue
   Do Until tble.EOF
     preref = get_filename(tanimi)
-    ' Rakennetaan viittausprefiksi ID-kent‰t
+    ' Rakennetaan viittausprefiksi ID-kentist‰
     For ii = 0 To tble.Fields.Count - 1
         If Right$(tble.Fields(ii).Name, 2) = "ID" Then
             preref = preref & "." & tble.Fields(ii).Value
@@ -362,6 +356,7 @@ Else
   Loop
 
   Close filenum
+  filenum = 0
   tble.Close
 End If
 
@@ -376,7 +371,7 @@ ErrorHandler:
            "Taulu/Kysely: " & tanimi, vbCritical, "LISP-generointi ep‰onnistui"
     ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
-    Close filenum
+    If filenum <> 0 Then Close filenum
     If Not tble Is Nothing Then
         tble.Close
         Set tble = Nothing
@@ -384,28 +379,39 @@ ErrorHandler:
     Set DB = Nothing
 End Sub
 
-Sub MakeListWithLoopID(tblnimipre As String, Hakem As String, idsyst As String, suoda As Variant, Looppid As Integer)
+'------------------------------------------------------------------------------
+' Proseduuri: MakeListWithLoopID
+' Tarkoitus: Luo LISP-listat taulukoista/kyselyist‰ vain valitun silmukan riveille
+' Parametrit:
+'   tblnimipre - Taulu/kyselynnimi (voi sis‰lt‰‰ * jokerina)
+'   Hakem      - Tulostushakemiston polku
+'   idsyst     - Viittausprefiksiin otettavien ID-kenttien m‰‰r‰ (0 = automaattinen)
+'   suoda      - Suodatusarvo (verrataan taulun ensimm‰iseen kentt‰‰n)
+'   Looppid    - Silmukka-ID-kent‰n indeksi
+'------------------------------------------------------------------------------
+Sub MakeListWithLoopID(tblnimipre As String, Hakem As String, idsyst As Long, suoda As Variant, Looppid As Integer)
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database
 Dim tble As DAO.Recordset
 Dim L As String
 Dim aster As Integer
-Dim filenum As Integer
+Dim filenum As Integer      ' Tiedostokahva (0 = ei avattu)
 Dim i As Integer
 Dim ii As Integer
 Dim iii As Integer
 Dim preref As String
 
 Set DB = CurrentDb
-L = Chr(34)
+L = Chr$(34)
 
 aster = InStr(tblnimipre, "*")
+filenum = FreeFile
+Open Hakem & get_filename(tblnimipre) & ".txt" For Append As filenum
+
 If aster <> 0 Then
 
-  filenum = FreeFile
-  Open Hakem & get_filename(tblnimipre) & ".txt" For Append As filenum
-  ' K‰yd‰‰n l‰pi kaikki taulukot
+  ' K‰yd‰‰n l‰pi kaikki etuliitett‰ vastaavat taulukot
   For i = 0 To DB.TableDefs.Count - 1
       If Mid$(DB.TableDefs(i).Name, 1, aster - 1) = get_filename(tblnimipre) Then
         Set tble = DB.OpenRecordset(DB.TableDefs(i).Name, dbOpenDynaset)
@@ -416,7 +422,7 @@ If aster <> 0 Then
                 preref = tble.Fields(Looppid).Value & "." & get_filename(tblnimipre)
                 If idsyst = 0 Then
                     For ii = 1 To tble.Fields.Count - 1
-                        If Not tble.Fields(ii).Name = Looppid Then
+                        If ii <> Looppid Then
                             If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                                 preref = preref & "." & tble.Fields(ii).Value
                             Else
@@ -426,12 +432,12 @@ If aster <> 0 Then
                     Next
                 Else
                     For ii = 1 To idsyst
-                        If Not tble.Fields(ii).Name = Looppid Then
+                        If ii <> Looppid Then
                             preref = preref & "." & tble.Fields(ii).Value
                         End If
                     Next
                 End If
-              
+
                 For iii = 0 To tble.Fields.Count - 1
                     If Not IsNull(tble.Fields(iii).Value) Then
                         Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(iii).Name);
@@ -441,24 +447,22 @@ If aster <> 0 Then
             End If
             tble.MoveNext
         Loop
-         
+        tble.Close
+        Set tble = Nothing
       End If
   Next
-  Close
 
 Else
 
   Set tble = DB.OpenRecordset(tblnimipre, dbOpenDynaset)
   If Not tble.EOF Then tble.MoveFirst
 
-  filenum = FreeFile
-  Open Hakem & Mid$(tble.Name, 1, 8) & ".txt" For Append As filenum
   Do Until tble.EOF
     If tble.Fields(0).Value = suoda Then
         preref = tble.Fields(Looppid).Value & "." & get_filename(tblnimipre)
         If idsyst = 0 Then
             For ii = 1 To tble.Fields.Count - 1
-                If Not tble.Fields(ii).Name = Looppid Then
+                If ii <> Looppid Then
                     If Right$(tble.Fields(ii).Name, 2) = "ID" Then
                         preref = preref & "." & tble.Fields(ii).Value
                     Else
@@ -468,12 +472,12 @@ Else
             Next
         Else
             For ii = 1 To idsyst
-                If Not tble.Fields(ii).Name = Looppid Then
+                If ii <> Looppid Then
                     preref = preref & "." & tble.Fields(ii).Value
                 End If
             Next
         End If
-      
+
         For ii = 0 To tble.Fields.Count - 1
             If Not IsNull(tble.Fields(ii).Value) Then
                 Print #filenum, "( " & L & UCase$(preref) & "." & UCase$(tble.Fields(ii).Name);
@@ -483,185 +487,122 @@ Else
     End If
     tble.MoveNext
   Loop
-  
-  Close filenum
+  tble.Close
+  Set tble = Nothing
 
 End If
+
+Close filenum
+filenum = 0
+Set DB = Nothing
 
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error in MakeListWithLoopID: " & Err.Description, vbCritical, "Loop ID List Error"
+    MsgBox "Virhe MakeListWithLoopID-rutiinissa: " & Err.Description & vbCrLf & _
+           "Taulu/Kysely: " & tblnimipre, vbCritical, "Silmukkalistan luontivirhe"
     On Error Resume Next
     If Not tble Is Nothing Then tble.Close
-    Close filenum
+    Set tble = Nothing
+    If filenum <> 0 Then Close filenum
+    Set DB = Nothing
 End Sub
 
 '------------------------------------------------------------------------------
-' Funktio: MakeLocFiles
-' Tarkoitus: Luo asennussijainnin tiedostot AutoCADille
-'
-' KOVAKOODATUT POLUT ó projektikohtaiset:
-'   P:\acaddata\projekti\agropm10\tyo\instloc.txt
-'
-' Huom: Polut ovat agropm10-projektille. Muokkaa tai siirr‰ konfiguraatiotauluun.
+' Proseduuri: MakeScript
+' Tarkoitus: Luo AutoCAD-skriptitiedoston ja qmemlist.txt-tiedoston er‰ajoa varten
+' Parametrit:
+'   common  - Konfiguraatiotaulun nimi
+'   suod    - Suodatusarvo (verrataan p‰‰taulun ensimm‰iseen kentt‰‰n)
+'   Looppid - Silmukka-ID-kent‰n indeksi p‰‰taulussa
 '------------------------------------------------------------------------------
-Function MakeLocFiles()
-On Error GoTo ErrorHandler
-
-Dim DB As DAO.Database
-Dim cmmn As DAO.Recordset
-Dim tbl As DAO.Recordset
-Dim Taulukko As DAO.TableDef
-Dim Taul As DAO.Recordset
-Dim tble As DAO.Recordset
-Dim L As String
-Dim i As Integer
-Dim kentta1 As Variant
-Dim kentta2 As Variant
-
-Set DB = CurrentDb
-Set tble = DB.OpenRecordset("Loops", dbOpenDynaset)
-
-L = Chr(34)
-
-' Alustetaan txt-tiedostot
-        Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Output As #1
-        Print #1, "(";
-        Close
- 
- 
- For i = 0 To DB.TableDefs.Count - 1
-  Set Taulukko = DB.TableDefs(i)
-  If Left$(Taulukko.Name, 6) = "devTbl" Then 'valitaan taulukot
-   If Right$(Taulukko.Name, 6) <> "Common" Then
-    If Right$(Taulukko.Name, 12) <> "Positioner01" Then
-     Set Taul = DB.OpenRecordset(DB.TableDefs(i).Name)
- 
-        If Not Taul.EOF Then Taul.MoveFirst
-          Do Until Taul.EOF
-            Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Append As #1
-            Print #1, "(" & L;
-            kentta1 = Taul.Fields(0).Value
-            kentta2 = Taul.Fields(1).Value
-            Print #1, (Taul.Fields(0).Value);
-            Print #1, (Taul.Fields(1).Value);
-            Print #1, L & " " & L;
-            Print #1, (Taul.Fields(0).Value) & "-";
-
-                tble.MoveFirst
-                 Do Until tble.EOF
-                  If Left$(Taul.Fields(2).Value, 2) = "ZS" Then Exit Do
-                  If Left$(Taul.Fields(2).Value, 2) = "EV" Then Exit Do
-                  If tble!AreaCode.Value = kentta1 And tble!LoopNo.Value = kentta2 Then
-                  Print #1, tble!LoopFID.Value;
-                  Exit Do
-                  Else: tble.MoveNext
-                  End If
-                 Loop
-
-        Print #1, (Taul.Fields(2).Value);
-        If (Taul.Fields(3).Value) <> "-" Then Print #1, (Taul.Fields(3).Value);
-        Print #1, "-" & (Taul.Fields(1).Value) & L & " " & L;
-        Print #1, Taulukko.Name & "." & Taul!CounterID.Value;
-        Print #1, L & ")"
-        Close
-     Taul.MoveNext
-    Loop
-   End If
-  End If
- End If
-Next
-
-' Kirjoitetaan p‰‰tt‰v‰ sulkumerkki tiedostoon
-        Open "p:\acaddata\projekti\agropm10\tyo\instloc.txt" For Append As #1
-        Print #1, ")"
-        Close
-
-Exit Function
-
-ErrorHandler:
-    MsgBox "Error in MakeLocFiles: " & Err.Description, vbCritical, "Location Files Error"
-    On Error Resume Next
-    Close #1
-    If Not tble Is Nothing Then tble.Close
-    If Not Taul Is Nothing Then Taul.Close
-End Function
-
 Sub MakeScript(common As String, suod As Variant, Looppid As Integer)
 On Error GoTo ErrorHandler
-
-'common = "COMMON"
 
 Dim DB As DAO.Database
 Dim cmmn As DAO.Recordset
 Dim tblmain As DAO.Recordset
 Dim L As String
 Dim iii As Integer
+Dim Hakem As String         ' Tulostushakemisto
+Dim ScriptKahva As Integer  ' Skriptitiedoston kahva (0 = ei avattu)
+Dim ListaKahva As Integer   ' qmemlist.txt-tiedoston kahva (0 = ei avattu)
 
 Set DB = CurrentDb
 Set cmmn = DB.OpenRecordset(common, dbOpenDynaset)
 
-L = Chr(34)
+L = Chr$(34)
 cmmn.MoveFirst
+Hakem = NormalisoiHakemisto(cmmn!AcadDirectory.Value)
 Set tblmain = DB.OpenRecordset(cmmn.Fields(0).Value, dbOpenDynaset)
 
-Open cmmn!AcadDirectory.Value & cmmn!ScriptFileName.Value For Output As #1
+ScriptKahva = FreeFile
+Open Hakem & cmmn!ScriptFileName.Value For Output As ScriptKahva
 
-tblmain.MoveFirst
 cmmn.MoveFirst
 
-If Not IsNull(cmmn.Fields("ScriptInTheBegining").Value) Then Print #1, cmmn.Fields("ScriptInTheBegining").Value
+If Not IsNull(cmmn.Fields("ScriptInTheBegining").Value) Then Print #ScriptKahva, cmmn.Fields("ScriptInTheBegining").Value
 
-Print #1, "(QMEM " & L & "W" & L & " 1 " & L & "CRSREF.TXT" & L & ")'nil"
-Print #1, "(QMEM " & L & "W" & L & " 0 " & L & "QMEMLIST.TXT" & L & ")'nil"
+Print #ScriptKahva, "(QMEM " & L & "W" & L & " 1 " & L & "CRSREF.TXT" & L & ")'nil"
+Print #ScriptKahva, "(QMEM " & L & "W" & L & " 0 " & L & "QMEMLIST.TXT" & L & ")'nil"
 
-Open cmmn!AcadDirectory.Value & "qmemlist.txt" For Output As #2
+ListaKahva = FreeFile
+Open Hakem & "qmemlist.txt" For Output As ListaKahva
 iii = 2
-Print #2, "("
+Print #ListaKahva, "("
 Do Until cmmn.EOF
     If Not IsNull(cmmn.Fields(0).Value) Then
-      Print #2, "( " & L & get_filename(cmmn.Fields(0).Value) & L & " " & L & iii & L & " )"
-      Print #1, "(QMEM " & L & "W" & L & " " & iii & " " & L & get_filename(cmmn.Fields(0).Value) & ".TXT" & L & ")'nil"
+      Print #ListaKahva, "( " & L & get_filename(cmmn.Fields(0).Value) & L & " " & L & iii & L & " )"
+      Print #ScriptKahva, "(QMEM " & L & "W" & L & " " & iii & " " & L & get_filename(cmmn.Fields(0).Value) & ".TXT" & L & ")'nil"
     End If
     If Not IsNull(cmmn.Fields(1).Value) Then
-      Print #2, "( " & L & get_filename(cmmn.Fields(1).Value) & L & " " & L & iii + 1 & L & " )"
-      Print #1, "(QMEM " & L & "W" & L & " " & iii + 1 & " " & L & get_filename(cmmn.Fields(1).Value) & ".TXT" & L & ")'nil"
+      Print #ListaKahva, "( " & L & get_filename(cmmn.Fields(1).Value) & L & " " & L & iii + 1 & L & " )"
+      Print #ScriptKahva, "(QMEM " & L & "W" & L & " " & iii + 1 & " " & L & get_filename(cmmn.Fields(1).Value) & ".TXT" & L & ")'nil"
     End If
     cmmn.MoveNext
     iii = iii + 2
 Loop
-Print #2, ")"
-Close #2
+Print #ListaKahva, ")"
+Close ListaKahva
+ListaKahva = 0
 
-tblmain.MoveFirst
+' Kirjoitetaan skriptirivit jokaiselle valitun silmukan tietueelle
 cmmn.MoveFirst
-
+If Not tblmain.EOF Then tblmain.MoveFirst
 Do Until tblmain.EOF
     If tblmain.Fields(0).Value = suod Then
-        If Not IsNull(cmmn.Fields("ScriptBeforeLoop1").Value) Then Print #1, cmmn.Fields("ScriptBeforeLoop1").Value
-        If cmmn.Fields!New.Value Then Print #1, "(New " & L & tblmain.Fields(cmmn.Fields("FileNameColumn").Value).Value & L & L & tblmain.Fields(cmmn.Fields("BaseDwgColumn").Value).Value & L & ")"
-        If Not IsNull(cmmn.Fields("ScriptBeforeLoop2").Value) Then Print #1, cmmn.Fields("ScriptBeforeLoop2").Value
-        Print #1, "(setq loop " & L & tblmain.Fields(Looppid).Value & L & ")"
-        If Not IsNull(cmmn.Fields("ScriptAfterLoop").Value) Then Print #1, cmmn.Fields("ScriptAfterLoop").Value
-        If cmmn.Fields("Save").Value Then Print #1, "(save " & L & tblmain.Fields(cmmn.Fields("FileNameColumn").Value).Value & L & ")"
+        If Not IsNull(cmmn.Fields("ScriptBeforeLoop1").Value) Then Print #ScriptKahva, cmmn.Fields("ScriptBeforeLoop1").Value
+        If cmmn.Fields!New.Value Then Print #ScriptKahva, "(New " & L & tblmain.Fields(cmmn.Fields("FileNameColumn").Value).Value & L & L & tblmain.Fields(cmmn.Fields("BaseDwgColumn").Value).Value & L & ")"
+        If Not IsNull(cmmn.Fields("ScriptBeforeLoop2").Value) Then Print #ScriptKahva, cmmn.Fields("ScriptBeforeLoop2").Value
+        Print #ScriptKahva, "(setq loop " & L & tblmain.Fields(Looppid).Value & L & ")"
+        If Not IsNull(cmmn.Fields("ScriptAfterLoop").Value) Then Print #ScriptKahva, cmmn.Fields("ScriptAfterLoop").Value
+        If cmmn.Fields("Save").Value Then Print #ScriptKahva, "(save " & L & tblmain.Fields(cmmn.Fields("FileNameColumn").Value).Value & L & ")"
     End If
-    
+
     tblmain.MoveNext
 Loop
 
-cmmn.MoveFirst
-tblmain.MoveLast
-If Not IsNull(cmmn.Fields("ScriptInTheEnd").Value) Then Print #1, cmmn.Fields("ScriptInTheEnd").Value
+If Not IsNull(cmmn.Fields("ScriptInTheEnd").Value) Then Print #ScriptKahva, cmmn.Fields("ScriptInTheEnd").Value
 
-Close
+Close ScriptKahva
+ScriptKahva = 0
+
+tblmain.Close
+cmmn.Close
+Set tblmain = Nothing
+Set cmmn = Nothing
+Set DB = Nothing
 
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Error in MakeScript: " & Err.Description, vbCritical, "Script Generation Error"
+    MsgBox "Virhe MakeScript-rutiinissa: " & Err.Description, vbCritical, "Skriptin luontivirhe"
     On Error Resume Next
-    Close #1
-    Close #2
+    If ScriptKahva <> 0 Then Close ScriptKahva
+    If ListaKahva <> 0 Then Close ListaKahva
+    If Not tblmain Is Nothing Then tblmain.Close
+    If Not cmmn Is Nothing Then cmmn.Close
+    Set tblmain = Nothing
+    Set cmmn = Nothing
+    Set DB = Nothing
 End Sub
-

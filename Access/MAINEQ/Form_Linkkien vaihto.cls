@@ -1,19 +1,26 @@
 Option Compare Database
 Option Explicit
 
+' Tämä taulu jätetään linkkien päivityksen ulkopuolelle
 Private Const POISSULJETTU_TAULU As String = "MotorData"
+' MSysObjects-taulun Type-arvo linkitetyille Access-tauluille
 Private Const LINKITETTY_TAULU_TYYPPI As Long = 6
 
+' Osoittaa kaikki linkitetyt taulut sen hakemiston samannimiseen tietokantaan,
+' jossa tämä tietokanta sijaitsee (esim. kun projekti kopioidaan uuteen paikkaan).
 Private Sub Command0_Click()
-  Dim Polku As String, Polku2 As String, Nimi As String
-  Dim Kohdetiedosto As String, Taulu As String
+  Dim Polku As String, Polku2 As String, Nimi As String  ' Oma hakemisto, linkin hakemisto ja tietokannan nimi
+  Dim Kohdetiedosto As String, Taulu As String  ' Uusi tietokantatiedosto ja käsiteltävä taulu
   Dim Taul As DAO.Recordset, db As DAO.Database, tdf As DAO.TableDef
-  Dim kasitellyt As New Collection, epaonnistuneet As String
-  Dim viimeinenKauttaviiva As Long
+  Dim kasitellyt As Collection  ' Jo käsitellyt taulut (sama taulu voi esiintyä kahdesti)
+  Dim epaonnistuneet As String  ' Kooste epäonnistuneista linkeistä
+  Dim viimeinenKauttaviiva As Long  ' Hakemistopolun ja tiedostonimen raja
   Dim virhenumero As Long, virhekuvaus As String
 
   On Error GoTo ErrorHandler
+  Set kasitellyt = New Collection
   Set db = CurrentDb
+  ' Oma hakemisto: tietokannan polku ilman tiedostonimeä
   Polku = Left$(db.Name, Len(db.Name) - Len(Dir$(db.Name)))
   Set Taul = db.OpenRecordset( _
     "SELECT [DATABASE], ForeignName, [Name] FROM MSysObjects " & _
@@ -33,6 +40,7 @@ Private Sub Command0_Click()
           If Len(Dir$(Kohdetiedosto)) = 0 Then
             epaonnistuneet = epaonnistuneet & "  - " & Taulu & " (tietokantaa ei löydy: " & Kohdetiedosto & ")" & vbCrLf
           Else
+            ' Päivitetään linkki; yksittäisen taulun virhe ei keskeytä muita
             Set tdf = db.TableDefs(Taulu)
             tdf.Connect = ";DATABASE=" & Kohdetiedosto
             On Error Resume Next
@@ -52,6 +60,7 @@ Private Sub Command0_Click()
 
   Taul.Close
   Set Taul = Nothing
+  Set kasitellyt = Nothing
   Set db = Nothing
   If Len(epaonnistuneet) > 0 Then
     MsgBox "Osa taulujen linkeistä ei päivittynyt:" & vbCrLf & epaonnistuneet, vbExclamation
@@ -72,6 +81,7 @@ ErrorHandler:
   MsgBox "Virhe tauluyhteyksien päivityksessä (" & virhenumero & "): " & virhekuvaus, vbCritical
 End Sub
 
+' Palauttaa True, jos taulu on jo kokoelmassa (avaimena taulun nimi)
 Private Function JoKasitelty(ByRef lista As Collection, ByVal nimi As String) As Boolean
   On Error Resume Next
   Dim testi As Variant

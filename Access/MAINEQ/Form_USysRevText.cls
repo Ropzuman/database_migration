@@ -1,13 +1,18 @@
 Option Compare Database
 Option Explicit
+' Valitun rivin edess‰ ja takana olevat revisiorivit (Lista.RowSource-muodossa)
 Public Alku As String
 Public Loppu As String
+' Alustus tehd‰‰n vain kerran, ettei koon muutos nollaa k‰ytt‰j‰n syˆtt‰mi‰ tietoja
+Private Alustettu As Boolean
+
 Private Sub Form_Resize()
-  Dim Rivit As String
+  If Alustettu Then Exit Sub
+  Alustettu = True
   If Revisioteksti <> "" Then
     Lista.RowSource = Replace(CStr(Revisioteksti), vbCrLf, ";")
     Lista.SetFocus
-    Lista.ListIndex = 0
+    If Lista.ListCount > 0 Then Lista.ListIndex = 0
     If InStr(Revisioteksti, vbCrLf) Then
       NaytaRev Left$(Revisioteksti, InStr(Revisioteksti, vbCrLf) - 1), 0
     Else
@@ -51,8 +56,9 @@ Private Sub Talleta_Click()
 Dim koe As String
  If Lista.RowSource <> "" Then
    koe = Rev & Drawn & Checked & Approved & Description
-   If InStr(koe, "/") Then
-     MsgBox "Letter ""/"" is not allowed!", vbCritical, "Save revision"
+   ' Kauttaviiva erottaa kent‰t ja puolipiste listan rivit, joten ne eiv‰t kelpaa tekstiin
+   If InStr(koe, "/") > 0 Or InStr(koe, ";") > 0 Then
+     MsgBox "Merkit ""/"" ja "";"" eiv‰t ole sallittuja!", vbCritical, "Talleta revisio"
      Exit Sub
    Else
      MRevRev = Rev.Value
@@ -70,9 +76,10 @@ Dim UusiRev As String
   Alku = ""
   Loppu = Lista.RowSource
   If MRevRev = "" Then
-    If Loppu <> "" Then
+    If Loppu <> "" And InStr(Lista.RowSource, " ") > 1 Then
+        ' Uusi revisio on edellisen kirjaimen seuraava kirjain
         MRevRev = Left$(Lista.RowSource, InStr(Lista.RowSource, " ") - 1)
-        MRevRev = Chr(Asc(MRevRev) + 1)
+        MRevRev = Chr$(Asc(MRevRev) + 1)
     Else
       MRevRev = "0"
     End If
@@ -82,7 +89,7 @@ Dim UusiRev As String
   Lista.RowSource = UusiRev & ";" & Lista.RowSource
   TOtsikko.Caption = "New Revision"
   Lista.SetFocus
-  Lista.ListIndex = 0
+  If Lista.ListCount > 0 Then Lista.ListIndex = 0
   AddNew.Enabled = False
   NaytaRev UusiRev, 0
 End Sub
@@ -98,44 +105,38 @@ Loppu = ""
 For i = 0 To Indeksi - 1
   Alku = Alku & Lista.Column(0, i) & ";"
 Next i
-For i = Indeksi + 1 To Lista.ListCount
+For i = Indeksi + 1 To Lista.ListCount - 1
   Loppu = Loppu & ";" & Lista.Column(0, i)
 Next i
-'Revisio
+' Revisiotunnus
 Osoitin = InStr(Tieto, " ")
 If Osoitin = 0 Then Exit Sub
 Rev.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'P‰iv‰m‰‰r‰
+' P‰iv‰m‰‰r‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 DateFld.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Tekij‰
+' Piirt‰j‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Drawn.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Tarkastaja
+' Tarkastaja
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Checked.Value = Left$(Tieto, Osoitin - 1)
 Tieto = Mid$(Tieto, Osoitin + 1)
-'Hyv‰ksyj‰
+' Hyv‰ksyj‰
 Osoitin = InStr(Tieto, "/")
 If Osoitin = 0 Then Exit Sub
 Approved.Value = Left$(Tieto, Osoitin - 1)
-'Tieto = Mid(Tieto, Osoitin + 1)
-'Kohde
-'Osoitin = InStr(Tieto, "/")
-'If Osoitin = 0 Then Exit Sub
-'Kohde.VALUE = Left(Tieto, Osoitin - 1)
-'Selitys
+' Selitys
 Description.Value = Mid$(Tieto, Osoitin + 1)
 End Sub
 Private Sub Tyhjenna()
   Rev.Value = ""
-  'DateFld.VALUE = ""
   Drawn.Value = ""
   Checked.Value = ""
   Approved.Value = ""

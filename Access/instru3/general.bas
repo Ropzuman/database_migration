@@ -121,13 +121,17 @@ On Error GoTo ErrorHandler
     ' J√§sennet√§√§n p√§iv√§m√§√§r√§ muistiinpanomerkkijonosta (muoto "teksti:pvm|lis√§√§")
     Os = InStr(UdNote, ":")
     If Os > 0 Then
-        ' Extract date portion between : and |
+        ' Poimitaan p‰iv‰m‰‰r‰osa merkkien : ja | v‰lilt‰
         Paiva = Mid$(UdNote, Os + 1)
+        If InStr(Paiva, "|") = 0 Then
+            UdNoteToRev = Null  ' Muistiinpanosta puuttuu p‰‰tt‰v‰ "|", joten p‰iv‰m‰‰r‰‰ ei voi poimia
+            Exit Function
+        End If
         Paiva = Left$(Paiva, InStr(Paiva, "|") - 1)
         VP = DateValue(Paiva)
-        Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   'Format: M/D/YYYY (e.g., 2/1/2007)
+        Paiva = Month(VP) & "/" & Day(VP) & "/" & Year(VP)   ' Muoto K/P/VVVV (esim. 2/1/2007), jotta Access-SQL tulkitsee p‰iv‰m‰‰r‰n oikein
         
-        ' Look up revision based on date
+        ' Haetaan p‰iv‰m‰‰r‰‰ vastaava revisio
         Set RevTaul = CurrentDb.OpenRecordset("SELECT * FROM _Revisions WHERE (((BeforeDate) > #" & Paiva & "#)) ORDER BY BeforeDate ASC;")
         If RevTaul.RecordCount > 0 Then
             UdNoteToRev = RevTaul.Fields("Rev").Value
@@ -169,8 +173,8 @@ Function EtsiLoop(Alue As String, Looppi As String) As String
 On Error GoTo ErrorHandler
     Dim Taul As DAO.Recordset  ' Kyselytulokset
     
-    ' Haetaan vastaava looppi
-    Set Taul = CurrentDb.OpenRecordset("SELECT * From qrysolvalve WHERE AreaCode='" & Alue & "' AND LoopNo='" & Looppi & "'")
+    ' Haetaan vastaava looppi (heittomerkit tuplataan SQL-merkkijonossa)
+    Set Taul = CurrentDb.OpenRecordset("SELECT * From qrysolvalve WHERE AreaCode='" & Replace(Alue, "'", "''") & "' AND LoopNo='" & Replace(Looppi, "'", "''") & "'")
     If Taul.EOF Then
         EtsiLoop = ""  ' Ei l√∂ydy
     Else

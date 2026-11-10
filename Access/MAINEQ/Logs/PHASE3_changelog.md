@@ -1,36 +1,36 @@
-# Access/MAINEQ ‚Äî Phase 3 Viimeistely
+# Access/MAINEQ ó Phase 3 Viimeistely
 
 **Tiedosto:** Access/MAINEQ (kaikki lomakkeet ja raportit)  
-**P√§iv√§m√§√§r√§:** 2026-03-09  
-**Tekij√§:** GitHub Copilot ‚Äî 64-bit migraatioagentti
+**P‰iv‰m‰‰r‰:** 2026-03-09  
+**Tekij‰:** GitHub Copilot ó 64-bit migraatioagentti
 
 ---
 
 ## Kriittiset muutokset
 
-_Ei kriittisi√§ 32-bit/driver-ongelmia l√∂ytynyt. Kaikki `Declare`-lausekkeet k√§ytt√§v√§t `PtrSafe`. Ei `Jet.OLEDB`-k√§ytt√∂√§._
+_Ei kriittisi‰ 32-bit/driver-ongelmia lˆytynyt. Kaikki `Declare`-lausekkeet k‰ytt‰v‰t `PtrSafe`. Ei `Jet.OLEDB`-k‰yttˆ‰._
 
 ---
 
 ## Siivous ja optimointi
 
-- **`Form_Revisiointi.cls`** ‚Äî `PaivitaIDRev`-funktiossa lis√§tty `Taul.Close` + `Set Taul = Nothing` ensin recordsetin sulkemiseen ennen uudelleenk√§ytt√∂√§ (aiemmin `OpenRecordset` kutsuttiin kahdesti ilman sulkemista). `Tee_Click`-tapahtumassa lis√§tty `Vert.Close` + `Set Vert = Nothing` ennen `"Valmis"`-ilmoitusta.
+- **`Form_Revisiointi.cls`** ó `PaivitaIDRev`-funktiossa lis‰tty `Taul.Close` + `Set Taul = Nothing` ensin recordsetin sulkemiseen ennen uudelleenk‰yttˆ‰ (aiemmin `OpenRecordset` kutsuttiin kahdesti ilman sulkemista). `Tee_Click`-tapahtumassa lis‰tty `Vert.Close` + `Set Vert = Nothing` ennen `"Valmis"`-ilmoitusta.
 
-- **`Form_KuvienGenerointi.cls`** ‚Äî `GenRev_Click`-funktiossa lis√§tty `Set Revisiot = Nothing` silmukan sis√§lle ennen `Kuvat.MoveNext`-kutsua. Lis√§tty `Set DB = Nothing` siivousosioihin kolmessa aliohjelmassa (`GenRev_Click`, `Teetaulukko_Click`, `GenKuvat_Click`). Poistettu duplikaatti `Set Kuvat = Nothing`.
+- **`Form_KuvienGenerointi.cls`** ó `GenRev_Click`-funktiossa lis‰tty `Set Revisiot = Nothing` silmukan sis‰lle ennen `Kuvat.MoveNext`-kutsua. Lis‰tty `Set DB = Nothing` siivousosioihin kolmessa aliohjelmassa (`GenRev_Click`, `Teetaulukko_Click`, `GenKuvat_Click`). Poistettu duplikaatti `Set Kuvat = Nothing`.
 
-- **`Form_EQUIPMENT.cls`** ‚Äî Lis√§tty `Taulukko.Close` ennen `Set Taulukko = Nothing` `EqType_AfterUpdate`-tapahtumassa. DAO-recordset suljetaan nyt oikeaoppisesti ennen vapautusta.
+- **`Form_EQUIPMENT.cls`** ó Lis‰tty `Taulukko.Close` ennen `Set Taulukko = Nothing` `EqType_AfterUpdate`-tapahtumassa. DAO-recordset suljetaan nyt oikeaoppisesti ennen vapautusta.
 
-- **`Form_EQUIPMENT_FI.cls`** ‚Äî Sama korjaus kuin `Form_EQUIPMENT.cls`: lis√§tty `Taulukko.Close` ennen `Set Taulukko = Nothing`.
+- **`Form_EQUIPMENT_FI.cls`** ó Sama korjaus kuin `Form_EQUIPMENT.cls`: lis‰tty `Taulukko.Close` ennen `Set Taulukko = Nothing`.
 
-- **`Report_P√Ñ√ÑLAITTEET_BAAN.cls`** ‚Äî Lis√§tty `On Error GoTo ErrorHandler` -rakenne koko raportin generoinnille. Lis√§tty `Tiedot.Close` ennen `Set Tiedot = Nothing`. ErrorHandler varmistaa resurssien vapautuksen virhetilanteessa.
+- **`Report_PƒƒLAITTEET_BAAN.cls`** ó Lis‰tty `On Error GoTo ErrorHandler` -rakenne koko raportin generoinnille. Lis‰tty `Tiedot.Close` ennen `Set Tiedot = Nothing`. ErrorHandler varmistaa resurssien vapautuksen virhetilanteessa.
 
-- **`Form__qryMotorData_subform.cls`** ‚Äî Poistettu tyhj√§ tapahtumank√§sittelij√§ `Private Sub ID_Click()`.
+- **`Form__qryMotorData_subform.cls`** ó Poistettu tyhj‰ tapahtumank‰sittelij‰ `Private Sub ID_Click()`.
 
 ---
 
 ## Huomiot
 
-- `Report_P√Ñ√ÑLAITTEET_BAAN.cls`: `xlApp.Quit` on tahallaan j√§tetty pois ‚Äî Excel j√§√§ n√§kyviin k√§ytt√§j√§lle interaktiiviseen k√§ytt√∂√∂n. T√§m√§ on suunniteltu toimintamalli.
-- `Report_MOOTTORIT.cls`, `Report_P√Ñ√ÑLAITTEET.cls`, `Form_MoottTilaus.cls`: analysoitu ‚Äî `xlApp.Quit` l√∂ytyy oikein, ei muutoksia tarvittu.
-- `Form_USysRevText.cls`, `Form_UsysRevTextDrive.cls`, `Form_Motors_Subform.cls` yms. alilomaket: ei merkitt√§vi√§ ongelmia.
+- `Report_PƒƒLAITTEET_BAAN.cls`: `xlApp.Quit` on tahallaan j‰tetty pois ó Excel j‰‰ n‰kyviin k‰ytt‰j‰lle interaktiiviseen k‰yttˆˆn. T‰m‰ on suunniteltu toimintamalli.
+- `Report_MOOTTORIT.cls`, `Report_PƒƒLAITTEET.cls`, `Form_MoottTilaus.cls`: analysoitu ó `xlApp.Quit` lˆytyy oikein, ei muutoksia tarvittu.
+- `Form_USysRevText.cls`, `Form_UsysRevTextDrive.cls`, `Form_Motors_Subform.cls` yms. alilomakkeet: ei merkitt‰vi‰ ongelmia.
 - `GeneralCodes.bas`: ei ongelmia (ei sekoitettava `Function_descriptions_html`-kansion tiedostoon).

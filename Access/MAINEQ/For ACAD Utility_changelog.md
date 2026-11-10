@@ -4,14 +4,14 @@
 
 For ACAD Utility.bas
 
-## P√§iv√§m√§√§r√§
+## P‰iv‰m‰‰r‰
 
 2026-03-13
 
 ## Kriittiset muutokset
 
-- `GetCursorPos`-Declare p√§ivitetty `PtrSafe`-muotoon 64-bit-yhteensopivuuden varmistamiseksi.
-- Poistettu compile-riski 64-bit VBA-ymp√§rist√∂ss√§.
+- `GetCursorPos`-Declare p‰ivitetty `PtrSafe`-muotoon 64-bit-yhteensopivuuden varmistamiseksi.
+- Poistettu compile-riski 64-bit VBA-ymp‰ristˆss‰.
 
 ## Siivous ja optimointi
 

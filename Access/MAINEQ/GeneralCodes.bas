@@ -26,7 +26,7 @@ Public TRevDesc As String
 '   strFormName - Tarkistettavan lomakkeen nimi
 ' Palautusarvo: True, jos lomake on auki eikä suunnittelunäkymässä
 '------------------------------------------------------------------------------
-Function IsLoaded(ByVal strFormName As String) As Integer
+Function IsLoaded(ByVal strFormName As String) As Boolean
 On Error GoTo ErrorHandler
 
     Const conObjStateClosed = 0
@@ -57,31 +57,29 @@ End Function
 Function HaeViimPaiva(Revisio As String) As String
 On Error GoTo ErrorHandler
 
-Dim i As Integer
-Dim Pituus As Long
-Dim teksti As String
+Dim Rivi As String  ' Viimeinen revisiorivi
+Dim Valil As Long  ' Ensimmäisen välilyönnin sijainti
+Dim Vinoviiva As Long  ' Päivämäärän päättävän kauttaviivan sijainti
 
-  teksti = Revisio
-  i = 2
-  Pituus = Len(teksti)
-  
-  ' Etsitään viimeisin revisio
-  If InStr(teksti, vbCrLf) Then  ' Sisyötteessä on rivinvaihto — useampi rivit
-    ' Etsitään viimeisen rivin alku
-    Do
-      i = i + 1
-    Loop Until InStr(Right$(teksti, i), vbCrLf) = 1 Or i >= Pituus
-    teksti = Mid$(teksti, Pituus - i + 3)  ' Poimitaan viimeinen rivi
-  End If
-  
+  ' Käytetään historian viimeistä riviä (aiempi toiminta säilytetty)
+  Rivi = Revisio
+  If InStr(Rivi, vbCrLf) > 0 Then Rivi = Mid$(Rivi, InStrRev(Rivi, vbCrLf) + 2)
+
   ' Poimitaan päivämääräosa (välilyönnin ja ensimmäisen kauttaviivan väliltä)
-  teksti = Mid$(teksti, InStr(teksti, " ") + 1)
-  HaeViimPaiva = Left$(teksti, InStr(teksti, "/") - 1)
-  
+  Valil = InStr(Rivi, " ")
+  If Valil = 0 Then Exit Function
+  Rivi = Mid$(Rivi, Valil + 1)
+  Vinoviiva = InStr(Rivi, "/")
+  If Vinoviiva = 0 Then
+    HaeViimPaiva = Rivi
+  Else
+    HaeViimPaiva = Left$(Rivi, Vinoviiva - 1)
+  End If
+
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in HaeViimPaiva: " & Err.Description, vbCritical, "Revision Date Extraction Error"
+    MsgBox "Virhe funktiossa HaeViimPaiva: " & Err.Description, vbCritical, "Revisiopäivän poiminta"
     HaeViimPaiva = ""  ' Virhetilanteessa palautetaan tyhjä merkkijono
 End Function
 
@@ -100,7 +98,7 @@ End Function
 '   Drives_ID - Haettavan käytön ID
 ' Palautusarvo: Muotoiltu teksti, esim. "+Optio1 +Optio2" tai tyhjä merkkijono
 '------------------------------------------------------------------------------
-Function Optiot(ByVal Drives_ID As Integer) As String
+Function Optiot(ByVal Drives_ID As Long) As String
 On Error GoTo ErrorHandler
 
 Dim DB As DAO.Database
@@ -133,8 +131,8 @@ If Not (OptTaulu.EOF And OptTaulu.BOF) Then
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Optiot: " & Err.Description & vbCrLf & _
-           "Drive ID: " & Drives_ID, vbCritical, "Options Lookup Error"
+    MsgBox "Virhe funktiossa Optiot: " & Err.Description & vbCrLf & _
+           "Käytön ID: " & Drives_ID, vbCritical, "Optioiden haku"
     Optiot = ""  ' Virhetilanteessa palautetaan tyhjä merkkijono
     ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
@@ -166,7 +164,7 @@ Set DB = CurrentDb
 sqtxt = "SELECT MAINEQ.ProjectElement, [maineq]![department] & '-' & [maineq]![eqtype] " _
     & "& '-' & [maineq]![eqseq] & ' / ' & [Drives].[suffix] AS Custpos FROM MAINEQ INNER JOIN DRIVES ON " _
     & "(MAINEQ.EqClass = DRIVES.EqClass) AND (MAINEQ.EqType = DRIVES.EqType) AND (MAINEQ.Eqseq = DRIVES.EqSeq) " _
-    & "AND (MAINEQ.Department = DRIVES.Department) WHERE MAINEQ.ProjectElement= '" & LaiteNr & "';"
+    & "AND (MAINEQ.Department = DRIVES.Department) WHERE MAINEQ.ProjectElement= '" & Replace(LaiteNr, "'", "''") & "';"
     
 Set ElemTaulu = DB.OpenRecordset(sqtxt)
 
@@ -192,8 +190,8 @@ If Not (ElemTaulu.EOF And ElemTaulu.BOF) Then
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Positiot: " & Err.Description & vbCrLf & _
-           "Project Element: " & LaiteNr, vbCritical, "Position Lookup Error"
+    MsgBox "Virhe funktiossa Positiot: " & Err.Description & vbCrLf & _
+           "Projektielementti: " & LaiteNr, vbCritical, "Positioiden haku"
     Positiot = ""  ' Virhetilanteessa palautetaan tyhjä merkkijono
     ' Siivotaan objektit virhetilanteessa
     On Error Resume Next
@@ -211,23 +209,30 @@ End Function
 '   Cosfii - Tehokerroin (cos φ)
 ' Palautusarvo: Vaihekulma radiaaneina
 '------------------------------------------------------------------------------
-Function Vaihekulma(Cosfii)
+Function Vaihekulma(Cosfii As Double) As Double
 On Error GoTo ErrorHandler
 
-    ' Lasketaan vaihekulma: arctan(-cosφ / sqrt(-cosφ² + 1)) + π/2
-    Vaihekulma = Atn(-Cosfii / Sqr(-Cosfii * Cosfii + 1)) + 2 * Atn(1)
+    ' Lasketaan vaihekulma: arctan(-cosφ / sqrt(-cosφ² + 1)) + π/2.
+    ' Rajatapauksessa |cosφ| = 1 neliöjuuri on nolla, joten kulma annetaan suoraan.
+    If Cosfii >= 1 Then
+        Vaihekulma = 0
+    ElseIf Cosfii <= -1 Then
+        Vaihekulma = 4 * Atn(1)
+    Else
+        Vaihekulma = Atn(-Cosfii / Sqr(-Cosfii * Cosfii + 1)) + 2 * Atn(1)
+    End If
     
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in Vaihekulma: " & Err.Description & vbCrLf & _
-           "Power Factor: " & Cosfii, vbCritical, "Phase Angle Calculation Error"
+    MsgBox "Virhe funktiossa Vaihekulma: " & Err.Description & vbCrLf & _
+           "Tehokerroin: " & Cosfii, vbCritical, "Vaihekulman laskenta"
     Vaihekulma = 0  ' Virhetilanteessa palautetaan 0
 End Function
 
 '------------------------------------------------------------------------------
 ' Funktio: MotKaapUh
-' Tarkoitus: Laskee moottorikäaapelin jännitealenemaprosentin
+' Tarkoitus: Laskee moottorikaapelin jännitealenemaprosentin
 ' Parametrit:
 '   Cosfii  - Tehokerroin (cos φ)
 '   Resist  - Kaapelin resistanssi (Ω/km)
@@ -237,31 +242,32 @@ End Function
 '   Pituus  - Kaapelin pituus (m)
 ' Palautusarvo: Muotoiltu jännitealenemaprosentti, esim. "2.35 %"
 '------------------------------------------------------------------------------
-Function MotKaapUh(Cosfii As Single, Resist As Double, React As Double, Virta As Single, Voltage As Integer, Pituus As Integer)
-Dim Kulma As Double
+Function MotKaapUh(Cosfii As Double, Resist As Double, React As Double, Virta As Double, Voltage As Long, Pituus As Double)
+Dim Kulma As Double  ' Vaihekulma radiaaneina
+Dim Alenema As Double  ' Jännitealenema voltteina
 On Error GoTo MotKaapUhErr
 
-' Lasketaan vaihekulma
-Kulma = Atn(-Cosfii / Sqr(-Cosfii * Cosfii + 1)) + 2 * Atn(1)
+' Lasketaan vaihekulma (rajatapaus cosφ = 1 käsitellään Vaihekulma-funktiossa)
+Kulma = Vaihekulma(Cosfii)
 
 ' Lasketaan jännitealenema: √3 * I * (R*L*cosφ + X*L*sinφ)
-MotKaapUh = Sqr(3) * Virta * ((Resist * Pituus * Cosfii) + (React * Pituus * Sin(Kulma)))
+Alenema = Sqr(3) * Virta * ((Resist * Pituus * Cosfii) + (React * Pituus * Sin(Kulma)))
 
 ' Muunnetaan prosentiksi jännitteestä
-MotKaapUh = (MotKaapUh / Voltage) * 100
+Alenema = (Alenema / Voltage) * 100
 
 ' Muotoillaan prosenttiluvuksi
-MotKaapUh = Format(MotKaapUh, "# ##0.0#") & " %"
+MotKaapUh = Format(Alenema, "# ##0.0#") & " %"
 
 Exit_Function:
     Exit Function
 
 MotKaapUhErr:
-    MsgBox "Error in MotKaapUh: " & Err.Description & vbCrLf & _
+    MsgBox "Virhe funktiossa MotKaapUh: " & Err.Description & vbCrLf & _
            "cosφ=" & Cosfii & " R=" & Resist & " X=" & React & _
            " I=" & Virta & " V=" & Voltage & " L=" & Pituus, _
-           vbCritical, "Cable Voltage Drop Calculation Error"
-    MotKaapUh = "Error"
+           vbCritical, "Kaapelin jännitealenema"
+    MotKaapUh = "Virhe"
     Resume Exit_Function
 End Function
 
@@ -271,17 +277,17 @@ End Function
 ' Parametrit:
 '   Tieto  - Alkuperäinen numeromerkkijono (esim. "001")
 '   Lisays - Lisättävä luku (esim. 100)
-' Palautusarvo: Padded-merkkijono (esim. "101")
+' Palautusarvo: Johtavilla nollilla täytetty merkkijono (esim. "101")
 ' Esimerkki: LisaaNo("001", 100) = "101"
 '------------------------------------------------------------------------------
-Function LisaaNo(Tieto As Variant, Lisays As Integer) As String
+Function LisaaNo(Tieto As Variant, Lisays As Long) As String
 On Error GoTo ErrorHandler
 
-Dim Pit As Integer    ' Alkuperäinen merkkijonon pituus
-Dim No As Integer     ' Numeerinen arvo
+Dim Pit As Long       ' Alkuperäinen merkkijonon pituus
+Dim No As Long        ' Numeerinen arvo
 Dim i As Integer      ' Silmukkalasku
 
-  ' Käsitellään nolla-syöte
+  ' Null-syötteestä palautetaan tyhjä merkkijono
   If IsNull(Tieto) Then
     LisaaNo = ""
   Else
@@ -299,11 +305,11 @@ Dim i As Integer      ' Silmukkalasku
 Exit Function
 
 ErrorHandler:
-    MsgBox "Error in LisaaNo: " & Err.Description & vbCrLf & _
-           "Input: " & Tieto & ", Addition: " & Lisays, _
-           vbCritical, "Number Addition Error"
+    MsgBox "Virhe funktiossa LisaaNo: " & Err.Description & vbCrLf & _
+           "Syöte: " & Tieto & ", lisäys: " & Lisays, _
+           vbCritical, "Luvun lisäys"
     LisaaNo = ""  ' Virhetilanteessa palautetaan tyhjä merkkijono
 End Function
 
-'Example usage in query:
-'   Field: LisaaNo([FieldName], 100)
+' Esimerkki kyselyssä:
+'   Kenttä: LisaaNo([Kentännimi], 100)

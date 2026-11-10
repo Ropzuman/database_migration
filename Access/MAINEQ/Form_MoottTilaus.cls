@@ -1,106 +1,169 @@
 Option Compare Database
 Option Explicit
 
+'==============================================================================
+' Lomake: MoottTilaus
+' Tarkoitus: Vie lomakkeella suodatetut moottorit Excel-liitteeksi
+'            moottorien ostoehdotukseen.
+' Päivitetty: 2026-11-10 - Kovakoodattu Santa Fe -mallipolku korvattu
+'             tiedostonvalinnalla, virheenkäsittely ja Excelin siivous,
+'             DROP TABLE vain jos taulu on olemassa, kuollut Command3 poistettu
+'==============================================================================
+
+' Muistetaan viimeksi valittu mallitiedosto lomakkeen eliniän ajan
+Private MalliPolku As String
+
+' Kysyy käyttäjältä Excel-mallitiedoston; palauttaa "" jos valinta peruttiin
+Private Function ValitseMalli() As String
+    Dim fd As Object  ' FileDialog-objekti
+
+    If MalliPolku <> "" Then
+        If Dir$(MalliPolku) <> "" Then
+            ValitseMalli = MalliPolku
+            Exit Function
+        End If
+    End If
+
+    Set fd = Application.FileDialog(3)  ' msoFileDialogFilePicker = 3
+    With fd
+        .Title = "Valitse moottorien ostoehdotuksen liitteen Excel-malli"
+        .AllowMultiSelect = False
+        .Filters.Clear
+        .Filters.Add "Excel-tiedostot", "*.xls;*.xlsx;*.xlsm;*.xlt;*.xltx"
+        If .Show = -1 Then
+            ValitseMalli = .SelectedItems(1)
+            MalliPolku = ValitseMalli
+        End If
+    End With
+    Set fd = Nothing
+End Function
+
+' Luo Excel-liitteen lomakkeen suodatetuista riveistä.
+' Rivit kirjoitetaan silmukassa solu kerrallaan, jotta mallipohjan muotoilut säilyvät.
 Private Sub Command0_Click()
     On Error GoTo ErrorHandler
 
-    Dim PWB As Object  ' Excel.Workbook (Late Binding)
-    Dim UWB As Object  ' Excel.Workbook
+    Dim PWB As Object  ' Excel.Workbook (mallipohja)
+    Dim UWB As Object  ' Excel.Workbook (valmis liite)
     Dim XL As Object   ' Excel.Application
-    Dim i As Integer
-    Dim Rivi As Integer
-    Dim TemplatePath As String
+    Dim Siv As Object  ' Valmiin liitteen taulukko
+    Dim rs As DAO.Recordset  ' Lomakkeen suodatetut rivit
+    Dim i As Long  ' Juokseva numero
+    Dim Rivi As Long  ' Excelin kirjoitusrivi
+    Dim K As Long  ' Sarakelaskuri
+    Dim Polku As String  ' Mallitiedoston polku
+    Dim virhenumero As Long  ' Virheen numero käsittelijässä
+    Dim virhekuvaus As String  ' Virheen kuvaus käsittelijässä
+    Dim Valmis As Boolean  ' Onnistuiko liitteen luonti
 
-    ' Polku: haetaan asetustaulusta tulevaisuudessa; tässä tarkistetaan ensin tiedoston olemassaolo
-    TemplatePath = "N:\whldata\Projekti\Santa Fe 220018\Sahko\Tools\LiiteMoottorienOstoehdotukseenTemplate.xls"
+    Polku = ValitseMalli()
+    If Polku = "" Then Exit Sub
 
-    If Dir(TemplatePath) = "" Then
-        MsgBox "Excel-mallitiedostoa ei löydy polusta:" & vbCrLf & TemplatePath, vbCritical, "Virhe"
-        Exit Sub
+    Set rs = Me.RecordsetClone
+    If rs.EOF And rs.BOF Then
+        MsgBox "Lomakkeella ei ole vietäviä rivejä.", vbInformation, "Ostoehdotuksen liite"
+        GoTo Cleanup
     End If
 
     Set XL = CreateObject("Excel.Application")
-    ' Piilotetaan Excel ajon ajaksi — nopeuttaa käyttöä huomattavasti
+    ' Piilotetaan Excel ajon ajaksi - nopeuttaa käyttöä huomattavasti
     XL.Visible = False
     XL.ScreenUpdating = False
+    XL.Calculation = -4135  ' xlCalculationManual
 
-    Set PWB = XL.Workbooks.Open(TemplatePath)
+    Set PWB = XL.Workbooks.Open(Polku, , True)  ' Vain luku -tilassa
     PWB.Sheets.Copy
     Set UWB = XL.ActiveWorkbook
     PWB.Close False
+    Set PWB = Nothing
+    Set Siv = UWB.ActiveSheet
+
     i = 1
     Rivi = 6
-    Me.RecordsetClone.MoveFirst
-    Do While Not Me.RecordsetClone.EOF
-      With UWB.ActiveSheet
-        .Cells(Rivi, 1).Value = i
-        .Cells(Rivi, 1).VerticalAlignment = -4160  ' xlTop
-        .Cells(Rivi, 2).Value = Me.RecordsetClone.Fields(0).Value
-        .Cells(Rivi, 2).VerticalAlignment = -4160
-        .Cells(Rivi, 3).Value = Me.RecordsetClone.Fields(1).Value & Me.RecordsetClone.Fields(2).Value
-        .Cells(Rivi, 4).Value = Me.RecordsetClone.Fields(3).Value
-        .Cells(Rivi, 4).VerticalAlignment = -4160
-        .Cells(Rivi, 5).Value = Me.RecordsetClone.Fields(4).Value
-        .Cells(Rivi, 5).VerticalAlignment = -4160
-        .Cells(Rivi, 6).Value = Me.RecordsetClone.Fields(5).Value
-        .Cells(Rivi, 6).VerticalAlignment = -4160
-        .Cells(Rivi, 7).Value = Me.RecordsetClone.Fields(6).Value
-        .Cells(Rivi, 7).VerticalAlignment = -4160
-        .Cells(Rivi, 8).Value = Me.RecordsetClone.Fields(7).Value
-        .Cells(Rivi, 8).VerticalAlignment = -4160
-        .Cells(Rivi, 9).Value = Me.RecordsetClone.Fields(8).Value
-        .Cells(Rivi, 9).VerticalAlignment = -4160
-        .Cells(Rivi, 10).Value = Me.RecordsetClone.Fields(9).Value
-        .Cells(Rivi, 10).VerticalAlignment = -4160
-      End With
-      Rivi = Rivi + 1
-      i = i + 1
-      Me.RecordsetClone.MoveNext
+    rs.MoveFirst
+    Do While Not rs.EOF
+        Siv.Cells(Rivi, 1).Value = i
+        Siv.Cells(Rivi, 1).VerticalAlignment = -4160  ' xlTop
+        Siv.Cells(Rivi, 2).Value = rs.Fields(0).Value
+        Siv.Cells(Rivi, 2).VerticalAlignment = -4160
+        ' Sarakkeeseen 3 yhdistetään kaksi kenttää
+        Siv.Cells(Rivi, 3).Value = Nz(rs.Fields(1).Value, "") & Nz(rs.Fields(2).Value, "")
+        For K = 4 To 10
+            Siv.Cells(Rivi, K).Value = rs.Fields(K - 1).Value
+            Siv.Cells(Rivi, K).VerticalAlignment = -4160
+        Next K
+        Rivi = Rivi + 1
+        i = i + 1
+        rs.MoveNext
     Loop
 
-    With XL.Range(UWB.ActiveSheet.Cells(6, 1), UWB.ActiveSheet.Cells(Rivi - 1, 10)).Borders
-      .LineStyle = 1   ' xlContinuous
-      .Weight = 1      ' xlHairline
-      .ColorIndex = -4105  ' xlAutomatic
+    With Siv.Range(Siv.Cells(6, 1), Siv.Cells(Rivi - 1, 10)).Borders
+        .LineStyle = 1   ' xlContinuous
+        .Weight = 1      ' xlHairline
+        .ColorIndex = -4105  ' xlAutomatic
     End With
-
-    ' Näytetään tulos käyttäjälle
-    XL.ScreenUpdating = True
-    XL.Visible = True
-    AppActivate XL.Caption
+    Valmis = True
 
 Cleanup:
     On Error Resume Next
-    ' Vapautetaan COM-objektit muistivuotojen estämiseksi
+    If Not rs Is Nothing Then rs.Close
+    Set rs = Nothing
+    If Not XL Is Nothing Then
+        XL.Calculation = -4105  ' xlCalculationAutomatic
+        XL.ScreenUpdating = True
+        If Valmis Then
+            ' Näytetään tulos käyttäjälle
+            XL.Visible = True
+            AppActivate XL.Caption
+        Else
+            ' Virheessä tai keskeytyksessä suljetaan piilotettu Excel-prosessi
+            If Not UWB Is Nothing Then UWB.Close False
+            XL.Quit
+        End If
+    End If
+    Set Siv = Nothing
     Set PWB = Nothing
     Set UWB = Nothing
     Set XL = Nothing
+    If virhenumero <> 0 Then
+        MsgBox "Virhe Excel-raportin luonnissa: " & virhekuvaus, vbCritical, "Virhe " & virhenumero
+    End If
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Virhe Excel-raportin luonnissa: " & Err.Description, vbCritical, "Virhe " & Err.Number
-    ' Jos Excel kaatuu, yritetään sulkea piilotettu prosessi
-    If Not XL Is Nothing Then
-        On Error Resume Next
-        If Not XL.Visible Then XL.Quit
-    End If
+    virhenumero = Err.Number
+    virhekuvaus = Err.Description
     Resume Cleanup
 End Sub
 
-Private Sub Command3_Click()
-Dim Taulu As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
-Set Taulu = CurrentDb.OpenRecordset("Select * FROM qryMottilaus2 WHERE Elementti='340301'")
-Set Taulu = Nothing
-End Sub
-
+' Rakentaa moottorioptioiden aputaulun uudelleen ja asettaa valmistajasuodattimen
 Private Sub Form_Load()
-  CurrentDb.Execute "DROP TABLE TblMotorsOptions"
-  CurrentDb.Execute "MakeTblMotorsOptions"
-  Valm.Value = Valm.ItemData(0)
-  Valm_AfterUpdate
+    On Error GoTo ErrorHandler
+
+    Dim Tbl As DAO.TableDef  ' Taulujen läpikäynti
+    Dim Olemassa As Boolean  ' Onko aputaulu olemassa
+
+    For Each Tbl In CurrentDb.TableDefs
+        If StrComp(Tbl.Name, "TblMotorsOptions", vbTextCompare) = 0 Then
+            Olemassa = True
+            Exit For
+        End If
+    Next Tbl
+    If Olemassa Then CurrentDb.Execute "DROP TABLE TblMotorsOptions", dbFailOnError
+    CurrentDb.Execute "MakeTblMotorsOptions", dbFailOnError
+
+    If Valm.ListCount > 0 Then
+        Valm.Value = Valm.ItemData(0)
+        Valm_AfterUpdate
+    End If
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "Virhe moottorioptioiden aputaulun päivityksessä: " & Err.Description, vbCritical, "Virhe " & Err.Number
 End Sub
 
 Private Sub Valm_AfterUpdate()
-  Me.Filter = "Manuf ='" & Valm.Value & "'"
+  ' Heittomerkit tuplataan, jotta valmistajan nimi ei riko suodatinta
+  Me.Filter = "Manuf ='" & Replace(CStr(Nz(Valm.Value, "")), "'", "''") & "'"
   Me.FilterOn = True
 End Sub

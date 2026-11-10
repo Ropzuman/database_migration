@@ -20,12 +20,32 @@ Private Sub Command27_Click()
         PuhdistettuViesti = Replace(Viesti, """", "'")
         PuhdistettuViesti = Replace(PuhdistettuViesti, "&", "ja")
         PuhdistettuViesti = Replace(PuhdistettuViesti, "|", "")
-        PuhdistettuKohde  = Replace(CStr(Nz(Me.NetworkName.Value, "")), " ", "")
+        PuhdistettuViesti = PuhdistaMerkit(PuhdistettuViesti, "", "^<>%!" & vbCr & vbLf)
+        ' Kohteeksi sallitaan vain koneen/k‰ytt‰j‰n nimess‰ k‰ytett‰v‰t merkit
+        PuhdistettuKohde  = PuhdistaMerkit(CStr(Nz(Me.NetworkName.Value, "")), "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.\", "")
+        If PuhdistettuKohde = "" Then Exit Sub
 
         ' K‰ytet‰‰n modernia MSG.EXE-komentoa ó NET SEND poistettu Windows Vistasta l‰htien
         Call Shell("msg " & PuhdistettuKohde & " """ & PuhdistettuViesti & """", vbHide)
     End If
 End Sub
+
+' Poistaa merkkijonosta kielletyt merkit; jos Sallitut on annettu, vain ne s‰ilytet‰‰n
+Private Function PuhdistaMerkit(ByVal Teksti As String, ByVal Sallitut As String, ByVal Kielletyt As String) As String
+    Dim i As Long  ' Merkin indeksi
+    Dim Merkki As String  ' K‰sitelt‰v‰ merkki
+    Dim Tulos As String  ' Puhdistettu teksti
+
+    For i = 1 To Len(Teksti)
+        Merkki = Mid$(Teksti, i, 1)
+        If Sallitut <> "" Then
+            If InStr(1, Sallitut, Merkki, vbBinaryCompare) > 0 Then Tulos = Tulos & Merkki
+        ElseIf InStr(1, Kielletyt, Merkki, vbBinaryCompare) = 0 Then
+            Tulos = Tulos & Merkki
+        End If
+    Next i
+    PuhdistaMerkit = Tulos
+End Function
 
 Private Sub Form_Open(Cancel As Integer)
    
@@ -62,7 +82,7 @@ On Error GoTo Err_WhosOn
 
    Dim iLDBFile As Integer
    Dim i As Integer
-   Dim SPath As String, X As String
+   Dim SPath As String
    Dim sLogStr As String, sLogins As String
    Dim sMach As String, sUser As String
    Dim rUser As UserRec    ' K‰ytt‰j‰tietue, m‰‰ritelty moduulin alussa
@@ -77,11 +97,10 @@ On Error GoTo Err_WhosOn
 
 ' Rakennetaan LACCDB-tiedoston polku.
 
-   SPath = Left(SPath, InStr(1, SPath, ".")) + "LACCDB"
+   SPath = Left$(SPath, InStrRev(SPath, ".")) & "LACCDB"
 
 ' Tarkistetaan, ett‰ tiedosto on olemassa.
 
-   X = Dir(SPath)  'Tarkistetaan, ett‰ tiedosto on olemassa
    iLDBFile = FreeFile
 
    Open SPath For Binary Access Read Shared As iLDBFile
@@ -114,9 +133,9 @@ Exit_WhosOn:
 
 Err_WhosOn:
    If Err = 68 Then
-      MsgBox "Couldn't populate the list", 48, "No LDB File"
+      MsgBox "K‰ytt‰j‰listaa ei voitu muodostaa: LACCDB-tiedostoa ei lˆydy.", 48, "LACCDB puuttuu"
    Else
-      MsgBox "Error: " & Err.Number & vbCrLf & Err.Description
+      MsgBox "Virhe: " & Err.Number & vbCrLf & Err.Description
       Close iLDBFile
    End If
    Resume Exit_WhosOn

@@ -21,26 +21,16 @@ Option Explicit
 '   - kernel32.dll (GetComputerNameW API)
 '================================================================================
 
+' Puskuri annetaan osoittimena (StrPtr), jotta W-API kirjoittaa UTF-16-merkit suoraan VBA-merkkijonoon.
 ' Unicode W -versiot tukevat skandinaavisia merkkejä (Ä, Ö) ilman merkistökorruptioriskiä
-#If VBA7 Then
-    Private Declare PtrSafe Function api_GetUserName _
-                    Lib "advapi32.dll" _
-                    Alias "GetUserNameW" _
-                    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Private Declare PtrSafe Function api_GetComputerName _
-                    Lib "kernel32" _
-                    Alias "GetComputerNameW" _
-                    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-#Else
-  Private Declare Function api_GetUserName _
-                    Lib "advapi32.dll" _
-                    Alias "GetUserNameW" _
-                    (ByVal lpBuffer As String, nSize As Long) As Long
-    Private Declare Function api_GetComputerName _
-                    Lib "kernel32" _
-                    Alias "GetComputerNameW" _
-                    (ByVal lpBuffer As String, nSize As Long) As Long
-#End If
+Private Declare PtrSafe Function api_GetUserName _
+                Lib "advapi32.dll" _
+                Alias "GetUserNameW" _
+                (ByVal lpBuffer As LongPtr, ByRef nSize As Long) As Long
+Private Declare PtrSafe Function api_GetComputerName _
+                Lib "kernel32" _
+                Alias "GetComputerNameW" _
+                (ByVal lpBuffer As LongPtr, ByRef nSize As Long) As Long
 
 '--------------------------------------------------------------------------------
 ' Funktio: SniffUser
@@ -66,7 +56,7 @@ On Error GoTo ErrorHandler
     BuffSize = 256
     NBuffer = Space$(BuffSize)
     
-    If api_GetUserName(NBuffer, BuffSize) Then
+    If api_GetUserName(StrPtr(NBuffer), BuffSize) Then
       NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
     Else
       NWUserName = "Tuntematon"
@@ -75,7 +65,7 @@ On Error GoTo ErrorHandler
     ' Haetaan tietokoneen nimi Windows API:n avulla
     BuffSize = 256
     NBuffer = Space$(BuffSize)
-    If api_GetComputerName(NBuffer, BuffSize) Then
+    If api_GetComputerName(StrPtr(NBuffer), BuffSize) Then
       CName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
     Else
       CName = "Tuntematon"

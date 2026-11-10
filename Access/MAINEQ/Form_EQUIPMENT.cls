@@ -1,5 +1,8 @@
-Option Compare Database   'Use database order for string comparisons
+Option Compare Database
 Option Explicit
+
+' Painikkeen teksti, kun lomake on vain luku -tilassa
+Private Const MUOKKAA_TEKSTI As String = "Edit Maineq Data"
 
 Private Sub Button77_Click()
 On Error GoTo Err_Button77_Click
@@ -49,18 +52,15 @@ Err_Button80_Click:
     
 End Sub
 
+' Suodattaa lomakkeen valitun yksikön mukaan ja tyhjentää osaston valinnan
 Private Sub Combo117_AfterUpdate()
+On Error GoTo Err_Combo117_AfterUpdate
 
-    Dim stMainDocName As String
-    Dim stMainLinkCriteria As String
-
-    stMainDocName = "EQUIPMENT"
-    stMainLinkCriteria = "(MetsoUnit= " & VBA.Chr(34) & Me.Combo117.Value & VBA.Chr(34) & ")"
-    Me.Filter = stMainLinkCriteria
-    DoCmd.DoMenuItem acFormBar, acRecordsMenu, 2, , acMenuVer70
+    Me.Filter = "(MetsoUnit= " & VBA.Chr(34) & Replace(CStr(Nz(Me.Combo117.Value, "")), VBA.Chr(34), VBA.Chr(34) & VBA.Chr(34)) & VBA.Chr(34) & ")"
+    Me.FilterOn = True
     Me.Combo123.Value = ""
     Me.Combo123.Requery
-        
+
 Exit_Combo117_AfterUpdate:
     Exit Sub
 
@@ -71,32 +71,32 @@ Err_Combo117_AfterUpdate:
 End Sub
 
 Private Sub Combo117_GotFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+    If Me.Komento172.Caption = MUOKKAA_TEKSTI Then
     Me.AllowEdits = True
     End If
 End Sub
 
 Private Sub Combo117_LostFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+    If Me.Komento172.Caption = MUOKKAA_TEKSTI Then
     Me.AllowEdits = False
     End If
 End Sub
 
+' Suodattaa lomakkeen valitun yksikön ja osaston mukaan
 Private Sub Combo123_AfterUpdate()
-    Dim stMainDocName As String
-    Dim stMainLinkCriteria As String
+On Error GoTo Err_Combo123_AfterUpdate
+    Dim Lainaus As String  ' Lainausmerkki
+    Lainaus = VBA.Chr(34)
 
-    stMainDocName = "EQUIPMENT"
-    stMainLinkCriteria = "((MetsoUnit= " & VBA.Chr(34) & Me.Combo117.Value & VBA.Chr(34) & ")and (Department= " & VBA.Chr(34) & Me.Combo123.Value & VBA.Chr(34) & "))"
-    Me.Filter = stMainLinkCriteria
+    Me.Filter = "((MetsoUnit= " & Lainaus & Replace(CStr(Nz(Me.Combo117.Value, "")), Lainaus, Lainaus & Lainaus) & Lainaus & ") and (Department= " & Lainaus & Replace(CStr(Nz(Me.Combo123.Value, "")), Lainaus, Lainaus & Lainaus) & Lainaus & "))"
     Me.FilterOn = True
-        
-Exit_Combo117_AfterUpdate:
+
+Exit_Combo123_AfterUpdate:
     Exit Sub
 
-Err_Combo117_AfterUpdate:
+Err_Combo123_AfterUpdate:
     MsgBox Err.Description
-    Resume Exit_Combo117_AfterUpdate
+    Resume Exit_Combo123_AfterUpdate
 
 End Sub
 
@@ -104,20 +104,8 @@ Private Sub EquipName_Exit(Cancel As Integer)
 suffix_afterupdate
 End Sub
 
+' Ei käytössä: lisätietolomakkeen avaus on poistettu
 Private Sub ExtData_Click()
-'Avaa formin, jossa on lisätiedot
-'Dim stDocName As String
-'Dim stDocNamePu As String
-' EI KÄYTÖSSÄ
-'stDocNamePu = "PumpsSubform"
-'    If Me.EqGroup.Value = "Pumps" Then
-'    Pumps
-'    Else
-'     If IsLoaded(stDocNamePu) Then
-'        Forms!PumpsSubform.Visible = False
-'        End If
-'    End If
-
 End Sub
 
 Private Sub Pos_AfterUpdate()
@@ -130,19 +118,12 @@ suffix_afterupdate
 End Sub
 
 Private Sub PosIndex_AfterUpdate()
-   'Stop
-   Dim frm As Form
-   Set frm = Forms("equipment")
-    
-    frm("Posindex").Value = frm("Posindex").Value & frm("suffix").Value
+    ' Liitetään tunnuksen perään liite (suffix)
+    Me!PosIndex.Value = Me!PosIndex.Value & Me!Suffix.Value
 End Sub
 
+' Ei toimintaa: PosIndex muodostetaan PosIndex_AfterUpdate-tapahtumassa
 Private Sub suffix_afterupdate()
-   'Stop
-   Dim frm As Form
-   Set frm = Forms("equipment")
-    'If Not (IsNull(frm!Pos) And IsNull(frm!Suffix)) Then frm!PosIndex = frm!Pos & frm!Suffix
-
 End Sub
 
 Private Sub Suffix_Exit(Cancel As Integer)
@@ -150,13 +131,13 @@ suffix_afterupdate
 End Sub
 
 Private Sub Combo123_GotFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+    If Me.Komento172.Caption = MUOKKAA_TEKSTI Then
     Me.AllowEdits = True
     End If
 End Sub
 
 Private Sub Combo123_LostFocus()
-    If Me.Komento172.Caption = "Edit Maineq Data" Then
+    If Me.Komento172.Caption = MUOKKAA_TEKSTI Then
     Me.AllowEdits = False
     End If
 End Sub
@@ -211,7 +192,7 @@ On Error GoTo Err_Command99_Click
 
 
     Screen.PreviousControl.SetFocus
-    DoCmd.DoMenuItem acFormBar, acEditMenu, 10, , acMenuVer70
+    DoCmd.RunCommand acCmdFind
 
 Exit_Command99_Click:
     Exit Sub
@@ -223,54 +204,46 @@ Err_Command99_Click:
 End Sub
 
 Private Sub EqGroup_AfterUpdate()
-'Form_Current
 End Sub
+
+' Ei toimintaa: alalomakkeiden näkyvyyttä ei ohjata tässä versiossa
 Private Sub Form_Current()
-'Me.Department.Requery
-'  If Me.EqType = "BB" Then ' Pumput
-'    Me.PUMPS_SubForm.Visible = True
-'    Me.TANKS_SubForm.Visible = False
-'    Me.AUXILIARY_SubForm.Visible = False
-'  ElseIf Me.EqType = "22" Then 'Tankit
-'    Me.PUMPS_SubForm.Visible = False
-'    Me.TANKS_SubForm.Visible = True
-'    Me.AUXILIARY_SubForm.Visible = False
-'  Else
-'    Me.AUXILIARY_SubForm.Visible = True
-'    Me.TANKS_SubForm.Visible = False
-'    Me.PUMPS_SubForm.Visible = False
-'  End If
 End Sub
 
+' Ehdottaa uudelle laitteelle seuraavaa juoksevaa numeroa (EqSeq) osastolla ja tyypillä
 Private Sub EqType_AfterUpdate()
-Dim Taulukko As DAO.Recordset  ' Updated 2025-11-11: Added DAO prefix
-Dim Uusi As String
-Set Taulukko = CurrentDb.OpenRecordset("SELECT EqSeq From MAINEQ WHERE Department = '" & Me.Department.Value & "' AND Eqtype='" & Me.EqType.Value & "' ORDER By EqSeq DESC;")
+On Error GoTo Err_EqType_AfterUpdate
+Dim Taulukko As DAO.Recordset  ' Suurin käytössä oleva numero
+Dim Uusi As Long  ' Seuraava numero
 
-If Taulukko.RecordCount = 0 Then
-  Uusi = "001"
-Else
-  Uusi = CStr(VAL(Taulukko.Fields(0)) + 1)
-End If
-If Len(Uusi) = 1 Then
-  Uusi = "00" & Uusi
-ElseIf Len(Uusi) = 2 Then
-  Uusi = "0" & Uusi
-End If
-
-  EqSeq.Value = Uusi
+  ' Suurin numero haetaan numeerisesti, jotta yli 999 -arvot ja tekstijärjestys eivät sotke tulosta
+  Set Taulukko = CurrentDb.OpenRecordset("SELECT Max(Val(EqSeq)) AS Suurin FROM MAINEQ WHERE Department = '" & Replace(CStr(Nz(Me.Department.Value, "")), "'", "''") & "' AND Eqtype='" & Replace(CStr(Nz(Me.EqType.Value, "")), "'", "''") & "';", dbOpenSnapshot)
+  Uusi = CLng(Nz(Taulukko.Fields(0).Value, 0)) + 1
   Taulukko.Close
   Set Taulukko = Nothing
+
+  EqSeq.Value = Format$(Uusi, "000")
   Form_Current
+
+Exit_EqType_AfterUpdate:
+  Exit Sub
+
+Err_EqType_AfterUpdate:
+  MsgBox "Seuraavan numeron haku epäonnistui: " & Err.Description, vbExclamation
+  On Error Resume Next
+  If Not Taulukko Is Nothing Then Taulukko.Close
+  Resume Exit_EqType_AfterUpdate
 End Sub
 
 Private Sub Form_Open(Cancel As Integer)
 Form_Current
 Me.AllowEdits = False
-Me.Komento172.Caption = "Edit Maineq Data"
+Me.Komento172.Caption = MUOKKAA_TEKSTI
 End Sub
 
+' Mukautetaan alalomakkeiden koko ikkunan kokoon
 Private Sub Form_Resize()
+  On Error Resume Next  ' Koonmuutos ei saa kaatua pienennettyyn ikkunaan
   If Me.WindowWidth > 1000 Then
     DRIVES_SubForm.Width = Me.WindowWidth - 300
     TANKS_SubForm.Width = Me.WindowWidth - 300
@@ -283,13 +256,13 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub Komento172_Click()
-If Me.Komento172.Caption = "Edit Maineq Data" Then
+If Me.Komento172.Caption = MUOKKAA_TEKSTI Then
 Me.AllowEdits = True
 Me.Komento172.Caption = "Save"
 Me.EquipNameEng.SetFocus
 Else
 Me.AllowEdits = False
-Me.Komento172.Caption = "Edit Maineq Data"
+Me.Komento172.Caption = MUOKKAA_TEKSTI
 Me.EquipNameEng.SetFocus
 End If
 End Sub

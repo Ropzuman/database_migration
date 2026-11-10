@@ -45,6 +45,21 @@
 - **general.bas** – 64-bittisessä Officessa epävakaa `GetOpenFileNameA` (comdlg32.dll) poistettu kokonaan. Korvattu Office-natiivilla `Application.FileDialog(3)` -pohjaisella `HaeTiedostoNimi()`-funktiolla (toimii luotettavasti 32/64-bit).
 - **USysCheck.bas** – ANSI-versiot `GetUserNameA` ja `GetComputerNameA` korvattu Unicode-versioilla `GetUserNameW` ja `GetComputerNameW`. Estää skandinaavisten merkkien (Ä, Ö) korruptoitumisen koodisivumuunnosten yhteydessä. Muutos tehty sekä `#If VBA7` että `#Else`-haaroihin.
 
+### Code review -korjaukset (2026-11-10)
+
+- **Form_CopyLoops.cls** – `HaeLoopit_Click` tekee koko tuonnin yhdessä transaktiossa (rollback virheessä). `On Error Resume Next` rajattu pelkkään kenttäkopiointiin, `Update`-virheet keskeyttävät tuonnin ja loopit lisätään laiteriviluetteloon vasta onnistuneen tallennuksen jälkeen. SQL-heittomerkit tuplataan. Recordsetit suljetaan, `devTable` avataan kerran, tyhjä alilomake ei enää kaada `MoveFirst`-kutsua. Vanhentuneet `GetOpenFileName`/`comdlg32`-maininnat poistettu kommenteista.
+- **general.bas** – `EtsiLoop`: SQL-heittomerkkien suojaus. `UdNoteToRev`: tarkistus puuttuvalle `|`-merkille (ei enää negatiivista `Left$`-pituutta). Kommentit suomeksi.
+- **USysCheck.bas** – `GetUserNameW`/`GetComputerNameW` saavat puskurin `LongPtr`-osoittimena (`StrPtr`), jotta W-API kirjoittaa UTF-16-merkit oikein. Kuollut 32-bittinen `#Else`-haara poistettu.
+- **Form_DBUsers.cls** – `msg`-kohde rajattu sallittuihin merkkeihin ja viestistä poistetaan lisää Shell-erikoismerkkejä (`^<>%!`, rivinvaihdot). `LACCDB`-polku muodostetaan `InStrRev`-haulla. Virheviestit suomeksi.
+- **Form_SizingOut.cls** – Taulun/kyselyn nimi validoidaan ennen `SELECT`-lausetta. Kaikki kentät (myös ensimmäinen) käsitellään samalla tavalla. Desimaalipilkku muutetaan pisteeksi vain luvuille, ja formula-injection-suoja ei enää riko negatiivisia lukuja. Hakemisto lainataan `EXPLORER`-kutsussa ja CSV-tiedosto suljetaan myös virhetilanteessa.
+- **Form_Linkkien vaihto.cls** – Käyttämättömät muuttujat poistettu, `Polku2`/`Nimi` nollataan joka kierroksella, kommentit ja viestit suomeksi.
+- **Sivunumerointi.bas** – `CInt(Alue)` korvattu `CInt(Val(Alue))`-muunnoksella ja lisätty dokumentaatio.
+
+### Viimeistely (2026-11-10)
+
+- **Form_CopyLoops.cls** – Englanninkieliset `Debug.Print`-tulosteet poistettu, tiedostovalintaikkunan otsikko ja suodatin suomennettu, vanha `LahdeDB`-yhteys suljetaan ennen uuden avaamista (ei vuoda yhteyksiä uudelleenvalinnassa). Kommentit tarkistettu.
+- Muissa instru3-tiedostoissa ei löytynyt jäljellä olevia englanninkielisiä kommentteja, käyttämättömiä muuttujia tai kuollutta koodia; objektiviittaukset vapautetaan (`Set ... = Nothing`) normaali- ja virhepolussa.
+
 ### Siivous
 
 - **Access/instru3/CodeReview_instru3** – Tiedostonimi muutettu: nimetty uudelleen `CodeReview_instru3.md`-tiedostoksi.

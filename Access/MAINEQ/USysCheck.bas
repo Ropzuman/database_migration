@@ -1,53 +1,12 @@
 Option Compare Database
 Option Explicit
 
-' OPENFILENAME-tyyppi täytyy esitellä ehtokääntämislohkon ulkopuolella Access-lomakkeiden yhteensopivuuden vuoksi
-Public Type OPENFILENAME
-    lStructSize As Long
-#If VBA7 Then
-    hwndOwner As LongPtr
-    hInstance As LongPtr
-#Else
-    hwndOwner As Long
-    hInstance As Long
-#End If
-    lpstrFilter As String
-    lpstrCustomFilter As String
-    nMaxCustFilter As Long
-    nFilterIndex As Long
-    lpstrFile As String
-    nMaxFile As Long
-    lpstrFileTitle As String
-    nMaxFileTitle As Long
-    lpstrInitialDir As String
-    lpstrTitle As String
-    flags As Long
-    nFileOffset As Integer
-    nFileExtension As Integer
-    lpstrDefExt As String
-#If VBA7 Then
-    lCustData As LongPtr
-    lpfnHook As LongPtr
-#Else
-    lCustData As Long
-    lpfnHook As Long
-#End If
-    lpTemplateName As String
-End Type
 
-' KORJATTU: Muutettu "Private Declare" -> "Public Declare"
-' (nSize: LongPtr → ByRef Long — Win32 DWORD on 32-bittinen, ei osoitinkokoinen)
-#If VBA7 Then
-    Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
-        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Public Declare PtrSafe Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
-        (pOpenfilename As OPENFILENAME) As LongPtr
-#Else
-    Public Declare Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
-        (ByVal lpBuffer As String, ByRef nSize As Long) As Long
-    Public Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" _
-        (pOpenfilename As OPENFILENAME) As Long
-#End If
+' GetUserNameW kirjoittaa UTF-16-merkit suoraan puskuriin, joten puskuri annetaan osoittimena (StrPtr).
+' Näin skandinaaviset merkit (Ä, Ö) eivät korruptoidu ANSI-muunnoksessa.
+' nSize on Win32 DWORD (32-bittinen), joten se on Long myös 64-bittisessä Officessa.
+Public Declare PtrSafe Function wu_GetUserName Lib "advapi32" Alias "GetUserNameW" _
+    (ByVal lpBuffer As LongPtr, ByRef nSize As Long) As Long
 
 ' Moduulitason tilamuuttujat viimeisimmälle hakuehdolle
 Private m_last_criteria As Variant
@@ -90,8 +49,9 @@ On Error GoTo ErrorHandler
     ' Haetaan verkkokäyttäjänimi wu_GetUserName-API:lla
     BuffSize = 256
     NBuffer = Space$(BuffSize)
-    If wu_GetUserName(NBuffer, BuffSize) Then
-        NWUserName = Left$(NBuffer, InStr(NBuffer, Chr(0)) - 1)
+    If wu_GetUserName(StrPtr(NBuffer), BuffSize) Then
+        ' BuffSize sisältää päättävän nollamerkin, joka jätetään pois
+        NWUserName = Left$(NBuffer, BuffSize - 1)
     Else
         NWUserName = "Tuntematon"
     End If
