@@ -1,16 +1,16 @@
-# Tietokantamigraatio: 32-bit â†’ 64-bit Office VBA
+# Tietokantamigraatio: 32-bit -> 64-bit Office VBA
 >
 > Tietokantapohjainen suunnittelujärjestelmä päivitetty 64-bittiseksi M365-yhteensopivaksi.
 > *Database-driven design system upgraded to 64-bit M365 compatibility.*
 
 ---
 
-## ?? Projektin tila / Project Status
+## Projektin tila / Project Status
 
-> **Versio / Version:** 2.1.1 â€” Kielikoodauksen ja 64-bit-yhteensopivuuden viimeistely
+> **Versio / Version:** 2.1.1 — Kielikoodauksen ja 64-bit-yhteensopivuuden viimeistely
 > **Viimeksi päivitetty / Last updated:** 17.9.2026
-> **Yhteensopivuus / Compatibility:** Microsoft 365 (32/64-bit), Excel, Access, AutoCAD 2019â€“2027
-> **Tila / Status:** âœ… KÃ¤yttÃ¶valmis / Ready for use
+> **Yhteensopivuus / Compatibility:** Microsoft 365 (32/64-bit), Excel, Access, AutoCAD 2019–2027
+> **Tila / Status:** ? Käyttövalmis / Ready for use
 
 ---
 
@@ -53,11 +53,11 @@ Järjestelmä päivitettiin toimimaan nykyaikaisessa **64-bittisessä Microsoft 365*
 
 **Käyttäjälle näkyvät muutokset / Changes visible to users:**
 
-- ? Access VBA -lähdekoodi tukee VBA7/64-bit-ympäristöä ja säilyttää VBA6/32-bit-haarat
-- ? Yhteydet tietokantaan ovat nopeampia ja luotettavampia
-- ? Automaatioskriptit toimivat 64-bit PowerShellissä
-- ? AutoCAD-tyyppikirjaston enum-vakiot on korvattu late-binding-yhteensopivilla vakioilla
-- ? PIPE-, LoopCircuit- ja Lukituskaavio-moduulien käännösesteitä korjattu
+- Access VBA -lähdekoodi tukee VBA7/64-bit-ympäristöä ja säilyttää VBA6/32-bit-haarat
+- Yhteydet tietokantaan ovat nopeampia ja luotettavampia
+- Automaatioskriptit toimivat 64-bit PowerShellissä
+- AutoCAD-tyyppikirjaston enum-vakiot on korvattu late-binding-yhteensopivilla vakioilla
+- PIPE-, LoopCircuit- ja Lukituskaavio-moduulien käännösesteitä korjattu
 
 **Tekniset muutokset (kehittäjille) / Technical changes (for developers):**
 
@@ -83,7 +83,7 @@ Katso täydelliset muutokset: `Logs/CHANGELOG_64bit_and_perf.md`
 4. Tuo tarvittaessa `Access/AutoCAD_References.bas` Access-kantaan ja suorita makro `PoistaAutoCADReferences`.
 5. Tarkista vähintään `Microsoft Office xx.0 Access database engine Object Library` ja `OLE Automation`.
 6. Tuo aktiivisen tietokannan tarvitsemat moduulit vastaavasta `Access`-alikansiosta.
-7. Suorita **Debug ? Compile VBAProject** ennen toiminnallista testausta.
+7. Suorita **Debug & Compile VBAProject** ennen toiminnallista testausta.
 
 Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. Lähdekoodin päivittäminen ei yksin korjaa puuttuvaa `MISSING:`-viitettä. `PoistaAutoCADReferences` poistaa vain rikkinäiset tai AutoCADin version sidotut viitteet; DAO-, Office- ja OLE Automation -viitteitä ei poisteta.
 
@@ -98,12 +98,9 @@ Access-kantojen VBA-projektiviitteet tallennetaan itse tietokantaan. Lähdekoodin
 | Office | Microsoft 365 (suositus / recommended), 32- tai 64-bit |
 | Access | Microsoft Access (sisältyy M365:een / included in M365) |
 | Excel | Microsoft Excel (sisältyy M365:een / included in M365) |
-| AutoCAD | AutoCAD 2019â€“2027 tai uudempi / or newer |
+| AutoCAD | AutoCAD 2019–2027 tai uudempi / or newer |
 | Windows | Windows 10/11 (64-bit) |
-| PowerShell | 5.1+ (64-bit) â€” automaatioita varten / for automations |
-
-> ?? **Tärkeää / Important:** 64-bit Office on ensisijainen kohde. 32-bit Officea tuetaan vain moduuleissa, joissa on erillinen `#Else`-haara. Tarkista bittisyys: Excel ? Tiedosto ? Tili ? Tietoja Excelistä.
-> *64-bit Office is the primary target. 32-bit Office is supported only where a separate `#Else` branch exists.*
+| PowerShell | 5.1+ (64-bit) — automaatioita varten / for automations |
 
 ---
 
@@ -217,9 +214,7 @@ Automaatioskriptit päivittävät VBA-moduulit tiedostoihin ilman manuaalista kopio
 
 1. Aja 64-bittisessä PowerShellissä (x64) — skripti tarkistaa tämän automaattisesti
 2. Microsoft Access/Excel asennettuna
-3. Trust Center: ota kÃ¤yttÃ¶Ã¶n "Luota VBA-projektin objektimalliin" / "Trust access to the VBA project object model"
-
-> ?? **Tärkeää / Important:** Skriptit käyttävät **suoraa koodinkorvausta** eikä `VBComponents.Import()` -metodia. Tämä estää näkymättömän metatietovioittumisen. Katso `Automations/Logs/Access_automaatio_changelog.md`.
+3. Trust Center: ota käyttöön "Luota VBA-projektin objektimalliin" / "Trust access to the VBA project object model"
 
 ---
 
@@ -237,10 +232,10 @@ Automaatioskriptit päivittävät VBA-moduulit tiedostoihin ilman manuaalista kopio
 
 ### Testiohjeet kehittäjille / Test instructions for developers
 
-1. **Access:** Debug ? Compile VBA-editorissa, testaa `SniffUser`, `CustomMessage`
-2. **Excel:** Klikkaa "Hae tiedot" ? tarkista DB1/DB2 täyttyvät ilman virheitä
-3. **Excel:** Klikkaa "Aja tarkistus" ? tarkista Info-arkki täyttyy, ei ERRORS-merkintöjä
-4. **Excel:** Klikkaa "Luo tuloste" ? tarkista uusi työkirja luodaan oikein
+1. **Access:** Debug & Compile VBA-editorissa, testaa `SniffUser`, `CustomMessage`
+2. **Excel:** Klikkaa "Hae tiedot" & tarkista DB1/DB2 täyttyvät ilman virheitä
+3. **Excel:** Klikkaa "Aja tarkistus" & tarkista Info-arkki täyttyy, ei ERRORS-merkintöjä
+4. **Excel:** Klikkaa "Luo tuloste" & tarkista uusi työkirja luodaan oikein
 
 ---
 
