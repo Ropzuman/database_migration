@@ -48,3 +48,20 @@ Public Type OPENFILENAME
 #End If
     lpTemplateName As String
 End Type
+
+Private m_lastCriteria As Variant
+Private m_lastUsed As Variant
+
+Public Function Set_last(ByVal Values As Variant, ByVal criterias As Variant) As Variant
+    m_lastCriteria = criterias
+    m_lastUsed = Values
+    Set_last = m_lastUsed
+End Function
+
+Public Function Show_last(ByVal criterias As Variant) As Variant
+    Show_last = m_lastUsed
+End Function
+
+Public Function Show_last_criteria(ByVal criterias As Variant) As Variant
+    Show_last_criteria = m_lastCriteria
+End Function

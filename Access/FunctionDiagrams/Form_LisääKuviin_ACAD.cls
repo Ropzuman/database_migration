@@ -295,7 +295,7 @@ SQLQry = "SELECT " & _
 "INNER JOIN DocType ON Documents.TypeID=DocType.TypeID) INNER JOIN DocSize ON Documents.SizeID=DocSize.SizeID) " & _
 "INNER JOIN Status ON Documents.StatusID=Status.StatusID) INNER JOIN Revision ON Documents.CurrentRevID=Revision.RevID) " & _
 "INNER JOIN Files ON Documents.CurrentFileID=Files.FileID) LEFT JOIN SAVDocNoTbl ON Documents.DocumentID=SAVDocNoTbl.DocumentID " & _
--NN"WHERE Documents.ProjectID=" & Me.RefID.Value & ""
+"WHERE Documents.ProjectID=" & Me.RefID.Value
 KopioiTulosTauluun dbsDocuments, dbs, SQLQry, "DocumentsDetail"
 
 ' Toinen kysely; tuloksesta luodaan paikallinen taulu DocumentsRevision
